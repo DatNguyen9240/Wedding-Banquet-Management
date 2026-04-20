@@ -463,60 +463,43 @@ img { max-width: 100%; display: block; }
   :root {
     --header-height: 64px;
     --sidebar-width: 260px;
-    --spacing-lg: 20px; /* Scale down global spacing */
-    --spacing-xl: 24px;
-    --font-size-2xl: 24px; /* Scale down large titles */
+    --font-size-2xl: 24px;
   }
 
   .search-box { display: none; }
-  .user-text { display: none; } /* Hide Admin text */
-  .app-header { padding: 0 16px; }
+  .user-text { display: none; }
+  .app-header { padding: 0 16px; gap: 8px; }
   .app-content { padding: 16px; }
   
   .header-left { gap: 12px; }
   .header-right { gap: 14px; }
   
-  /* Make buttons smaller */
-  .btn-hamburger { width: 38px; height: 38px; border-radius: var(--radius-sm); }
-  .btn-hamburger .material-symbols-outlined { font-size: 22px; }
+  .btn-hamburger { width: 36px; height: 36px; border-radius: var(--radius-sm); }
+  .btn-hamburger .material-symbols-outlined { font-size: 20px; }
   .icon-btn { width: 34px; height: 34px; }
-  .user-avatar { width: 38px; height: 38px; }
+  .user-avatar { width: 34px; height: 34px; }
   
-  /* Stats Cards scaling */
   .stats-grid { 
-    grid-template-columns: 1fr; /* Stack */
+    grid-template-columns: repeat(2, 1fr); 
     gap: 12px; 
     margin-bottom: 20px;
   }
   
-  .stat-card {
-    padding: 16px; 
-    gap: 16px;
-    border-radius: var(--radius-md);
-  }
-  
+  .stat-card { padding: 12px; gap: 12px; border-radius: var(--radius-md); }
   .stat-icon { width: 44px; height: 44px; }
   .stat-icon .material-symbols-outlined { font-size: 22px; }
   
   .stat-info h3 { font-size: 20px; margin-bottom: 2px; }
-  .stat-info p { font-size: 13px; }
+  .stat-info p { font-size: 13px; margin-bottom: 0; }
 
-  /* Generic Card and Table scaling */
-  .card-header { 
-    padding: 16px; 
-    font-size: 16px; 
-  }
+  .card-header { padding: 16px; font-size: 16px; }
   .card-body { padding: 16px; }
   
-  /* Ensure table scrolls instead of wrapping text aggressively */
-  .table-wrapper {
-    margin: 0 -16px; /* Let it bleed to edges on mobile */
-    padding: 0 16px;
-    width: calc(100% + 32px);
-  }
+  .table-wrapper { width: 100%; border-radius: var(--radius-sm); }
   .data-table th, .data-table td { 
-    padding: 12px 16px; 
-    white-space: nowrap; /* Prevent ugly squeezing */
+    padding: 10px 12px; 
+    font-size: 13px; 
+    white-space: nowrap; 
   }
 }
 
@@ -525,64 +508,30 @@ img { max-width: 100%; display: block; }
   :root {
     --header-height: 56px;
     --sidebar-width: 240px;
-    --spacing-md: 12px;
-    --spacing-lg: 16px; 
-    --spacing-xl: 16px;
   }
-  
-  .app-header { padding: 0 12px; }
-  .app-content { padding: 12px; }
-  
-  .header-left { gap: 8px; }
-  .header-right { gap: 10px; }
   
   .btn-hamburger { width: 34px; height: 34px; border-radius: 6px; }
-  .btn-hamburger .material-symbols-outlined { font-size: 20px; }
   .icon-btn { width: 32px; height: 32px; }
-  .icon-btn .material-symbols-outlined { font-size: 18px !important; } /* Force icon smaller */
+  .icon-btn .material-symbols-outlined { font-size: 18px !important; } 
   .user-avatar { width: 32px; height: 32px; }
   
-  /* Sidebar ultra compact */
-  .sidebar-header {
-    padding: 0 12px;
-    font-size: 16px;
-    gap: 6px;
-  }
-  .sidebar-header > div > .material-symbols-outlined { 
-    font-size: 24px !important; 
-    margin-right: 6px !important; 
-  }
-  .btn-close-sidebar { width: 32px; height: 32px; }
-  .btn-close-sidebar .material-symbols-outlined {
-    font-size: 20px !important;
-    margin-right: 0 !important; /* Ensure no margin pushes it off-center */
-  }
+  .sidebar-header { padding: 0 12px; font-size: 15px; }
+  .sidebar-header > div > .material-symbols-outlined { font-size: 22px !important; margin-right: 4px !important; }
+  .btn-close-sidebar { width: 28px; height: 28px; }
   
-  .nav-group-title { font-size: 11px; padding: 4px 12px; margin-top: 16px; }
-  .nav-item { padding: 10px 12px; font-size: 14px; gap: 10px; }
-  .nav-item span.icon { font-size: 20px; }
+  .nav-group-title { font-size: 10px; padding: 4px 12px; margin-top: 12px; }
+  .nav-item { padding: 8px 12px; font-size: 13px; gap: 8px; margin: 2px 8px; }
+  .nav-item span.icon { font-size: 18px; }
 
-  /* Stats grid extra compact */
-  .stats-grid { gap: 10px; margin-bottom: 16px; }
-  .stat-card { padding: 12px; gap: 12px; border-radius: 12px; }
-  .stat-icon { width: 40px; height: 40px; border-radius: 10px; }
+  .stats-grid { grid-template-columns: 1fr; gap: 10px; margin-bottom: 16px; }
+  
+  .stat-icon { width: 38px; height: 38px; border-radius: 8px; }
   .stat-icon .material-symbols-outlined { font-size: 20px; }
-  .stat-info h3 { font-size: 18px; margin-bottom: 0px; }
+  .stat-info h3 { font-size: 18px; }
   .stat-info p { font-size: 12px; }
 
-  /* Generic Card and Table ultra compact */
-  .card-header { padding: 12px; font-size: 15px; }
+  .card-header { padding: 12px; font-size: 14px; }
   .card-body { padding: 12px; }
   
-  .table-wrapper {
-    margin: 0 -12px; 
-    padding: 0 12px;
-    width: calc(100% + 24px);
-  }
-  .data-table th, .data-table td { 
-    padding: 8px 12px; 
-    font-size: 12px; /* Smaller text for table on mobile */
-  }
-  .data-table th { font-size: 11px; }
-  .status-badge { padding: 2px 8px; font-size: 11px; }
+  .data-table th, .data-table td { padding: 8px 10px; font-size: 12px; }
 }
