@@ -50,9 +50,17 @@
 
         <!-- Nhóm Quản lý tiệc -->
         <div class="nav-group-title">Quản lý tiệc</div>
+        <a href="#/customers" class="nav-item">
+          <span class="material-symbols-outlined icon">manage_accounts</span>
+          Hồ sơ khách hàng
+        </a>
         <a href="#/calendar" class="nav-item">
           <span class="material-symbols-outlined icon">calendar_month</span>
           Lịch tiệc
+        </a>
+        <a href="#/hall-status" class="nav-item">
+          <span class="material-symbols-outlined icon">meeting_room</span>
+          Trạng thái sảnh
         </a>
         <a href="#/visitor" class="nav-item">
           <span class="material-symbols-outlined icon">hail</span>
@@ -71,11 +79,33 @@
           Quyết toán
         </a>
 
+        <!-- Nhóm Nhân sự -->
+        <div class="nav-group-title">Nhân sự</div>
+        <a href="#/staff" class="nav-item">
+          <span class="material-symbols-outlined icon">badge</span>
+          Nhân viên phục vụ
+        </a>
+
         <!-- Nhóm Danh mục -->
         <div class="nav-group-title">Danh mục</div>
         <a href="#/menu-items" class="nav-item">
           <span class="material-symbols-outlined icon">restaurant_menu</span>
           Hàng hóa / Món ăn
+        </a>
+
+        <!-- Nhóm Báo cáo -->
+        <div class="nav-group-title">Báo cáo</div>
+        <a href="#/report-revenue" class="nav-item">
+          <span class="material-symbols-outlined icon">bar_chart</span>
+          Doanh thu tiệc
+        </a>
+        <a href="#/report-cost" class="nav-item">
+          <span class="material-symbols-outlined icon">price_change</span>
+          Chi phí tiệc
+        </a>
+        <a href="#/report-other" class="nav-item">
+          <span class="material-symbols-outlined icon">assessment</span>
+          Báo cáo khác
         </a>
       </nav>
     </aside>
@@ -139,10 +169,11 @@
   <div id="modal-container"></div>
 
   <!-- Core Scripts -->
-  <script src="./src/js/utils/permission.js?v=12"></script>
-  <script src="./src/js/core/KeyboardManager.js?v=12"></script>
-  <script src="./src/js/core/router.js?v=12"></script>
-  <script src="./src/js/pages/index.js?v=12"></script>
+  <script src="./src/js/utils/permission.js?v=17"></script>
+  <script src="./src/js/core/KeyboardManager.js?v=17"></script>
+  <script src="./src/js/pages/visitor.js?v=17"></script>
+  <script src="./src/js/core/router.js?v=17"></script>
+  <script src="./src/js/pages/index.js?v=17"></script>
 </body>
 
 </html>

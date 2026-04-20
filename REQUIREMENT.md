@@ -457,3 +457,112 @@ Tất cả các form đều có thanh công cụ 6 nút theo thứ tự:
 | **Ý kiến khách tham quan** | Tổng hợp tất cả ý kiến khách đã tham quan |
 | **Các kênh thông tin** | Kênh nào giúp khách biết đến nhà hàng |
 | **CTKM được yêu thích** | Các chương trình khuyến mãi được chọn nhiều nhất |
+
+---
+
+## VI. Yêu cầu Bổ sung (Cập nhật)
+
+### VI.1 Hồ sơ Khách hàng
+**Route:** `#/customers`
+**Module:** HopDong
+
+- Quản lý danh bạ toàn bộ khách hàng đã/đang đặt tiệc.
+- **Tra cứu nhanh** theo tên khách, số điện thoại, mã khách.
+- **Lịch sử giao dịch** của từng khách: Đã tham quan bao nhiêu lần, đã ký hợp đồng nào, đã thanh toán chưa.
+- Thông tin lưu: Tên Cô Dâu – Chú Rể, SĐT, Địa chỉ, CMND đại diện, Email, Loại tiệc ưa thích, Nhân viên phụ trách.
+- **DB mapping:** Bảng `dmkhachhang` (Makh, Tenchure, Tencodau, Dienthoai, Mail, Diachi…).
+
+---
+
+### VI.2 Trạng thái Sảnh Tiệc
+**Route:** `#/hall-status`
+**Module:** HopDong
+
+- Hiển thị **trực quan bằng màu sắc** tình trạng từng sảnh tiệc trong ngày/tuần/tháng.
+
+| Màu | Trạng thái |
+|---|---|
+| 🟢 Xanh lá | Sảnh trống – Có thể đặt |
+| 🟡 Vàng | Đã cọc chỗ – Chờ ký HĐ |
+| 🔴 Đỏ | Đã ký Hợp đồng – Đã có chủ |
+| ⚫ Xám | Ngưng hoạt động / Đang bảo trì |
+
+- Click vào từng ô sảnh → Hiển thị thông tin chi tiết (Tên khách, Ngày tổ chức, Ca tiệc, Số bàn).
+- **DB mapping:** Bảng `SanhTiec` kết hợp `HopDongTiec`.
+
+---
+
+### VI.3 Nhân viên Phục vụ Tiệc
+**Route:** `#/staff`
+**Module:** NhanSu
+
+- Quản lý hồ sơ nhân viên phục vụ tiệc (Thời vụ, Bán thời gian, Fulltime).
+- Thông tin lưu: Họ tên, Giới tính, SĐT, Loại hợp đồng, Ngày vào làm, Mức lương/ca, Đánh giá.
+- Ghi nhận **đánh giá / nhận xét** sau mỗi tiệc (Chuyên cần, Thái độ, Kỹ năng).
+- Lịch làm việc theo ca tiệc.
+
+---
+
+### VI.4 Cảnh báo Thời hạn Thanh toán
+**Vị trí hiển thị:** Dashboard (`#/dashboard`) — Widget thông báo
+
+- Hiển thị danh sách các hợp đồng **sắp đến hạn thanh toán** (trong vòng 7 ngày tới).
+- Cảnh báo màu đỏ khi **đã quá hạn thanh toán**.
+- Click vào cảnh báo → Nhảy thẳng vào màn hình Hợp đồng chi tiết.
+
+---
+
+### VI.5 Báo cáo Doanh thu Tiệc
+**Route:** `#/report-revenue`
+**Module:** BaoCao
+
+- Báo cáo doanh thu **tổng hợp** và **chi tiết** theo khoảng ngày (Từ → Đến).
+- Lọc theo: Sảnh tiệc, Nhân viên Sales, Loại tiệc.
+- Biểu đồ cột/đường theo tháng trong năm.
+- Xuất ra file Excel / In báo cáo.
+
+---
+
+### VI.6 Báo cáo Chi phí Tiệc
+**Route:** `#/report-cost`
+**Module:** BaoCao
+
+- Báo cáo tổng hợp chi phí: Gói thực đơn, Dịch vụ phát sinh, Chi phí nhân sự ca tiệc.
+- So sánh Chi phí ↔ Doanh thu để tính Lợi nhuận gộp theo từng tiệc.
+
+---
+
+### VI.7 Báo cáo Quản lý Khác
+**Route:** `#/report-other`
+**Module:** BaoCao
+
+Bao gồm các báo cáo quản trị tổng hợp:
+
+| Báo cáo | Mô tả |
+|---|---|
+| **Tiến trình nhận tiệc** | Tháng/Năm nhận tiệc và Tháng/Năm tổ chức tiệc |
+| **Luỹ kế nhận tiệc trong năm** | Số bàn và doanh thu theo nhân viên Sales |
+| **Thống kê cọc chỗ – cọc HĐ** | Tiền cọc và số bàn tăng/giảm theo khoảng ngày |
+| **Yếu tố khách đặt tiệc** | Lý do khách lựa chọn nhà hàng |
+| **Trạng thái sảnh CrossTab** | Lưới chéo sảnh × ngày tổ chức (nguồn: `CrosstabDatsanh_Sumkhach`) |
+
+---
+
+## VII. Bảng Tổng hợp Route & Trạng thái
+
+| Route | Tên Màn hình | Module | Trạng thái |
+|---|---|---|---|
+| `#/dashboard` | Tổng quan | QuanTriHeThong | ✅ Có giao diện mẫu |
+| `#/users` | Người dùng | QuanTriHeThong | ⏳ Placeholder |
+| `#/customers` | Hồ sơ Khách hàng | HopDong | ❌ Chưa code |
+| `#/calendar` | Lịch tiệc | HopDong | ⏳ Placeholder |
+| `#/hall-status` | Trạng thái Sảnh | HopDong | ❌ Chưa code |
+| `#/visitor` | Khách tham quan | HopDong | ✅ Đã có Form đầy đủ |
+| `#/booking` | Biên nhận cọc | HopDong | ⏳ Placeholder |
+| `#/contract` | Hợp đồng tiệc | HopDong | ⏳ Placeholder |
+| `#/checkout` | Quyết toán | QuyetToan | ⏳ Placeholder |
+| `#/staff` | Nhân viên phục vụ | NhanSu | ❌ Chưa code |
+| `#/menu-items` | Hàng hóa / Món ăn | DanhMuc | ⏳ Placeholder |
+| `#/report-revenue` | Doanh thu Tiệc | BaoCao | ❌ Chưa code |
+| `#/report-cost` | Chi phí Tiệc | BaoCao | ❌ Chưa code |
+| `#/report-other` | Báo cáo Khác | BaoCao | ❌ Chưa code |

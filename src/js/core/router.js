@@ -7,14 +7,24 @@ var Router = (function () {
 
   // Cấu hình các Route mô phỏng
   var routes = {
-    '/dashboard': { title: 'Tổng quan', module: 'QuanTriHeThong' },
-    '/users':     { title: 'Danh sách người dùng', module: 'QuanTriHeThong' },
-    '/calendar':  { title: 'Lịch tiệc trong tháng', module: 'HopDong' },
-    '/visitor':   { title: 'Khách tham quan', module: 'HopDong' },
-    '/booking':   { title: 'Biên nhận cọc chỗ', module: 'HopDong' },
-    '/contract':  { title: 'Hợp đồng tiệc', module: 'HopDong' },
-    '/checkout':  { title: 'Quyết toán', module: 'QuyetToan' },
-    '/menu-items':{ title: 'Hàng hóa / Món ăn', module: 'DanhMuc' }
+    '/dashboard':      { title: 'Tổng quan', module: 'QuanTriHeThong' },
+    '/users':          { title: 'Danh sách người dùng', module: 'QuanTriHeThong' },
+    // Quản lý tiệc
+    '/customers':      { title: 'Hồ sơ Khách hàng', module: 'HopDong' },
+    '/calendar':       { title: 'Lịch tiệc trong tháng', module: 'HopDong' },
+    '/hall-status':    { title: 'Trạng thái Sảnh Tiệc', module: 'HopDong' },
+    '/visitor':        { title: 'Khách tham quan', module: 'HopDong' },
+    '/booking':        { title: 'Biên nhận cọc chỗ', module: 'HopDong' },
+    '/contract':       { title: 'Hợp đồng tiệc', module: 'HopDong' },
+    '/checkout':       { title: 'Quyết toán', module: 'QuyetToan' },
+    // Nhân sự
+    '/staff':          { title: 'Nhân viên Phục vụ Tiệc', module: 'NhanSu' },
+    // Danh mục
+    '/menu-items':     { title: 'Hàng hóa / Món ăn', module: 'DanhMuc' },
+    // Báo cáo
+    '/report-revenue': { title: 'Báo cáo Doanh thu Tiệc', module: 'BaoCao' },
+    '/report-cost':    { title: 'Báo cáo Chi phí Tiệc', module: 'BaoCao' },
+    '/report-other':   { title: 'Báo cáo Quản lý Khác', module: 'BaoCao' }
   };
 
   function init() {
@@ -154,6 +164,13 @@ var Router = (function () {
           </div>
         </div>
       `;
+    } else if (hash === '/visitor') {
+      // Delegate toàn bộ UI Khách tham quan cho VisitorPage module
+      if(window.VisitorPage) {
+        window.VisitorPage.render($content);
+      } else {
+        $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module VisitorPage.</div></div>';
+      }
     } else {
       // Các trang khác tạm thời hiện raw html
       $content.innerHTML = '<div class="card"><div class="card-header">' + route.title + '</div><div class="card-body">Giao diện nội dung của trang <b>' + route.title + '</b> sẽ load ở đây...</div></div>';
