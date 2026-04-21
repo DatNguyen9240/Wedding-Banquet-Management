@@ -187,8 +187,20 @@ var Router = (function () {
       if(window.SettingsPage) window.SettingsPage.render($content);
       else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module SettingsPage.</div></div>';
     } else if (hash === '/categories') {
-      if(window.CategoriesPage) window.CategoriesPage.render($content);
+      if (window.CategoriesPage) window.CategoriesPage.render($content);
       else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module CategoriesPage.</div></div>';
+    } else if (hash === '/booking') {
+      if (window.BookingPage) window.BookingPage.render($content);
+      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module BookingPage.</div></div>';
+    } else if (hash === '/contract') {
+      if (window.ContractPage) window.ContractPage.render($content);
+      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module ContractPage.</div></div>';
+    } else if (hash === '/checkout') {
+      if (window.CheckoutPage) window.CheckoutPage.render($content);
+      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module CheckoutPage.</div></div>';
+    } else if (hash === '/calendar') {
+      if (window.CalendarPage) window.CalendarPage.render($content);
+      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module CalendarPage.</div></div>';
     } else {
       // Các trang khác tạm thời hiện raw html
       $content.innerHTML = '<div class="card"><div class="card-header">' + route.title + '</div><div class="card-body">Giao diện nội dung của trang <b>' + route.title + '</b> sẽ load ở đây...</div></div>';
