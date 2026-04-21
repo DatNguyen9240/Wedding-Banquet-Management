@@ -41,7 +41,7 @@ var SettingsPage = (function () {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = `
       <div style="padding: 24px;">
-        <div style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">Thông tin Nhà hàng Quản lý Tiệc Cưới</div>
+        <div style="font-size: var(--font-size-lg); font-weight: 600; margin-bottom: 24px;">Thông tin Nhà hàng Quản lý Tiệc Cưới</div>
         
         <div style="display: flex; gap: 40px; flex-wrap: wrap;">
           <!-- Cột Trái: Nhập liệu cơ bản -->
@@ -77,8 +77,8 @@ var SettingsPage = (function () {
             </div>
 
             <div style="padding: 16px; background: #F8FAFC; border: 1px dashed var(--color-border-strong); border-radius: 8px;">
-              <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px; color: var(--color-text);">Ghi chú hệ thống</div>
-              <ul style="font-size: 13px; color: var(--color-text-secondary); margin: 0; padding-left: 16px; line-height: 1.6;">
+              <div style="font-weight: 600; margin-bottom: 8px; font-size: var(--font-size-md); color: var(--color-text);">Ghi chú hệ thống</div>
+              <ul style="font-size: var(--font-size-sm); color: var(--color-text-secondary); margin: 0; padding-left: 16px; line-height: 1.6;">
                 <li>Thông tin liên hệ này sẽ được in trực tiếp lên các biểu mẫu Hợp đồng & Phiếu thu.</li>
                 <li>Logo nên dùng ảnh định dạng PNG nền trong suốt, kích thước tỷ lệ 1:1 tốt nhất là 400x400px.</li>
               </ul>
@@ -113,7 +113,7 @@ var SettingsPage = (function () {
     wrapper.innerHTML = `
       <div style="padding: 24px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <div style="font-size: 16px; font-weight: 600;">Quản lý Năm Sử Dụng & Kỳ Kế Toán</div>
+          <div style="font-size: var(--font-size-lg); font-weight: 600;">Quản lý Năm Sử Dụng & Kỳ Kế Toán</div>
           <div style="display:flex; gap:12px">
             <button class="btn btn-secondary" onclick="ConfirmModal.show({ title:'Chuyển Kỳ', message:'Chuyển đổi dữ liệu sang kỳ làm việc khác (Kỳ 10/2026)?' })">
               Chuyển tới Kỳ Khác
@@ -199,7 +199,7 @@ var SettingsPage = (function () {
         
         <!-- Đổi mật khẩu -->
         <div style="flex: 1 1 400px; max-width: 100%;">
-          <div style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">Đổi Mật Khẩu (Admin)</div>
+          <div style="font-size: var(--font-size-lg); font-weight: 600; margin-bottom: 24px;">Đổi Mật Khẩu (Admin)</div>
           <div class="form-group mb-3">
             <label>Mật khẩu hiện tại</label>
             <input type="password" class="ui-input" placeholder="***">
@@ -222,7 +222,7 @@ var SettingsPage = (function () {
               .settings-backup-layout { padding-left: 48px; border-left: 1px solid var(--color-border); }
             }
           </style>
-          <div style="font-size: 16px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap:8px;">
+          <div style="font-size: var(--font-size-lg); font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap:8px;">
             <span class="material-symbols-outlined" style="color:var(--color-primary)">cloud_download</span>
             Sao lưu Dữ liệu Hệ thống
           </div>

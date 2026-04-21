@@ -87,8 +87,8 @@ img {
 }
 
 .page-title-bar {
-  margin-bottom: 24px;
-  font-size: 26px;
+  margin-bottom: var(--spacing-xl);
+  font-size: var(--font-size-2xl);
   font-weight: 700;
   color: var(--color-text);
 }
@@ -129,6 +129,12 @@ img {
   :root {
     --header-height: 64px;
     --sidebar-width: 260px;
+    /* Scale down typography on mobile screens */
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-md: 14px;
+    --font-size-lg: 16px;
+    --font-size-xl: 20px;
     --font-size-2xl: 24px;
   }
 

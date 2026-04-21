@@ -40,4 +40,11 @@
   background: #F1F5F9;
 }
 
+@media (max-width: 768px) {
+  .data-table th,
+  .data-table td {
+    padding: 12px 12px;
+  }
+}
+
 

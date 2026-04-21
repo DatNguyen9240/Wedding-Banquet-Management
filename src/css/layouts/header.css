@@ -97,5 +97,16 @@
   .user-text {
     display: none !important;
   }
+  .btn-hamburger {
+    width: 36px;
+    height: 36px;
+  }
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .icon-btn .material-symbols-outlined {
+    font-size: 18px !important;
+  }
 }
 

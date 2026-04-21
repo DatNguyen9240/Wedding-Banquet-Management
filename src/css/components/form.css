@@ -9,7 +9,7 @@
 }
 
 .form-group label {
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--color-text-secondary);
 }
@@ -20,7 +20,7 @@
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
   outline: none;
-  font-size: 14px;
+  font-size: var(--font-size-md);
   font-family: inherit;
   color: var(--color-text);
   transition: all 0.2s;
