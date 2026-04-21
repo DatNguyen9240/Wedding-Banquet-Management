@@ -82,9 +82,9 @@ var Sidebar = (function () {
 
           <!-- Nhóm Danh mục -->
           <div class="nav-group-title">Danh mục</div>
-          <a href="#/menu-items" class="nav-item">
-            <span class="material-symbols-outlined icon">restaurant_menu</span>
-            Hàng hóa / Món ăn
+          <a href="#/categories" class="nav-item">
+            <span class="material-symbols-outlined icon">category</span>
+            Quản lý Danh mục
           </a>
 
           <!-- Nhóm Báo cáo -->

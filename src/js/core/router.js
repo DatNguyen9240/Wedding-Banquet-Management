@@ -22,7 +22,7 @@ var Router = (function () {
     // Nhân sự
     '/staff':          { title: 'Nhân viên Phục vụ Tiệc', module: 'NhanSu' },
     // Danh mục
-    '/menu-items':     { title: 'Hàng hóa / Món ăn', module: 'DanhMuc' },
+    '/categories':     { title: 'Quản lý Danh mục', module: 'DanhMuc' },
     // Báo cáo
     '/report-revenue': { title: 'Báo cáo Doanh thu Tiệc', module: 'BaoCao' },
     '/report-cost':    { title: 'Báo cáo Chi phí Tiệc', module: 'BaoCao' },
@@ -186,6 +186,9 @@ var Router = (function () {
     } else if (hash === '/settings') {
       if(window.SettingsPage) window.SettingsPage.render($content);
       else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module SettingsPage.</div></div>';
+    } else if (hash === '/categories') {
+      if(window.CategoriesPage) window.CategoriesPage.render($content);
+      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module CategoriesPage.</div></div>';
     } else {
       // Các trang khác tạm thời hiện raw html
       $content.innerHTML = '<div class="card"><div class="card-header">' + route.title + '</div><div class="card-body">Giao diện nội dung của trang <b>' + route.title + '</b> sẽ load ở đây...</div></div>';
