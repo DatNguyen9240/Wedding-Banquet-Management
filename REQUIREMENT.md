@@ -7,6 +7,9 @@
 
 ### 1.1 Thanh Công cụ Chuẩn (ButtonBar)
 
+![Màn hình Danh mục](images/01.png)
+
+
 Tất cả các form đều có thanh công cụ 6 nút theo thứ tự:
 
 | Nút | Chức năng |

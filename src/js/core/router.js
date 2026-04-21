@@ -9,6 +9,7 @@ var Router = (function () {
   var routes = {
     '/dashboard':      { title: 'Tổng quan', module: 'QuanTriHeThong' },
     '/users':          { title: 'Danh sách người dùng', module: 'QuanTriHeThong' },
+    '/permissions':    { title: 'Phân quyền Cán bộ', module: 'QuanTriHeThong' },
     // Quản lý tiệc
     '/customers':      { title: 'Hồ sơ Khách hàng', module: 'HopDong' },
     '/calendar':       { title: 'Lịch tiệc trong tháng', module: 'HopDong' },
@@ -24,7 +25,8 @@ var Router = (function () {
     // Báo cáo
     '/report-revenue': { title: 'Báo cáo Doanh thu Tiệc', module: 'BaoCao' },
     '/report-cost':    { title: 'Báo cáo Chi phí Tiệc', module: 'BaoCao' },
-    '/report-other':   { title: 'Báo cáo Quản lý Khác', module: 'BaoCao' }
+    '/report-other':   { title: 'Báo cáo Quản lý Khác', module: 'BaoCao' },
+    '/components-demo':{ title: 'Bản test Component', module: 'QuanTriHeThong' }
   };
 
   function init() {
@@ -50,7 +52,7 @@ var Router = (function () {
     });
 
     if (!route) {
-      $pageTitle.innerText = 'Trang không tồn tại';
+      if ($pageTitle) $pageTitle.innerText = 'Trang không tồn tại';
       $content.innerHTML = '<div class="card"><div class="card-body">Không tìm thấy trang yêu cầu (404)</div></div>';
       return;
     }
@@ -171,6 +173,15 @@ var Router = (function () {
       } else {
         $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module VisitorPage.</div></div>';
       }
+    } else if (hash === '/components-demo') {
+      if(window.ComponentsDemoPage) window.ComponentsDemoPage.render($content);
+      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module ComponentsDemoPage.</div></div>';
+    } else if (hash === '/users') {
+      if(window.UsersPage) window.UsersPage.render($content);
+      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module UsersPage.</div></div>';
+    } else if (hash === '/permissions') {
+      if(window.PermissionsPage) window.PermissionsPage.render($content);
+      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module PermissionsPage.</div></div>';
     } else {
       // Các trang khác tạm thời hiện raw html
       $content.innerHTML = '<div class="card"><div class="card-header">' + route.title + '</div><div class="card-body">Giao diện nội dung của trang <b>' + route.title + '</b> sẽ load ở đây...</div></div>';

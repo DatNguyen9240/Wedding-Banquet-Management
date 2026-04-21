@@ -1,0 +1,67 @@
+/* ═══════════════════════════════════════════
+   TABS / SEGMENT COMPONENT
+   ═══════════════════════════════════════════ */
+
+.ui-tabs {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.ui-tabs-header {
+  display: flex;
+  align-items: center;
+  border-bottom: 2px solid var(--color-border);
+  gap: 32px;
+  margin-bottom: 24px;
+}
+
+.ui-tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.ui-tab-btn:hover {
+  color: var(--color-primary);
+}
+
+.ui-tab-btn.active {
+  color: var(--color-primary);
+}
+
+.ui-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 4px 4px 0 0;
+}
+
+.ui-tabs-body {
+  position: relative;
+  width: 100%;
+}
+
+.ui-tab-panel {
+  display: none;
+  animation: tabFadeIn 0.3s ease;
+}
+
+.ui-tab-panel.active {
+  display: block;
+}
+
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

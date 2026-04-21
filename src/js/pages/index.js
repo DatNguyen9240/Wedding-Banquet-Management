@@ -12,32 +12,13 @@ document.addEventListener('DOMContentLoaded', function () {
     Router.init();
   }
 
-  // 3. Xử lý UI Sidebar Responsive
-  var $sidebar = document.getElementById('app-sidebar');
-  var $btnHamburger = document.getElementById('btn-hamburger');
-  var $btnCloseSidebar = document.getElementById('btn-close-sidebar');
-  var $sidebarOverlay = document.getElementById('sidebar-overlay');
-
-  function openSidebar() {
-    if ($sidebar) $sidebar.classList.add('open');
-    if ($sidebarOverlay) $sidebarOverlay.classList.add('active');
+  // 3. Khởi tạo UI Giao diện màng bao (App Shell)
+  if (typeof Sidebar !== 'undefined') {
+    Sidebar.render('sidebar-container');
   }
 
-  function closeSidebar() {
-    if ($sidebar) $sidebar.classList.remove('open');
-    if ($sidebarOverlay) $sidebarOverlay.classList.remove('active');
-  }
-
-  if ($btnHamburger) {
-    $btnHamburger.addEventListener('click', openSidebar);
-  }
-
-  if ($btnCloseSidebar) {
-    $btnCloseSidebar.addEventListener('click', closeSidebar);
-  }
-  
-  if ($sidebarOverlay) {
-    $sidebarOverlay.addEventListener('click', closeSidebar);
+  if (typeof Header !== 'undefined') {
+    Header.render('header-container');
   }
 
   // Tự động đóng sidebar khi chuyển trang trên Mobile

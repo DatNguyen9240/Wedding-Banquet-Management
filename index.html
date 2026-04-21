@@ -7,14 +7,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PMQL Tiệc Cưới</title>
 
-  <link rel="stylesheet" href="./src/css/design-tokens.css?v=12">
-  <link rel="stylesheet" href="./src/css/global.css?v=12">
-
+  <link rel="stylesheet" href="./src/css/design-tokens.css?v=14">
+  <link rel="stylesheet" href="./src/css/global.css?v=16">
+  <!-- Layouts -->
+  <link rel="stylesheet" href="./src/css/layouts/header.css?v=1">
+  <link rel="stylesheet" href="./src/css/layouts/sidebar.css?v=1">
+  <link rel="stylesheet" href="./src/css/layouts/dashboard.css?v=1">
+  <!-- UI Components -->
+  <link rel="stylesheet" href="./src/css/components/button.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/modal.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/form.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/card.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/table.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/badge.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/search-bar.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/user-profile.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/tabs.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/skeleton.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/total-bar.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/chart.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/stepper.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/timeline.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/empty-state.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/file-upload.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/context-menu.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/tooltip.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/accordion.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/tree.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/calendar.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/slider.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/toast.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/popover.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/checkbox.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/shared-dropdown.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/combobox.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/grid-dropdown.css?v=1">
+  <!-- Core JS UI Components CSS -->
+  <link rel="stylesheet" href="./src/css/components/loading-spinner.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/alert.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/pagination.css?v=1">
+  <link rel="stylesheet" href="./src/css/components/filter.css?v=1">
   <!-- Thư viện Font & Icon Modern -->
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
     rel="stylesheet" />
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+  rel="stylesheet" />
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -22,140 +61,14 @@
   <!-- APP SHELL -->
   <div id="app">
 
-    <!-- ════ SIDEBAR ════ -->
-    <aside class="app-sidebar" id="app-sidebar">
-      <div class="sidebar-header">
-        <div style="display:flex; align-items:center;">
-          <span class="material-symbols-outlined"
-            style="margin-right:12px; font-size:32px; color:var(--color-primary)">diamond</span>
-          Quản lí tiệc cưới
-        </div>
-        <!-- Nút đóng Sidebar trên Mobile -->
-        <button class="btn-close-sidebar" id="btn-close-sidebar">
-          <span class="material-symbols-outlined">arrow_back</span>
-        </button>
-      </div>
-
-      <nav class="sidebar-nav">
-        <!-- Nhóm Hệ thống -->
-        <div class="nav-group-title">Hệ Thống</div>
-        <a href="#/dashboard" class="nav-item active">
-          <span class="material-symbols-outlined icon">dashboard</span>
-          Tổng quan
-        </a>
-        <a href="#/users" class="nav-item">
-          <span class="material-symbols-outlined icon">group</span>
-          Người dùng
-        </a>
-
-        <!-- Nhóm Quản lý tiệc -->
-        <div class="nav-group-title">Quản lý tiệc</div>
-        <a href="#/customers" class="nav-item">
-          <span class="material-symbols-outlined icon">manage_accounts</span>
-          Hồ sơ khách hàng
-        </a>
-        <a href="#/calendar" class="nav-item">
-          <span class="material-symbols-outlined icon">calendar_month</span>
-          Lịch tiệc
-        </a>
-        <a href="#/hall-status" class="nav-item">
-          <span class="material-symbols-outlined icon">meeting_room</span>
-          Trạng thái sảnh
-        </a>
-        <a href="#/visitor" class="nav-item">
-          <span class="material-symbols-outlined icon">hail</span>
-          Khách tham quan
-        </a>
-        <a href="#/booking" class="nav-item">
-          <span class="material-symbols-outlined icon">edit_document</span>
-          Biên nhận cọc
-        </a>
-        <a href="#/contract" class="nav-item">
-          <span class="material-symbols-outlined icon">contract</span>
-          Hợp đồng tiệc
-        </a>
-        <a href="#/checkout" class="nav-item">
-          <span class="material-symbols-outlined icon">receipt_long</span>
-          Quyết toán
-        </a>
-
-        <!-- Nhóm Nhân sự -->
-        <div class="nav-group-title">Nhân sự</div>
-        <a href="#/staff" class="nav-item">
-          <span class="material-symbols-outlined icon">badge</span>
-          Nhân viên phục vụ
-        </a>
-
-        <!-- Nhóm Danh mục -->
-        <div class="nav-group-title">Danh mục</div>
-        <a href="#/menu-items" class="nav-item">
-          <span class="material-symbols-outlined icon">restaurant_menu</span>
-          Hàng hóa / Món ăn
-        </a>
-
-        <!-- Nhóm Báo cáo -->
-        <div class="nav-group-title">Báo cáo</div>
-        <a href="#/report-revenue" class="nav-item">
-          <span class="material-symbols-outlined icon">bar_chart</span>
-          Doanh thu tiệc
-        </a>
-        <a href="#/report-cost" class="nav-item">
-          <span class="material-symbols-outlined icon">price_change</span>
-          Chi phí tiệc
-        </a>
-        <a href="#/report-other" class="nav-item">
-          <span class="material-symbols-outlined icon">assessment</span>
-          Báo cáo khác
-        </a>
-      </nav>
-    </aside>
-
-    <!-- Overlay mờ khi mở Sidebar trên Mobile -->
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <!-- Container cho Sidebar.js -->
+    <div id="sidebar-container"></div>
 
     <!-- ════ MAIN CONTENT WRAPPER ════ -->
-    <main class="app-main">
+    <main class="app-main" id="app-main">
 
-      <!-- ════ HEADER ════ -->
-      <header class="app-header">
-        <div class="header-left">
-          <!-- Nút Hamburger Mở Sidebar (Chỉ hiện trên Mobile) -->
-          <button class="btn-hamburger" id="btn-hamburger">
-            <span class="material-symbols-outlined">menu</span>
-          </button>
-
-          <!-- Thanh tìm kiếm kiểu Tailadmin -->
-          <div class="search-box">
-            <span class="material-symbols-outlined">search</span>
-            <input type="text" placeholder="Type to search...">
-          </div>
-        </div>
-
-        <div class="header-right">
-          <!-- Các nút Notification / Chat của Tailadmin -->
-          <div class="icon-btn">
-            <span class="material-symbols-outlined" style="font-size:20px;">notifications</span>
-            <span class="badge"></span>
-          </div>
-          <div class="icon-btn">
-            <span class="material-symbols-outlined" style="font-size:20px;">chat</span>
-            <span class="badge" style="background:#3BA2B8"></span>
-          </div>
-
-          <!-- Thông tin User -->
-          <div class="user-profile">
-            <div class="user-text">
-              <div class="user-name">Admin</div>
-              <div class="user-role">Quản trị hệ thống</div>
-            </div>
-            <div class="user-avatar">
-              <!-- Dùng ảnh placeholder tạm -->
-              <img src="https://ui-avatars.com/api/?name=Admin&background=3C50E0&color=fff" alt="User">
-            </div>
-            <span class="material-symbols-outlined" style="color:var(--color-text-secondary)">expand_more</span>
-          </div>
-        </div>
-      </header>
+      <!-- Container cho Header.js -->
+      <div id="header-container"></div>
 
       <!-- ════ SCROLLABLE DYNAMIC CONTENT ════ -->
       <div id="app-content" class="app-content">
@@ -169,11 +82,49 @@
   <div id="modal-container"></div>
 
   <!-- Core Scripts -->
-  <script src="./src/js/utils/permission.js?v=17"></script>
-  <script src="./src/js/core/KeyboardManager.js?v=17"></script>
-  <script src="./src/js/pages/visitor.js?v=17"></script>
-  <script src="./src/js/core/router.js?v=17"></script>
-  <script src="./src/js/pages/index.js?v=17"></script>
+  <script src="./src/js/utils/permission.js?v=18"></script>
+  <script src="./src/js/core/KeyboardManager.js?v=18"></script>
+  <script src="./src/js/utils/FormatUtils.js?v=1"></script>
+  <script src="./src/js/utils/PrintUtils.js?v=1"></script>
+  <script src="./src/js/components/UIUtils.js?v=1"></script>
+  <script src="./src/js/components/Sidebar.js?v=1"></script>
+  <script src="./src/js/components/Header.js?v=1"></script>
+  <script src="./src/js/components/Checkbox.js?v=1"></script>
+  <script src="./src/js/components/DataComboBox.js?v=1"></script>
+  <script src="./src/js/components/GridDropdown.js?v=1"></script>
+  <script src="./src/js/components/LoadingSpinner.js?v=1"></script>
+  <script src="./src/js/components/Alert.js?v=1"></script>
+  <script src="./src/js/components/ConfirmModal.js?v=1"></script>
+  <script src="./src/js/components/Modal.js?v=1"></script>
+  <script src="./src/js/components/Pagination.js?v=1"></script>
+  <script src="./src/js/components/FilterComponent.js?v=1"></script>
+  <script src="./src/js/components/Input.js?v=1"></script>
+  <script src="./src/js/components/Button.js?v=1"></script>
+  <script src="./src/js/components/ActionToolbar.js?v=1"></script>
+  <script src="./src/js/components/Card.js?v=1"></script>
+  <script src="./src/js/components/Table.js?v=1"></script>
+  <script src="./src/js/components/Tabs.js?v=1"></script>
+  <script src="./src/js/components/TotalBar.js?v=1"></script>
+  <script src="./src/js/components/Badge.js?v=1"></script>
+  <script src="./src/js/components/Chart.js?v=1"></script>
+  <script src="./src/js/components/Stepper.js?v=1"></script>
+  <script src="./src/js/components/Timeline.js?v=1"></script>
+  <script src="./src/js/components/EmptyState.js?v=1"></script>
+  <script src="./src/js/components/FileUpload.js?v=1"></script>
+  <script src="./src/js/components/ContextMenu.js?v=1"></script>
+  <script src="./src/js/components/Accordion.js?v=1"></script>
+  <script src="./src/js/components/TreeView.js?v=1"></script>
+  <script src="./src/js/components/Calendar.js?v=1"></script>
+  <script src="./src/js/components/Slider.js?v=1"></script>
+  <script src="./src/js/components/Toast.js?v=1"></script>
+  <script src="./src/js/components/Popover.js?v=1"></script>
+  <script src="./src/js/pages/users.js?v=2"></script>
+  <scri pt src="./src/js/pages/permissions.js?v=2">
+    </script>
+    <script src="./src/js/pages/visitor.js?v=18"></script>
+    <script src="./src/js/pages/components-demo.js?v=5"></script>
+    <script src="./src/js/core/router.js?v=19"></script>
+    <script src="./src/js/pages/index.js?v=18"></script>
 </body>
 
 </html>
