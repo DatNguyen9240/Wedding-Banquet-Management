@@ -112,9 +112,9 @@ var SettingsPage = (function () {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = `
       <div style="padding: 24px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <div style="font-size: var(--font-size-lg); font-weight: 600;">Quản lý Năm Sử Dụng & Kỳ Kế Toán</div>
-          <div style="display:flex; gap:12px">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:16px;">
+          <div style="font-size: var(--font-size-lg); font-weight: 600; min-width: 200px;">Quản lý Năm Sử Dụng & Kỳ Kế Toán</div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
             <button class="btn btn-secondary" onclick="ConfirmModal.show({ title:'Chuyển Kỳ', message:'Chuyển đổi dữ liệu sang kỳ làm việc khác (Kỳ 10/2026)?' })">
               Chuyển tới Kỳ Khác
             </button>
@@ -130,25 +130,35 @@ var SettingsPage = (function () {
             @media (max-width: 768px) {
               .settings-period-layout > div:first-child { border-right: none !important; border-bottom: 1px solid var(--color-border); padding-right: 0 !important; padding-bottom: 24px; margin-bottom: 8px; }
             }
+            .year-item {
+              padding: 10px 16px; background: #fff; border: 1px solid var(--color-border);
+              color: var(--color-text); border-radius: 6px; cursor: pointer; transition: all 0.2s;
+            }
+            .year-item:hover { border-color: var(--color-primary); }
+            .year-item.active {
+              background: #F8FAFC; border: 1px solid var(--color-primary);
+              color: var(--color-primary); font-weight: 600;
+            }
           </style>
           <!-- Cột bên trái: Danh sách các năm -->
           <div style="flex: 1 1 250px; max-width: 100%; border-right: 1px solid var(--color-border); padding-right: 16px;">
             <label style="font-weight:600; display:block; margin-bottom:12px;">Năm Làm Việc</label>
             <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px">
-              <li style="padding:10px 16px; background:#F8FAFC; border:1px solid var(--color-primary); color:var(--color-primary); font-weight:600; border-radius:6px; cursor:pointer;" onclick="UIToast.show('Năm đang hoạt động')">Năm 2026 (Hiện tại)</li>
-              <li style="padding:10px 16px; background:#fff; border:1px solid var(--color-border); border-radius:6px; cursor:pointer;">Năm 2025</li>
-              <li style="padding:10px 16px; background:#fff; border:1px solid var(--color-border); border-radius:6px; cursor:pointer;">Năm 2024</li>
+              <li class="year-item active" onclick="SettingsPage.selectYear(this, '2026')">Năm 2026 (Hiện tại)</li>
+              <li class="year-item" onclick="SettingsPage.selectYear(this, '2025')">Năm 2025</li>
+              <li class="year-item" onclick="SettingsPage.selectYear(this, '2024')">Năm 2024</li>
             </ul>
           </div>
           
           <!-- Cột bên phải: 12 Kỳ -->
           <div style="flex: 999 1 400px; max-width: 100%;">
-            <div style="margin-bottom:16px; display:flex; justify-content:space-between;">
-              <span style="font-weight:600">Tháng / Kỳ trong năm 2026</span>
-              <span class="status-badge success">Kỳ hiện hành: T10/2026</span>
+            <div style="margin-bottom:16px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; align-items:center;">
+              <span style="font-weight:600" id="period-header-year">Tháng / Kỳ trong năm 2026</span>
+              <span class="status-badge success" style="white-space:nowrap;">Kỳ hiện hành: T10/2026</span>
             </div>
-            <table class="data-table">
-              <thead>
+            <div class="table-wrapper" style="overflow-x: auto; width: 100%; padding-bottom: 8px;">
+              <table class="data-table">
+                <thead>
                 <tr>
                   <th>Kỳ (Tháng)</th>
                   <th>Phân Quý</th>
@@ -185,6 +195,7 @@ var SettingsPage = (function () {
                 </tr>
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>
@@ -242,6 +253,15 @@ var SettingsPage = (function () {
   }
 
   return {
-    render: render
+    render: render,
+    selectYear: function(el, year) {
+      if (!el) return;
+      var items = el.parentElement.querySelectorAll('.year-item');
+      items.forEach(function(item) { item.classList.remove('active'); });
+      el.classList.add('active');
+      UIToast.show('Đã chuyển sang xem Kỳ Kế Toán Năm ' + year);
+      var headerText = document.getElementById('period-header-year');
+      if (headerText) headerText.innerText = 'Tháng / Kỳ trong năm ' + year;
+    }
   };
 })();
