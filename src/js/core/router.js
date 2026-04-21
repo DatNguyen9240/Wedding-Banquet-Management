@@ -10,6 +10,7 @@ var Router = (function () {
     '/dashboard':      { title: 'Tổng quan', module: 'QuanTriHeThong' },
     '/users':          { title: 'Danh sách người dùng', module: 'QuanTriHeThong' },
     '/permissions':    { title: 'Phân quyền Cán bộ', module: 'QuanTriHeThong' },
+    '/settings':       { title: 'Thiết lập chung', module: 'QuanTriHeThong' },
     // Quản lý tiệc
     '/customers':      { title: 'Hồ sơ Khách hàng', module: 'HopDong' },
     '/calendar':       { title: 'Lịch tiệc trong tháng', module: 'HopDong' },
@@ -182,6 +183,9 @@ var Router = (function () {
     } else if (hash === '/permissions') {
       if(window.PermissionsPage) window.PermissionsPage.render($content);
       else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module PermissionsPage.</div></div>';
+    } else if (hash === '/settings') {
+      if(window.SettingsPage) window.SettingsPage.render($content);
+      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module SettingsPage.</div></div>';
     } else {
       // Các trang khác tạm thời hiện raw html
       $content.innerHTML = '<div class="card"><div class="card-header">' + route.title + '</div><div class="card-body">Giao diện nội dung của trang <b>' + route.title + '</b> sẽ load ở đây...</div></div>';

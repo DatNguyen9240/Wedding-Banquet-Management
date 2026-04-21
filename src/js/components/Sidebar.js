@@ -37,6 +37,10 @@ var Sidebar = (function () {
             <span class="material-symbols-outlined icon">admin_panel_settings</span>
             Phân quyền
           </a>
+          <a href="#/settings" class="nav-item">
+            <span class="material-symbols-outlined icon">settings_applications</span>
+            Thiết lập chung
+          </a>
 
           <!-- Nhóm Quản lý tiệc -->
           <div class="nav-group-title">Quản lý tiệc</div>
