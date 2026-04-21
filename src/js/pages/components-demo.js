@@ -13,7 +13,7 @@ var ComponentsDemoPage = (function () {
       <!-- CHECKBOX GROUP -->
       <div class="card mb-4" style="animation: slideUp 0.3s ease forwards;">
         <div class="card-header">1. Nhóm Checkbox</div>
-        <div class="card-body" style="display: flex; gap: 24px; padding: 24px;" id="demo-checkbox-group">
+        <div class="card-body" style="display: flex; gap: 24px; padding: 24px; flex-wrap: wrap;" id="demo-checkbox-group">
           <!-- Inject Checkboxes by JS -->
         </div>
       </div>

@@ -15,10 +15,10 @@ var PermissionsPage = (function () {
         <span>Phân quyền Nhóm Người dùng</span>
       </div>
 
-      <div class="row" style="animation: slideUp 0.3s ease forwards; display: flex; gap: 20px;">
+      <div class="row" style="animation: slideUp 0.3s ease forwards; display: flex; gap: 20px; flex-wrap: wrap;">
         
         <!-- CỘT TRÁI: DANH SÁCH NHÓM -->
-        <div style="flex: 0 0 280px;">
+        <div style="flex: 1 1 250px; max-width: 100%;">
           <div class="card" style="height: 100%;">
             <div class="card-header" style="background:#f8fafc;">
               <h3 style="font-size: 15px; margin:0; display:flex; align-items:center; gap:6px;">
@@ -33,14 +33,14 @@ var PermissionsPage = (function () {
         </div>
 
         <!-- CỘT PHẢI: MA TRẬN QUYỀN -->
-        <div style="flex: 1;">
-          <div class="card" style="height: 100%;">
+        <div style="flex: 999 1 400px; max-width: 100%;">
+          <div class="card" style="height: 100%; overflow: hidden; display: flex; flex-direction: column;">
             <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc;">
               <h3 style="font-size: 15px; margin:0;" id="matrix-title">Quyền hạn của: Admin</h3>
               <button class="btn btn-primary" id="btn-save-permission" style="padding: 4px 12px; font-size:13px;">Lưu Thay Đổi</button>
             </div>
-            <div class="card-body table-wrapper" style="padding:0; border-radius:0 0 8px 8px;">
-              <table class="data-table" id="permission-table" style="margin:0;">
+            <div class="card-body table-wrapper" style="padding:0; border-radius:0 0 8px 8px; width: 100%; max-width: 100%; overflow-x: auto;">
+              <table class="data-table" id="permission-table" style="margin:0; min-width: 500px;">
                 <thead>
                   <tr>
                     <th style="width: 40px; text-align: center;">STT</th>

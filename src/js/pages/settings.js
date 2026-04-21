@@ -40,37 +40,53 @@ var SettingsPage = (function () {
   function _buildCompanyInfoTab() {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = `
-      <div style="max-width: 600px; padding: 24px;">
+      <div style="padding: 24px;">
         <div style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">Thông tin Nhà hàng Quản lý Tiệc Cưới</div>
         
-        <div class="form-group mb-4">
-          <label>Tên nhà hàng / Công ty</label>
-          <input type="text" class="ui-input" value="NHÀ HÀNG TIỆC CƯỚI CÁNH HOA ĐÊM" placeholder="Nhập tên doanh nghiệp...">
-        </div>
-        
-        <div class="form-group mb-4">
-          <label>Địa chỉ</label>
-          <input type="text" class="ui-input" value="123 Nguyễn Văn Cừ, Phường 4, Quận 5, TP.HCM" placeholder="Địa chỉ cơ sở...">
-        </div>
+        <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+          <!-- Cột Trái: Nhập liệu cơ bản -->
+          <div style="flex: 1 1 400px;">
+            <div class="form-group mb-4">
+              <label>Tên nhà hàng / Công ty</label>
+              <input type="text" class="ui-input" value="NHÀ HÀNG TIỆC CƯỚI CÁNH HOA ĐÊM" placeholder="Nhập tên doanh nghiệp...">
+            </div>
+            
+            <div class="form-group mb-4">
+              <label>Địa chỉ</label>
+              <input type="text" class="ui-input" value="123 Nguyễn Văn Cừ, Phường 4, Quận 5, TP.HCM" placeholder="Địa chỉ cơ sở...">
+            </div>
 
-        <div style="display:flex; gap: 24px; margin-bottom: 24px;">
-          <div class="form-group" style="flex:1">
-            <label>Số điện thoại</label>
-            <input type="text" class="ui-input" value="0909.123.456" placeholder="Hotline liên hệ...">
+            <div style="display:flex; gap: 24px; margin-bottom: 24px; flex-wrap: wrap;">
+              <div class="form-group" style="flex:1">
+                <label>Số điện thoại</label>
+                <input type="text" class="ui-input" value="0909.123.456" placeholder="Hotline liên hệ...">
+              </div>
+              <div class="form-group" style="flex:1">
+                <label>Quỹ tiền mặt ban đầu</label>
+                <input type="text" class="ui-input" value="500,000,000" style="text-align:right" placeholder="...">
+              </div>
+            </div>
           </div>
-          <div class="form-group" style="flex:1">
-            <label>Quỹ tiền mặt ban đầu</label>
-            <input type="text" class="ui-input" value="500,000,000" style="text-align:right" placeholder="...">
+
+          <!-- Cột Phải: Upload & Ghi chú -->
+          <div style="flex: 1 1 400px;">
+            <div class="form-group mb-4">
+              <label>Logo Doanh Nghiệp (Dùng trên Phiếu/Hợp đồng)</label>
+              <div id="logo-upload-wrapper"></div>
+              <small style="color:var(--color-text-secondary); display:block; margin-top:8px;">Hệ thống sẽ lưu file thành logo.jpg trong thư mục mặc định.</small>
+            </div>
+
+            <div style="padding: 16px; background: #F8FAFC; border: 1px dashed var(--color-border-strong); border-radius: 8px;">
+              <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px; color: var(--color-text);">Ghi chú hệ thống</div>
+              <ul style="font-size: 13px; color: var(--color-text-secondary); margin: 0; padding-left: 16px; line-height: 1.6;">
+                <li>Thông tin liên hệ này sẽ được in trực tiếp lên các biểu mẫu Hợp đồng & Phiếu thu.</li>
+                <li>Logo nên dùng ảnh định dạng PNG nền trong suốt, kích thước tỷ lệ 1:1 tốt nhất là 400x400px.</li>
+              </ul>
+            </div>
           </div>
         </div>
 
-        <div class="form-group mb-4">
-          <label>Logo Doanh Nghiệp (Dùng trên Phiếu/Hợp đồng)</label>
-          <div id="logo-upload-wrapper"></div>
-          <small style="color:var(--color-text-secondary); display:block; margin-top:8px;">Hệ thống sẽ lưu file thành logo.jpg trong thư mục mặc định.</small>
-        </div>
-
-        <div style="display:flex; gap: 12px; border-top:1px solid var(--color-border); padding-top: 16px;">
+        <div style="display:flex; gap: 12px; border-top:1px solid var(--color-border); padding-top: 16px; margin-top: 24px;">
           <button class="btn btn-primary" onclick="UIToast.show('Đã lưu thông tin doanh nghiệp.')">Cập Nhật Thông Tin</button>
         </div>
       </div>
@@ -109,9 +125,14 @@ var SettingsPage = (function () {
           </div>
         </div>
 
-        <div style="display:flex; gap: 32px">
+        <div style="display:flex; gap: 32px; flex-wrap: wrap;" class="settings-period-layout">
+          <style>
+            @media (max-width: 768px) {
+              .settings-period-layout > div:first-child { border-right: none !important; border-bottom: 1px solid var(--color-border); padding-right: 0 !important; padding-bottom: 24px; margin-bottom: 8px; }
+            }
+          </style>
           <!-- Cột bên trái: Danh sách các năm -->
-          <div style="width: 250px; border-right: 1px solid var(--color-border); padding-right: 16px;">
+          <div style="flex: 1 1 250px; max-width: 100%; border-right: 1px solid var(--color-border); padding-right: 16px;">
             <label style="font-weight:600; display:block; margin-bottom:12px;">Năm Làm Việc</label>
             <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px">
               <li style="padding:10px 16px; background:#F8FAFC; border:1px solid var(--color-primary); color:var(--color-primary); font-weight:600; border-radius:6px; cursor:pointer;" onclick="UIToast.show('Năm đang hoạt động')">Năm 2026 (Hiện tại)</li>
@@ -121,7 +142,7 @@ var SettingsPage = (function () {
           </div>
           
           <!-- Cột bên phải: 12 Kỳ -->
-          <div style="flex:1">
+          <div style="flex: 999 1 400px; max-width: 100%;">
             <div style="margin-bottom:16px; display:flex; justify-content:space-between;">
               <span style="font-weight:600">Tháng / Kỳ trong năm 2026</span>
               <span class="status-badge success">Kỳ hiện hành: T10/2026</span>
@@ -174,10 +195,10 @@ var SettingsPage = (function () {
   function _buildSecurityTab() {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = `
-      <div style="display:flex; gap: 48px; padding: 24px;">
+      <div style="display:flex; gap: 48px; padding: 24px; flex-wrap: wrap;">
         
         <!-- Đổi mật khẩu -->
-        <div style="flex:1; max-width: 400px;">
+        <div style="flex: 1 1 400px; max-width: 100%;">
           <div style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">Đổi Mật Khẩu (Admin)</div>
           <div class="form-group mb-3">
             <label>Mật khẩu hiện tại</label>
@@ -195,7 +216,12 @@ var SettingsPage = (function () {
         </div>
 
         <!-- Sao lưu Dữ liệu -->
-        <div style="flex:1; max-width: 400px; padding-left: 48px; border-left: 1px solid var(--color-border);">
+        <div style="flex: 1 1 400px; max-width: 100%;" class="settings-backup-layout">
+          <style>
+            @media (min-width: 769px) {
+              .settings-backup-layout { padding-left: 48px; border-left: 1px solid var(--color-border); }
+            }
+          </style>
           <div style="font-size: 16px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap:8px;">
             <span class="material-symbols-outlined" style="color:var(--color-primary)">cloud_download</span>
             Sao lưu Dữ liệu Hệ thống

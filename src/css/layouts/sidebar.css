@@ -2,11 +2,22 @@
    SIDEBAR COMPONENTS
    ═══════════════════════════════════════════ */
 
+#sidebar-container {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  transition: width var(--transition-normal);
+}
+
+@media (max-width: 1024px) {
+  #sidebar-container {
+    width: 0 !important;
+  }
+}
+
 .app-sidebar {
   width: var(--sidebar-width);
   background-color: var(--color-sidebar);
   color: var(--color-text-sidebar);
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   height: 100vh;
