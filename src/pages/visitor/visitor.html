@@ -1,0 +1,174 @@
+<!-- ═══════════════════════════════════════════
+   KHÁCH THAM QUAN - HTML Template
+   ═══════════════════════════════════════════ -->
+
+<!-- Tiêu đề & Công cụ -->
+<div class="page-title-bar d-flex justify-content-between align-items-center">
+  <span>Quản Lý Khách Tham Quan</span>
+  <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-add-visitor" style="padding: 10px 16px;">
+    <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+    Thêm Khách Mới
+  </button>
+</div>
+
+<!-- Bảng Danh sách -->
+<div class="card mb-4" style="animation: slideUp 0.3s ease forwards;">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="search-box d-flex align-items-center" style="border: 1px solid var(--color-border); padding: 8px 12px; border-radius: var(--radius-md);">
+      <span class="material-symbols-outlined me-2" style="color: var(--color-text-secondary);">search</span>
+      <input type="text" placeholder="Tìm tên khách hoặc SĐT..." style="border: none; outline: none; background: transparent; width: 200px;">
+    </div>
+    <div class="d-flex gap-2">
+      <button class="icon-btn tooltip"><span class="material-symbols-outlined">filter_list</span></button>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã Phiếu</th>
+            <th>Khách Hàng</th>
+            <th>Ngày Dự Kiến</th>
+            <th>Gói & Sảnh</th>
+            <th>Trạng Thái</th>
+            <th class="text-end">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="fw-semibold">TQ10426/002</td>
+            <td>
+              <div class="fw-medium">Trần Văn Khoa - Lê Nhã Kỳ</div>
+              <div style="font-size: 13px; color: var(--color-text-secondary);">0982.42.33.88</div>
+            </td>
+            <td>
+              20/11/2026
+              <div style="font-size: 12px; color: var(--color-text-secondary);">Nhằm 10/10 ÂL</div>
+            </td>
+            <td>
+              <div class="fw-medium">Gói Lộc Phát</div>
+              <div style="font-size: 13px; color: var(--color-text-secondary);">Diamond Hall</div>
+            </td>
+            <td><span class="status-badge warning">Đang Tư Vấn</span></td>
+            <td class="text-end">
+              <button class="icon-btn btn-edit-visitor" style="display: inline-flex;"><span class="material-symbols-outlined">edit</span></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Khung Trượt Form (Slide-over Panel) -->
+<div id="visitor-form-overlay" class="sidebar-overlay"></div>
+<div id="visitor-form-panel" style="position: fixed; top: 0; right: -800px; width: 100%; max-width: 800px; height: 100vh; background: var(--color-surface); box-shadow: -10px 0 30px rgba(0,0,0,0.1); transition: right 0.3s ease; z-index: 10000; display: flex; flex-direction: column;">
+  
+  <!-- Panel Header -->
+  <div class="d-flex justify-content-between align-items-center p-4" style="border-bottom: 1px solid var(--color-border); background: var(--color-background);">
+    <h2 class="mb-0" style="font-size: 20px;">Phiếu Khách Tham Quan</h2>
+    <button id="btn-close-form" class="icon-btn" style="background: transparent; border: none;"><span class="material-symbols-outlined">close</span></button>
+  </div>
+
+  <!-- Panel Body (Scrollable) -->
+  <div style="flex: 1; overflow-y: auto; padding: 24px;">
+    
+    <!-- Thẻ 1: Thông tin khách -->
+    <div class="card mb-4" style="box-shadow: none;">
+      <div class="card-header" style="padding: 16px; background: #F8FAFC; font-size: 14px; color: var(--color-text-secondary);">1. Thông Tin Khách Hàng Gốc</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Mã Chứng Từ</label>
+            <input type="text" class="ui-input w-100" value="TQ10427/AUTO" readonly style="background: #f1f5f9; color: #64748b; font-weight: 600;">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Số Điện Thoại <span style="color: var(--color-danger);">*</span></label>
+            <div class="d-flex gap-2">
+              <input type="text" class="ui-input flex-grow-1" placeholder="Gõ để tìm KH cũ...">
+              <button class="btn" style="padding: 0 12px; border: 1px solid var(--color-border); background: var(--color-background); border-radius: var(--radius-md);"><span class="material-symbols-outlined">search</span></button>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Họ tên Cô Dâu - Chú Rể <span style="color: var(--color-danger);">*</span></label>
+            <input type="text" class="ui-input w-100" placeholder="VD: Nguyễn Văn A - Lê Thị B" style="font-weight: 500;">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Địa chỉ liên hệ</label>
+            <input type="text" class="ui-input w-100" placeholder="Phường, Quận...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thẻ 2: Nhu cầu Tiệc -->
+    <div class="card mb-4" style="box-shadow: none;">
+      <div class="card-header" style="padding: 16px; background: #F8FAFC; font-size: 14px; color: var(--color-text-secondary);">2. Nhu Cầu & Tiệc Dự Kiến</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Ngày tổ chức</label>
+            <input type="date" class="ui-input w-100">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Loại tiệc & Khung giờ</label>
+            <div class="d-flex gap-2">
+              <select class="ui-input flex-grow-1"><option>Tiệc Cưới</option><option>Sinh Nhật</option><option>Hội Nghị</option></select>
+              <select class="ui-input flex-grow-1"><option>Trưa (11h-14h)</option><option selected>Tối (17h-22h)</option></select>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Số Bàn</label>
+            <div class="d-flex gap-2 align-items-center">
+              <input type="number" id="inp-ban-man" class="ui-input flex-grow-1" placeholder="Mặn" min="0">
+              <span style="color: var(--color-text-secondary);">+</span>
+              <input type="number" id="inp-ban-chay" class="ui-input flex-grow-1" placeholder="Chay" min="0">
+              <span style="color: var(--color-text-secondary);">=</span>
+              <input type="number" id="inp-tong-ban" class="ui-input flex-grow-1" placeholder="Tổng" readonly style="background: #e0e7ff; color: var(--color-primary); font-weight: 700;">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Trạng thái Tư Vấn</label>
+            <select class="ui-input w-100"><option>0 - Đang Tư Vấn</option><option>1 - Khách Hủy / Rớt Khách</option><option>2 - Chuyển sang Đặt Cọc</option></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thẻ 3: Sảnh & Ghi chú -->
+    <div class="card" style="box-shadow: none;">
+      <div class="card-header" style="padding: 16px; background: #F8FAFC; font-size: 14px; color: var(--color-text-secondary);">3. Sảnh Quan Tâm & Ghi Chú</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Khách quan tâm Sảnh nào? (Chọn nhiều)</label>
+          <div class="d-flex gap-2 flex-wrap">
+            <label class="d-flex align-items-center gap-2" style="background: var(--color-background); border: 1px solid var(--color-border-strong); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 14px;">
+              <input type="checkbox"> Diamond Hall
+            </label>
+            <label class="d-flex align-items-center gap-2" style="background: var(--color-background); border: 1px solid var(--color-border-strong); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 14px;">
+              <input type="checkbox"> Ruby Hall
+            </label>
+            <label class="d-flex align-items-center gap-2" style="background: var(--color-background); border: 1px solid var(--color-border-strong); padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 14px;">
+              <input type="checkbox"> Queen Plaza
+            </label>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Nội dung Ghi chú Trao đổi</label>
+          <textarea rows="3" class="ui-input w-100" placeholder="Nhập tóm tắt trao đổi với khách..." style="resize: vertical;"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Footer -->
+  <div class="d-flex justify-content-end gap-2 p-3" style="border-top: 1px solid var(--color-border); background: #F8FAFC;">
+    <button id="btn-cancel-form" class="btn btn-secondary">Hủy Bỏ</button>
+    <button class="btn btn-primary d-flex align-items-center gap-2">
+      <span class="material-symbols-outlined" style="font-size: 18px;">save</span>
+      Lưu Dữ Liệu
+    </button>
+  </div>
+
+</div>

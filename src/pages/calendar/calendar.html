@@ -1,0 +1,37 @@
+<!-- ═══════════════════════════════════════════
+   LỊCH TIỆC TRONG THÁNG - HTML Template
+   ═══════════════════════════════════════════ -->
+
+<div class="page-title-bar">
+  <span>Lịch Tổ Chức Tiệc Trong Tháng</span>
+</div>
+
+<!-- Thanh điều hướng tháng -->
+<div class="card mb-4" style="animation: slideUp 0.3s ease forwards;">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 p-3">
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-secondary" id="btn-prev-month" style="padding: 6px 12px;"><span class="material-symbols-outlined">chevron_left</span></button>
+      <span class="fw-bold" style="font-size: 18px; margin: 0 16px;" id="calendar-month-label">Tháng 11 / 2026</span>
+      <button class="btn btn-secondary" id="btn-next-month" style="padding: 6px 12px;"><span class="material-symbols-outlined">chevron_right</span></button>
+    </div>
+    <div class="d-flex gap-3 flex-wrap" style="font-size:13px; color:var(--color-text-secondary);">
+      <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:12px; height:12px; background:var(--color-success); border-radius:3px;"></span> Mới Cọc (Chưa Ký HĐ)</div>
+      <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:12px; height:12px; background:var(--color-danger); border-radius:3px;"></span> Đã ký Hợp Đồng</div>
+      <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:12px; height:12px; border:1px solid #ccc; font-weight:bold; text-align:center; line-height:12px;">X</span> Sảnh Phụ / Ghép</div>
+    </div>
+  </div>
+</div>
+
+<!-- Lưới lịch -->
+<div class="card" style="animation: slideUp 0.4s ease forwards;">
+  <div class="p-4" style="overflow-x: auto;">
+    <!-- Header ngày trong tuần -->
+    <div id="calendar-weekday-header" style="display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 12px; margin-bottom: 12px; min-width:800px;">
+      <!-- JS RENDER -->
+    </div>
+    <!-- Body: Các ô ngày -->
+    <div id="calendar-grid-body" style="display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); grid-auto-rows: minmax(110px, auto); gap: 12px; min-width:800px;">
+      <!-- JS RENDER -->
+    </div>
+  </div>
+</div>

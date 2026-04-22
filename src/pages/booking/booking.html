@@ -1,0 +1,41 @@
+<!-- ═══════════════════════════════════════════
+   BIÊN NHẬN CỌC CHỖ - HTML Template
+   ═══════════════════════════════════════════ -->
+
+<div class="page-title-bar">
+  <span>Quản lý Biên nhận Cọc chỗ</span>
+</div>
+
+<!-- THANH CÔNG CỤ -->
+<div class="button-bar mb-4" style="animation: slideUp 0.3s ease forwards;">
+  <button class="btn btn-tool" id="btn-add-deposit1"><span class="material-symbols-outlined">add_circle</span>Thêm Cọc Lần 1</button>
+  <button class="btn btn-tool" id="btn-edit-deposit"><span class="material-symbols-outlined">edit</span>Thay đổi Cọc</button>
+  <button class="btn btn-tool" id="btn-add-deposit2"><span class="material-symbols-outlined">payments</span>Tiếp nhận Cọc Lần 2</button>
+  <div class="divider"></div>
+  <button class="btn btn-tool text-danger" id="btn-delete"><span class="material-symbols-outlined">delete</span>Hủy Cọc</button>
+  <button class="btn btn-tool" id="btn-print"><span class="material-symbols-outlined">print</span>In Biên nhận</button>
+</div>
+
+<!-- DATAGRID -->
+<div class="card" style="animation: slideUp 0.4s ease forwards;">
+  <div class="table-wrapper" style="overflow-x: auto; width: 100%;">
+    <table class="data-table selectable" id="booking-table">
+      <thead>
+        <tr>
+          <th class="text-center" style="width: 50px;">STT</th>
+          <th>Số Phiếu</th>
+          <th>Tên Khách Hàng (Cặp Đôi)</th>
+          <th>Điện Thoại</th>
+          <th>Ngày Tổ Chức</th>
+          <th>Số Bàn</th>
+          <th>Sảnh Đặt</th>
+          <th class="text-end">Đã Cọc (VNĐ)</th>
+          <th class="text-center">Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Render by JS -->
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,224 +1,252 @@
 /**
- * Router — Quản lý Hash Routing kiểu SPA
+ * Router — Hash-based SPA routing cho Quản lý Tiệc Cưới
+ * ─────────────────────────────────────────────────────
+ * Kiến trúc: Mảng ROUTES cấu hình → Dynamic script loading → pageFn.render()
+ * Template do Page Module tự fetch (Router cung cấp cache layer)
+ * Tham khảo: Medstand Router v9
  */
 var Router = (function () {
-  var $content = document.getElementById('app-content');
-  var $pageTitle = document.getElementById('page-title');
 
-  // Cấu hình các Route mô phỏng
-  var routes = {
-    '/dashboard':      { title: 'Tổng quan', module: 'QuanTriHeThong' },
-    '/users':          { title: 'Danh sách người dùng', module: 'QuanTriHeThong' },
-    '/permissions':    { title: 'Phân quyền Cán bộ', module: 'QuanTriHeThong' },
-    '/settings':       { title: 'Thiết lập chung', module: 'QuanTriHeThong' },
-    '/appearance':     { title: 'Cài đặt Giao diện', module: 'QuanTriHeThong' },
-    // Quản lý tiệc
-    '/customers':      { title: 'Hồ sơ Khách hàng', module: 'HopDong' },
-    '/calendar':       { title: 'Lịch tiệc trong tháng', module: 'HopDong' },
-    '/hall-status':    { title: 'Trạng thái Sảnh Tiệc', module: 'HopDong' },
-    '/visitor':        { title: 'Khách tham quan', module: 'HopDong' },
-    '/booking':        { title: 'Biên nhận cọc chỗ', module: 'HopDong' },
-    '/contract':       { title: 'Hợp đồng tiệc', module: 'HopDong' },
-    '/checkout':       { title: 'Quyết toán', module: 'QuyetToan' },
-    // Nhân sự
-    '/staff':          { title: 'Nhân viên Phục vụ Tiệc', module: 'NhanSu' },
-    // Danh mục
-    '/categories':     { title: 'Quản lý Danh mục', module: 'DanhMuc' },
-    // Báo cáo
-    '/report-revenue': { title: 'Báo cáo Doanh thu Tiệc', module: 'BaoCao' },
-    '/report-cost':    { title: 'Báo cáo Chi phí Tiệc', module: 'BaoCao' },
-    '/report-other':   { title: 'Báo cáo Quản lý Khác', module: 'BaoCao' },
-    '/components-demo':{ title: 'Bản test Component', module: 'QuanTriHeThong' }
-  };
+  // ── Route definitions ──────────────────────────────────────────────────
+  var ROUTES = [
+    { path: '/dashboard',       template: 'src/pages/dashboard/dashboard.html',             script: null,                                                module: 'QuanTriHeThong', title: 'Tổng quan',               pageFn: null },
+    { path: '/visitor',         template: 'src/pages/visitor/visitor.html',                 script: 'src/pages/visitor/visitor.js',                     module: 'HopDong',        title: 'Khách tham quan',         pageFn: 'VisitorPage' },
+    { path: '/booking',         template: 'src/pages/booking/booking.html',                 script: 'src/pages/booking/booking.js',                     module: 'HopDong',        title: 'Biên nhận cọc chỗ',       pageFn: 'BookingPage' },
+    { path: '/contract',        template: 'src/pages/contract/contract.html',               script: 'src/pages/contract/contract.js',                   module: 'HopDong',        title: 'Hợp đồng tiệc',          pageFn: 'ContractPage' },
+    { path: '/checkout',        template: 'src/pages/checkout/checkout.html',               script: 'src/pages/checkout/checkout.js',                   module: 'QuyetToan',      title: 'Quyết toán',              pageFn: 'CheckoutPage' },
+    { path: '/calendar',        template: 'src/pages/calendar/calendar.html',               script: 'src/pages/calendar/calendar.js',                   module: 'HopDong',        title: 'Lịch tiệc trong tháng',   pageFn: 'CalendarPage' },
+    { path: '/customers',       template: null,                                              script: null,                                                module: 'HopDong',        title: 'Hồ sơ Khách hàng',        pageFn: null },
+    { path: '/hall-status',     template: null,                                              script: null,                                                module: 'HopDong',        title: 'Trạng thái Sảnh Tiệc',    pageFn: null },
+    { path: '/users',           template: 'src/pages/users/users.html',                     script: 'src/pages/users/users.js',                         module: 'QuanTriHeThong', title: 'Danh sách người dùng',    pageFn: 'UsersPage' },
+    { path: '/permissions',     template: 'src/pages/permissions/permissions.html',         script: 'src/pages/permissions/permissions.js',             module: 'QuanTriHeThong', title: 'Phân quyền Cán bộ',       pageFn: 'PermissionsPage' },
+    { path: '/settings',        template: 'src/pages/settings/settings.html',               script: 'src/pages/settings/settings.js',                   module: 'QuanTriHeThong', title: 'Thiết lập chung',         pageFn: 'SettingsPage' },
+    { path: '/appearance',      template: 'src/pages/appearance/appearance.html',           script: 'src/pages/appearance/appearance.js',               module: 'QuanTriHeThong', title: 'Cài đặt Giao diện',       pageFn: 'AppearancePage' },
+    { path: '/categories',      template: 'src/pages/categories/categories.html',           script: 'src/pages/categories/categories.js',               module: 'DanhMuc',        title: 'Quản lý Danh mục',        pageFn: 'CategoriesPage' },
+    { path: '/staff',           template: null,                                              script: null,                                                module: 'NhanSu',         title: 'Nhân viên Phục vụ Tiệc',  pageFn: null },
+    { path: '/report-revenue',  template: 'src/pages/report-revenue/report-revenue.html',   script: 'src/pages/report-revenue/report-revenue.js',       module: 'BaoCao',         title: 'Báo cáo Doanh thu Tiệc',  pageFn: 'ReportRevenuePage' },
+    { path: '/report-cost',     template: 'src/pages/report-cost/report-cost.html',         script: 'src/pages/report-cost/report-cost.js',             module: 'BaoCao',         title: 'Báo cáo Chi phí Tiệc',    pageFn: 'ReportCostPage' },
+    { path: '/report-other',    template: 'src/pages/report-other/report-other.html',       script: 'src/pages/report-other/report-other.js',           module: 'BaoCao',         title: 'Báo cáo Quản lý Khác',    pageFn: 'ReportOtherPage' },
+    { path: '/components-demo', template: 'src/pages/components-demo/components-demo.html', script: 'src/pages/components-demo/components-demo.js',     module: 'QuanTriHeThong', title: 'Bản test Component',       pageFn: 'ComponentsDemoPage' }
+  ];
 
+  // ── State ──────────────────────────────────────────────────────────────
+  var _currentRoute = null;
+  var _loadedScripts = {};
+  var _templateCache = {};
+  var _appVersion = '1.0';
+  var _isNavigating = false;    // Guard chống double-navigate
+
+  // ── Template cache (dùng chung cho cả Router lẫn Page modules) ─────────
+  function fetchTemplate(url) {
+    if (_templateCache[url]) return Promise.resolve(_templateCache[url]);
+    return fetch(url + '?v=' + _appVersion)
+      .then(function (res) {
+        if (!res.ok) throw new Error('Template not found: ' + url);
+        return res.text();
+      })
+      .then(function (html) {
+        _templateCache[url] = html;
+        return html;
+      });
+  }
+
+  // ── Preload templates phổ biến (tải trước nền) ─────────────────────────
+  function _preloadTemplates() {
+    var priority = ['/dashboard', '/visitor', '/booking'];
+    priority.forEach(function (p) {
+      var r = _findRoute(p);
+      if (r && r.template) fetchTemplate(r.template).catch(function () { });
+    });
+  }
+
+  // ── Dynamic Script Loading ─────────────────────────────────────────────
+  function _loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      if (_loadedScripts[src]) { resolve(); return; }
+      var el = document.createElement('script');
+      el.src = src + '?v=' + _appVersion;
+      el.onload = function () { _loadedScripts[src] = true; resolve(); };
+      el.onerror = function () { reject(new Error('Script load failed: ' + src)); };
+      document.body.appendChild(el);
+    });
+  }
+
+  // ── Route matching (dùng Map nội bộ cho O(1) lookup) ───────────────────
+  var _routeMap = {};
+  ROUTES.forEach(function (r) { _routeMap[r.path] = r; });
+
+  function _findRoute(path) {
+    return _routeMap[path] || null;
+  }
+
+  // ── Page Transition ────────────────────────────────────────────────────
+  function _fadeOut($el) {
+    return new Promise(function (resolve) {
+      $el.style.opacity = '0';
+      $el.style.transition = 'opacity 120ms ease';
+      setTimeout(resolve, 120);
+    });
+  }
+
+  function _fadeIn($el) {
+    $el.style.opacity = '1';
+    $el.style.transition = 'opacity 180ms ease';
+  }
+
+  // ── Trang lỗi ──────────────────────────────────────────────────────────
+  function _render404($el, path) {
+    $el.innerHTML =
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center;padding:48px 24px;">' +
+        '<span class="material-symbols-outlined" style="font-size:72px;color:var(--color-border-strong);margin-bottom:16px;">search_off</span>' +
+        '<h2 style="font-size:2rem;font-weight:700;margin:0 0 8px;">404</h2>' +
+        '<p style="color:var(--color-text-secondary);margin:0 0 24px;">Trang <code style="background:#F1F5F9;padding:2px 8px;border-radius:4px;">' + path + '</code> không tồn tại</p>' +
+        '<a href="#/dashboard" class="btn btn-primary" style="text-decoration:none;">Về trang chủ</a>' +
+      '</div>';
+  }
+
+  function _renderAccessDenied($el) {
+    $el.innerHTML =
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;text-align:center;padding:48px;">' +
+        '<span class="material-symbols-outlined" style="font-size:64px;color:var(--color-danger);opacity:0.4;margin-bottom:16px;">lock</span>' +
+        '<p style="color:var(--color-danger);font-weight:600;">Bạn không có quyền xem trang này</p>' +
+      '</div>';
+  }
+
+  function _renderPlaceholder($el, title) {
+    $el.innerHTML =
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;text-align:center;padding:48px;">' +
+        '<span class="material-symbols-outlined" style="font-size:64px;color:var(--color-border-strong);opacity:0.4;margin-bottom:16px;">construction</span>' +
+        '<h3 style="margin:0 0 8px;font-weight:600;">' + title + '</h3>' +
+        '<p style="color:var(--color-text-secondary);margin:0;">Trang này đang được phát triển...</p>' +
+      '</div>';
+  }
+
+  function _renderError($el, message) {
+    $el.innerHTML =
+      '<div class="card"><div class="card-body" style="color:var(--color-danger);">' +
+        '<span class="material-symbols-outlined" style="vertical-align:middle;margin-right:8px;">error</span>' + message +
+      '</div></div>';
+  }
+
+  // ── Cập nhật navigation UI ─────────────────────────────────────────────
+  function _updateNavActive(hash) {
+    // Sidebar nav
+    document.querySelectorAll('.sidebar-nav .nav-item').forEach(function (el) {
+      el.classList.remove('active');
+      if (el.getAttribute('href') === '#' + hash) el.classList.add('active');
+    });
+    // Navbar (nếu đang dùng layout ngang)
+    document.querySelectorAll('.main-nav .nav-link, .sub-menu-item').forEach(function (el) {
+      el.classList.remove('active');
+      if (el.getAttribute('href') === '#' + hash) el.classList.add('active');
+    });
+  }
+
+  // ── Main Route Handler ─────────────────────────────────────────────────
+  function _handleRoute() {
+    if (_isNavigating) return;   // Chống double-trigger
+    _isNavigating = true;
+
+    var $content = document.getElementById('app-content');
+    var $pageTitle = document.getElementById('page-title');
+    var hash = window.location.hash.replace('#', '') || '/dashboard';
+    var route = _findRoute(hash);
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    // Cập nhật nav UI
+    _updateNavActive(hash);
+
+    // 404
+    if (!route) {
+      if ($pageTitle) $pageTitle.innerText = '404 — Không tìm thấy';
+      document.title = '404 | Quản lý Tiệc Cưới';
+      _render404($content, hash);
+      _isNavigating = false;
+      return;
+    }
+
+    // Kiểm tra quyền
+    if (!Permission.canView(route.module)) {
+      if ($pageTitle) $pageTitle.innerText = 'Từ chối truy cập';
+      _renderAccessDenied($content);
+      _isNavigating = false;
+      return;
+    }
+
+    // Cập nhật title
+    if ($pageTitle) $pageTitle.innerText = route.title;
+    document.title = route.title + ' | Quản lý Tiệc Cưới';
+    document.body.setAttribute('data-page', hash.replace('/', ''));
+
+    // ── Trường hợp 1: Có script → load script → pageFn.render() ──
+    // (Page module tự fetch template bên trong render nếu cần)
+    if (route.script && route.pageFn) {
+      _fadeOut($content)
+        .then(function () { return _loadScript(route.script); })
+        .then(function () {
+          var mod = window[route.pageFn];
+          if (mod && typeof mod.render === 'function') {
+            mod.render($content);
+          } else {
+            _renderError($content, 'Không tìm thấy module: ' + route.pageFn);
+          }
+          _fadeIn($content);
+          _currentRoute = route;
+          _isNavigating = false;
+        })
+        .catch(function (err) {
+          console.error('[Router]', err);
+          _renderError($content, 'Lỗi tải module: ' + err.message);
+          _fadeIn($content);
+          _isNavigating = false;
+        });
+      return;
+    }
+
+    // ── Trường hợp 2: Chỉ có template (dashboard, trang tĩnh) ──
+    if (route.template) {
+      _fadeOut($content)
+        .then(function () { return fetchTemplate(route.template); })
+        .then(function (html) {
+          $content.innerHTML = html;
+          _fadeIn($content);
+          _currentRoute = route;
+          _isNavigating = false;
+        })
+        .catch(function (err) {
+          console.error('[Router]', err);
+          _renderError($content, 'Lỗi tải template: ' + err.message);
+          _fadeIn($content);
+          _isNavigating = false;
+        });
+      return;
+    }
+
+    // ── Trường hợp 3: Trang chưa code ──
+    _renderPlaceholder($content, route.title);
+    _isNavigating = false;
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────
   function init() {
     window.addEventListener('hashchange', _handleRoute);
-    // Nếu mới vào chưa có hash thì đẩy về dashboard
+
     if (!window.location.hash) {
       window.location.hash = '#/dashboard';
     } else {
       _handleRoute();
     }
+
+    // Preload templates phổ biến sau 500ms
+    setTimeout(_preloadTemplates, 500);
   }
 
-  function _handleRoute() {
-    var hash = window.location.hash.replace('#', '') || '/dashboard';
-    var route = routes[hash];
-
-    // Cập nhật nav active (UI Menu)
-    document.querySelectorAll('.sidebar-nav .nav-item').forEach(function(el) {
-      el.classList.remove('active');
-      if (el.getAttribute('href') === '#' + hash) {
-        el.classList.add('active');
-      }
-    });
-
-    if (!route) {
-      if ($pageTitle) $pageTitle.innerText = 'Trang không tồn tại';
-      $content.innerHTML = '<div class="card"><div class="card-body">Không tìm thấy trang yêu cầu (404)</div></div>';
-      return;
-    }
-
-    // Kiểm tra quyền View cơ bản
-    if (!Permission.canView(route.module)) {
-      if ($pageTitle) $pageTitle.innerText = 'Từ chối truy cập';
-      $content.innerHTML = '<div class="card"><div class="card-body" style="color:var(--color-danger)">Bạn không có quyền xem trang này!</div></div>';
-      return;
-    }
-
-    if ($pageTitle) {
-      $pageTitle.innerText = route.title;
-    }
-    
-    // Nếu là trang Tổng quan (Dashboard) thì hiển thị giao diện mẫu cực đẹp
-    if (hash === '/dashboard') {
-      $content.innerHTML = `
-        <!-- 4 Thẻ Phân Tích Thống Kê -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon" style="color: var(--color-primary); background: rgba(60, 80, 224, 0.1);">
-              <span class="material-symbols-outlined">payments</span>
-            </div>
-            <div class="stat-info">
-              <h3>₫3.540M</h3>
-              <p>Tổng doanh thu tháng này</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="color: var(--color-success); background: rgba(16, 185, 129, 0.1);">
-              <span class="material-symbols-outlined">contract</span>
-            </div>
-            <div class="stat-info">
-              <h3>120</h3>
-              <p>Hợp đồng đã ký</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="color: var(--color-warning); background: rgba(245, 158, 11, 0.1);">
-              <span class="material-symbols-outlined">event_seat</span>
-            </div>
-            <div class="stat-info">
-              <h3>45</h3>
-              <p>Khách đang đặt cọc</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="color: var(--color-danger); background: rgba(239, 68, 68, 0.1);">
-              <span class="material-symbols-outlined">trending_up</span>
-            </div>
-            <div class="stat-info">
-              <h3>+14.5%</h3>
-              <p>Tăng trưởng so với trước</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bảng Dữ Liệu Mẫu -->
-        <div class="card">
-          <div class="card-header">
-            <span>Tiệc Cưới Sắp Diễn Ra</span>
-            <span class="material-symbols-outlined" style="cursor: pointer; color: var(--color-text-secondary);">more_vert</span>
-          </div>
-          <div class="card-body" style="padding: 0;">
-            <div class="table-wrapper">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Khách hàng</th>
-                    <th>Ngày tổ chức</th>
-                    <th>Sảnh tiệc</th>
-                    <th>Số bàn</th>
-                    <th>Trạng thái</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <div style="font-weight: 500; color: var(--color-text);">Nguyễn Văn A - Lê Thị B</div>
-                      <div style="font-size: 13px; color: var(--color-text-secondary);">0909 123 456</div>
-                    </td>
-                    <td>25/11/2026<br><span style="font-size: 12px; color: #8A99AF;">Nhằm 15/10 ÂL</span></td>
-                    <td>Diamond Hall</td>
-                    <td>45 mặn, 2 chay</td>
-                    <td><span class="status-badge success">Đã ký HĐ</span></td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <div style="font-weight: 500; color: var(--color-text);">Trần Hữu C - Đinh Bích D</div>
-                      <div style="font-size: 13px; color: var(--color-text-secondary);">0988 765 432</div>
-                    </td>
-                    <td>30/11/2026<br><span style="font-size: 12px; color: #8A99AF;">Nhằm 20/10 ÂL</span></td>
-                    <td>Ruby Hall</td>
-                    <td>30 mặn</td>
-                    <td><span class="status-badge warning">Mới cọc lần 1</span></td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <div style="font-weight: 500; color: var(--color-text);">Hoàng Hữu E - Ngô F</div>
-                      <div style="font-size: 13px; color: var(--color-text-secondary);">0912 345 678</div>
-                    </td>
-                    <td>01/12/2026<br><span style="font-size: 12px; color: #8A99AF;">Nhằm 21/10 ÂL</span></td>
-                    <td>Sapphire Hall</td>
-                    <td>60 mặn</td>
-                    <td><span class="status-badge success">Đã ký HĐ</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      `;
-    } else if (hash === '/visitor') {
-      // Delegate toàn bộ UI Khách tham quan cho VisitorPage module
-      if(window.VisitorPage) {
-        window.VisitorPage.render($content);
-      } else {
-        $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module VisitorPage.</div></div>';
-      }
-    } else if (hash === '/components-demo') {
-      if(window.ComponentsDemoPage) window.ComponentsDemoPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module ComponentsDemoPage.</div></div>';
-    } else if (hash === '/users') {
-      if(window.UsersPage) window.UsersPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module UsersPage.</div></div>';
-    } else if (hash === '/permissions') {
-      if(window.PermissionsPage) window.PermissionsPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module PermissionsPage.</div></div>';
-    } else if (hash === '/settings') {
-      if(window.SettingsPage) window.SettingsPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module SettingsPage.</div></div>';
-    } else if (hash === '/appearance') {
-      if(window.AppearancePage) window.AppearancePage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module AppearancePage.</div></div>';
-    } else if (hash === '/categories') {
-      if (window.CategoriesPage) window.CategoriesPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module CategoriesPage.</div></div>';
-    } else if (hash === '/booking') {
-      if (window.BookingPage) window.BookingPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module BookingPage.</div></div>';
-    } else if (hash === '/contract') {
-      if (window.ContractPage) window.ContractPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module ContractPage.</div></div>';
-    } else if (hash === '/checkout') {
-      if (window.CheckoutPage) window.CheckoutPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module CheckoutPage.</div></div>';
-    } else if (hash === '/calendar') {
-      if (window.CalendarPage) window.CalendarPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module CalendarPage.</div></div>';
-    } else if (hash === '/report-revenue') {
-      if (window.ReportRevenuePage) window.ReportRevenuePage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module ReportRevenuePage.</div></div>';
-    } else if (hash === '/report-cost') {
-      if (window.ReportCostPage) window.ReportCostPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module ReportCostPage.</div></div>';
-    } else if (hash === '/report-other') {
-      if (window.ReportOtherPage) window.ReportOtherPage.render($content);
-      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module ReportOtherPage.</div></div>';
-    } else {
-      // Các trang khác tạm thời hiện raw html
-      $content.innerHTML = '<div class="card"><div class="card-header">' + route.title + '</div><div class="card-body">Giao diện nội dung của trang <b>' + route.title + '</b> sẽ load ở đây...</div></div>';
-    }
-  }
-
-  return { init: init };
+  // ── Public API ─────────────────────────────────────────────────────────
+  return {
+    init: init,
+    ROUTES: ROUTES,
+    fetchTemplate: fetchTemplate   // Cho page modules dùng chung cache layer
+  };
 })();
