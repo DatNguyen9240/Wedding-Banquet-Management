@@ -5,34 +5,44 @@
 
 :root {
   /* Brand Colors - Premium Violet/Blue */
-  --color-primary: #4F46E5;       /* Indigo 600 - Rất hiện đại */
+  --color-primary: #4F46E5;
+  /* Indigo 600 - Rất hiện đại */
   --color-primary-hover: #4338CA;
-  --color-primary-dark: #3730A3;  /* Thêm biến bị thiếu cho hover */
+  --color-primary-dark: #3730A3;
+  /* Thêm biến bị thiếu cho hover */
   --color-primary-light: rgba(79, 70, 229, 0.1);
-  
+
   /* System / Status Colors */
   --color-success: #10B981;
   --color-warning: #F59E0B;
-  --color-danger: #F43F5E;      /* Rose 500 - đỏ hồng hiện đại */
+  --color-danger: #F43F5E;
+  /* Rose 500 - đỏ hồng hiện đại */
   --color-info: #0EA5E9;
 
   /* Specific Banquet Colors */
-  --color-booking: #10B981;   
-  --color-contract: #F43F5E;  
+  --color-booking: #10B981;
+  --color-contract: #F43F5E;
 
   /* Surfaces & Backgrounds */
-  --color-background: #F8FAFC;    /* Nền Slate 50 - Sáng, sang */
+  --color-background: #F8FAFC;
+  /* Nền Slate 50 - Sáng, sang */
   --color-surface: #FFFFFF;
-  --color-sidebar: #0F172A;       /* Slate 900 - Đen sâu thăm thẳm */
-  --color-header: rgba(255, 255, 255, 0.85); /* Glass header */
+  --color-sidebar: #0F172A;
+  /* Slate 900 - Đen sâu thăm thẳm */
+  --color-header: rgba(255, 255, 255, 0.85);
+  /* Glass header */
 
   /* Text & Typography */
-  --color-text: #1E293B;          /* Slate 800 */
-  --color-text-secondary: #64748B;/* Slate 500 */
-  --color-text-sidebar: #94A3B8;  /* Slate 400 */
-  
+  --color-text: #1E293B;
+  /* Slate 800 */
+  --color-text-secondary: #64748B;
+  /* Slate 500 */
+  --color-text-sidebar: #94A3B8;
+  /* Slate 400 */
+
   /* Borders & Dividers */
-  --color-border: #F1F5F9;        /* Slate 100 - Border siêu mờ */
+  --color-border: #F1F5F9;
+  /* Slate 100 - Border siêu mờ */
   --color-border-strong: #E2E8F0;
 
   /* Shadows (Ultra Premium Soft Shadows) */
@@ -41,7 +51,7 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
   --shadow-card: 0 20px 25px -5px rgba(0, 0, 0, 0.02), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
   --shadow-hover: 0 25px 30px -5px rgba(0, 0, 0, 0.04), 0 15px 15px -10px rgba(0, 0, 0, 0.02);
-  --shadow-glass: 0 4px 6px -1px rgba(0,0,0,0.02);
+  --shadow-glass: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
 
   /* Spacing */
   --spacing-xs: 4px;
@@ -54,11 +64,12 @@
   --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-size-xs: 12px;
   --font-size-sm: 14px;
-  --font-size-md: 15px; /* Kích thước text chuẩn nhìn sang hơn */
+  --font-size-md: 15px;
+  /* Kích thước text chuẩn nhìn sang hơn */
   --font-size-lg: 18px;
   --font-size-xl: 24px;
   --font-size-2xl: 32px;
-  
+
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -73,7 +84,8 @@
   /* Layout Constants */
   --sidebar-width: 280px;
   --header-height: 84px;
-  
+  --navbar-height: 62px;
+
   /* Transitions */
   --transition-fast: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-normal: 0.4s cubic-bezier(0.16, 1, 0.3, 1);

@@ -12,19 +12,23 @@ document.addEventListener('DOMContentLoaded', function () {
     Router.init();
   }
 
-  // 3. Khởi tạo UI Giao diện màng bao (App Shell)
-  if (typeof Sidebar !== 'undefined') {
-    Sidebar.render('sidebar-container');
-  }
+  // 3. Khởi tạo Navbar (quản lý cả horizontal & vertical mode)
+  if (typeof Navbar !== 'undefined') {
+    Navbar.render('navbar-container');
 
-  if (typeof Header !== 'undefined') {
-    Header.render('header-container');
-  }
-
-  // Tự động đóng sidebar khi chuyển trang trên Mobile
-  window.addEventListener('hashchange', function() {
-    if (window.innerWidth <= 1024) {
-      closeSidebar();
+    // Nếu mode là vertical, chuyển #app-content vào vertical-main
+    if (Navbar.getLayout() === 'vertical') {
+      var $vertMain = document.getElementById('vertical-main');
+      var $content = document.getElementById('app-content');
+      if ($vertMain && $content && !$vertMain.contains($content)) {
+        $vertMain.appendChild($content);
+      }
     }
-  });
+  }
+
+  // 4. Khởi tạo CSS font chữ từ cấu hình giao diện
+  var savedFont = localStorage.getItem('pmql_font_family');
+  if (savedFont) {
+    document.documentElement.style.setProperty('--font-family', '"' + savedFont + '", sans-serif');
+  }
 });
