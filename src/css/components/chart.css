@@ -28,3 +28,26 @@
   height: 300px;
   width: 100%;
 }
+
+/* ═══════════════════════════════════════════
+   PRINT MEDIA QUERY (DÀNH RIÊNG CHO BIỂU ĐỒ)
+   ═══════════════════════════════════════════ */
+@media print {
+  /* Ép trình duyệt in màu nền, màu đường kẻ và nét của canvas */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Đảm bảo canvas không bị co lại hay mờ đi khi in */
+  canvas {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  .card {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+}
