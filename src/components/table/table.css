@@ -14,7 +14,7 @@
 }
 
 .data-table th {
-  background: #F8FAFC;
+  background: var(--color-background);
   padding: 16px 24px;
   font-size: 13px;
   text-transform: uppercase;
@@ -37,7 +37,24 @@
 }
 
 .data-table tbody tr:hover {
-  background: #F1F5F9;
+  background: rgba(148, 163, 184, 0.1);
+}
+
+/* ════ DARK THEME OVERRIDES ════ */
+body.dark-theme .data-table {
+  background-color: var(--color-surface);
+}
+body.dark-theme .data-table th {
+  background-color: var(--color-background); /* Nền tối hơn card một chút */
+  border-bottom-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+body.dark-theme .data-table td {
+  border-bottom-color: var(--color-border);
+  color: var(--color-text);
+}
+body.dark-theme .data-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 @media (max-width: 768px) {

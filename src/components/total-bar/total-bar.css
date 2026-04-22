@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #F8FAFC;
+  background: var(--color-background);
   padding: 16px 24px;
   border-top: 2px dashed var(--color-border);
   margin-top: 16px;

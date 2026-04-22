@@ -64,8 +64,8 @@ var CategoriesPage = (function () {
   var TimeSolarModule = {
     render: function(node, $contentElement) {
       $contentElement.innerHTML = `
-        <div style="padding: 24px; border-bottom: 1px solid var(--color-border); display: flex; gap: 16px; align-items: center; background: linear-gradient(to right, #ffffff, #f8fafc);">
-          <span style="font-weight: 600; font-size: 15px; color: #334155;">Tháng/Năm tạo lịch: </span>
+        <div style="padding: 24px; border-bottom: 1px solid var(--color-border); display: flex; gap: 16px; align-items: center; background: var(--color-surface);">
+          <span style="font-weight: 600; font-size: 15px; color: var(--color-text);">Tháng/Năm tạo lịch: </span>
           <div style="position: relative; display: flex; align-items: center;">
             <input type="month" id="ts-month" class="form-control" style="width: 200px; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 15px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#cbd5e1'" value="2026-07">
           </div>
@@ -157,16 +157,16 @@ var CategoriesPage = (function () {
           </div>
           
           <!-- Khối Tabs Detail -->
-          <div style="flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; min-height: 0;">
-            <div class="tabs-header" style="border-bottom: 1px solid var(--color-border); display: flex; padding-top: 5px; background: #fafafa;">
+          <div style="flex: 1; display: flex; flex-direction: column; background: var(--color-surface); overflow: hidden; min-height: 0;">
+            <div class="tabs-header" style="border-bottom: 1px solid var(--color-border); display: flex; padding-top: 5px; background: var(--color-surface);">
                <div class="tab-item active" onclick="CategoriesPage.switchTab(this, 'tab-gia-ban')">Lịch sử Giá Bán</div>
                <div class="tab-item" onclick="CategoriesPage.switchTab(this, 'tab-dinh-luong')">Định lượng món ăn</div>
             </div>
             
-            <div class="tabs-content" style="flex: 1; padding: 0; overflow-y: auto; background: #fff;">
+            <div class="tabs-content" style="flex: 1; padding: 0; overflow-y: auto; background: var(--color-surface);">
               <div id="tab-gia-ban" class="tab-pane active" style="display: block; padding: 0;">
                  <table class="data-table">
-                    <thead style="background: #f1f5f9;"><tr><th>Ngày Áp Dụng</th><th>Đơn giá</th><th style="text-align: right;">Thao tác</th></tr></thead>
+                    <thead style="background: rgba(148, 163, 184, 0.1);"><tr><th>Ngày Áp Dụng</th><th>Đơn giá</th><th style="text-align: right;">Thao tác</th></tr></thead>
                     <tbody id="price-history-body">
                        <tr><td colspan="3" style="text-align:center; padding: 30px; color:#aaa;">(Chưa chọn Hàng hoá)</td></tr>
                     </tbody>
@@ -174,7 +174,7 @@ var CategoriesPage = (function () {
               </div>
               <div id="tab-dinh-luong" class="tab-pane" style="display: none; padding: 0;">
                  <table class="data-table">
-                    <thead style="background: #f1f5f9;"><tr><th>Mã NVL</th><th>Tên Nguyên Vật Liệu</th><th>ĐVT</th><th>Định mức</th></tr></thead>
+                    <thead style="background: rgba(148, 163, 184, 0.1);"><tr><th>Mã NVL</th><th>Tên Nguyên Vật Liệu</th><th>ĐVT</th><th>Định mức</th></tr></thead>
                     <tbody id="inventory-parts-body">
                        <tr><td colspan="4" style="text-align:center; padding: 30px; color:#aaa;">(Chưa chọn Hàng hoá)</td></tr>
                     </tbody>
@@ -278,10 +278,10 @@ var CategoriesPage = (function () {
     style.id = 'categories-layout-style';
     style.textContent = [
       '@media(min-width:769px){#btn-mobile-open-tree,#btn-mobile-close-tree{display:none !important;}}',
-      '@media(max-width:768px){#btn-mobile-open-tree,#btn-mobile-close-tree{display:block !important;}.categories-layout>.tree-column{display:none;}.categories-layout.show-tree>.tree-column{display:flex !important;position:absolute;z-index:10;background:white;width:100%;height:100%;border-right:none;}}',
+      '@media(max-width:768px){#btn-mobile-open-tree,#btn-mobile-close-tree{display:block !important;}.categories-layout>.tree-column{display:none;}.categories-layout.show-tree>.tree-column{display:flex !important;position:absolute;z-index:10;background: var(--color-surface);width:100%;height:100%;border-right:none;}}',
       '.categories-layout .tab-item{padding:10px 20px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;font-weight:600;font-size:14px;transition:all 0.2s;}',
       '.categories-layout .tab-item:hover{color:var(--color-primary);background:rgba(60,80,224,0.05);}',
-      '.categories-layout .tab-item.active{color:var(--color-primary);border-bottom:2px solid var(--color-primary);background:#fff;}',
+      '.categories-layout .tab-item.active{color:var(--color-primary);border-bottom:2px solid var(--color-primary);background: var(--color-surface);}',
       '.categories-layout .tab-pane{display:none;}',
       '.categories-layout .tab-pane.active{display:block;animation:fadeIn 0.3s ease;}',
       '.categories-layout .row-selected{background:var(--color-bg) !important;position:relative;}',

@@ -34,7 +34,7 @@ var BookingPage = (function () {
         <td class="fw-semibold" style="color: var(--color-primary);">${row.id}</td>
         <td class="fw-medium">${row.customerName}</td>
         <td>${row.phone}</td>
-        <td><span style="background:#F1F5F9; padding:2px 8px; border-radius:4px; font-weight:500; border:1px solid var(--color-border);">${row.eventDate}</span></td>
+        <td><span style="background: rgba(148, 163, 184, 0.1); padding:2px 8px; border-radius:4px; font-weight:500; border:1px solid var(--color-border);">${row.eventDate}</span></td>
         <td class="text-end">${row.totalTables} bàn</td>
         <td>${row.hall}</td>
         <td class="text-end fw-semibold" style="color: var(--color-success);">${row.deposit}</td>

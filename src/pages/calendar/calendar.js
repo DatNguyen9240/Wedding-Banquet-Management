@@ -22,7 +22,7 @@ var CalendarPage = (function () {
     ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'].forEach(function(d) {
       var div = document.createElement('div');
       div.className = 'text-center fw-bold';
-      div.style.cssText = 'color:var(--color-text-secondary); padding:8px; background:#F8FAFC; border-radius:6px;';
+      div.style.cssText = 'color:var(--color-text-secondary); padding:8px; background: var(--color-background); border-radius:6px;';
       div.textContent = d;
       header.appendChild(div);
     });
@@ -35,7 +35,7 @@ var CalendarPage = (function () {
     // Empty start days (Nov 2026 starts on Sunday → 6 blanks if Mon-start)
     for (var b = 0; b < 6; b++) {
       var blank = document.createElement('div');
-      blank.style.cssText = 'border:1px dashed var(--color-border); border-radius:8px; opacity:0.5; background:#FAFAFA;';
+      blank.style.cssText = 'border:1px dashed var(--color-border); border-radius:8px; opacity:0.5; background: var(--color-surface);';
       body.appendChild(blank);
     }
 
@@ -43,7 +43,7 @@ var CalendarPage = (function () {
     for (var i = 1; i <= 30; i++) {
       var cell = document.createElement('div');
       cell.className = 'calendar-day-hover';
-      cell.style.cssText = 'border:1px solid var(--color-border); border-radius:8px; padding:8px; min-height:100px; display:flex; flex-direction:column; gap:4px; background:#fff; transition:all 0.2s; cursor:pointer;';
+      cell.style.cssText = 'border:1px solid var(--color-border); border-radius:8px; padding:8px; min-height:100px; display:flex; flex-direction:column; gap:4px; background: var(--color-surface); transition:all 0.2s; cursor:pointer;';
 
       var eventsHtml = '';
       if (i === 10) eventsHtml = '<div style="background:rgba(16,185,129,0.1); color:var(--color-success); border:1px solid var(--color-success); border-radius:4px; padding:4px 6px; font-size:11px; font-weight:600;">Đại sảnh (50)</div>';

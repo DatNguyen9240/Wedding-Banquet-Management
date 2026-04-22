@@ -30,7 +30,7 @@ var CheckoutPage = (function () {
         <td class="text-center">${idx + 1}</td>
         <td class="fw-semibold" style="color: var(--color-primary);">${row.id}</td>
         <td class="fw-medium">${row.customerName}</td>
-        <td><span style="background:#F1F5F9; padding:2px 8px; border-radius:4px; font-weight:500; border:1px solid var(--color-border);">${row.eventDate}</span></td>
+        <td><span style="background: rgba(148, 163, 184, 0.1); padding:2px 8px; border-radius:4px; font-weight:500; border:1px solid var(--color-border);">${row.eventDate}</span></td>
         <td class="text-end">${row.totalTables} bàn</td>
         <td class="text-end fw-semibold" style="color: var(--color-danger);">${row.totalAmount} đ</td>
         <td class="text-center"><span class="${statusClass}">${row.status}</span></td>

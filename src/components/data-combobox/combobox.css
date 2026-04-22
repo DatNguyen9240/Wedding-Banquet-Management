@@ -25,7 +25,7 @@
 
 .combo-box-actions {
   display: flex;
-  background: #F8FAFC;
+  background: var(--color-background);
   border: 1px solid var(--color-border);
   border-left: none;
   border-radius: 0 var(--radius-md) var(--radius-md) 0;

@@ -24,7 +24,7 @@
 }
 
 .filter-item .ui-input {
-  background: white;
+  background: var(--color-surface);
 }
 
 .filter-actions {
@@ -35,7 +35,7 @@
 }
 
 .filter-wrapper.advanced {
-  background: #F8FAFC;
+  background: var(--color-background);
   padding: 16px;
   border-radius: var(--radius-md);
   border: 1px dashed var(--color-border);

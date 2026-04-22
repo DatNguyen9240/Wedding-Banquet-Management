@@ -32,7 +32,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: white;
+  background: var(--color-surface);
   border: 2px solid var(--color-border-strong);
   margin-top: 4px;
   flex-shrink: 0;
@@ -70,7 +70,7 @@
   font-size: 13px;
   color: var(--color-text-secondary);
   line-height: 1.5;
-  background: #F8FAFC;
+  background: var(--color-background);
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   margin-top: 4px;

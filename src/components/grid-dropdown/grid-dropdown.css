@@ -17,7 +17,7 @@
   color: inherit;
 }
 .grid-cell-input:focus {
-  background: #FFF;
+  background: var(--color-surface);
   box-shadow: inset 0 0 0 2px var(--color-primary-light);
   border-radius: 2px;
 }

@@ -25,7 +25,7 @@ var UIModal = (function () {
           </button>
         </div>
         <div class="card-body ui-modal-body"></div>
-        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC; border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--color-background); border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
       </div>
     `;
     overlay.innerHTML = html;

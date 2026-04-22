@@ -24,10 +24,10 @@
   --color-contract: #F43F5E;
 
   /* Surfaces & Backgrounds */
-  --color-background: #F8FAFC;
+  --color-background: var(--color-background);
   /* Nền Slate 50 - Sáng, sang */
   --color-surface: #FFFFFF;
-  --color-sidebar: #0F172A;
+  --color-sidebar: var(--color-surface);
   /* Slate 900 - Đen sâu thăm thẳm */
   --color-header: rgba(255, 255, 255, 0.85);
   /* Glass header */
@@ -37,7 +37,7 @@
   /* Slate 800 */
   --color-text-secondary: #64748B;
   /* Slate 500 */
-  --color-text-sidebar: #94A3B8;
+  --color-text-sidebar: var(--color-text-secondary);
   /* Slate 400 */
 
   /* Borders & Dividers */
@@ -90,4 +90,36 @@
   --transition-fast: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-normal: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ═══════════════════════════════════════════
+   Dark Theme Overrides
+   ═══════════════════════════════════════════ */
+body.dark-theme {
+  --color-background: #0F172A; /* Slate 900 */
+  --color-surface: #1E293B; /* Slate 800 */
+  --color-sidebar: var(--color-surface); /* Slate 950 */
+  --color-header: rgba(30, 41, 59, 0.85);
+  --color-text: #F8FAFC; /* Slate 50 */
+  --color-text-secondary: #94A3B8; /* Slate 400 */
+  --color-border: #334155; /* Slate 700 */
+  --color-border-strong: #475569; /* Slate 600 */
+  
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-card: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+}
+
+/* Fix some styles for dark theme cards and inputs */
+body.dark-theme .card,
+body.dark-theme .header-right,
+body.dark-theme .app-header {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+body.dark-theme .layout-option,
+body.dark-theme .font-option,
+body.dark-theme .theme-option {
+  background-color: var(--color-surface) !important;
 }

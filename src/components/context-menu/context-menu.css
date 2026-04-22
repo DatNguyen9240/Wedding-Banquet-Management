@@ -5,7 +5,7 @@
 .ui-context-menu {
   position: absolute;
   z-index: 999999;
-  background: white;
+  background: var(--color-surface);
   border-radius: var(--radius-sm);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--color-border);
@@ -27,7 +27,7 @@
 }
 
 .context-menu-item:hover {
-  background: #F1F5F9;
+  background: rgba(148, 163, 184, 0.1);
   color: var(--color-primary);
 }
 

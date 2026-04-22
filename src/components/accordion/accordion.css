@@ -11,7 +11,7 @@
 
 .ui-accordion-header {
   padding: 16px 24px;
-  background: #F8FAFC;
+  background: var(--color-background);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -23,7 +23,7 @@
 }
 
 .ui-accordion-header:hover {
-  background: #F1F5F9;
+  background: rgba(148, 163, 184, 0.1);
 }
 
 .ui-accordion-icon {
@@ -39,7 +39,7 @@
   max-height: 0;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: white;
+  background: var(--color-surface);
 }
 
 .ui-accordion.open .ui-accordion-body {

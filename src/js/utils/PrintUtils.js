@@ -24,7 +24,7 @@ var PrintUtils = (function () {
       win.document.write(s.outerHTML);
     });
 
-    win.document.write('<style> @media print { body { padding: 20px; background: white; } .btn-tool { display: none; } } </style>');
+    win.document.write('<style> @media print { body { padding: 20px; background: var(--color-surface); } .btn-tool { display: none; } } </style>');
     win.document.write('</head><body >');
     win.document.write(element.outerHTML);
     win.document.write('</body></html>');

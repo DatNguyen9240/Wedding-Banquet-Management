@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Màn hình Phân quyền Cán bộ
  * HTML Template: src/pages/permissions.html
  */
@@ -30,10 +30,10 @@ var PermissionsPage = (function () {
             font-weight: 500;
             color: var(--color-text-secondary);
           }
-          .group-list li:hover { background: #f1f5f9; color: var(--color-primary); }
+          .group-list li:hover { background: rgba(148, 163, 184, 0.1); color: var(--color-primary); }
           .group-list li.active {
-            background: #e0e7ff;
-            color: var(--color-primary-dark);
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--color-primary);
             border-left: 4px solid var(--color-primary);
           }
         `;

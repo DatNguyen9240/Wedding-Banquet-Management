@@ -26,9 +26,46 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // 4. Khởi tạo CSS font chữ từ cấu hình giao diện
+  // 4. Khởi tạo cấu hình giao diện
   var savedFont = localStorage.getItem('pmql_font_family');
   if (savedFont) {
     document.documentElement.style.setProperty('--font-family', '"' + savedFont + '", sans-serif');
+  }
+
+  var savedTheme = localStorage.getItem('pmql_theme') || 'auto';
+  if (savedTheme === 'dark' || (savedTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark-theme');
+  } else {
+    document.body.classList.remove('dark-theme');
+  }
+
+  // Lắng nghe sự thay đổi giao diện từ hệ thống (khi chuyển qua chế độ tiết kiệm pin hoặc Dark Mode)
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+    var currentTheme = localStorage.getItem('pmql_theme') || 'auto';
+    if (currentTheme === 'auto') {
+      if (e.matches) {
+        document.body.classList.add('dark-theme');
+      } else {
+        document.body.classList.remove('dark-theme');
+      }
+    }
+  });
+
+  var savedColor = localStorage.getItem('pmql_color');
+  if (savedColor) {
+    var COLORS = [
+      { id: 'indigo', primary: '#4F46E5', hover: '#4338CA', dark: '#3730A3', light: 'rgba(79, 70, 229, 0.1)' },
+      { id: 'emerald', primary: '#10B981', hover: '#059669', dark: '#047857', light: 'rgba(16, 185, 129, 0.1)' },
+      { id: 'rose', primary: '#E11D48', hover: '#BE123C', dark: '#9F1239', light: 'rgba(225, 29, 72, 0.1)' },
+      { id: 'amber', primary: '#F59E0B', hover: '#D97706', dark: '#B45309', light: 'rgba(245, 158, 11, 0.1)' },
+      { id: 'sky', primary: '#0EA5E9', hover: '#0284C7', dark: '#0369A1', light: 'rgba(14, 165, 233, 0.1)' }
+    ];
+    var colorDef = COLORS.find(function(c) { return c.id === savedColor; });
+    if (colorDef) {
+      document.documentElement.style.setProperty('--color-primary', colorDef.primary);
+      document.documentElement.style.setProperty('--color-primary-hover', colorDef.hover);
+      document.documentElement.style.setProperty('--color-primary-dark', colorDef.dark);
+      document.documentElement.style.setProperty('--color-primary-light', colorDef.light);
+    }
   }
 });

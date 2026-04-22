@@ -99,7 +99,7 @@ var Router = (function () {
       '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center;padding:48px 24px;">' +
         '<span class="material-symbols-outlined" style="font-size:72px;color:var(--color-border-strong);margin-bottom:16px;">search_off</span>' +
         '<h2 style="font-size:2rem;font-weight:700;margin:0 0 8px;">404</h2>' +
-        '<p style="color:var(--color-text-secondary);margin:0 0 24px;">Trang <code style="background:#F1F5F9;padding:2px 8px;border-radius:4px;">' + path + '</code> không tồn tại</p>' +
+        '<p style="color:var(--color-text-secondary);margin:0 0 24px;">Trang <code style="background: rgba(148, 163, 184, 0.1);padding:2px 8px;border-radius:4px;">' + path + '</code> không tồn tại</p>' +
         '<a href="#/dashboard" class="btn btn-primary" style="text-decoration:none;">Về trang chủ</a>' +
       '</div>';
   }

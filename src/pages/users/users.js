@@ -107,7 +107,7 @@ var UsersPage = (function () {
             <div class="form-group mb-3" id="u-status-wrapper">
             </div>
           </div>
-          <div class="modal-footer d-flex justify-content-end gap-2 p-3" style="border-top: 1px solid var(--color-border); background: #F8FAFC;">
+          <div class="modal-footer d-flex justify-content-end gap-2 p-3" style="border-top: 1px solid var(--color-border); background: var(--color-background);">
             <button class="btn btn-secondary" id="btn-cancel">Hủy bỏ</button>
             <button class="btn btn-primary" id="btn-save">LƯU THÔNG TIN</button>
           </div>

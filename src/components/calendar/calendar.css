@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════ */
 
 .ui-calendar-wrapper {
-  background: white;
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: 16px;
   border: 1px solid var(--color-border);
@@ -39,7 +39,7 @@
 
 .calendar-day {
   aspect-ratio: 1;
-  background: #F8FAFC;
+  background: var(--color-background);
   border-radius: var(--radius-sm);
   padding: 8px;
   position: relative;
@@ -48,7 +48,7 @@
 }
 
 .calendar-day:hover {
-  background: #F1F5F9;
+  background: rgba(148, 163, 184, 0.1);
 }
 
 .calendar-day-number {

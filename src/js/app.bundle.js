@@ -595,6 +595,24 @@ var Navbar = (function () {
 
         <!-- Right Actions -->
         <div class="navbar-right">
+
+            <!-- Toggle Theme -->
+            <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
+              <span class="material-symbols-outlined" id="header-theme-icon-horizontal">dark_mode</span>
+            </div>
+            <script>
+              setTimeout(function() {
+                var isDark = document.body.classList.contains('dark-theme');
+                var icon = document.getElementById('header-theme-icon-horizontal');
+                if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
+              }, 100);
+            </script>
+
+            <!-- Logout -->
+            <div class="navbar-icon-btn" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?' })" title="Đăng xuất">
+              <span class="material-symbols-outlined">logout</span>
+            </div>
+
           <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
             <span class="material-symbols-outlined">notifications</span>
             <span class="badge-dot"></span>
@@ -713,6 +731,18 @@ var Navbar = (function () {
             </div>
 
             <div class="header-right">
+            <!-- Toggle Theme -->
+            <div class="icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';">
+              <span class="material-symbols-outlined" style="font-size:20px;" id="header-theme-icon">dark_mode</span>
+            </div>
+            <script>
+              setTimeout(function() {
+                var isDark = document.body.classList.contains('dark-theme');
+                var icon = document.getElementById('header-theme-icon');
+                if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
+              }, 100);
+            </script>
+
               <div class="icon-btn" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
                 <span class="material-symbols-outlined" style="font-size:20px">notifications</span>
                 <span class="badge"></span>
@@ -1457,7 +1487,7 @@ var UIModal = (function () {
           </button>
         </div>
         <div class="card-body ui-modal-body"></div>
-        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: #F8FAFC; border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
+        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--color-background); border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
       </div>
     `;
     overlay.innerHTML = html;
@@ -2920,6 +2950,18 @@ var Header = (function () {
         </div>
 
         <div class="header-right">
+            <!-- Toggle Theme -->
+            <div class="icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';">
+              <span class="material-symbols-outlined" style="font-size:20px;" id="header-theme-icon">dark_mode</span>
+            </div>
+            <script>
+              setTimeout(function() {
+                var isDark = document.body.classList.contains('dark-theme');
+                var icon = document.getElementById('header-theme-icon');
+                if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
+              }, 100);
+            </script>
+
           <!-- Các nút Notification / Chat -->
           <div class="icon-btn" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
             <span class="material-symbols-outlined" style="font-size:20px;">notifications</span>
