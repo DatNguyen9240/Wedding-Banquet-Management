@@ -248,7 +248,7 @@ var PrintUtils = (function () {
       win.document.write(s.outerHTML);
     });
 
-    win.document.write('<style> @media print { body { padding: 20px; background: white; } .btn-tool { display: none; } } </style>');
+    win.document.write('<style> @media print { body { padding: 20px; background: var(--color-surface); } .btn-tool { display: none; } } </style>');
     win.document.write('</head><body >');
     win.document.write(element.outerHTML);
     win.document.write('</body></html>');
@@ -595,25 +595,24 @@ var Navbar = (function () {
 
         <!-- Right Actions -->
         <div class="navbar-right">
-
-            <!-- Toggle Theme -->
-            <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
+          <!-- Toggle Theme -->
+            <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle(\'dark-theme\'); localStorage.setItem(\'theme\', isDark ? \'dark\' : \'light\'); this.querySelector(\'span\').innerText = isDark ? \'light_mode\' : \'dark_mode\';" title="Chuyển giao diện">
               <span class="material-symbols-outlined" id="header-theme-icon-horizontal">dark_mode</span>
             </div>
             <script>
               setTimeout(function() {
-                var isDark = document.body.classList.contains('dark-theme');
-                var icon = document.getElementById('header-theme-icon-horizontal');
-                if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
+                var isDark = document.body.classList.contains(\'dark-theme\');
+                var icon = document.getElementById(\'header-theme-icon-horizontal\');
+                if (icon) icon.innerText = isDark ? \'light_mode\' : \'dark_mode\';
               }, 100);
             </script>
 
             <!-- Logout -->
-            <div class="navbar-icon-btn" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?' })" title="Đăng xuất">
+            <div class="navbar-icon-btn" onclick="ConfirmModal.show({ title: \'Đăng xuất\', message: \'Bạn muốn đăng xuất khỏi hệ thống?\' })" title="Đăng xuất">
               <span class="material-symbols-outlined">logout</span>
             </div>
 
-          <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
+            <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
             <span class="material-symbols-outlined">notifications</span>
             <span class="badge-dot"></span>
           </div>
@@ -731,18 +730,6 @@ var Navbar = (function () {
             </div>
 
             <div class="header-right">
-            <!-- Toggle Theme -->
-            <div class="icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';">
-              <span class="material-symbols-outlined" style="font-size:20px;" id="header-theme-icon">dark_mode</span>
-            </div>
-            <script>
-              setTimeout(function() {
-                var isDark = document.body.classList.contains('dark-theme');
-                var icon = document.getElementById('header-theme-icon');
-                if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
-              }, 100);
-            </script>
-
               <div class="icon-btn" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
                 <span class="material-symbols-outlined" style="font-size:20px">notifications</span>
                 <span class="badge"></span>
@@ -2950,18 +2937,6 @@ var Header = (function () {
         </div>
 
         <div class="header-right">
-            <!-- Toggle Theme -->
-            <div class="icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';">
-              <span class="material-symbols-outlined" style="font-size:20px;" id="header-theme-icon">dark_mode</span>
-            </div>
-            <script>
-              setTimeout(function() {
-                var isDark = document.body.classList.contains('dark-theme');
-                var icon = document.getElementById('header-theme-icon');
-                if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
-              }, 100);
-            </script>
-
           <!-- Các nút Notification / Chat -->
           <div class="icon-btn" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
             <span class="material-symbols-outlined" style="font-size:20px;">notifications</span>

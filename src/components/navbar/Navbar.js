@@ -245,7 +245,24 @@ var Navbar = (function () {
 
         <!-- Right Actions -->
         <div class="navbar-right">
-          <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
+          <!-- Toggle Theme -->
+            <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle(\'dark-theme\'); localStorage.setItem(\'theme\', isDark ? \'dark\' : \'light\'); this.querySelector(\'span\').innerText = isDark ? \'light_mode\' : \'dark_mode\';" title="Chuyển giao diện">
+              <span class="material-symbols-outlined" id="header-theme-icon-horizontal">dark_mode</span>
+            </div>
+            <script>
+              setTimeout(function() {
+                var isDark = document.body.classList.contains(\'dark-theme\');
+                var icon = document.getElementById(\'header-theme-icon-horizontal\');
+                if (icon) icon.innerText = isDark ? \'light_mode\' : \'dark_mode\';
+              }, 100);
+            </script>
+
+            <!-- Logout -->
+            <div class="navbar-icon-btn" onclick="ConfirmModal.show({ title: \'Đăng xuất\', message: \'Bạn muốn đăng xuất khỏi hệ thống?\' })" title="Đăng xuất">
+              <span class="material-symbols-outlined">logout</span>
+            </div>
+
+            <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
             <span class="material-symbols-outlined">notifications</span>
             <span class="badge-dot"></span>
           </div>
