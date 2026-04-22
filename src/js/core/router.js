@@ -11,6 +11,7 @@ var Router = (function () {
     '/users':          { title: 'Danh sách người dùng', module: 'QuanTriHeThong' },
     '/permissions':    { title: 'Phân quyền Cán bộ', module: 'QuanTriHeThong' },
     '/settings':       { title: 'Thiết lập chung', module: 'QuanTriHeThong' },
+    '/appearance':     { title: 'Cài đặt Giao diện', module: 'QuanTriHeThong' },
     // Quản lý tiệc
     '/customers':      { title: 'Hồ sơ Khách hàng', module: 'HopDong' },
     '/calendar':       { title: 'Lịch tiệc trong tháng', module: 'HopDong' },
@@ -186,6 +187,9 @@ var Router = (function () {
     } else if (hash === '/settings') {
       if(window.SettingsPage) window.SettingsPage.render($content);
       else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module SettingsPage.</div></div>';
+    } else if (hash === '/appearance') {
+      if(window.AppearancePage) window.AppearancePage.render($content);
+      else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module AppearancePage.</div></div>';
     } else if (hash === '/categories') {
       if (window.CategoriesPage) window.CategoriesPage.render($content);
       else $content.innerHTML = '<div class="card"><div class="card-body">Lỗi: Không tìm thấy module CategoriesPage.</div></div>';
