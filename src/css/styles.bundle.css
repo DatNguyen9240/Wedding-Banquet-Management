@@ -1463,6 +1463,16 @@ img {
 
 .icon-btn:hover { color: var(--color-primary); }
 
+body.dark-theme .icon-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-theme .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
 .icon-btn .badge {
   position: absolute;
   top: -2px;
@@ -2372,6 +2382,7 @@ img {
   padding: 10px 12px;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
+  background: var(--color-surface);
   outline: none;
   font-size: var(--font-size-md);
   font-family: inherit;

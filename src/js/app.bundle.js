@@ -624,7 +624,7 @@ var Navbar = (function () {
         <!-- Right Actions -->
         <div class="navbar-right">
           <!-- Toggle Theme -->
-            <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle(\'dark-theme\'); localStorage.setItem(\'theme\', isDark ? \'dark\' : \'light\'); this.querySelector(\'span\').innerText = isDark ? \'light_mode\' : \'dark_mode\';" title="Chuyển giao diện">
+            <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
               <span class="material-symbols-outlined" id="header-theme-icon-horizontal">dark_mode</span>
             </div>
             <script>
@@ -758,6 +758,18 @@ var Navbar = (function () {
             </div>
 
             <div class="header-right">
+              <!-- Toggle Theme -->
+              <div class="icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
+                <span class="material-symbols-outlined" id="header-theme-icon-vertical">dark_mode</span>
+              </div>
+              <script>
+                setTimeout(function() {
+                  var isDark = document.body.classList.contains('dark-theme');
+                  var icon = document.getElementById('header-theme-icon-vertical');
+                  if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
+                }, 100);
+              </script>
+
               <div class="icon-btn" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
                 <span class="material-symbols-outlined" style="font-size:20px">notifications</span>
                 <span class="badge"></span>

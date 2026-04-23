@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Màn hình Quản lý Danh mục (Master Data)
  * Hiển thị cấu trúc dạng Cây (Tree) bên trái và DataGrid bên phải.
  */
@@ -67,9 +67,9 @@ var CategoriesPage = (function () {
         <div style="padding: 24px; border-bottom: 1px solid var(--color-border); display: flex; gap: 16px; align-items: center; background: var(--color-surface);">
           <span style="font-weight: 600; font-size: 15px; color: var(--color-text);">Tháng/Năm tạo lịch: </span>
           <div style="position: relative; display: flex; align-items: center;">
-            <input type="month" id="ts-month" class="form-control" style="width: 200px; padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 15px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#cbd5e1'" value="2026-07">
+            <input type="month" id="ts-month" class="form-control" style="width: 200px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--color-border-strong); box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 15px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--color-primary)'" onblur="this.style.borderColor='var(--color-border-strong)'" value="2026-07">
           </div>
-          <button class="btn btn-primary" style="padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #6366f1, #4f46e5); border: none; outline: none; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3); color: white; cursor: pointer; transition: all 0.2s ease;" onclick="CategoriesPage.triggerModuleAction('generate')" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(99, 102, 241, 0.4)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 6px -1px rgba(99, 102, 241, 0.3)';">
+          <button class="btn btn-primary" style="padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; background: var(--color-primary); border: none; outline: none; box-shadow: 0 4px 6px -1px var(--color-primary-light); color: white; cursor: pointer; transition: all 0.2s ease;" onclick="CategoriesPage.triggerModuleAction('generate')" onmouseover="this.style.transform='translateY(-1px)'; this.style.opacity='0.9';" onmouseout="this.style.transform='none'; this.style.opacity='1';">
             <span class="material-symbols-outlined" style="font-size: 20px;">calendar_month</span> Sinh danh sách ngày
           </button>
         </div>
@@ -280,7 +280,7 @@ var CategoriesPage = (function () {
       '@media(min-width:769px){#btn-mobile-open-tree,#btn-mobile-close-tree{display:none !important;}}',
       '@media(max-width:768px){#btn-mobile-open-tree,#btn-mobile-close-tree{display:block !important;}.categories-layout>.tree-column{display:none;}.categories-layout.show-tree>.tree-column{display:flex !important;position:absolute;z-index:10;background: var(--color-surface);width:100%;height:100%;border-right:none;}}',
       '.categories-layout .tab-item{padding:10px 20px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;font-weight:600;font-size:14px;transition:all 0.2s;}',
-      '.categories-layout .tab-item:hover{color:var(--color-primary);background:rgba(60,80,224,0.05);}',
+      '.categories-layout .tab-item:hover{color:var(--color-primary);background:var(--color-primary-light);}',
       '.categories-layout .tab-item.active{color:var(--color-primary);border-bottom:2px solid var(--color-primary);background: var(--color-surface);}',
       '.categories-layout .tab-pane{display:none;}',
       '.categories-layout .tab-pane.active{display:block;animation:fadeIn 0.3s ease;}',
@@ -311,7 +311,7 @@ var CategoriesPage = (function () {
           <div class="ui-tree-toggle ${!node.children ? 'empty' : ''}">
             <span class="material-symbols-outlined">${node.expanded ? 'arrow_drop_down' : 'arrow_right'}</span>
           </div>
-          <span class="material-symbols-outlined ui-tree-icon" style="${node.children ? 'color:#f59e0b;' : 'color:#6366f1;'}">${node.icon || 'folder'}</span>
+          <span class="material-symbols-outlined ui-tree-icon" style="${node.children ? 'color:var(--color-warning);' : 'color:var(--color-primary);'}">${node.icon || 'folder'}</span>
           <span>${node.text}</span>
         </div>
       `;
@@ -336,8 +336,8 @@ var CategoriesPage = (function () {
       nodeEl.addEventListener('click', function() {
         document.querySelectorAll('.ui-tree-node').forEach(el => { el.style.fontWeight = '400'; el.style.color = 'var(--color-text)'; el.style.background = 'transparent'; });
         nodeEl.style.fontWeight = '600';
-        nodeEl.style.color = 'var(--color-primary)';
-        nodeEl.style.background = 'rgba(60, 80, 224, 0.05)';
+        nodeEl.style.color = '#fff';
+        nodeEl.style.background = 'var(--color-primary)';
         nodeEl.style.borderRadius = '4px';
         
         _loadCategoryData(node);
