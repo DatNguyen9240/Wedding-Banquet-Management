@@ -73,6 +73,7 @@ var Navbar = (function () {
       items: [
         { href: '#/users',       icon: 'group',                 label: 'Người dùng' },
         { href: '#/permissions', icon: 'admin_panel_settings',  label: 'Phân quyền' },
+        { href: '#/menus',       icon: 'list_alt',              label: 'Danh mục Menu' },
         { href: '#/settings',    icon: 'settings_applications', label: 'Thiết lập chung' }
       ]
     },
@@ -258,7 +259,7 @@ var Navbar = (function () {
             </script>
 
             <!-- Logout -->
-            <div class="navbar-icon-btn" onclick="ConfirmModal.show({ title: \'Đăng xuất\', message: \'Bạn muốn đăng xuất khỏi hệ thống?\' })" title="Đăng xuất">
+            <div class="navbar-icon-btn" onclick="ConfirmModal.show({ title: \'Đăng xuất\', message: \'Bạn muốn đăng xuất khỏi hệ thống?\', onConfirm: window.logoutApp })" title="Đăng xuất">
               <span class="material-symbols-outlined">logout</span>
             </div>
 
@@ -300,7 +301,7 @@ var Navbar = (function () {
 
               <div class="dropdown-divider"></div>
 
-              <div class="user-dropdown-item danger" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?' })">
+              <div class="user-dropdown-item danger" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?', onConfirm: window.logoutApp })">
                 <span class="material-symbols-outlined">logout</span>
                 Đăng xuất
               </div>
@@ -396,7 +397,7 @@ var Navbar = (function () {
                 <span class="material-symbols-outlined" style="font-size:20px">notifications</span>
                 <span class="badge"></span>
               </div>
-              <div class="icon-btn" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?' })">
+              <div class="icon-btn" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?', onConfirm: window.logoutApp })">
                 <span class="material-symbols-outlined" style="font-size:20px">logout</span>
               </div>
 
@@ -428,7 +429,7 @@ var Navbar = (function () {
 
                   <div class="dropdown-divider"></div>
 
-                  <div class="user-dropdown-item danger" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất?' })">
+                  <div class="user-dropdown-item danger" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất?', onConfirm: window.logoutApp })">
                     <span class="material-symbols-outlined">logout</span>
                     Đăng xuất
                   </div>

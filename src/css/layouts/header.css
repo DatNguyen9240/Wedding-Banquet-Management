@@ -84,17 +84,18 @@
   .btn-hamburger {
     display: flex !important;
   }
-}
-
-@media (max-width: 768px) {
   .search-box {
     display: none !important;
   }
+}
+
+@media (max-width: 768px) {
+
   .app-header {
     padding: 0 16px;
     gap: 8px;
   }
-  .user-text {
+  .user-info {
     display: none !important;
   }
   .btn-hamburger {
@@ -107,6 +108,9 @@
   }
   .icon-btn .material-symbols-outlined {
     font-size: 18px !important;
+  }
+  .header-right {
+    gap: 8px;
   }
 }
 

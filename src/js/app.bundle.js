@@ -451,6 +451,7 @@ var Navbar = (function () {
       items: [
         { href: '#/users',       icon: 'group',                 label: 'Người dùng' },
         { href: '#/permissions', icon: 'admin_panel_settings',  label: 'Phân quyền' },
+        { href: '#/menus',       icon: 'list_alt',              label: 'Danh mục Menu' },
         { href: '#/settings',    icon: 'settings_applications', label: 'Thiết lập chung' }
       ]
     },
@@ -636,7 +637,7 @@ var Navbar = (function () {
             </script>
 
             <!-- Logout -->
-            <div class="navbar-icon-btn" onclick="ConfirmModal.show({ title: \'Đăng xuất\', message: \'Bạn muốn đăng xuất khỏi hệ thống?\' })" title="Đăng xuất">
+            <div class="navbar-icon-btn" onclick="ConfirmModal.show({ title: \'Đăng xuất\', message: \'Bạn muốn đăng xuất khỏi hệ thống?\', onConfirm: window.logoutApp })" title="Đăng xuất">
               <span class="material-symbols-outlined">logout</span>
             </div>
 
@@ -678,7 +679,7 @@ var Navbar = (function () {
 
               <div class="dropdown-divider"></div>
 
-              <div class="user-dropdown-item danger" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?' })">
+              <div class="user-dropdown-item danger" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?', onConfirm: window.logoutApp })">
                 <span class="material-symbols-outlined">logout</span>
                 Đăng xuất
               </div>
@@ -774,7 +775,7 @@ var Navbar = (function () {
                 <span class="material-symbols-outlined" style="font-size:20px">notifications</span>
                 <span class="badge"></span>
               </div>
-              <div class="icon-btn" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?' })">
+              <div class="icon-btn" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?', onConfirm: window.logoutApp })">
                 <span class="material-symbols-outlined" style="font-size:20px">logout</span>
               </div>
 
@@ -806,7 +807,7 @@ var Navbar = (function () {
 
                   <div class="dropdown-divider"></div>
 
-                  <div class="user-dropdown-item danger" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất?' })">
+                  <div class="user-dropdown-item danger" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất?', onConfirm: window.logoutApp })">
                     <span class="material-symbols-outlined">logout</span>
                     Đăng xuất
                   </div>
@@ -1857,6 +1858,59 @@ var UIButton = (function () {
   return {
     create: create,
     createBar: createBar
+  };
+})();
+
+
+/* --- Icon.js --- */
+/**
+ * Icon Component
+ * Quản lý và render Icon (Hỗ trợ cả Material Symbols và Icon font riêng biệt)
+ */
+var UIIcon = (function () {
+  
+  /**
+   * Sinh ra mã HTML của Icon
+   * @param {string} iconName - Tên icon (VD: 'home', 'bar_chart', 'icon-grid')
+   * @param {string} style - (Tùy chọn) Style inline bổ sung (VD: 'font-size: 18px;')
+   * @param {string} className - (Tùy chọn) Class name bổ sung (VD: 'nav-icon')
+   */
+  function renderHtml(iconName, style, className) {
+    if (!iconName) return '';
+    var styleAttr = style ? ' style="' + style + '"' : '';
+    var extraClass = className ? ' ' + className : '';
+    
+    // Nếu có chứa "icon-" hoặc dấu cách, hoặc dấu gạch ngang -> Dùng thẻ <i> cho Icon font
+    if (iconName.indexOf('icon-') >= 0 || iconName.indexOf(' ') >= 0 || iconName.indexOf('-') > 0) {
+      return '<i class="' + iconName + extraClass + '"' + styleAttr + '></i>';
+    } else {
+      // Mặc định: Google Material Symbols Outlined
+      return '<span class="material-symbols-outlined' + extraClass + '"' + styleAttr + '>' + iconName + '</span>';
+    }
+  }
+
+  /**
+   * Tạo DOM Element của Icon
+   * @param {string} iconName 
+   * @param {string} className 
+   */
+  function create(iconName, className) {
+    if (!iconName) return null;
+    var el;
+    if (iconName.indexOf('icon-') >= 0 || iconName.indexOf(' ') >= 0 || iconName.indexOf('-') > 0) {
+      el = document.createElement('i');
+      el.className = iconName + (className ? ' ' + className : '');
+    } else {
+      el = document.createElement('span');
+      el.className = 'material-symbols-outlined' + (className ? ' ' + className : '');
+      el.innerText = iconName;
+    }
+    return el;
+  }
+
+  return {
+    renderHtml: renderHtml,
+    create: create
   };
 })();
 

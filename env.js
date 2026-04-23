@@ -7,7 +7,7 @@
 
 // 1. Tham số môi trường (Environment Variables)
 const ENV_VARS = {
-    API_BASE: 'http://localhost:3000', // Đổi t\u00e0nh domain backend thực tế khi deploy (VD: https://api.wedding.com)
+    API_BASE: 'https://qlt.bms79.com', // Domain backend thực tế
 };
 
 // 2. Cấu hình API chi tiết

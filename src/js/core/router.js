@@ -9,24 +9,25 @@ var Router = (function () {
 
   // ── Route definitions ──────────────────────────────────────────────────
   var ROUTES = [
-    { path: '/dashboard',       template: 'src/pages/dashboard/dashboard.html',             script: null,                                                module: 'QuanTriHeThong', title: 'Tổng quan',               pageFn: null },
-    { path: '/visitor',         template: 'src/pages/visitor/visitor.html',                 script: 'src/pages/visitor/visitor.js',                     module: 'HopDong',        title: 'Khách tham quan',         pageFn: 'VisitorPage' },
-    { path: '/booking',         template: 'src/pages/booking/booking.html',                 script: 'src/pages/booking/booking.js',                     module: 'HopDong',        title: 'Biên nhận cọc chỗ',       pageFn: 'BookingPage' },
-    { path: '/contract',        template: 'src/pages/contract/contract.html',               script: 'src/pages/contract/contract.js',                   module: 'HopDong',        title: 'Hợp đồng tiệc',          pageFn: 'ContractPage' },
-    { path: '/checkout',        template: 'src/pages/checkout/checkout.html',               script: 'src/pages/checkout/checkout.js',                   module: 'QuyetToan',      title: 'Quyết toán',              pageFn: 'CheckoutPage' },
-    { path: '/calendar',        template: 'src/pages/calendar/calendar.html',               script: 'src/pages/calendar/calendar.js',                   module: 'HopDong',        title: 'Lịch tiệc trong tháng',   pageFn: 'CalendarPage' },
-    { path: '/customers',       template: 'src/pages/customers/customers.html',             script: 'src/pages/customers/customers.js',                 module: 'HopDong',        title: 'Hồ sơ Khách hàng',        pageFn: 'CustomersPage' },
-    { path: '/hall-status',     template: 'src/pages/hall-status/hall-status.html',         script: 'src/pages/hall-status/hall-status.js',             module: 'HopDong',        title: 'Trạng thái Sảnh Tiệc',    pageFn: 'HallStatusPage' },
-    { path: '/users',           template: 'src/pages/users/users.html',                     script: 'src/pages/users/users.js',                         module: 'QuanTriHeThong', title: 'Danh sách người dùng',    pageFn: 'UsersPage' },
-    { path: '/permissions',     template: 'src/pages/permissions/permissions.html',         script: 'src/pages/permissions/permissions.js',             module: 'QuanTriHeThong', title: 'Phân quyền Cán bộ',       pageFn: 'PermissionsPage' },
-    { path: '/settings',        template: 'src/pages/settings/settings.html',               script: 'src/pages/settings/settings.js',                   module: 'QuanTriHeThong', title: 'Thiết lập chung',         pageFn: 'SettingsPage' },
-    { path: '/appearance',      template: 'src/pages/appearance/appearance.html',           script: 'src/pages/appearance/appearance.js',               module: 'QuanTriHeThong', title: 'Cài đặt Giao diện',       pageFn: 'AppearancePage' },
-    { path: '/categories',      template: 'src/pages/categories/categories.html',           script: 'src/pages/categories/categories.js',               module: 'DanhMuc',        title: 'Quản lý Danh mục',        pageFn: 'CategoriesPage' },
-    { path: '/staff',           template: 'src/pages/staff/staff.html',                     script: 'src/pages/staff/staff.js',                         module: 'NhanSu',         title: 'Nhân viên Phục vụ Tiệc',  pageFn: 'StaffPage' },
-    { path: '/report-revenue',  template: 'src/pages/report-revenue/report-revenue.html',   script: 'src/pages/report-revenue/report-revenue.js',       module: 'BaoCao',         title: 'Báo cáo Doanh thu Tiệc',  pageFn: 'ReportRevenuePage' },
-    { path: '/report-cost',     template: 'src/pages/report-cost/report-cost.html',         script: 'src/pages/report-cost/report-cost.js',             module: 'BaoCao',         title: 'Báo cáo Chi phí Tiệc',    pageFn: 'ReportCostPage' },
-    { path: '/report-other',    template: 'src/pages/report-other/report-other.html',       script: 'src/pages/report-other/report-other.js',           module: 'BaoCao',         title: 'Báo cáo Quản lý Khác',    pageFn: 'ReportOtherPage' },
-    { path: '/components-demo', template: 'src/pages/components-demo/components-demo.html', script: 'src/pages/components-demo/components-demo.js',     module: 'QuanTriHeThong', title: 'Bản test Component',       pageFn: 'ComponentsDemoPage' }
+    { path: '/dashboard', template: 'src/pages/dashboard/dashboard.html', script: null, module: 'QuanTriHeThong', title: 'Tổng quan', pageFn: null },
+    { path: '/visitor', template: 'src/pages/visitor/visitor.html', script: 'src/pages/visitor/visitor.js', module: 'HopDong', title: 'Khách tham quan', pageFn: 'VisitorPage' },
+    { path: '/booking', template: 'src/pages/booking/booking.html', script: 'src/pages/booking/booking.js', module: 'HopDong', title: 'Biên nhận cọc chỗ', pageFn: 'BookingPage' },
+    { path: '/contract', template: 'src/pages/contract/contract.html', script: 'src/pages/contract/contract.js', module: 'HopDong', title: 'Hợp đồng tiệc', pageFn: 'ContractPage' },
+    { path: '/checkout', template: 'src/pages/checkout/checkout.html', script: 'src/pages/checkout/checkout.js', module: 'QuyetToan', title: 'Quyết toán', pageFn: 'CheckoutPage' },
+    { path: '/calendar', template: 'src/pages/calendar/calendar.html', script: 'src/pages/calendar/calendar.js', module: 'HopDong', title: 'Lịch tiệc trong tháng', pageFn: 'CalendarPage' },
+    { path: '/customers', template: 'src/pages/customers/customers.html', script: 'src/pages/customers/customers.js', module: 'HopDong', title: 'Hồ sơ Khách hàng', pageFn: 'CustomersPage' },
+    { path: '/hall-status', template: 'src/pages/hall-status/hall-status.html', script: 'src/pages/hall-status/hall-status.js', module: 'HopDong', title: 'Trạng thái Sảnh Tiệc', pageFn: 'HallStatusPage' },
+    { path: '/users', template: 'src/pages/users/users.html', script: 'src/pages/users/users.js', module: 'QuanTriHeThong', title: 'Danh sách người dùng', pageFn: 'UsersPage' },
+    { path: '/permissions', template: 'src/pages/permissions/permissions.html', script: 'src/pages/permissions/permissions.js', module: 'QuanTriHeThong', title: 'Phân quyền Cán bộ', pageFn: 'PermissionsPage' },
+    { path: '/settings', template: 'src/pages/settings/settings.html', script: 'src/pages/settings/settings.js', module: 'QuanTriHeThong', title: 'Thiết lập chung', pageFn: 'SettingsPage' },
+    { path: '/menus', template: 'src/pages/menus/menus.html', script: 'src/pages/menus/menus.js', module: 'QuanTriHeThong', title: 'Quản lý Menu', pageFn: 'MenusPage' },
+    { path: '/appearance', template: 'src/pages/appearance/appearance.html', script: 'src/pages/appearance/appearance.js', module: 'QuanTriHeThong', title: 'Cài đặt Giao diện', pageFn: 'AppearancePage' },
+    { path: '/categories', template: 'src/pages/categories/categories.html', script: 'src/pages/categories/categories.js', module: 'DanhMuc', title: 'Quản lý Danh mục', pageFn: 'CategoriesPage' },
+    { path: '/staff', template: 'src/pages/staff/staff.html', script: 'src/pages/staff/staff.js', module: 'NhanSu', title: 'Nhân viên Phục vụ Tiệc', pageFn: 'StaffPage' },
+    { path: '/report-revenue', template: 'src/pages/report-revenue/report-revenue.html', script: 'src/pages/report-revenue/report-revenue.js', module: 'BaoCao', title: 'Báo cáo Doanh thu Tiệc', pageFn: 'ReportRevenuePage' },
+    { path: '/report-cost', template: 'src/pages/report-cost/report-cost.html', script: 'src/pages/report-cost/report-cost.js', module: 'BaoCao', title: 'Báo cáo Chi phí Tiệc', pageFn: 'ReportCostPage' },
+    { path: '/report-other', template: 'src/pages/report-other/report-other.html', script: 'src/pages/report-other/report-other.js', module: 'BaoCao', title: 'Báo cáo Quản lý Khác', pageFn: 'ReportOtherPage' },
+    { path: '/components-demo', template: 'src/pages/components-demo/components-demo.html', script: 'src/pages/components-demo/components-demo.js', module: 'QuanTriHeThong', title: 'Bản test Component', pageFn: 'ComponentsDemoPage' }
   ];
 
   // ── State ──────────────────────────────────────────────────────────────
@@ -97,34 +98,34 @@ var Router = (function () {
   function _render404($el, path) {
     $el.innerHTML =
       '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center;padding:48px 24px;">' +
-        '<span class="material-symbols-outlined" style="font-size:72px;color:var(--color-border-strong);margin-bottom:16px;">search_off</span>' +
-        '<h2 style="font-size:2rem;font-weight:700;margin:0 0 8px;">404</h2>' +
-        '<p style="color:var(--color-text-secondary);margin:0 0 24px;">Trang <code style="background: rgba(148, 163, 184, 0.1);padding:2px 8px;border-radius:4px;">' + path + '</code> không tồn tại</p>' +
-        '<a href="#/dashboard" class="btn btn-primary" style="text-decoration:none;">Về trang chủ</a>' +
+      '<span class="material-symbols-outlined" style="font-size:72px;color:var(--color-border-strong);margin-bottom:16px;">search_off</span>' +
+      '<h2 style="font-size:2rem;font-weight:700;margin:0 0 8px;">404</h2>' +
+      '<p style="color:var(--color-text-secondary);margin:0 0 24px;">Trang <code style="background: rgba(148, 163, 184, 0.1);padding:2px 8px;border-radius:4px;">' + path + '</code> không tồn tại</p>' +
+      '<a href="#/dashboard" class="btn btn-primary" style="text-decoration:none;">Về trang chủ</a>' +
       '</div>';
   }
 
   function _renderAccessDenied($el) {
     $el.innerHTML =
       '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;text-align:center;padding:48px;">' +
-        '<span class="material-symbols-outlined" style="font-size:64px;color:var(--color-danger);opacity:0.4;margin-bottom:16px;">lock</span>' +
-        '<p style="color:var(--color-danger);font-weight:600;">Bạn không có quyền xem trang này</p>' +
+      '<span class="material-symbols-outlined" style="font-size:64px;color:var(--color-danger);opacity:0.4;margin-bottom:16px;">lock</span>' +
+      '<p style="color:var(--color-danger);font-weight:600;">Bạn không có quyền xem trang này</p>' +
       '</div>';
   }
 
   function _renderPlaceholder($el, title) {
     $el.innerHTML =
       '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;text-align:center;padding:48px;">' +
-        '<span class="material-symbols-outlined" style="font-size:64px;color:var(--color-border-strong);opacity:0.4;margin-bottom:16px;">construction</span>' +
-        '<h3 style="margin:0 0 8px;font-weight:600;">' + title + '</h3>' +
-        '<p style="color:var(--color-text-secondary);margin:0;">Trang này đang được phát triển...</p>' +
+      '<span class="material-symbols-outlined" style="font-size:64px;color:var(--color-border-strong);opacity:0.4;margin-bottom:16px;">construction</span>' +
+      '<h3 style="margin:0 0 8px;font-weight:600;">' + title + '</h3>' +
+      '<p style="color:var(--color-text-secondary);margin:0;">Trang này đang được phát triển...</p>' +
       '</div>';
   }
 
   function _renderError($el, message) {
     $el.innerHTML =
       '<div class="card"><div class="card-body" style="color:var(--color-danger);">' +
-        '<span class="material-symbols-outlined" style="vertical-align:middle;margin-right:8px;">error</span>' + message +
+      '<span class="material-symbols-outlined" style="vertical-align:middle;margin-right:8px;">error</span>' + message +
       '</div></div>';
   }
 

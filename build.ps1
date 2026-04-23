@@ -64,6 +64,7 @@ $jsFiles = @(
   "components\filter\FilterComponent.js",
   "components\input\Input.js",
   "components\button\Button.js",
+  "components\icon\Icon.js",
   "components\action-toolbar\ActionToolbar.js",
   "components\card\Card.js",
   "components\table\Table.js",

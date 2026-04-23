@@ -11,10 +11,28 @@ const ApiClient = (function() {
     };
 
     /**
-     * Lấy auth token t\u1eeb Local Storage (Thay \u0111\u1ed5i key cho phù hợp với hệ thống thật)
+     * Cookie helpers (Tương tự Medstand)
+     */
+    function setCookie(name, value, days) {
+        const expires = new Date(Date.now() + days * 864e5).toUTCString();
+        const isSecure = window.location.protocol === 'https:';
+        document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Strict${isSecure ? ';Secure' : ''}`;
+    }
+
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+        return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function deleteCookie(name) {
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    }
+
+    /**
+     * Lấy auth token từ Cookie
      */
     function getAuthToken() {
-        return localStorage.getItem('token') || null;
+        return getCookie('auth_token') || null;
     }
 
     /**
@@ -49,7 +67,13 @@ const ApiClient = (function() {
             // Xử lý status 401 (Hết hạn token / Chưa đăng nhập)
             if (response.status === 401) {
                 console.warn('[ApiClient] 401 Unauthorized. Token expired?');
-                // \u0110\u1ec3 t\u1ea1m \u0111\u00e2y, sau n\u00e0y c\u00f3 th\u1ec3 g\u00e1n h\u00e0nh \u0111\u1ed9ng route v\u1ec1 trang Login \u1edf \u0111\u00e2y.
+                if (typeof window.logoutApp === 'function') {
+                    window.logoutApp();
+                } else {
+                    deleteCookie('auth_token');
+                    localStorage.removeItem('pmql_user');
+                    window.location.href = 'login.html';
+                }
             }
 
             // Nếu response code không phải 2xx (Tức là bị lỗi Backend trả về)
@@ -118,7 +142,12 @@ const ApiClient = (function() {
          */
         delete: function(endpoint, options = {}) {
             return request(endpoint, { ...options, method: 'DELETE' });
-        }
+        },
+
+        // Expose cookie helpers to be used globally (e.g., in login and logout)
+        setCookie: setCookie,
+        getCookie: getCookie,
+        deleteCookie: deleteCookie
     };
 })();
 
