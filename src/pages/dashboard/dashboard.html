@@ -21,33 +21,82 @@
   </div>
 </div>
 
-<div class="card">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <span>Tiệc Cưới Sắp Diễn Ra</span>
-    <span class="material-symbols-outlined" style="cursor:pointer; color:var(--color-text-secondary);">more_vert</span>
+<div class="row g-4">
+  <!-- CỘT TRÁI: TIỆC CƯỚI SẮP DIỄN RA -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Tiệc Cưới Sắp Diễn Ra</span>
+        <span class="material-symbols-outlined" style="cursor:pointer; color:var(--color-text-secondary);">more_vert</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead><tr><th>Khách hàng</th><th>Ngày tổ chức</th><th>Sảnh tiệc</th><th>Số bàn</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="fw-medium">Nguyễn Văn A - Lê Thị B</div><div style="font-size:13px; color:var(--color-text-secondary);">0909 123 456</div></td>
+                <td>25/11/2026</td><td>Diamond Hall</td><td>45 mặn, 2 chay</td>
+                <td><span class="status-badge success">Đã ký HĐ</span></td>
+              </tr>
+              <tr>
+                <td><div class="fw-medium">Trần Hữu C - Đinh Bích D</div><div style="font-size:13px; color:var(--color-text-secondary);">0988 765 432</div></td>
+                <td>30/11/2026</td><td>Ruby Hall</td><td>30 mặn</td>
+                <td><span class="status-badge warning">Mới cọc lần 1</span></td>
+              </tr>
+              <tr>
+                <td><div class="fw-medium">Hoàng Hữu E - Ngô F</div><div style="font-size:13px; color:var(--color-text-secondary);">0912 345 678</div></td>
+                <td>01/12/2026</td><td>Sapphire Hall</td><td>60 mặn</td>
+                <td><span class="status-badge success">Đã ký HĐ</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="card-body p-0">
-    <div class="table-wrapper">
-      <table class="data-table">
-        <thead><tr><th>Khách hàng</th><th>Ngày tổ chức</th><th>Sảnh tiệc</th><th>Số bàn</th><th>Trạng thái</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><div class="fw-medium">Nguyễn Văn A - Lê Thị B</div><div style="font-size:13px; color:var(--color-text-secondary);">0909 123 456</div></td>
-            <td>25/11/2026</td><td>Diamond Hall</td><td>45 mặn, 2 chay</td>
-            <td><span class="status-badge success">Đã ký HĐ</span></td>
-          </tr>
-          <tr>
-            <td><div class="fw-medium">Trần Hữu C - Đinh Bích D</div><div style="font-size:13px; color:var(--color-text-secondary);">0988 765 432</div></td>
-            <td>30/11/2026</td><td>Ruby Hall</td><td>30 mặn</td>
-            <td><span class="status-badge warning">Mới cọc lần 1</span></td>
-          </tr>
-          <tr>
-            <td><div class="fw-medium">Hoàng Hữu E - Ngô F</div><div style="font-size:13px; color:var(--color-text-secondary);">0912 345 678</div></td>
-            <td>01/12/2026</td><td>Sapphire Hall</td><td>60 mặn</td>
-            <td><span class="status-badge success">Đã ký HĐ</span></td>
-          </tr>
-        </tbody>
-      </table>
+
+  <!-- CỘT PHẢI: CẢNH BÁO THANH TOÁN -->
+  <div class="col-lg-4">
+    <div class="card" style="border-color: #fca5a5;">
+      <div class="card-header" style="background-color: #fee2e2; color: #b91c1c; font-weight: 600; border-bottom: 1px solid #fca5a5;">
+        <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 6px;">warning</span>
+        Cảnh báo Thanh toán
+      </div>
+      <div class="card-body p-0">
+        <div id="payment-warning-list">
+          <!-- Sẽ render bằng JS, tạm thời mock HTML -->
+          <div class="p-3 border-bottom" style="cursor: pointer;" onclick="if(typeof Router !== 'undefined') Router.navigate('contract')">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="fw-bold">HĐ: HD-202611-01</span>
+              <span class="badge" style="background: var(--color-danger); color: #fff;">Quá hạn 3 ngày</span>
+            </div>
+            <div style="font-size: 13px; color: var(--color-text-secondary);">Khách: Lý Mạc Sầu</div>
+            <div style="font-size: 13px; color: var(--color-danger); font-weight: 500;">Còn nợ: 15.000.000 VNĐ</div>
+          </div>
+          
+          <div class="p-3 border-bottom" style="cursor: pointer;" onclick="if(typeof Router !== 'undefined') Router.navigate('contract')">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="fw-bold">HĐ: HD-202611-05</span>
+              <span class="badge" style="background: var(--color-warning); color: #fff;">Hết hạn ngày mai</span>
+            </div>
+            <div style="font-size: 13px; color: var(--color-text-secondary);">Khách: Lệnh Hồ Xung</div>
+            <div style="font-size: 13px; color: var(--color-warning); font-weight: 500;">Còn nợ: 20.000.000 VNĐ</div>
+          </div>
+          
+          <div class="p-3" style="cursor: pointer;" onclick="if(typeof Router !== 'undefined') Router.navigate('contract')">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="fw-bold">HĐ: HD-202611-12</span>
+              <span class="badge" style="background: #cbd5e1; color: var(--color-text);">Còn 5 ngày</span>
+            </div>
+            <div style="font-size: 13px; color: var(--color-text-secondary);">Khách: Nhậm Doanh Doanh</div>
+            <div style="font-size: 13px; color: var(--color-text-secondary); font-weight: 500;">Còn nợ: 10.000.000 VNĐ</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer text-center" style="background-color: #f8fafc; border-top: 1px solid var(--color-border); padding: 8px;">
+        <a href="#/contract" style="font-size: 13px; text-decoration: none; color: var(--color-primary); font-weight: 500;">Xem tất cả hợp đồng &rarr;</a>
+      </div>
     </div>
   </div>
 </div>

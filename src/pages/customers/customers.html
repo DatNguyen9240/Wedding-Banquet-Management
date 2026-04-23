@@ -1,0 +1,27 @@
+<div class="page-header">
+  <div class="page-title">
+    <h2>Hồ sơ Khách hàng</h2>
+    <p class="text-secondary">Quản lý danh bạ và lịch sử giao dịch của khách đặt tiệc</p>
+  </div>
+  <div class="page-actions" id="customers-btn-container">
+    <!-- ActionToolbar sẽ render vào đây -->
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="card mb-4">
+    <div class="card-body">
+      <!-- Bộ lọc (Search bar) -->
+      <div id="customers-filter-container" class="mb-3 d-flex gap-2">
+        <input type="text" id="input-search-customers" class="form-control" placeholder="Tìm kiếm theo mã, tên, số điện thoại..." style="max-width: 350px;">
+        <button class="btn btn-outline" id="btn-search-customers">
+          <span class="material-symbols-outlined icon">search</span>
+          Tìm kiếm
+        </button>
+      </div>
+      
+      <!-- Bảng dữ liệu -->
+      <div id="customers-grid-container" style="min-height: 400px;"></div>
+    </div>
+  </div>
+</div>

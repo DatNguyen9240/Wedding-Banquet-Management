@@ -1,0 +1,33 @@
+<div class="page-header">
+  <div class="page-title">
+    <h2>Nhân viên Phục vụ Tiệc</h2>
+    <p class="text-secondary">Quản lý hồ sơ, phân ca làm việc và đánh giá nhân viên</p>
+  </div>
+  <div class="page-actions" id="staff-btn-container">
+    <!-- ActionToolbar -->
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="card mb-4">
+    <div class="card-body">
+      <!-- Bộ lọc -->
+      <div id="staff-filter-container" class="mb-3 d-flex gap-2">
+        <input type="text" id="input-search-staff" class="form-control" placeholder="Tìm kiếm theo mã, tên, sđt..." style="max-width: 300px;">
+        <select class="form-control" style="width: 180px;" id="select-type-staff">
+          <option value="">-- Tất cả hợp đồng --</option>
+          <option value="Thời vụ">Thời vụ</option>
+          <option value="Bán thời gian">Bán thời gian</option>
+          <option value="Fulltime">Fulltime</option>
+        </select>
+        <button class="btn btn-outline" id="btn-search-staff">
+          <span class="material-symbols-outlined icon">search</span>
+          Tìm kiếm
+        </button>
+      </div>
+      
+      <!-- Bảng dữ liệu -->
+      <div id="staff-grid-container" style="min-height: 400px;"></div>
+    </div>
+  </div>
+</div>

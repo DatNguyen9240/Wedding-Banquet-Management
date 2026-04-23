@@ -1,8 +1,8 @@
-﻿# BUILD SCRIPT - Gop CSS + JS thanh bundle
+# BUILD SCRIPT - Gop CSS + JS thanh bundle
 # Chay: .\build.ps1
 # Khi nao them file moi: them vao mang ben duoi roi chay lai
 
-$root = "c:\Git cua tui\Wedding\src"
+$root = "$PSScriptRoot\src"
 
 # ====== DANH SACH CSS ======
 $cssFiles = @(
