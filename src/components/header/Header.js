@@ -29,9 +29,7 @@ var Header = (function () {
             <span class="material-symbols-outlined" style="font-size:20px;">notifications</span>
             <span class="badge"></span>
           </div>
-          <div class="icon-btn" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?' })">
-            <span class="material-symbols-outlined" style="font-size:20px;">logout</span>
-          </div>
+
 
           <!-- Thông tin User -->
           <div class="user-profile">

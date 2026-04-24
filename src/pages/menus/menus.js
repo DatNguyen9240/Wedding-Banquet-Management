@@ -1,7 +1,14 @@
+/**
+ * MenusPage — Quản lý Danh mục Menu hệ thống
+ * Layout: UINestedTabs (trái) + Chi tiết / Thống kê (phải)
+ */
 var MenusPage = (function () {
   var $container;
-  var allMenus = [];
+  var allMenus = [];   // flat list từ API
 
+  // ════════════════════════════════════════════════════════
+  //  RENDER
+  // ════════════════════════════════════════════════════════
   function render(containerElement) {
     $container = containerElement;
 
@@ -9,195 +16,888 @@ var MenusPage = (function () {
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
-        _bindEvents();
+        _bindStaticEvents();
         _loadMenus();
       });
   }
 
-  function _bindEvents() {
+  // ════════════════════════════════════════════════════════
+  //  EVENTS
+  // ════════════════════════════════════════════════════════
+  function _bindStaticEvents() {
     $container.querySelector('#btn-refresh-menus').addEventListener('click', _loadMenus);
-    
-    $container.querySelector('#btn-add-menu').addEventListener('click', function() {
+
+    $container.querySelector('#btn-add-menu').addEventListener('click', function () {
       _openModal(false);
     });
 
     $container.querySelector('#btn-close-modal').addEventListener('click', _closeModal);
     $container.querySelector('#btn-cancel-modal').addEventListener('click', _closeModal);
-    
     $container.querySelector('#btn-save-menu').addEventListener('click', _saveMenu);
 
-    $container.querySelector('#menu-tree-table tbody').addEventListener('click', function (e) {
-      var btnEdit = e.target.closest('.btn-edit-menu');
-      if (btnEdit) {
-        var id = btnEdit.getAttribute('data-id');
-        var menu = allMenus.find(m => m.id === id);
-        if (menu) _openModal(true, menu);
-      }
-
-      var btnDel = e.target.closest('.btn-delete-menu');
-      if (btnDel) {
-        var id = btnDel.getAttribute('data-id');
-        if (confirm('Bạn có chắc chắn muốn xóa Menu ' + id + ' không? Lưu ý: Hành động này sẽ xóa luôn các Menu con của nó.')) {
-          _deleteMenu(id);
-        }
-      }
-    });
   }
 
+  // ════════════════════════════════════════════════════════
+  //  LOAD & RENDER MENUS
+  // ════════════════════════════════════════════════════════
   function _loadMenus() {
-    var tbody = $container.querySelector('#menu-tree-table tbody');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center">Đang tải danh sách...</td></tr>';
-    
-    var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
+    var container = $container.querySelector('#menus-nested-tabs-container');
+    container.innerHTML = '<div id="menus-tabs-loading" style="text-align:center;padding:60px 0;color:var(--color-text-secondary);">'
+      + UIIcon.renderHtml('menu_book', 'font-size:40px;opacity:0.2;display:block;margin-bottom:12px;')
+      + 'Đang tải danh sách...</div>';
 
-    var endpoint = window.API_CONFIG?.ENDPOINTS?.MENUS?.GET_ALL || '/api/API_WA_LayDanhSachMenuAll';
+    var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID
+      || currentUser.group || currentUser.NhomQuyen || 'Admin';
+
+    var endpoint = window.API_CONFIG && window.API_CONFIG.ENDPOINTS
+      ? (window.API_CONFIG.ENDPOINTS.MENUS && window.API_CONFIG.ENDPOINTS.MENUS.GET_ALL)
+      : '/api/API_WA_LayDanhSachMenuAll';
+    endpoint = endpoint || '/api/API_WA_LayDanhSachMenuAll';
+
     ApiClient.post(endpoint, { NhomNguoiDangThaoTac: myGroupId })
-      .then(function(res) {
+      .then(function (res) {
         if (res && res.code === 0) {
           allMenus = res.records || [];
-          _renderMenus();
+          _renderNestedTabs();
         } else {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Lỗi: ' + (res.msg || 'Không thể tải') + '</td></tr>';
+          container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--color-danger);">'
+            + 'Lỗi: ' + (res && res.msg ? res.msg : 'Không thể tải') + '</div>';
         }
       })
-      .catch(function(err) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Lỗi kết nối máy chủ</td></tr>';
+      .catch(function () {
+        container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--color-danger);">Lỗi kết nối máy chủ</div>';
       });
   }
 
-  function _renderMenus() {
-    var tbody = $container.querySelector('#menu-tree-table tbody');
-    
-    // Tìm các node root (parent rỗng hoặc không có parent)
-    var rootNodes = allMenus.filter(m => !m.parent || m.parent.trim() === '');
-    
-    // Build tree function
-    function buildNodeHTML(node, level) {
-      var padding = level * 30 + 12;
-      var hasChildren = allMenus.some(m => m.parent === node.id);
-      
-      var iconHtml = UIIcon.renderHtml(node.icon, 'vertical-align: middle; font-size: 18px;');
-      var folderIcon = hasChildren ? 'folder_open' : 'insert_drive_file';
-      
-      var html = `
-        <tr>
-          <td style="padding-left: ${padding}px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="material-symbols-outlined" style="color: ${hasChildren ? 'var(--color-primary)' : 'var(--color-text-secondary)'}; font-size: 20px;">
-                ${folderIcon}
-              </span>
-              <span style="font-weight: ${hasChildren ? '600' : '400'};">${node.label || '(Không tên)'}</span>
-            </div>
-          </td>
-          <td style="color: var(--color-text-secondary);">${node.en || '<span style="opacity: 0.3;">(Trống)</span>'}</td>
-          <td><code style="background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px;">${node.id}</code></td>
-          <td style="color: var(--color-text-secondary);">
-            ${node.formName || '<i>(Nhóm cha)</i>'}
-            ${node.isDisable ? '<span class="badge bg-danger" style="margin-left: 8px; font-size: 10px; padding: 2px 6px; border-radius: 4px;">Đã Ẩn</span>' : ''}
-          </td>
-          <td style="color: var(--color-text-secondary);">
-            ${iconHtml}
-            ${node.icon ? `<span style="font-size: 12px; opacity: 0.7; margin-left: 4px;">(${node.icon})</span>` : ''}
-          </td>
-          <td class="text-center" style="white-space: nowrap;">
-            <button class="btn btn-sm btn-secondary btn-edit-menu" data-id="${node.id}" style="padding: 4px 8px;" title="Sửa">
-              <span class="material-symbols-outlined" style="font-size: 16px;">edit</span>
-            </button>
-            <button class="btn btn-sm btn-danger btn-delete-menu" data-id="${node.id}" style="padding: 4px 8px; margin-left: 4px;" title="Xóa">
-              <span class="material-symbols-outlined" style="font-size: 16px;">delete</span>
-            </button>
-          </td>
-        </tr>
-      `;
-      
-      // Tìm các con của node này và đệ quy
-      var children = allMenus.filter(m => m.parent === node.id);
-      children.forEach(child => {
-        html += buildNodeHTML(child, level + 1);
-      });
-      
-      return html;
+  function _renderNestedTabs() {
+    var container = $container.querySelector('#menus-nested-tabs-container');
+
+    var validIds = new Set(allMenus.map(function (m) { return m.id; }));
+
+    // Chuẩn hóa records cho UINestedTabs
+    var records = allMenus.map(function (m) {
+      var safeParent = m.parent || '';
+      // Nếu ID cha không hề tồn tại trong DB -> Ép nó ra Root để không bị tàng hình
+      if (safeParent !== '' && !validIds.has(safeParent)) {
+        safeParent = '';
+      }
+
+      return {
+        id: m.id,
+        parent: safeParent,
+        label: m.label || '(Không tên)',
+        labelEN: m.en || '',
+        icon: m.icon || '',
+        formName: m.formName || '',
+        isDisable: m.isDisable
+      };
+    });
+
+    // Cập nhật badge đếm
+    var countBadge = $container.querySelector('#menus-count-badge');
+    if (countBadge) countBadge.textContent = allMenus.length + ' Menu';
+
+    if (records.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--color-text-secondary);">Chưa có Menu nào.</div>';
+      return;
     }
 
-    var finalHtml = '';
-    rootNodes.forEach(root => {
-      finalHtml += buildNodeHTML(root, 0);
-    });
-
-    if (finalHtml === '') finalHtml = '<tr><td colspan="5" class="text-center">Chưa có Menu nào. Vui lòng Thêm mới.</td></tr>';
-    tbody.innerHTML = finalHtml;
-  }
-
-  function _openModal(isEdit, menu = null) {
-    var modal = $container.querySelector('#modal-menu-form');
-    var title = $container.querySelector('#modal-menu-title');
-    var isEditInput = $container.querySelector('#menu-is-edit');
-    var oldIdInput = $container.querySelector('#menu-old-id');
-    
-    // Render dropdown Parent
-    var selectParent = $container.querySelector('#menu-parent');
-    var rootNodes = allMenus.filter(m => !m.parent || m.parent.trim() === '');
-    var optionsHtml = '<option value="">-- Là Nhóm Cha (Root) --</option>';
-    rootNodes.forEach(n => {
-      // Không cho tự chọn chính mình làm cha
-      if (!isEdit || n.id !== menu.id) {
-        optionsHtml += `<option value="${n.id}">${n.label} (${n.id})</option>`;
+    // ── GIAO DIỆN CHỈ HIỂN THỊ CÁC THƯ MỤC CÓ CHỨA CON BÊN TRÁI ───────────────────
+    // Tìm các Menu thực sự đóng vai trò là "Nhóm/Thư mục" (có menu con trỏ tới)
+    var folderIds = new Set();
+    records.forEach(function (r) {
+      if (r.parent && r.parent.trim() !== '') {
+        folderIds.add(r.parent);
+      }
+      if (!r.parent || r.parent.trim() === '') {
+        folderIds.add(r.id); // Giữ lại cả Root dù chưa có con
       }
     });
-    selectParent.innerHTML = optionsHtml;
+
+    var folderRecords = records.filter(function (r) {
+      // Chỉ lấy các Menu là Thư mục, giữ nguyên .parent gốc để NestedTabs tự động lồng ghép (Accordion)
+      return folderIds.has(r.id);
+    });
+
+    container.innerHTML = '';
+    var nestedEl = UINestedTabs.create(folderRecords, {
+      vertical: true,
+      draggable: true, // Cho phép kéo thả bình thường vì cấu trúc giờ đã chuẩn cây 2 cấp
+      onTabChange: function (parentId, childId) {
+      },
+      onReorder: function (type, orderedIds, parentId) {
+        var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+        var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID
+          || currentUser.group || currentUser.NhomQuyen || 'Admin';
+
+        var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
+          ? window.API_CONFIG.ENDPOINTS.MENUS.UPDATE_ORDER
+          : '/api/API_WA_LuuThuTuMenu';
+
+        ApiClient.post(endpoint, {
+          NhomNguoiDangThaoTac: myGroupId,
+          Type: type,
+          OrderedIDs: orderedIds.join(','),
+          ParentID: parentId
+        })
+          .then(function (res) {
+            if (res && res.code === 0) {
+              UIToast.show('Đã cập nhật thứ tự ' + (type === 'parent' ? 'nhóm' : 'menu'), 'success');
+            } else {
+              UIToast.show('Lỗi cập nhật: ' + (res.msg || 'Không rõ nguyên nhân'), 'error');
+              _loadMenus();
+            }
+          })
+          .catch(function () {
+            UIToast.show('Lỗi kết nối khi cập nhật thứ tự', 'error');
+            _loadMenus();
+          });
+      },
+      renderContent: function (item) {
+        // Dù click vào Nhóm Gốc hay Nhóm Con trên thanh dọc,
+        // luôn hiển thị BẢNG DANH SÁCH (Bảng Explorer) của nhánh đó ở bên phải
+        return _buildParentContent(item);
+      }
+    });
+
+    container.appendChild(nestedEl);
+  }
+
+  // ── Nội dung panel tab CHA: bảng danh sách con ──────────
+  function _buildParentContent(parentItem) {
+    var children = allMenus.filter(function (m) { return m.parent === parentItem.id; });
+    var wrapper = document.createElement('div');
+
+    // Lấy raw item từ DB gốc để hiển thị đúng những thông tin gõ nhầm (ví dụ ID cha bị mồ côi)
+    var rawParentItem = allMenus.find(function (m) { return m.id === parentItem.id; }) || parentItem;
+
+    // ── BẢNG THÔNG TIN CỦA CHÍNH THƯ MỤC CHA (TRÊN CÙNG) ĐỂ EDIT INLINE ──
+    var parentRowHTML = '<tr data-id="' + rawParentItem.id + '" style="background:rgba(var(--color-primary-rgb), 0.05);">'
+      + '<td style="text-align:center;">' + UIIcon.renderHtml('star', 'font-size:16px;color:#f59e0b;') + '</td>'
+      + '<td class="editable-cell" data-field="id" data-val="' + rawParentItem.id + '" title="Nhấp đúp để sửa"><code style="background:rgba(0,0,0,0.05);padding:2px 7px;border-radius:4px;font-size:12px;cursor:text;font-weight:700;">' + rawParentItem.id + '</code></td>'
+      + '<td class="editable-cell" data-field="parent" data-val="' + (rawParentItem.parent || '') + '" title="Nhấp đúp để sửa"><code style="background:rgba(0,0,0,0.03);padding:2px 7px;border-radius:4px;font-size:12px;cursor:text;">' + (rawParentItem.parent || '') + '</code></td>'
+      + '<td class="editable-cell" data-field="icon" data-val="' + (rawParentItem.icon || '') + '" title="Nhấp đúp để chọn Icon" style="cursor:text;text-align:center;">' + UIIcon.renderHtml(rawParentItem.icon || 'horizontal_rule', 'font-size:18px;color:var(--color-primary);vertical-align:middle;user-select:none;-webkit-user-select:none;') + '</td>'
+      + '<td class="editable-cell" data-field="label" data-val="' + rawParentItem.label + '" title="Nhấp đúp để sửa" style="cursor:text;color:var(--color-primary);"><b>' + rawParentItem.label + '</b></td>'
+      + '<td class="editable-cell" data-field="en" data-val="' + (rawParentItem.en || '') + '" title="Nhấp đúp để sửa tên EN" style="cursor:text;color:var(--color-text-secondary);font-size:13px;">' + (rawParentItem.en || '') + '</td>'
+      + '<td class="editable-cell" data-field="formName" data-val="' + (rawParentItem.formName || '') + '" style="color:var(--color-text-secondary);font-size:12px;cursor:text;" title="Nhấp đúp để sửa">' + (rawParentItem.formName || '') + '</td>'
+      + '<td class="editable-cell" data-field="formKey" data-val="' + (rawParentItem.formKey || '') + '" style="color:var(--color-text-secondary);font-size:12px;cursor:text;" title="Nhấp đúp để sửa">' + (rawParentItem.formKey || '') + '</td>'
+      + '<td class="editable-cell" data-field="urlPara" data-val="' + (rawParentItem.urlPara || '') + '" style="color:var(--color-text-secondary);font-size:12px;cursor:text;" title="Nhấp đúp để sửa">' + (rawParentItem.urlPara || '') + '</td>'
+      + '<td style="white-space:nowrap; user-select:none; -webkit-user-select:none; text-align:center;">'
+      + '  <button class="btn btn-tool btn-edit-menu-inline" data-id="' + rawParentItem.id + '" style="padding:3px 8px;" title="Sửa">'
+      + '    ' + UIIcon.renderHtml('edit', 'font-size:14px;')
+      + '  </button>'
+      + '  <button class="btn btn-tool btn-delete-menu-inline" data-id="' + rawParentItem.id + '" style="padding:3px 8px;color:var(--color-danger);" title="Xóa">'
+      + '    ' + UIIcon.renderHtml('delete', 'font-size:14px;')
+      + '  </button>'
+      + '</td>'
+      + '</tr>';
+
+    var parentTableHTML = '<div style="margin-bottom:20px;">'
+      + '<div style="font-weight:700; color:var(--color-text-primary); margin-bottom:8px; font-size:14px; text-transform:uppercase;">' + UIIcon.renderHtml('folder_open', 'vertical-align:bottom;font-size:18px;') + ' Thông tin Thư mục hiện tại (Nhấp đúp để sửa)</div>'
+      + '<div class="table-wrapper" style="border-radius:10px;overflow:visible;border:1px solid var(--color-primary);">'
+      + '<table class="data-table" style="margin:0; table-layout:fixed; width:100%;">'
+      + '<thead style="background:rgba(var(--color-primary-rgb), 0.1); white-space:nowrap;">'
+      + '<tr>'
+      + '<th style="width:80px;text-align:center;">Root</th>'
+      + '<th style="width:110px;">Menu ID</th>'
+      + '<th style="width:100px;">Parent ID</th>'
+      + '<th style="width:60px;text-align:center;">Icon</th>'
+      + '<th style="width:20%;">Tên Menu (VN)</th>'
+      + '<th style="width:12%;">Tên (EN)</th>'
+      + '<th style="width:15%;">Tên Form</th>'
+      + '<th style="width:15%;">Form Key</th>'
+      + '<th>URL</th>'
+      + '<th style="width:90px; text-align:center;">Thao tác</th>'
+      + '</tr>'
+      + '</thead>'
+      + '<tbody>' + parentRowHTML + '</tbody>'
+      + '</table></div></div>';
+    var contentHTML = '';
+
+    if (children.length === 0) {
+      contentHTML = '<div style="display:flex;align-items:center;gap:12px;padding:30px 0;justify-content:center;border-top:1px dashed var(--color-border);">'
+        + UIIcon.renderHtml('folder_off', 'font-size:48px;opacity:0.1;')
+        + '<div><div style="font-weight:600; font-size:16px;">Thư mục này hiện chưa có menu con</div>'
+        + '<div style="margin-top:12px;">'
+        + '  <button class="btn btn-primary btn-add-child-inline" data-parent="' + parentItem.id + '" style="padding:6px 16px; border-radius:6px;">'
+        + '    ' + UIIcon.renderHtml('add', 'font-size:16px;vertical-align:middle;margin-right:4px;') + 'Thêm Menu Con Mới'
+        + '  </button>'
+        + '</div></div>'
+        + '</div>';
+    } else {
+      var rows = children.map(function (c, i) {
+        return '<tr class="draggable-child-row" data-id="' + c.id + '">'
+          + '<td style="color:var(--color-text-secondary);text-align:center;">'
+          + '  <span class="drag-handle" style="font-size:16px; opacity:0.3; cursor:grab; margin-right:4px; user-select:none; -webkit-user-select:none;" title="Kéo để di chuyển">' + UIIcon.renderHtml('drag_indicator', 'vertical-align:middle;') + '</span>'
+          + '  ' + (i + 1)
+          + '</td>'
+          + '<td class="editable-cell" data-field="id" data-val="' + c.id + '" title="Nhấp đúp để sửa"><code style="background:rgba(0,0,0,0.05);padding:2px 7px;border-radius:4px;font-size:12px;cursor:text;">' + c.id + '</code></td>'
+          + '<td class="editable-cell" data-field="parent" data-val="' + (c.parent || '') + '" title="Nhấp đúp để sửa"><code style="background:rgba(0,0,0,0.03);padding:2px 7px;border-radius:4px;font-size:12px;cursor:text;">' + (c.parent || '') + '</code></td>'
+          + '<td class="editable-cell" data-field="icon" data-val="' + (c.icon || '') + '" title="Nhấp đúp để chọn Icon" style="cursor:text;text-align:center;">' + UIIcon.renderHtml(c.icon || 'horizontal_rule', 'font-size:18px;color:var(--color-primary);vertical-align:middle;user-select:none;-webkit-user-select:none;') + '</td>'
+          + '<td class="editable-cell" data-field="label" data-val="' + c.label + '" title="Nhấp đúp để sửa" style="cursor:text;"><b>' + c.label + '</b></td>'
+          + '<td class="editable-cell" data-field="en" data-val="' + (c.labelEN || '') + '" title="Nhấp đúp để sửa tên EN" style="cursor:text;color:var(--color-text-secondary);font-size:13px;">' + (c.labelEN || '') + '</td>'
+          + '<td class="editable-cell" data-field="formName" data-val="' + (c.formName || '') + '" style="color:var(--color-text-secondary);font-size:12px;cursor:text;" title="Nhấp đúp để sửa">' + (c.formName || '') + '</td>'
+          + '<td class="editable-cell" data-field="formKey" data-val="' + (c.formKey || '') + '" style="color:var(--color-text-secondary);font-size:12px;cursor:text;" title="Nhấp đúp để sửa">' + (c.formKey || '') + '</td>'
+          + '<td class="editable-cell" data-field="urlPara" data-val="' + (c.urlPara || '') + '" style="color:var(--color-text-secondary);font-size:12px;cursor:text;" title="Nhấp đúp để sửa">' + (c.urlPara || '') + '</td>'
+          + '<td style="white-space:nowrap; user-select:none; -webkit-user-select:none; text-align:center;">'
+          + '  <button class="btn btn-tool btn-edit-menu-inline" data-id="' + c.id + '" style="padding:3px 8px;" title="Sửa">'
+          + '    ' + UIIcon.renderHtml('edit', 'font-size:14px;')
+          + '  </button>'
+          + '  <button class="btn btn-tool btn-delete-menu-inline" data-id="' + c.id + '" style="padding:3px 8px;color:var(--color-danger);" title="Xóa">'
+          + '    ' + UIIcon.renderHtml('delete', 'font-size:14px;')
+          + '  </button>'
+          + '</td>'
+          + '</tr>';
+      }).join('');
+
+      var table = '<div class="table-wrapper" style="border-radius:10px;overflow:visible;border:1px solid var(--color-border);">'
+        + '<table class="data-table child-drag-table" style="margin:0; table-layout:fixed; width:100%;">'
+        + '<thead style="white-space:nowrap;"><tr>'
+        + '<th style="width:80px;text-align:center;">Kéo/STT</th>'
+        + '<th style="width:110px;">Menu ID</th>'
+        + '<th style="width:100px;">Parent ID</th>'
+        + '<th style="width:60px;text-align:center;">Icon</th>'
+        + '<th style="width:20%;">Tên Menu (VN)</th>'
+        + '<th style="width:12%;">Tên (EN)</th>'
+        + '<th style="width:15%;">Tên Form</th>'
+        + '<th style="width:15%;">Form Key</th>'
+        + '<th>URL</th>'
+        + '<th style="width:90px; text-align:center;">Thao tác</th>'
+        + '</tr></thead>'
+        + '<tbody>' + rows + '</tbody>'
+        + '</table></div>'
+        + '<div style="margin-top:12px; text-align:center;">'
+        + '  <button class="btn btn-outline-primary btn-add-child-inline" data-parent="' + parentItem.id + '" style="padding:8px 20px; font-weight:600; border-style:dashed; width:100%; border-radius:8px;">'
+        + '    ' + UIIcon.renderHtml('add', 'font-size:18px;vertical-align:middle;margin-right:4px;') + 'Thêm Menu Con Mới'
+        + '  </button>'
+        + '</div>';
+
+      contentHTML = '<div style="margin-top:24px; font-weight:700; color:var(--color-text-primary); margin-bottom:8px; font-size:14px; text-transform:uppercase;">'
+        + UIIcon.renderHtml('list', 'vertical-align:bottom;font-size:18px;') + ' Danh sách Menu con</div>'
+        + table;
+    }
+
+    // Gộp chung Bảng Cha và Danh sách Cọn
+    wrapper.innerHTML = parentTableHTML + contentHTML;
+
+    // Bind event cho nút sửa/xóa inline
+    wrapper.querySelectorAll('.btn-edit-menu-inline').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var menu = allMenus.find(function (m) { return m.id === btn.dataset.id; });
+        if (menu) _openModal(true, menu);
+      });
+    });
+
+    // Bind event cho nút Thêm Menu Con inline (trực tiếp trên table)
+    wrapper.querySelectorAll('.btn-add-child-inline').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var tbody = wrapper.querySelector('tbody');
+        if (!tbody) {
+          // Bảng trống nên tbody nằm trong wrapper.querySelector('.child-drag-table tbody'); 
+          // Nhưng khoan, nếu rỗng thì chưa render '<table class="child-drag-table">'.
+          // Tuy nhiên, ở bản HTML ta có <div> rỗng nếu list rỗng, nhưng mình vừa thấy ở code (khoảng line 219)
+          // `contentHTML` rỗng nếu list rỗng, đâm ra không có bảng.
+          // Để giải quyết, ta cứ gọi `_openModal` nếu ko có bảng, hoặc ép nó render bảng.
+          // Nhưng để an toàn cứ thử lấy bảng:
+        }
+        var tableWrapper = wrapper.querySelector('.child-drag-table tbody');
+        if (!tableWrapper) {
+          // Nếu trống không có table thì cứ mở Modal cho gọn
+          _openModal(false, { parent: parentItem.id, isDisable: false });
+          return;
+        }
+
+        var baseInputStyle = "width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px; border-radius:6px; border:1px solid var(--color-border); outline:none; transition:all 0.2s; background:#fff;";
+        var focusInputStyle = "width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px; border-radius:6px; border:1px solid var(--color-primary); outline:none; transition:all 0.2s; background:#fff;";
+        var idInputStyle = "width:100%; box-sizing:border-box; padding:6px 8px; font-size:13px; border-radius:6px; border:2px solid var(--color-primary); outline:none; text-align:center; font-weight:700; font-family:monospace; background:#fff;";
+
+        var tr = document.createElement('tr');
+        tr.style.background = 'rgba(var(--color-primary-rgb), 0.04)';
+        tr.style.boxShadow = 'inset 0 0 0 1px rgba(var(--color-primary-rgb), 0.2)';
+        tr.innerHTML = '<td style="color:var(--color-text-secondary);text-align:center;">' + UIIcon.renderHtml('add_circle', 'font-size:18px; color:var(--color-primary);') + '</td>'
+          + '<td><input type="text" class="form-control inline-new-id" placeholder="VD: 0305" style="' + idInputStyle + '" autofocus></td>'
+          + '<td style="text-align:center;"><code style="background:rgba(0,0,0,0.05);padding:5px 10px;border-radius:6px;font-size:12px;font-weight:700;color:var(--color-text-secondary);">' + parentItem.id + '</code></td>'
+          + '<td><div style="display:flex;align-items:center;background:#fff;border:1px solid var(--color-border);border-radius:6px;padding:0 4px;transition:0.2s;"><span class="material-symbols-outlined inline-icon-preview" style="font-size:18px;color:var(--color-primary);margin:0 2px;">horizontal_rule</span><input type="text" class="form-control inline-new-icon" placeholder="Icon..." value="horizontal_rule" style="border:none;outline:none;width:100%;font-size:13px;padding:6px 4px;background:transparent;"></div></td>'
+          + '<td><input type="text" class="form-control inline-new-label" placeholder="VD: Báo cáo mới..." style="' + focusInputStyle + '"></td>'
+          + '<td><input type="text" class="form-control inline-new-en" placeholder="VD: New Report" style="' + baseInputStyle + '"></td>'
+          + '<td><input type="text" class="form-control inline-new-formname" placeholder="Tên Form" style="' + baseInputStyle + '"></td>'
+          + '<td><input type="text" class="form-control inline-new-formkey" placeholder="Key" style="' + baseInputStyle + '"></td>'
+          + '<td><input type="text" class="form-control inline-new-urlpara" placeholder="?url=" style="' + baseInputStyle + '"></td>'
+          + '<td style="text-align:center; white-space:nowrap;">'
+          + '  <div style="display:flex; gap:6px; justify-content:center;">'
+          + '    <button class="btn btn-primary btn-save-inline-new" style="padding:6px 12px;font-size:13px;border-radius:6px;display:flex;align-items:center;gap:4px;font-weight:600;"><span class="material-symbols-outlined" style="font-size:16px;">save</span> Lưu</button>'
+          + '    <button class="btn btn-light btn-cancel-inline-new" style="padding:6px 8px;font-size:13px;border-radius:6px;border:1px solid var(--color-border);display:flex;align-items:center;" title="Hủy bỏ"><span class="material-symbols-outlined" style="font-size:16px;color:var(--color-text-secondary);">close</span></button>'
+          + '  </div>'
+          + '</td>';
+
+        tableWrapper.appendChild(tr);
+
+        // Hiệu ứng focus cho icon
+        var iconInput = tr.querySelector('.inline-new-icon');
+        iconInput.addEventListener('focus', function () { this.parentElement.style.borderColor = 'var(--color-primary)'; });
+        iconInput.addEventListener('blur', function () { this.parentElement.style.borderColor = 'var(--color-border)'; });
+        iconInput.addEventListener('input', function () {
+          tr.querySelector('.inline-icon-preview').textContent = this.value.trim() || 'horizontal_rule';
+        });
+
+        // Nút hủy
+        tr.querySelector('.btn-cancel-inline-new').addEventListener('click', function () { tr.remove(); });
+
+        // Nút lưu
+        tr.querySelector('.btn-save-inline-new').addEventListener('click', function () {
+          var btnSave = this;
+          var id = tr.querySelector('.inline-new-id').value.trim();
+          var label = tr.querySelector('.inline-new-label').value.trim();
+          if (!id || !label) {
+            UIToast.show('Vui lòng nhập ID và Tên Menu', 'error'); return;
+          }
+
+          var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+          var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
+
+          var payload = {
+            NhomNguoiDangThaoTac: myGroupId,
+            MenuID: id,
+            OldMenuID: '',
+            ParentID: parentItem.id,
+            Label: label,
+            EN: tr.querySelector('.inline-new-en').value.trim(),
+            FormName: tr.querySelector('.inline-new-formname').value.trim(),
+            FormKey: tr.querySelector('.inline-new-formkey').value.trim(),
+            URLPara: tr.querySelector('.inline-new-urlpara').value.trim(),
+            Icon: tr.querySelector('.inline-new-icon').value.trim() || 'horizontal_rule',
+            IsDisable: 0,
+            IsEdit: 0
+          };
+
+          btnSave.disabled = true;
+          btnSave.innerHTML = '...';
+
+          var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS) ? window.API_CONFIG.ENDPOINTS.MENUS.SAVE : '/api/API_WA_LuuMenu';
+          ApiClient.post(endpoint, payload).then(function (res) {
+            if (res && res.code === 0) {
+              UIToast.show('Thêm mới thành công!', 'success');
+              _loadMenus();
+            } else {
+              UIToast.show(res.msg || 'Lỗi', 'error');
+              btnSave.disabled = false;
+              btnSave.innerHTML = 'Lưu';
+            }
+          }).catch(function () {
+            UIToast.show('Lỗi kết nối', 'error');
+            btnSave.disabled = false;
+            btnSave.innerHTML = 'Lưu';
+          });
+        });
+      });
+    });
+    wrapper.querySelectorAll('.btn-delete-menu-inline').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var menu = allMenus.find(function (m) { return m.id === btn.dataset.id; });
+        if (!menu) return;
+        ConfirmModal.show({
+          title: 'Xóa Menu',
+          message: 'Bạn có chắc muốn xóa <b>' + menu.label + '</b>?',
+          onConfirm: function () { _deleteMenu(menu.id); }
+        });
+      });
+    });
+
+    // Bind sự kiện kéo thả cho các dòng (Drag & Drop HTML5)
+    var dragRows = wrapper.querySelectorAll('.draggable-child-row');
+    var dragSrcEl = null;
+
+    dragRows.forEach(function (row) {
+      // Chỉ cho phép kéo khi chuột ở vùng tay cầm (drag-handle) để có thể bôi đen chữ copy
+      var handle = row.querySelector('.drag-handle');
+      if (handle) {
+        handle.addEventListener('mouseenter', function () { row.setAttribute('draggable', 'true'); });
+        handle.addEventListener('mouseleave', function () { row.removeAttribute('draggable'); });
+      }
+
+      row.addEventListener('dragstart', function (e) {
+        dragSrcEl = this;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.innerHTML);
+        this.style.opacity = '0.5';
+        this.style.background = 'var(--color-surface-hover)';
+      });
+
+      row.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        this.style.borderTop = '2px solid var(--color-primary)';
+        return false;
+      });
+
+      row.addEventListener('dragleave', function (e) {
+        this.style.borderTop = '';
+      });
+
+      row.addEventListener('drop', function (e) {
+        e.stopPropagation();
+        this.style.borderTop = '';
+        if (dragSrcEl !== this) {
+          // Hoán đổi phần tử DOM
+          this.parentNode.insertBefore(dragSrcEl, this);
+
+          // Gửi API Cập nhật thứ tự toàn bộ
+          var newOrderRows = wrapper.querySelectorAll('.draggable-child-row');
+          var orderedIds = [];
+          newOrderRows.forEach(function (tr) {
+            orderedIds.push(tr.dataset.id);
+          });
+
+          var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+          var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
+
+          var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
+            ? window.API_CONFIG.ENDPOINTS.MENUS.UPDATE_ORDER
+            : '/api/API_WA_LuuThuTuMenu';
+
+          ApiClient.post(endpoint, {
+            NhomNguoiDangThaoTac: myGroupId,
+            Type: 'child',
+            OrderedIDs: orderedIds.join(','),
+            ParentID: parentItem.id
+          }).then(function (res) {
+            if (res && res.code === 0) {
+              UIToast.show('Đã cập nhật tự động mã Menu thành công', 'success');
+              _loadMenus(); // Tải lại vì ID vừa bị hoán đổi (swap) trên database!
+            } else {
+              UIToast.show('Lỗi cập nhật: ' + (res.msg || ''), 'error');
+              _loadMenus();
+            }
+          }).catch(function () {
+            UIToast.show('Lỗi kết nối máy chủ', 'error');
+          });
+        }
+        return false;
+      });
+
+      row.addEventListener('dragend', function (e) {
+        this.style.opacity = '1';
+        this.style.background = '';
+        dragRows.forEach(function (r) { r.style.borderTop = ''; });
+      });
+    });
+
+    // --- Inline Editing ---
+    wrapper.querySelectorAll('.editable-cell').forEach(function (td) {
+      td.addEventListener('dblclick', function () {
+        if (this.querySelector('input')) return; // Đang sửa rồi
+        var originalHtml = this.innerHTML;
+        var val = this.dataset.val;
+        var field = this.dataset.field;
+        var rowId = this.closest('tr').dataset.id;
+
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.value = val;
+        input.className = 'form-control ui-input-base';
+        if (field === 'id' || field === 'parent') {
+          input.style.cssText = 'width:100%; box-sizing:border-box; min-width:70px; padding:6px 8px; font-size:13px; margin:0; border-radius:6px; border:2px solid var(--color-primary); outline:none; text-align:center; font-weight:600; font-family:monospace;';
+        }
+
+        if (field === 'icon') {
+          input.style.cssText = 'width:calc(100% - 10px); padding:4px; font-size:13px; margin:0; text-align:center;';
+          input.placeholder = 'Gõ tên icon...';
+        }
+
+        this.innerHTML = '';
+        this.appendChild(input);
+
+        if (field === 'icon') {
+          this.style.position = 'relative';
+          var picker = document.createElement('div');
+          picker.className = 'inline-icon-picker';
+          picker.style.cssText = 'position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%); width:220px; background:#fff; border:1px solid var(--color-border); box-shadow:0 10px 25px rgba(0,0,0,0.15); border-radius:8px; padding:8px; z-index:999; display:flex; flex-wrap:wrap; gap:4px; justify-content:center; cursor:default;';
+
+          var icons = ['article', 'dashboard', 'people', 'bar_chart', 'settings', 'receipt', 'restaurant', 'point_of_sale', 'calendar_month', 'inventory_2', 'assignment', 'group', 'local_shipping', 'local_dining', 'category', 'notifications', 'monitoring', 'event', 'attach_money', 'print', 'folder', 'home', 'description', 'list', 'add', 'edit', 'delete', 'search', 'event_note', 'storefront'];
+
+          icons.forEach(function (ico) {
+            var btn = document.createElement('div');
+            btn.style.cssText = 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:4px; transition:background 0.2s;';
+            btn.innerHTML = UIIcon.renderHtml(ico, 'font-size:20px;color:var(--color-primary);');
+            btn.title = ico;
+            btn.onmouseenter = function () { btn.style.background = 'rgba(0,0,0,0.05)'; };
+            btn.onmouseleave = function () { btn.style.background = 'transparent'; };
+            btn.onmousedown = function (e) {
+              e.preventDefault(); // Giữ focus cho thẻ input để ko kích hoạt blur
+              input.value = ico;
+              saveInline();
+            };
+            picker.appendChild(btn);
+          });
+          this.appendChild(picker);
+        }
+        input.focus();
+
+        // Chọn dòng chữ
+        input.setSelectionRange(0, input.value.length);
+
+        var saveInline = function () {
+          var newVal = input.value.trim();
+          if (newVal === val || (field === 'id' && newVal === '')) {
+            // Hủy sửa
+            td.innerHTML = originalHtml;
+            return;
+          }
+
+          td.innerHTML = '<span style="opacity:0.5;">Đang lưu...</span>';
+
+          var menu = allMenus.find(function (m) { return m.id === rowId; });
+          if (!menu) return;
+
+          var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+          var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
+
+          var payload = {
+            NhomNguoiDangThaoTac: myGroupId,
+            MenuID: field === 'id' ? newVal : menu.id,
+            OldMenuID: menu.id,
+            ParentID: field === 'parent' ? newVal : (menu.parent || ''),
+            Label: field === 'label' ? newVal : menu.label,
+            EN: field === 'en' ? newVal : (menu.en || ''),
+            FormName: field === 'formName' ? newVal : menu.formName,
+            FormKey: field === 'formKey' ? newVal : (menu.formKey || ''),
+            URLPara: field === 'urlPara' ? newVal : (menu.urlPara || ''),
+            Icon: field === 'icon' ? newVal : menu.icon,
+            IsDisable: menu.isDisable ? 1 : 0,
+            IsEdit: 1
+          };
+
+          var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
+            ? window.API_CONFIG.ENDPOINTS.MENUS.SAVE
+            : '/api/API_WA_LuuMenu';
+
+          ApiClient.post(endpoint, payload)
+            .then(function (res) {
+              if (res && res.code === 0) {
+                UIToast.show('Lưu thành công', 'success');
+                _loadMenus();
+              } else {
+                UIToast.show(res.msg || 'Lỗi lưu dữ liệu', 'error');
+                td.innerHTML = originalHtml;
+              }
+            })
+            .catch(function () {
+              UIToast.show('Lỗi mạng', 'error');
+              td.innerHTML = originalHtml;
+            });
+        };
+
+        // Bắt Enter và Blur
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            input.blur(); // Tự trỏ ra Blur để kích hoạt hàm phía dưới
+          } else if (e.key === 'Escape') {
+            td.innerHTML = originalHtml; // Hủy
+          }
+        });
+
+        input.addEventListener('blur', function () {
+          saveInline();
+        });
+      });
+    });
+
+    return wrapper;
+  }
+
+  // ── Nội dung panel tab CON: Form chỉnh sửa Premium ──
+  function _buildChildContent(item) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'quick-edit-panel';
+    wrapper.style.cssText = 'max-width: 600px; padding: 20px; animation: fadeIn 0.4s ease;';
+
+    // 1. Header
+    var header = document.createElement('div');
+    header.style.cssText = 'display: flex; align-items: center; gap: 16px; margin-bottom: 30px;';
+
+    var iconBox = document.createElement('div');
+    iconBox.className = 'quick-edit-icon-box';
+    iconBox.style.cssText = 'width: 64px; height: 64px; background: linear-gradient(135deg, var(--color-primary), #6366f1); color: #fff; border-radius: 16px; display: flex; align-items: center; justify-content:center; box-shadow: 0 8px 16px rgba(var(--color-primary-rgb), 0.2);';
+    iconBox.appendChild(UIIcon.create(item.icon || 'article'));
+    iconBox.querySelector('span, i').style.fontSize = '32px';
+
+    var titleInfo = document.createElement('div');
+    titleInfo.innerHTML = '<div style="font-size: 20px; font-weight: 800; color: var(--color-text-primary);">Cấu hình Menu</div>'
+      + '<div style="font-size: 13px; color: var(--color-text-secondary); opacity: 0.7;">Tùy chỉnh thông tin hiển thị và chức năng</div>';
+
+    header.appendChild(iconBox);
+    header.appendChild(titleInfo);
+    wrapper.appendChild(header);
+
+    // 2. Form Body
+    var formBody = document.createElement('div');
+    formBody.className = 'quick-edit-form';
+
+    // Tên Menu (VN)
+    var inputLabel = UIInput.createText({
+      label: 'Tên hiển thị (Tiếng Việt)',
+      value: item.label,
+      placeholder: 'VD: Báo cáo doanh thu...',
+      required: true,
+      className: 'mb-4'
+    });
+    formBody.appendChild(inputLabel);
+
+    // Grid cho ID và Form
+    var grid2 = document.createElement('div');
+    grid2.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 1.5rem;';
+
+    var inputId = UIInput.createText({
+      label: 'Mã Menu (ID)',
+      value: item.id,
+      placeholder: 'VD: 14 hoặc 1401'
+    });
+    inputId.querySelector('input').classList.add('edit-id');
+    grid2.appendChild(inputId);
+
+    var inputForm = UIInput.createText({
+      label: 'Tên Form / Module',
+      value: item.formName,
+      placeholder: 'VD: WB_BaoCaoDoanhThu'
+    });
+    grid2.appendChild(inputForm);
+    formBody.appendChild(grid2);
+
+    var grid3 = document.createElement('div');
+    grid3.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 1.5rem;';
+
+    var inputFormKey = UIInput.createText({
+      label: 'Form Key',
+      value: item.formKey || '',
+      placeholder: 'Khóa phụ'
+    });
+    grid3.appendChild(inputFormKey);
+
+    var inputUrlPara = UIInput.createText({
+      label: 'URL',
+      value: item.urlPara || '',
+      placeholder: 'VD: ?type=1'
+    });
+    grid3.appendChild(inputUrlPara);
+    formBody.appendChild(grid3);
+
+    // Icon và Trạng thái
+    var inputIcon = UIInput.createText({
+      label: 'Icon đại diện (Material Symbol)',
+      value: item.icon,
+      placeholder: 'VD: bar_chart, settings...',
+      className: 'mb-4'
+    });
+    formBody.appendChild(inputIcon);
+
+    // Toggle ẩn hiện
+    var switchWrapper = document.createElement('div');
+    switchWrapper.style.cssText = 'background: rgba(0,0,0,0.03); padding: 15px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;';
+
+    var switchInfo = document.createElement('div');
+    switchInfo.innerHTML = '<div style="font-weight: 700; font-size: 14px;">Trạng thái ẩn</div>'
+      + '<div style="font-size: 11px; opacity: 0.6;">Tạm thời không hiển thị menu này trên thanh điều hướng</div>';
+
+    var switchInput = document.createElement('div');
+    switchInput.className = 'form-check form-switch';
+    switchInput.style.padding = '0';
+    switchInput.style.margin = '0';
+    switchInput.innerHTML = '<input class="form-check-input" type="checkbox" style="width: 40px; height: 20px; background-size: 16px;" ' + (item.isDisable ? 'checked' : '') + '>';
+
+    switchWrapper.appendChild(switchInfo);
+    switchWrapper.appendChild(switchInput);
+
+    formBody.appendChild(switchWrapper);
+
+    wrapper.appendChild(formBody);
+
+    // 3. Footer / Button
+    var btnSave = document.createElement('button');
+    btnSave.className = 'btn btn-primary';
+    btnSave.style.cssText = 'width: 100%; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);';
+    btnSave.innerHTML = UIIcon.renderHtml('save', 'font-size: 20px;') + ' Cập nhật ngay';
+
+    btnSave.addEventListener('click', function () {
+      var updatedData = {
+        id: inputId.querySelector('input').value,
+        label: inputLabel.querySelector('input').value,
+        en: item.labelEN || item.en || '',
+        formName: inputForm.querySelector('input').value,
+        formKey: inputFormKey.querySelector('input').value,
+        urlPara: inputUrlPara.querySelector('input').value,
+        icon: inputIcon.querySelector('input').value,
+        isDisable: switchInput.querySelector('input').checked,
+        isEdit: true,
+        oldId: item.id
+      };
+      _saveMenuDirect(updatedData, btnSave);
+    });
+
+    wrapper.appendChild(btnSave);
+
+    // Realtime icon preview
+    var iconInputEl = inputIcon.querySelector('input');
+    iconInputEl.addEventListener('input', function () {
+      iconBox.innerHTML = '';
+      var newIcon = UIIcon.create(this.value || 'article');
+      if (newIcon) {
+        newIcon.style.fontSize = '32px';
+        iconBox.appendChild(newIcon);
+      }
+    });
+
+    return wrapper;
+  }
+
+  /**
+   * Hàm lưu dữ liệu trực tiếp từ panel
+   */
+  function _saveMenuDirect(data, btn) {
+    var originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = UIIcon.renderHtml('sync', 'font-size:18px; animation: rotation 2s infinite linear;') + ' Đang lưu...';
+
+    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
+      ? window.API_CONFIG.ENDPOINTS.MENUS.SAVE
+      : '/api/API_WA_LuuMenu';
+
+    var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID
+      || currentUser.group || currentUser.NhomQuyen || 'Admin';
+
+    var payload = {
+      NhomNguoiDangThaoTac: myGroupId,
+      MenuID: data.id,
+      OldMenuID: data.oldId,
+      Label: data.label,
+      FormName: data.formName,
+      Icon: data.icon,
+      IsDisable: data.isDisable ? 1 : 0,
+      IsEdit: 1
+    };
+
+    ApiClient.post(endpoint, payload)
+      .then(function (res) {
+        if (res && res.code === 0) {
+          UIToast.show('Đã cập nhật Menu thành công!', 'success');
+          _loadMenus(); // Tải lại để cập nhật label trên cây menu bên trái
+        } else {
+          Alert.error('Lỗi', res && res.msg ? res.msg : 'Lưu thất bại');
+        }
+      })
+      .catch(function () {
+        Alert.error('Lỗi', 'Không thể kết nối máy chủ');
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+      });
+  }
+
+
+  // ════════════════════════════════════════════════════════
+  //  MODAL
+  // ════════════════════════════════════════════════════════
+  function _openModal(isEdit, menu) {
+    menu = menu || null;
+    var modal = $container.querySelector('#modal-menu-form');
+    var title = $container.querySelector('#modal-menu-title');
+    var isEditInp = $container.querySelector('#menu-is-edit');
+    var oldIdInp = $container.querySelector('#menu-old-id');
+    var selectParent = $container.querySelector('#menu-parent');
+
+    // Render dropdown Parent (chỉ tab cha)
+    var parentNodes = allMenus.filter(function (m) { return !m.parent || m.parent.trim() === ''; });
+    var opts = '<option value="">— Là Nhóm Cha (Root) —</option>';
+    parentNodes.forEach(function (n) {
+      if (isEdit && menu && n.id === menu.id) return;
+      opts += '<option value="' + n.id + '">' + n.label + ' (' + n.id + ')</option>';
+    });
+    selectParent.innerHTML = opts;
+
+    // Render Icon Grid picker
+    var iconGrid = $container.querySelector('#modal-icon-picker-grid');
+    if (iconGrid && iconGrid.children.length === 0) {
+      var icons = ['article', 'dashboard', 'people', 'bar_chart', 'settings', 'receipt', 'restaurant', 'point_of_sale', 'calendar_month', 'inventory_2', 'assignment', 'group', 'local_shipping', 'local_dining', 'category', 'notifications', 'monitoring', 'event', 'attach_money', 'print', 'folder', 'home', 'description', 'list', 'add', 'edit', 'delete', 'search', 'event_note', 'storefront'];
+      icons.forEach(function (ico) {
+        var btn = document.createElement('div');
+        btn.style.cssText = 'width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:4px; transition:background 0.2s;';
+        btn.innerHTML = UIIcon.renderHtml(ico, 'font-size:24px;color:var(--color-primary);');
+        btn.title = ico;
+        btn.onmouseenter = function () { btn.style.background = 'rgba(0,0,0,0.06)'; };
+        btn.onmouseleave = function () { btn.style.background = 'transparent'; };
+        btn.onclick = function () {
+          $container.querySelector('#menu-icon').value = ico;
+          $container.querySelector('#menu-icon-preview').textContent = ico;
+        };
+        iconGrid.appendChild(btn);
+      });
+    }
 
     if (isEdit && menu) {
-      title.innerText = 'Sửa Menu: ' + menu.label;
-      isEditInput.value = '1';
-      oldIdInput.value = menu.id;
-      
+      title.textContent = 'Sửa Menu: ' + menu.label;
+      isEditInp.value = '1';
+      oldIdInp.value = menu.id;
       $container.querySelector('#menu-id').value = menu.id || '';
       $container.querySelector('#menu-parent').value = menu.parent || '';
       $container.querySelector('#menu-label').value = menu.label || '';
       $container.querySelector('#menu-en').value = menu.en || '';
       $container.querySelector('#menu-formname').value = menu.formName || '';
+      $container.querySelector('#menu-formkey').value = menu.formKey || '';
+      $container.querySelector('#menu-urlpara').value = menu.urlPara || '';
       $container.querySelector('#menu-icon').value = menu.icon || '';
+      $container.querySelector('#menu-icon-preview').textContent = menu.icon || 'label';
       $container.querySelector('#menu-is-disable').checked = (menu.isDisable === 1 || menu.isDisable === true);
     } else {
-      title.innerText = 'Thêm mới Menu';
-      isEditInput.value = '0';
-      oldIdInput.value = '';
-      
+      title.textContent = 'Thêm mới Menu';
+      isEditInp.value = '0';
+      oldIdInp.value = '';
       $container.querySelector('#menu-id').value = '';
       $container.querySelector('#menu-parent').value = '';
       $container.querySelector('#menu-label').value = '';
       $container.querySelector('#menu-en').value = '';
       $container.querySelector('#menu-formname').value = '';
+      $container.querySelector('#menu-formkey').value = '';
+      $container.querySelector('#menu-urlpara').value = '';
       $container.querySelector('#menu-icon').value = '';
+      $container.querySelector('#menu-icon-preview').textContent = 'label';
       $container.querySelector('#menu-is-disable').checked = false;
     }
 
     modal.style.display = 'flex';
+    setTimeout(function () { $container.querySelector('#menu-id').focus(); }, 100);
   }
 
   function _closeModal() {
     $container.querySelector('#modal-menu-form').style.display = 'none';
   }
 
+  // ════════════════════════════════════════════════════════
+  //  SAVE
+  // ════════════════════════════════════════════════════════
   function _saveMenu() {
     var id = $container.querySelector('#menu-id').value.trim();
     var label = $container.querySelector('#menu-label').value.trim();
     var en = $container.querySelector('#menu-en').value.trim();
     var parent = $container.querySelector('#menu-parent').value;
     var formName = $container.querySelector('#menu-formname').value.trim();
+    var formKey = $container.querySelector('#menu-formkey').value.trim();
+    var urlPara = $container.querySelector('#menu-urlpara').value.trim();
     var icon = $container.querySelector('#menu-icon').value.trim();
     var isDisable = $container.querySelector('#menu-is-disable').checked ? 1 : 0;
     var isEdit = $container.querySelector('#menu-is-edit').value === '1';
     var oldId = $container.querySelector('#menu-old-id').value;
 
     if (!id || !label) {
-      if (typeof Alert !== 'undefined') Alert.error('Lỗi', 'Vui lòng nhập Menu ID và Tên Menu');
+      Alert.error('Thiếu thông tin', 'Vui lòng nhập Menu ID và Tên Menu (VN)');
       return;
     }
 
     var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
+    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID
+      || currentUser.group || currentUser.NhomQuyen || 'Admin';
 
     var payload = {
       NhomNguoiDangThaoTac: myGroupId,
@@ -207,6 +907,8 @@ var MenusPage = (function () {
       Label: label,
       EN: en,
       FormName: formName,
+      FormKey: formKey,
+      URLPara: urlPara,
       Icon: icon,
       IsDisable: isDisable,
       IsEdit: isEdit ? 1 : 0
@@ -214,44 +916,56 @@ var MenusPage = (function () {
 
     var btn = $container.querySelector('#btn-save-menu');
     btn.disabled = true;
-    btn.innerText = 'Đang lưu...';
+    btn.textContent = 'Đang lưu...';
 
-    var endpoint = window.API_CONFIG?.ENDPOINTS?.MENUS?.SAVE || '/api/API_WA_LuuMenu';
+    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
+      ? window.API_CONFIG.ENDPOINTS.MENUS.SAVE
+      : '/api/API_WA_LuuMenu';
+    endpoint = endpoint || '/api/API_WA_LuuMenu';
+
     ApiClient.post(endpoint, payload)
-      .then(function(res) {
+      .then(function (res) {
         if (res && res.code === 0) {
-          if (typeof Alert !== 'undefined') Alert.success('Thành công', 'Đã lưu Menu thành công!');
+          Alert.success('Thành công', 'Đã lưu Menu thành công!');
           _closeModal();
-          _loadMenus(); // Reload grid
+          _loadMenus();
         } else {
-          if (typeof Alert !== 'undefined') Alert.error('Lỗi', res.msg || 'Lưu thất bại');
+          Alert.error('Lỗi', res && res.msg ? res.msg : 'Lưu thất bại');
         }
       })
-      .catch(function(err) {
-        if (typeof Alert !== 'undefined') Alert.error('Lỗi', 'Kết nối máy chủ bị gián đoạn');
+      .catch(function () {
+        Alert.error('Lỗi', 'Kết nối máy chủ bị gián đoạn');
       })
-      .finally(function() {
+      .finally(function () {
         btn.disabled = false;
-        btn.innerText = 'Lưu Thông Tin';
+        btn.innerHTML = UIIcon.renderHtml('save', 'font-size:16px;vertical-align:middle;margin-right:4px;') + ' Lưu Thông Tin';
       });
   }
 
+  // ════════════════════════════════════════════════════════
+  //  DELETE
+  // ════════════════════════════════════════════════════════
   function _deleteMenu(menuId) {
     var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
+    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID
+      || currentUser.group || currentUser.NhomQuyen || 'Admin';
 
-    var endpoint = window.API_CONFIG?.ENDPOINTS?.MENUS?.DELETE || '/api/API_WA_XoaMenu';
+    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
+      ? window.API_CONFIG.ENDPOINTS.MENUS.DELETE
+      : '/api/API_WA_XoaMenu';
+    endpoint = endpoint || '/api/API_WA_XoaMenu';
+
     ApiClient.post(endpoint, { NhomNguoiDangThaoTac: myGroupId, MenuID: menuId })
-      .then(function(res) {
+      .then(function (res) {
         if (res && res.code === 0) {
-          if (typeof Alert !== 'undefined') Alert.success('Thành công', 'Đã xóa Menu thành công!');
-          _loadMenus(); // Reload grid
+          Alert.success('Thành công', 'Đã xóa Menu!');
+          _loadMenus();
         } else {
-          if (typeof Alert !== 'undefined') Alert.error('Lỗi', res.msg || 'Xóa thất bại');
+          Alert.error('Lỗi', res && res.msg ? res.msg : 'Xóa thất bại');
         }
       })
-      .catch(function(err) {
-        if (typeof Alert !== 'undefined') Alert.error('Lỗi', 'Kết nối máy chủ bị gián đoạn');
+      .catch(function () {
+        Alert.error('Lỗi', 'Kết nối máy chủ bị gián đoạn');
       });
   }
 

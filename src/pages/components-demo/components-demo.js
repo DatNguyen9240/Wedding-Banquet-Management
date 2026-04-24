@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Trang minh họa TOÀN BỘ UI Components trong hệ thống
  * HTML Template: src/pages/components-demo.html
  */
@@ -23,6 +23,8 @@ var ComponentsDemoPage = (function () {
     _mountToasts();
     _mountModals();
     _mountTabs();
+    _mountNestedTabs();
+    _mountNestedTabsVertical();
     _mountAccordion();
     _mountStepper();
     _mountTimeline();
@@ -157,6 +159,126 @@ var ComponentsDemoPage = (function () {
       { title: 'Tab Cài đặt', icon: 'settings', content: '<div class="p-4"><p>Nội dung <b>Tab Cài đặt</b> với các tùy chọn cấu hình.</p></div>' }
     ]);
     el.appendChild(tabs);
+  }
+
+  // ── 9b. NESTED TABS ──
+  function _mountNestedTabs() {
+    var el = document.getElementById('demo-nested-tabs');
+    if (!el) return;
+    if (typeof UINestedTabs === 'undefined') {
+      el.innerHTML = '<p style="color:var(--color-text-secondary)">UINestedTabs chưa được khai báo.</p>';
+      return;
+    }
+
+    // Dữ liệu mock mô phỏng WA_Menu (parent rỗng = tab cha, có parent = tab con)
+    var mockMenuData = [
+      // Tab Cha: Biên nhận (12)
+      { id: '12',   parent: '',   label: 'Biên nhận',         icon: 'receipt_long' },
+      { id: '1201', parent: '12', label: 'Biên nhận cọc lần 1' },
+      { id: '1217', parent: '12', label: 'Biên nhận cọc lần 2' },
+      { id: '1218', parent: '12', label: 'Cọc hội nghị' },
+      { id: '1219', parent: '12', label: 'Hợp đồng hội nghị' },
+      { id: '1222', parent: '12', label: 'Thay đổi - Bổ sung HĐ' },
+
+      // Tab Cha: Báo cáo (14)
+      { id: '14',   parent: '',   label: 'Báo cáo',           icon: 'bar_chart' },
+      { id: '1401', parent: '14', label: 'Báo cáo thống kê' },
+      { id: '140101', parent: '14', label: 'BC Khách tham quan' },
+      { id: '140103', parent: '14', label: 'BC Khách cọc chỗ' },
+      { id: '140112', parent: '14', label: 'TK Tiền cọc - coc hội' },
+      { id: '140115', parent: '14', label: 'TK Tiến trình nhận tiệc' },
+      { id: '1402',   parent: '14', label: 'Báo cáo dịch vụ' },
+
+      // Tab Cha: Hệ thống (10)
+      { id: '10',   parent: '',   label: 'Hệ thống',          icon: 'settings' },
+      { id: '1001', parent: '10', label: 'Người dùng' },
+      { id: '1002', parent: '10', label: 'Nhóm quyền' },
+      { id: '1003', parent: '10', label: 'Danh mục Menu' },
+
+      // Tab Cha: Danh mục (11) - không có con (panel độc lập)
+      { id: '11',   parent: '',   label: 'Danh mục',          icon: 'category' }
+    ];
+
+    var nestedEl = UINestedTabs.create(mockMenuData, {
+      onTabChange: function(parentId, childId) {
+        UIToast.show(
+          'Parent: ' + parentId + (childId ? '  →  Child: ' + childId : ''),
+          'info'
+        );
+      },
+      onReorder: function(type, orderedIds, parentId) {
+        var msg = (type === 'parent')
+          ? 'Sắp xếp cha: [' + orderedIds.join(', ') + ']'
+          : 'Sắp xếp con (nhóm ' + parentId + '): [' + orderedIds.join(', ') + ']';
+        UIToast.show(msg, 'success');
+      },
+      renderContent: function(item) {
+        // Mô phỏng: nếu item có formName thì load form, còn không thì placeholder
+        var icon = item.icon || 'article';
+        return [
+          '<div style="display:flex; align-items:center; gap:16px; padding:20px 0;">',
+            '<span class="material-symbols-outlined" style="font-size:48px; opacity:0.15;">',
+              icon,
+            '</span>',
+            '<div>',
+              '<div style="font-size:15px; font-weight:700; margin-bottom:4px;">', item.label, '</div>',
+              '<code style="font-size:11px; opacity:0.4; background:rgba(0,0,0,0.05); padding:2px 8px; border-radius:4px;">',
+                'MenuID: ', item.id,
+              '</code>',
+              '<div style="margin-top:10px; font-size:13px; color:var(--color-text-secondary);">',
+                'Nội dung trang/form tương ứng <b>', item.label, '</b> sẽ được render tại đây.',
+              '</div>',
+            '</div>',
+          '</div>'
+        ].join('');
+      }
+    });
+
+    el.appendChild(nestedEl);
+  }
+
+  // ── 9c. NESTED TABS VERTICAL ──
+  function _mountNestedTabsVertical() {
+    var el = document.getElementById('demo-nested-tabs-v');
+    if (!el || typeof UINestedTabs === 'undefined') return;
+
+    var mockMenuData = [
+      { id: '12', parent: '',   label: 'Biên nhận',  icon: 'receipt_long' },
+      { id: '1201', parent: '12', label: 'Cọc lần 1' },
+      { id: '1217', parent: '12', label: 'Cọc lần 2 (thay đổi)' },
+      { id: '1218', parent: '12', label: 'Cọc hội nghị' },
+      { id: '1219', parent: '12', label: 'Hợp đồng hội nghị' },
+      { id: '14', parent: '',   label: 'Báo cáo',    icon: 'bar_chart' },
+      { id: '1401', parent: '14', label: 'Thống kê chung' },
+      { id: '140101', parent: '14', label: 'BC Khách tham quan' },
+      { id: '140103', parent: '14', label: 'BC Cọc chỗ' },
+      { id: '140115', parent: '14', label: 'TK Tiến trình nhận tiệc' },
+      { id: '10', parent: '',   label: 'Hệ thống',   icon: 'settings' },
+      { id: '1001', parent: '10', label: 'Người dùng' },
+      { id: '1002', parent: '10', label: 'Phân quyền' },
+      { id: '11', parent: '',   label: 'Danh mục',   icon: 'category' }
+    ];
+
+    var vEl = UINestedTabs.create(mockMenuData, {
+      vertical:  true,
+      draggable: true,
+      onTabChange: function(parentId, childId) {
+        UIToast.show('→ ' + (childId || parentId), 'info');
+      },
+      onReorder: function(type, ids) {
+        UIToast.show('Sắp xếp: [' + ids.join(', ') + ']', 'success');
+      },
+      renderContent: function(item) {
+        return '<div style="padding:8px 0;display:flex;align-items:center;gap:12px;">'
+          + '<span class="material-symbols-outlined" style="font-size:36px;opacity:0.15;">' + (item.icon || 'article') + '</span>'
+          + '<div>'
+          + '<div style="font-weight:700;font-size:15px;">' + item.label + '</div>'
+          + '<code style="font-size:11px;opacity:0.35;background:rgba(0,0,0,0.05);padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px;">MenuID: ' + item.id + '</code>'
+          + '</div></div>';
+      }
+    });
+
+    el.appendChild(vEl);
   }
 
   // ── 10. ACCORDION ──

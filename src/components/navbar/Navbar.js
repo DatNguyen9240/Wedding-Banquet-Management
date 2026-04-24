@@ -258,11 +258,6 @@ var Navbar = (function () {
               }, 100);
             </script>
 
-            <!-- Logout -->
-            <div class="navbar-icon-btn" onclick="ConfirmModal.show({ title: \'Đăng xuất\', message: \'Bạn muốn đăng xuất khỏi hệ thống?\', onConfirm: window.logoutApp })" title="Đăng xuất">
-              <span class="material-symbols-outlined">logout</span>
-            </div>
-
             <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
             <span class="material-symbols-outlined">notifications</span>
             <span class="badge-dot"></span>
@@ -397,9 +392,7 @@ var Navbar = (function () {
                 <span class="material-symbols-outlined" style="font-size:20px">notifications</span>
                 <span class="badge"></span>
               </div>
-              <div class="icon-btn" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?', onConfirm: window.logoutApp })">
-                <span class="material-symbols-outlined" style="font-size:20px">logout</span>
-              </div>
+
 
               <!-- User profile with layout switcher dropdown -->
               <div class="user-profile" id="vertical-user-profile">

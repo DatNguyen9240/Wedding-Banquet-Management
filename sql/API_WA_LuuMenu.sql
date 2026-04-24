@@ -7,7 +7,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[API_WA_LuuMenu]
+ALTER PROCEDURE [dbo].[API_WA_LuuMenu]
     @NhomNguoiDangThaoTac NVARCHAR(50) = '',
     @MenuID NVARCHAR(50),
     @OldMenuID NVARCHAR(50) = '',
@@ -15,6 +15,8 @@ CREATE PROCEDURE [dbo].[API_WA_LuuMenu]
     @Label NVARCHAR(250),
     @EN NVARCHAR(250) = '',
     @FormName NVARCHAR(250) = '',
+    @FormKey NVARCHAR(250) = '',
+    @URLPara NVARCHAR(250) = '',
     @Icon NVARCHAR(100) = '',
     @IsDisable BIT = 0,
     @IsEdit BIT = 0
@@ -30,6 +32,8 @@ BEGIN
             UPDATE WA_Menu SET MenuID = @MenuID WHERE MenuID = @OldMenuID;
             UPDATE WA_UserGroupPermisstion SET MenuID = @MenuID WHERE MenuID = @OldMenuID;
             UPDATE WA_UserPermisstion SET MenuID = @MenuID WHERE MenuID = @OldMenuID;
+            -- Đồng bộ cập nhật cột Parent cho các menu con nếu đổi ID của Group cha
+            UPDATE WA_Menu SET Parent = @MenuID WHERE Parent = @OldMenuID;
         END
 
         UPDATE WA_Menu 
@@ -38,6 +42,8 @@ BEGIN
             VN = @Label,
             EN = @EN,
             FormName = @FormName,
+            FormKey = @FormKey,
+            URLPara = @URLPara,
             IconClass = @Icon,
             isDisable = @IsDisable
         WHERE MenuID = @MenuID;
@@ -50,8 +56,8 @@ BEGIN
             RETURN;
         END
 
-        INSERT INTO WA_Menu (MenuID, Parent, VN, EN, FormName, IconClass, isDisable)
-        VALUES (@MenuID, @ParentID, @Label, @EN, @FormName, @Icon, @IsDisable);
+        INSERT INTO WA_Menu (MenuID, Parent, VN, EN, FormName, FormKey, URLPara, IconClass, isDisable)
+        VALUES (@MenuID, @ParentID, @Label, @EN, @FormName, @FormKey, @URLPara, @Icon, @IsDisable);
     END
 END
 GO

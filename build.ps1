@@ -69,6 +69,7 @@ $jsFiles = @(
   "components\card\Card.js",
   "components\table\Table.js",
   "components\tabs\Tabs.js",
+  "components\tabs\NestedTabs.js",
   "components\total-bar\TotalBar.js",
   "components\badge\Badge.js",
   "components\chart\Chart.js",

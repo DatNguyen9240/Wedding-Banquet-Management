@@ -1,107 +1,166 @@
-<div class="page-title-bar">
-  <span>Quản lý Danh mục Menu</span>
-</div>
+<!-- ═══════════════════════════════════════
+   QUẢN LÝ DANH MỤC MENU — menus.html
+   ═══════════════════════════════════════ -->
 
-<div class="row g-4" style="animation: slideUp 0.3s ease forwards;">
-  <div class="col-12">
-    <div class="card h-100 d-flex flex-column" style="overflow: hidden;">
-      <div class="card-header d-flex justify-content-between align-items-center"
-        style="background: var(--color-background);">
-        <h3 class="mb-0" style="font-size: var(--font-size-md);">Cấu trúc Menu Hệ thống</h3>
-        <div class="d-flex gap-2">
-          <button class="btn btn-secondary" id="btn-refresh-menus"
-            style="padding: 4px 12px; font-size:var(--font-size-sm);">
-            <span class="material-symbols-outlined"
-              style="font-size: 16px; margin-right: 4px; vertical-align: middle;">refresh</span> Làm mới
-          </button>
-          <button class="btn btn-primary" id="btn-add-menu" style="padding: 4px 12px; font-size:var(--font-size-sm);">
-            <span class="material-symbols-outlined"
-              style="font-size: 16px; margin-right: 4px; vertical-align: middle;">add</span> Thêm Mới Menu
-          </button>
-        </div>
-      </div>
-      <div class="card-body table-wrapper p-0" style="border-radius:0 0 8px 8px; overflow-x: auto;">
-        <table class="data-table" id="menu-tree-table" style="margin:0; min-width: 800px;">
-          <thead>
-            <tr>
-              <th style="width: 35%; min-width: 250px;">Tên Menu (VN)</th>
-              <th style="width: 20%; min-width: 150px;">Tên Tiếng Anh (EN)</th>
-              <th style="width: 100px; white-space: nowrap;">Menu ID</th>
-              <th style="width: 25%; min-width: 200px;">Tên Form (Màn hình)</th>
-              <th style="width: 120px;">Icon</th>
-              <th class="text-center" style="width: 100px; white-space: nowrap;">Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- JS GENERATED ROWS -->
-          </tbody>
-        </table>
-      </div>
-    </div>
+<div class="page-title-bar d-flex justify-content-between align-items-center">
+  <span>Quản lý Danh mục Menu</span>
+  <div class="d-flex gap-2 align-items-center">
+    <button class="btn btn-secondary" id="btn-refresh-menus" style="padding: 6px 14px; font-size:var(--font-size-sm);">
+      <span class="material-symbols-outlined"
+        style="font-size:16px;vertical-align:middle;margin-right:4px;">refresh</span>
+      Làm mới
+    </button>
+    <button class="btn btn-primary" id="btn-add-menu" style="padding: 6px 14px; font-size:var(--font-size-sm);">
+      <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle;margin-right:4px;">add</span>
+      Thêm Menu
+    </button>
   </div>
 </div>
 
-<!-- Modal Thêm/Sửa Menu -->
-<div id="modal-menu-form" class="modal-overlay" style="display: none;">
-  <div class="modal-content" style="width: 500px;">
+<!-- ══ BODY: 2 cột ══════════════════════════════════════════ -->
+<div class="row g-4" style="animation: slideUp 0.3s ease forwards; align-items: flex-start;">
+
+  <!-- CỘT TRÁI — Cây Menu (UINestedTabs) -->
+  <div class="col-12">
+    <div class="card" style="overflow: hidden; min-height: 420px;">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="mb-0" style="font-size: var(--font-size-md);">
+          <span class="material-symbols-outlined"
+            style="font-size:18px;vertical-align:middle;margin-right:6px;color:var(--color-primary);">account_tree</span>
+          Cấu trúc Menu
+        </h3>
+        <span class="status-badge primary" id="menus-count-badge" style="font-size:11px;">0 Menu</span>
+      </div>
+      <div class="card-body p-4" id="menus-nested-tabs-container">
+        <!-- UINestedTabs sẽ được mount vào đây từ JS -->
+        <div id="menus-tabs-loading" style="text-align:center; padding:60px 0; color:var(--color-text-secondary);">
+          <span class="material-symbols-outlined"
+            style="font-size:40px;opacity:0.2;display:block;margin-bottom:12px;">menu_book</span>
+          Đang tải danh mục...
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ MODAL Thêm / Sửa Menu ══════════════════════════════════ -->
+<div id="modal-menu-form" class="modal-overlay" style="display:none;">
+  <div class="modal-content" style="width: 520px;">
     <div class="modal-header">
       <h3 id="modal-menu-title">Thêm mới Menu</h3>
       <button class="btn-close-modal" id="btn-close-modal">
         <span class="material-symbols-outlined">close</span>
       </button>
     </div>
-    <div class="modal-body" style="padding: 20px;">
+
+    <div class="modal-body" style="padding: 24px;">
       <form id="menu-form">
         <input type="hidden" id="menu-is-edit" value="0">
         <input type="hidden" id="menu-old-id" value="">
 
+        <!-- Menu ID -->
         <div class="form-group mb-3">
-          <label>Menu ID (Mã duy nhất)*</label>
-          <input type="text" id="menu-id" class="ui-input" required placeholder="VD: 03 hoặc 0304">
+          <label class="form-label">
+            Menu ID <span style="color:var(--color-danger)">*</span>
+            <span style="font-size:11px; color:var(--color-text-secondary); font-weight:400; margin-left:6px;">
+              (2 số = Nhóm cha &nbsp;|&nbsp; 4+ số = Menu con)
+            </span>
+          </label>
+          <input type="text" id="menu-id" class="ui-input" required placeholder="VD: 15 hoặc 1501">
         </div>
 
+        <!-- Parent -->
         <div class="form-group mb-3">
-          <label>Menu Cha (Parent ID)</label>
+          <label class="form-label">Nhóm Cha (Parent)</label>
           <select id="menu-parent" class="ui-input">
-            <option value="">-- Là Nhóm Cha (Root) --</option>
-            <!-- Render options -->
+            <option value="">— Là Nhóm Cha (Root) —</option>
           </select>
         </div>
 
-        <div class="form-group mb-3">
-          <label>Tên Menu (Tiếng Việt)*</label>
-          <input type="text" id="menu-label" class="ui-input" required placeholder="VD: Báo cáo doanh thu">
+        <!-- Tên VN / EN (2 cột) -->
+        <div class="row g-3 mb-3">
+          <div class="col-6">
+            <div class="form-group">
+              <label class="form-label">Tên Tiếng Việt <span style="color:var(--color-danger)">*</span></label>
+              <input type="text" id="menu-label" class="ui-input" required placeholder="VD: Báo cáo">
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group">
+              <label class="form-label">Tên Tiếng Anh</label>
+              <input type="text" id="menu-en" class="ui-input" placeholder="VD: Report">
+            </div>
+          </div>
         </div>
 
-        <div class="form-group mb-3">
-          <label>Tên Menu (Tiếng Anh)</label>
-          <input type="text" id="menu-en" class="ui-input" placeholder="VD: Revenue Report">
+        <!-- Tên Form & Form Key -->
+        <div class="row g-3 mb-3">
+          <div class="col-8">
+            <div class="form-group">
+              <label class="form-label">Tên Form hệ thống</label>
+              <input type="text" id="menu-formname" class="ui-input" placeholder="VD: WB_BaocaoDoanhThu">
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="form-group">
+              <label class="form-label">Form Key</label>
+              <input type="text" id="menu-formkey" class="ui-input" placeholder="VD: Report">
+            </div>
+          </div>
         </div>
 
+        <!-- URL / Tham số -->
         <div class="form-group mb-3">
-          <label>Tên Form hệ thống</label>
-          <input type="text" id="menu-formname" class="ui-input"
-            placeholder="VD: WB_DoanhthutonghopReport (Bỏ trống nếu là Nhóm Cha)">
+          <label class="form-label">URL / Tham số</label>
+          <input type="text" id="menu-urlpara" class="ui-input" placeholder="VD: ?type=doanhthu">
         </div>
 
+        <!-- Icon -->
         <div class="form-group mb-3">
-          <label>Tên Icon (Material Symbols / Class)</label>
-          <input type="text" id="menu-icon" class="ui-input" placeholder="VD: bar_chart hoặc icon-grid">
+          <label class="form-label">
+            Icon
+            <span style="font-size:11px; color:var(--color-text-secondary); font-weight:400; margin-left:4px;">(Material
+              Symbols)</span>
+          </label>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="text" id="menu-icon" class="ui-input" style="flex:1;"
+              placeholder="VD: bar_chart, home, settings..."
+              oninput="document.getElementById('menu-icon-preview').textContent = this.value || 'label'">
+            <span class="material-symbols-outlined" id="menu-icon-preview"
+              style="font-size:28px; color:var(--color-primary); flex-shrink:0; transition:all 0.2s;">
+              label
+            </span>
+          </div>
+          <div id="modal-icon-picker-grid"
+            style="display:flex; flex-wrap:wrap; gap:4px; margin-top:10px; padding:10px; background:rgba(0,0,0,0.02); border:1px solid var(--color-border); border-radius:6px;">
+            <!-- JS Render -->
+          </div>
         </div>
 
-        <div class="mb-0" style="margin-top: 16px;">
-          <label class="modern-checkbox-wrapper"
-            style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+        <!-- Ẩn / Hiện -->
+        <div
+          style="margin-top:8px; padding:12px 14px; background:rgba(239,68,68,0.06); border-radius:8px; border:1px solid rgba(239,68,68,0.15);">
+          <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
             <input type="checkbox" id="menu-is-disable" class="modern-checkbox">
-            <span style="color: var(--color-danger); font-weight: 500; font-size: 14px;">Đóng băng (Ẩn) Menu này</span>
+            <span style="color:var(--color-danger); font-weight:500; font-size:13px;">
+              <span class="material-symbols-outlined"
+                style="font-size:16px;vertical-align:middle;margin-right:4px;">visibility_off</span>
+              Đóng băng (Ẩn) Menu này khỏi hệ thống
+            </span>
           </label>
         </div>
       </form>
     </div>
+
     <div class="modal-footer"
-      style="display: flex; justify-content: flex-end; gap: 8px; padding: 16px 20px; border-top: 1px solid var(--color-border); background: rgba(0,0,0,0.02);">
+      style="display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; border-top:1px solid var(--color-border); background:rgba(0,0,0,0.02);">
       <button class="btn btn-secondary" id="btn-cancel-modal">Hủy</button>
-      <button class="btn btn-primary" id="btn-save-menu">Lưu Thông Tin</button>
+      <button class="btn btn-primary" id="btn-save-menu">
+        <span class="material-symbols-outlined"
+          style="font-size:16px;vertical-align:middle;margin-right:4px;">save</span>
+        Lưu Thông Tin
+      </button>
     </div>
   </div>
 </div>
