@@ -15,34 +15,38 @@ var PermissionsPage = (function () {
     fetch('./src/pages/permissions/permissions.html')
       .then(function (res) { return res.text(); })
       .then(function (html) {
-        $container.innerHTML = html;
+        try {
+          $container.innerHTML = html;
 
-        // CSS nhỏ cho tree table và role tabs
-        var style = document.createElement('style');
-        style.innerHTML = `
-          .tree-row { transition: background 0.2s; }
-          .tree-row:hover { background: rgba(148, 163, 184, 0.05); }
-          .tree-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
-          .tree-toggle { font-size: 20px; transition: transform 0.2s; color: var(--color-text-secondary); width: 20px; text-align: center; }
-          .tree-toggle.open { transform: rotate(90deg); }
-          .tree-toggle.empty { opacity: 0; pointer-events: none; }
-          .tree-icon { font-size: 20px; color: var(--color-primary); }
-          .tree-row[data-hidden="true"] { display: none; }
+          // CSS nhỏ cho tree table và role tabs
+          var style = document.createElement('style');
+          style.innerHTML = `
+            .tree-row { transition: background 0.2s; }
+            .tree-row:hover { background: rgba(148, 163, 184, 0.05); }
+            .tree-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+            .tree-toggle { font-size: 20px; transition: transform 0.2s; color: var(--color-text-secondary); width: 20px; text-align: center; }
+            .tree-toggle.open { transform: rotate(90deg); }
+            .tree-toggle.empty { opacity: 0; pointer-events: none; }
+            .tree-icon { font-size: 20px; color: var(--color-primary); }
+            .tree-row[data-hidden="true"] { display: none; }
 
-          .role-tab { padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--color-text); }
-          .role-tab:hover { background: rgba(148, 163, 184, 0.1); }
-          .role-tab.active { background: rgba(60, 80, 224, 0.1); color: var(--color-primary); }
-        `;
-        $container.appendChild(style);
+            .role-tab { padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--color-text); }
+            .role-tab:hover { background: rgba(148, 163, 184, 0.1); }
+            .role-tab.active { background: rgba(60, 80, 224, 0.1); color: var(--color-primary); }
+          `;
+          $container.appendChild(style);
 
-        _renderRoleTabs();
-        _setupTreeToggle();
+          _renderRoleTabs();
+          _setupTreeToggle();
+          _setupAutoSave();
 
-        $container.querySelector('#btn-save-permission').addEventListener('click', _savePermissions);
-        var btnSync = $container.querySelector('#btn-sync-permission');
-        if (btnSync) btnSync.addEventListener('click', _syncPermissions);
+          var btnSync = $container.querySelector('#btn-sync-permission');
+          if (btnSync) btnSync.addEventListener('click', _syncPermissions);
 
-        _fetchGroups();
+          _fetchGroups();
+        } catch (e) {
+          $container.innerHTML = '<div style="color:red; padding: 20px;">Lỗi lập trình viên: ' + e.message + '<br>' + e.stack + '</div>';
+        }
       });
   }
 
@@ -166,6 +170,14 @@ var PermissionsPage = (function () {
       var canThem = item.them || item.Them || item.CanAdd || item.Add || item.IsAdd || false;
       var canSua = item.sua || item.Sua || item.CanEdit || item.Edit || item.IsUpdate || false;
       var canXoa = item.xoa || item.Xoa || item.CanDelete || item.Delete || item.IsDelete || false;
+      
+      var isManager = item.isManager || false;
+      var isAdmin = item.isAdmin || false;
+      var isAutoLock = item.isAutoLock || false;
+      var isHideAmount = item.isHideAmount || false;
+      var isLockDoc = item.isLockDoc || false;
+      var isUnLockDoc = item.isUnLockDoc || false;
+      var isExportExcel = item.isExportExcel || false;
 
       var rawIcon = (item.icon || item.IconClass || '').toLowerCase().trim();
       var parsedIcon = 'folder';
@@ -197,7 +209,14 @@ var PermissionsPage = (function () {
           xem: canXem,
           them: canThem,
           sua: canSua,
-          xoa: canXoa
+          xoa: canXoa,
+          isManager: isManager,
+          isAdmin: isAdmin,
+          isAutoLock: isAutoLock,
+          isHideAmount: isHideAmount,
+          isLockDoc: isLockDoc,
+          isUnLockDoc: isUnLockDoc,
+          isExportExcel: isExportExcel
         }
       });
     });
@@ -233,6 +252,16 @@ var PermissionsPage = (function () {
 
       // Hide/show children recursively
       _toggleChildren(tbody, id, isExpanded);
+    });
+  }
+
+  function _setupAutoSave() {
+    var tbody = $container.querySelector('#permission-tree-table tbody');
+    tbody.addEventListener('change', function(e) {
+      if (e.target.classList.contains('perm-chk')) {
+         var tr = e.target.closest('tr');
+         if(tr) _saveSingleRowPermission(tr);
+      }
     });
   }
 
@@ -273,7 +302,7 @@ var PermissionsPage = (function () {
       <div class="tree-cell" style="padding-left: ${paddingLeft}px;">
         ${toggleHtml}
         <span class="material-symbols-outlined tree-icon">${data.icon}</span>
-        <span style="font-weight: ${data.isFolder ? '500' : '400'};">${data.label}</span>
+        <span class="tree-label" style="font-weight: ${data.isFolder ? '500' : '400'};">${data.label}</span>
       </div>
     `;
     tr.appendChild(tdTree);
@@ -284,9 +313,17 @@ var PermissionsPage = (function () {
       tr.appendChild(_createCheckboxTd(data.perms.them, 'them'));
       tr.appendChild(_createCheckboxTd(data.perms.sua, 'sua'));
       tr.appendChild(_createCheckboxTd(data.perms.xoa, 'xoa'));
+      
+      tr.appendChild(_createCheckboxTd(data.perms.isManager, 'isManager'));
+      tr.appendChild(_createCheckboxTd(data.perms.isAdmin, 'isAdmin'));
+      tr.appendChild(_createCheckboxTd(data.perms.isAutoLock, 'isAutoLock'));
+      tr.appendChild(_createCheckboxTd(data.perms.isHideAmount, 'isHideAmount'));
+      tr.appendChild(_createCheckboxTd(data.perms.isLockDoc, 'isLockDoc'));
+      tr.appendChild(_createCheckboxTd(data.perms.isUnLockDoc, 'isUnLockDoc'));
+      tr.appendChild(_createCheckboxTd(data.perms.isExportExcel, 'isExportExcel'));
     } else {
       // Empty cells for folder rows
-      for (var i = 0; i < 4; i++) {
+      for (var i = 0; i < 11; i++) {
         var td = document.createElement('td');
         tr.appendChild(td);
       }
@@ -309,75 +346,57 @@ var PermissionsPage = (function () {
     return td;
   }
 
-  function _savePermissions() {
+  function _saveSingleRowPermission(tr) {
     if (!currentSelectedGroup) return;
-
-    var btn = $container.querySelector('#btn-save-permission');
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px; animation: spin 1s linear infinite;">refresh</span> Đang lưu...';
-    }
-
-    var tbody = $container.querySelector('#permission-tree-table tbody');
-    var rows = tbody.querySelectorAll('tr[data-is-folder="false"]');
-    var permissionsToSave = [];
 
     var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
     var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
 
-    rows.forEach(function (tr) {
-      var id = tr.getAttribute('data-id');
-      var xem = tr.querySelector('.perm-chk[data-action="xem"]')?.checked || false;
-      var them = tr.querySelector('.perm-chk[data-action="them"]')?.checked || false;
-      var sua = tr.querySelector('.perm-chk[data-action="sua"]')?.checked || false;
-      var xoa = tr.querySelector('.perm-chk[data-action="xoa"]')?.checked || false;
+    var id = tr.getAttribute('data-id');
+    var xem = tr.querySelector('.perm-chk[data-action="xem"]')?.checked || false;
+    var them = tr.querySelector('.perm-chk[data-action="them"]')?.checked || false;
+    var sua = tr.querySelector('.perm-chk[data-action="sua"]')?.checked || false;
+    var xoa = tr.querySelector('.perm-chk[data-action="xoa"]')?.checked || false;
+    
+    var isManager = tr.querySelector('.perm-chk[data-action="isManager"]')?.checked || false;
+    var isAdmin = tr.querySelector('.perm-chk[data-action="isAdmin"]')?.checked || false;
+    var isAutoLock = tr.querySelector('.perm-chk[data-action="isAutoLock"]')?.checked || false;
+    var isHideAmount = tr.querySelector('.perm-chk[data-action="isHideAmount"]')?.checked || false;
+    var isLockDoc = tr.querySelector('.perm-chk[data-action="isLockDoc"]')?.checked || false;
+    var isUnLockDoc = tr.querySelector('.perm-chk[data-action="isUnLockDoc"]')?.checked || false;
+    var isExportExcel = tr.querySelector('.perm-chk[data-action="isExportExcel"]')?.checked || false;
 
-      permissionsToSave.push({
-        NhomNguoiDangThaoTac: myGroupId,
-        UserGroupID: currentSelectedGroup.id,
-        MenuID: id,
-        IsRun: xem ? 1 : 0,
-        IsAdd: them ? 1 : 0,
-        IsUpdate: sua ? 1 : 0,
-        IsDelete: xoa ? 1 : 0
-      });
-    });
+    var payload = {
+      NhomNguoiDangThaoTac: myGroupId,
+      UserGroupID: currentSelectedGroup.id,
+      MenuID: id,
+      IsRun: xem ? 1 : 0,
+      IsAdd: them ? 1 : 0,
+      IsUpdate: sua ? 1 : 0,
+      IsDelete: xoa ? 1 : 0,
+      isManager: isManager ? 1 : 0,
+      isAdmin: isAdmin ? 1 : 0,
+      isAutoLock: isAutoLock ? 1 : 0,
+      isHideAmount: isHideAmount ? 1 : 0,
+      isLockDoc: isLockDoc ? 1 : 0,
+      isUnLockDoc: isUnLockDoc ? 1 : 0,
+      isExportExcel: isExportExcel ? 1 : 0
+    };
 
     var endpoint = window.API_CONFIG.ENDPOINTS.PERMISSIONS.SAVE_GROUP_PERMISSIONS || '/api/API_WA_LuuQuyenCuaNhom';
     
-    // Gọi tuần tự (Sequential Save) vì SQL bắt buộc nhận từng Menu
-    async function processQueue() {
-        var hasError = false;
-        var errorMsg = '';
-        for (var i = 0; i < permissionsToSave.length; i++) {
-            try {
-                var res = await ApiClient.post(endpoint, permissionsToSave[i]);
-                if (res && res.code !== 0) {
-                    hasError = true;
-                    errorMsg = res.msg || 'Có lỗi khi lưu quyền';
-                    break;
-                }
-            } catch (err) {
-                console.error(err);
-                hasError = true;
-                errorMsg = 'Lỗi kết nối mạng khi lưu quyền';
-                break;
-            }
-        }
+    var label = tr.querySelector('.tree-label') ? tr.querySelector('.tree-label').innerText : id;
 
-        if (btn) {
-            btn.disabled = false;
-            btn.innerText = 'Lưu Thay Đổi';
-        }
-
-        if (!hasError) {
-            if (typeof Alert !== 'undefined') Alert.success('Thành công', 'Đã lưu phân quyền cho nhóm ' + currentSelectedGroup.name);
+    ApiClient.post(endpoint, payload).then(function(res) {
+        if (res && res.code === 0) {
+           UIToast.show('Đã cập nhật quyền: <b>' + label + '</b>', 'success');
         } else {
-            if (typeof Alert !== 'undefined') Alert.error('Lỗi', errorMsg);
+           UIToast.show(res.msg || 'Lỗi cập nhật quyền', 'error');
+           // Revert checkbox ui state implicitly skipped (assumes DB integrity)
         }
-    }
-
-    processQueue();
+    }).catch(function() {
+        UIToast.show('Lỗi kết nối khi cập nhật quyền', 'error');
+    });
   }
 
   function _syncPermissions() {

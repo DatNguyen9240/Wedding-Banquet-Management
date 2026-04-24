@@ -14,7 +14,14 @@ ALTER PROCEDURE [dbo].[API_WA_LuuQuyenCuaNhom]
     @IsRun BIT,                         
     @IsAdd BIT,                         
     @IsUpdate BIT,                      
-    @IsDelete BIT                       
+    @IsDelete BIT,
+    @isManager BIT,
+    @isAdmin BIT,
+    @isAutoLock BIT,
+    @isHideAmount BIT,
+    @isLockDoc BIT,
+    @isUnLockDoc BIT,
+    @isExportExcel BIT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -22,11 +29,9 @@ BEGIN
     -- =======================================================
     -- BƯỚC 1: CẢNH VỆ HỆ THỐNG - CHỈ SUPER ADMIN MỚI ĐƯỢC CHẠY
     -- Khoá cứng điều kiện: Mã nhóm thao tác bắt buộc phải là 'Admin'
-    -- (Nếu công ty bạn lưu mã Admin là ký hiệu khác như 'G01' hay 'QuanTri' thì bạn thay tên vào nhé)
     -- =======================================================
     IF (@NhomNguoiDangThaoTac != 'Admin')
     BEGIN
-        -- Hất văng Request ngay tắp lự, đá lỗi đỏ (Mã 16) về cho C# xử lý
         RAISERROR (N'Lỗi Bảo Mật: Bạn không phải Giám đốc Server, cấm sửa Phân Quyền!', 16, 1);
         RETURN; 
     END
@@ -39,7 +44,14 @@ BEGIN
         IsRun = @IsRun,
         IsAdd = @IsAdd,
         IsUpdate = @IsUpdate,
-        IsDelete = @IsDelete
+        IsDelete = @IsDelete,
+        isManager = @isManager,
+        isAdmin = @isAdmin,
+        isAutoLock = @isAutoLock,
+        isHideAmount = @isHideAmount,
+        isLockDoc = @isLockDoc,
+        isUnLockDoc = @isUnLockDoc,
+        isExportExcel = @isExportExcel
     WHERE UserGroupID = @UserGroupID 
       AND MenuID = @MenuID;
 
