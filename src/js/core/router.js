@@ -24,6 +24,8 @@ var Router = (function () {
     { path: '/appearance', template: 'src/pages/appearance/appearance.html', script: 'src/pages/appearance/appearance.js', module: 'QuanTriHeThong', title: 'Cài đặt Giao diện', pageFn: 'AppearancePage' },
     { path: '/categories', template: 'src/pages/categories/categories.html', script: 'src/pages/categories/categories.js', module: 'DanhMuc', title: 'Quản lý Danh mục', pageFn: 'CategoriesPage' },
     { path: '/staff', template: 'src/pages/staff/staff.html', script: 'src/pages/staff/staff.js', module: 'NhanSu', title: 'Nhân viên Phục vụ Tiệc', pageFn: 'StaffPage' },
+    { path: '/survey', template: 'src/pages/survey/survey.html', script: 'src/pages/survey/survey.js', module: 'HopDong', title: 'Khảo sát Thông tin Khách hàng', pageFn: 'SurveyPage' },
+    { path: '/promotions', template: 'src/pages/promotions/promotions.html', script: 'src/pages/promotions/promotions.js', module: 'DanhMuc', title: 'Chương trình Ưu đãi & Combo', pageFn: 'PromotionsPage' },
     { path: '/report-revenue', template: 'src/pages/report-revenue/report-revenue.html', script: 'src/pages/report-revenue/report-revenue.js', module: 'BaoCao', title: 'Báo cáo Doanh thu Tiệc', pageFn: 'ReportRevenuePage' },
     { path: '/report-cost', template: 'src/pages/report-cost/report-cost.html', script: 'src/pages/report-cost/report-cost.js', module: 'BaoCao', title: 'Báo cáo Chi phí Tiệc', pageFn: 'ReportCostPage' },
     { path: '/report-other', template: 'src/pages/report-other/report-other.html', script: 'src/pages/report-other/report-other.js', module: 'BaoCao', title: 'Báo cáo Quản lý Khác', pageFn: 'ReportOtherPage' },
