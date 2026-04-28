@@ -20,7 +20,7 @@ window.API_CONFIG = {
             LOGOUT: '/logout',
             USER_INFO: '/api/API_UserInfo',
         },
-        
+
         PERMISSIONS: {
             SYNC: '/api/API_WA_DongBoQuyenTruyCap',
             GET_MENU_BY_GROUP: '/api/API_WA_LayMenuTheoNhomQuyen',
@@ -28,7 +28,6 @@ window.API_CONFIG = {
             GET_GROUP_LIST: '/api/API_SY_LayDanhSachNhom',
         },
 
-        // D\u1ef1 ki\u1ebfn s\u1ebd c\u00f3 c\u00e1c module n\u00e0y trong t\u01b0\u01a1ng lai
         BOOKING: {
             LIST: '/api/API_Booking_List',
             CREATE: '/api/API_Booking_Create',

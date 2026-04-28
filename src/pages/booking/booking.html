@@ -18,8 +18,8 @@
 
 <!-- DATAGRID -->
 <div class="card" style="animation: slideUp 0.4s ease forwards;">
-  <div class="table-wrapper" style="overflow-x: auto; width: 100%;">
-    <table class="data-table selectable" id="booking-table">
+  <div class="table-responsive" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
+    <table class="data-table selectable" id="booking-table" style="min-width: 1000px; white-space: nowrap;">
       <thead>
         <tr>
           <th class="text-center" style="width: 50px;">STT</th>
@@ -27,7 +27,7 @@
           <th>Tên Khách Hàng (Cặp Đôi)</th>
           <th>Điện Thoại</th>
           <th>Ngày Tổ Chức</th>
-          <th>Số Bàn</th>
+          <th class="text-end">Số Bàn</th>
           <th>Sảnh Đặt</th>
           <th class="text-end">Đã Cọc (VNĐ)</th>
           <th class="text-center">Trạng thái</th>
