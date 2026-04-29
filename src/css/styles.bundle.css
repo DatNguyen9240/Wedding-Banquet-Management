@@ -84,7 +84,7 @@
 
   /* Layout Constants */
   --sidebar-width: 280px;
-  --header-height: 84px;
+  --header-height: 62px;
   --navbar-height: 62px;
 
   /* Transitions */
@@ -698,11 +698,11 @@ img {
 }
 
 .navbar-icon-btn {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -714,8 +714,11 @@ img {
 
 .navbar-icon-btn:hover {
   color: var(--color-text);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body.dark-theme .navbar-icon-btn:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .navbar-icon-btn .material-symbols-outlined {
@@ -739,17 +742,20 @@ img {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  padding: 6px 12px;
+  padding: 4px 8px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.04);
+  border: none;
+  background: transparent;
   transition: all var(--transition-fast);
   position: relative;
 }
 
 .navbar-user:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+body.dark-theme .navbar-user:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .navbar-user .user-avatar-nav {
@@ -3134,11 +3140,30 @@ body.dark-theme .icon-btn:hover {
 }
 
 .data-table tbody tr {
-  transition: background var(--transition-fast);
+  cursor: pointer;
+  transition: 
+    background 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .data-table tbody tr:hover {
-  background: rgba(148, 163, 184, 0.1);
+  background: rgba(148, 163, 184, 0.05);
+}
+
+.data-table tbody tr.active {
+  background-color: var(--color-primary-light);
+  box-shadow: inset 4px 0 0 var(--color-primary);
+}
+
+.data-table tbody tr td {
+  transition: 
+    color 0.2s ease,
+    font-weight 0.2s ease;
+}
+
+.data-table tbody tr.active td {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 /* ════ DARK THEME OVERRIDES ════ */
@@ -4136,20 +4161,24 @@ body.dark-theme .data-table tbody tr:hover {
 .ui-side-panel {
   position: fixed;
   top: 0;
-  right: -1000px; /* Far enough to hide large shadows */
+  right: -1000px;
   width: 100%;
   max-width: 800px;
   height: 100vh;
   background: var(--color-surface);
-  box-shadow: -20px 0 50px rgba(0, 0, 0, 0.3);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.25);
   z-index: 10001;
   display: none;
   flex-direction: column;
-  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.8;
+  transition: 
+    right 0.45s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.4s ease;
 }
 
 .ui-side-panel.show {
   right: 0 !important;
+  opacity: 1 !important;
 }
 
 

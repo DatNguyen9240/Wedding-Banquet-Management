@@ -246,24 +246,13 @@ var Navbar = (function () {
 
         <!-- Right Actions -->
         <div class="navbar-right">
-          <!-- Toggle Theme -->
-            <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
-              <span class="material-symbols-outlined" id="header-theme-icon-horizontal">dark_mode</span>
-            </div>
-            <script>
-              setTimeout(function() {
-                var isDark = document.body.classList.contains(\'dark-theme\');
-                var icon = document.getElementById(\'header-theme-icon-horizontal\');
-                if (icon) icon.innerText = isDark ? \'light_mode\' : \'dark_mode\';
-              }, 100);
-            </script>
-
-            <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
+          <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
+            <span class="material-symbols-outlined" id="header-theme-icon-horizontal">dark_mode</span>
+          </div>
+          <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
             <span class="material-symbols-outlined">notifications</span>
             <span class="badge-dot"></span>
           </div>
-
-          <!-- User Profile + dropdown -->
           <div class="navbar-user" id="navbar-user">
             <div class="user-avatar-nav">
               <img src="https://ui-avatars.com/api/?name=Admin&background=3C50E0&color=fff" alt="User">
@@ -376,37 +365,25 @@ var Navbar = (function () {
             </div>
 
             <div class="header-right">
-              <!-- Toggle Theme -->
-              <div class="icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
+              <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
                 <span class="material-symbols-outlined" id="header-theme-icon-vertical">dark_mode</span>
               </div>
-              <script>
-                setTimeout(function() {
-                  var isDark = document.body.classList.contains('dark-theme');
-                  var icon = document.getElementById('header-theme-icon-vertical');
-                  if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
-                }, 100);
-              </script>
-
-              <div class="icon-btn" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
-                <span class="material-symbols-outlined" style="font-size:20px">notifications</span>
-                <span class="badge"></span>
+              <div class="navbar-icon-btn" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
+                <span class="material-symbols-outlined">notifications</span>
+                <span class="badge-dot"></span>
               </div>
-
-
-              <!-- User profile with layout switcher dropdown -->
-              <div class="user-profile" id="vertical-user-profile">
-                <div class="user-text">
-                  <div class="user-name">Admin</div>
-                  <div class="user-role">Quản trị hệ thống</div>
-                </div>
-                <div class="user-avatar">
+              <div class="navbar-user" id="vertical-user-profile">
+                <div class="user-avatar-nav">
                   <img src="https://ui-avatars.com/api/?name=Admin&background=3C50E0&color=fff" alt="User">
                 </div>
-                <span class="material-symbols-outlined" style="color:var(--color-text-secondary)">expand_more</span>
+                <div class="user-info-nav">
+                  <div class="user-name-nav">Admin</div>
+                  <div class="user-role-nav">Quản trị hệ thống</div>
+                </div>
+                <span class="material-symbols-outlined expand-icon">expand_more</span>
 
                 <!-- Vertical user dropdown -->
-                <div class="vertical-user-dropdown" id="vertical-user-dropdown">
+                <div class="user-dropdown" id="vertical-user-dropdown">
                   <div class="user-dropdown-header">
                     <div class="user-dropdown-name">Admin</div>
                     <div class="user-dropdown-role">Quản trị hệ thống</div>
@@ -578,15 +555,22 @@ var Navbar = (function () {
     if ($uProf && $uDrop) {
       $uProf.addEventListener('click', function (e) {
         e.stopPropagation();
-        var isOpen = $uDrop.classList.contains('open');
+        var isOpen = $uProf.classList.contains('open');
+        $uProf.classList.toggle('open', !isOpen);
+        
+        // Also toggle 'open' on dropdown if needed by other CSS
         $uDrop.classList.toggle('open', !isOpen);
-        $uProf.querySelector('.material-symbols-outlined:last-child')
-          .textContent = isOpen ? 'expand_more' : 'expand_less';
+
+        var expandIcon = $uProf.querySelector('.expand-icon');
+        if (expandIcon) {
+          expandIcon.textContent = isOpen ? 'expand_more' : 'expand_less';
+        }
       });
     }
 
     document.addEventListener('click', function () {
       if ($uDrop) $uDrop.classList.remove('open');
+      if ($uProf) $uProf.classList.remove('open');
     });
 
     _highlightActive();

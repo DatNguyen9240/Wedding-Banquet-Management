@@ -25,18 +25,22 @@
 .ui-side-panel {
   position: fixed;
   top: 0;
-  right: -1000px; /* Far enough to hide large shadows */
+  right: -1000px;
   width: 100%;
   max-width: 800px;
   height: 100vh;
   background: var(--color-surface);
-  box-shadow: -20px 0 50px rgba(0, 0, 0, 0.3);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.25);
   z-index: 10001;
   display: none;
   flex-direction: column;
-  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0.8;
+  transition: 
+    right 0.45s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.4s ease;
 }
 
 .ui-side-panel.show {
   right: 0 !important;
+  opacity: 1 !important;
 }

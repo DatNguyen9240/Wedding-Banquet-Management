@@ -108,12 +108,16 @@ var BookingPage = (function () {
   function _bindEvents() {
     // Row selection logic
     var tbody = $container.querySelector('#booking-table tbody');
-    tbody.addEventListener('click', function (e) {
-      var tr = e.target.closest('tr');
-      if (!tr) return;
-      Array.from(tbody.querySelectorAll('tr')).forEach(r => r.classList.remove('active'));
-      tr.classList.add('active');
-    });
+    if (window.UIControls && UIControls.utils && UIControls.utils.setupTableSelection) {
+      UIControls.utils.setupTableSelection(tbody);
+    } else {
+      tbody.addEventListener('click', function (e) {
+        var tr = e.target.closest('tr');
+        if (!tr) return;
+        Array.from(tbody.querySelectorAll('tr')).forEach(r => r.classList.remove('active'));
+        tr.classList.add('active');
+      });
+    }
 
     $container.querySelector('#btn-add-deposit1').addEventListener('click', function () {
       openForm('add1', null);

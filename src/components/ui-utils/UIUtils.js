@@ -71,6 +71,30 @@ UIControls.utils = (function() {
 
   return {
     computeDropdownPosition: computeDropdownPosition,
-    createDropdownTableHTML: createDropdownTableHTML
+    createDropdownTableHTML: createDropdownTableHTML,
+    /**
+     * Setup single row selection for a table
+     */
+    setupTableSelection: function(tableBody, onSelect) {
+      if (!tableBody) return;
+      tableBody.addEventListener('click', function(e) {
+        var tr = e.target.closest('tr');
+        if (!tr) return;
+        
+        var isAlreadyActive = tr.classList.contains('active');
+        
+        // Remove active from all rows
+        Array.from(tableBody.querySelectorAll('tr')).forEach(r => r.classList.remove('active'));
+        
+        // If it wasn't active, make it active
+        if (!isAlreadyActive) {
+          tr.classList.add('active');
+          if (typeof onSelect === 'function') onSelect(tr);
+        } else {
+          // If it was already active, we just removed it above, so we pass null to onSelect
+          if (typeof onSelect === 'function') onSelect(null);
+        }
+      });
+    }
   };
 })();
