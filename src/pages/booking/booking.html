@@ -2,17 +2,35 @@
    BIÊN NHẬN CỌC CHỖ - HTML Template
    ═══════════════════════════════════════════ -->
 
+<style>
+  /* Disable hover jump effects on flat cards in booking form */
+  #booking-form-panel .card {
+    transform: none !important;
+    transition: none !important;
+    overflow: visible !important;
+  }
+
+  #booking-form-panel .card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+</style>
+
 <div class="page-title-bar">
   <span>Quản lý Biên nhận Cọc chỗ</span>
 </div>
 
 <!-- THANH CÔNG CỤ -->
 <div class="button-bar mb-4" style="animation: slideUp 0.3s ease forwards;">
-  <button class="btn btn-tool" id="btn-add-deposit1"><span class="material-symbols-outlined">add_circle</span>Thêm Cọc Lần 1</button>
-  <button class="btn btn-tool" id="btn-edit-deposit"><span class="material-symbols-outlined">edit</span>Thay đổi Cọc</button>
-  <button class="btn btn-tool" id="btn-add-deposit2"><span class="material-symbols-outlined">payments</span>Tiếp nhận Cọc Lần 2</button>
+  <button class="btn btn-tool" id="btn-add-deposit1"><span class="material-symbols-outlined">add_circle</span>Thêm Cọc
+    Lần 1</button>
+  <button class="btn btn-tool" id="btn-edit-deposit"><span class="material-symbols-outlined">edit</span>Thay đổi
+    Cọc</button>
+  <button class="btn btn-tool" id="btn-add-deposit2"><span class="material-symbols-outlined">payments</span>Tiếp nhận
+    Cọc Lần 2</button>
   <div class="divider"></div>
-  <button class="btn btn-tool text-danger" id="btn-delete"><span class="material-symbols-outlined">delete</span>Hủy Cọc</button>
+  <button class="btn btn-tool text-danger" id="btn-delete"><span class="material-symbols-outlined">delete</span>Hủy
+    Cọc</button>
   <button class="btn btn-tool" id="btn-print"><span class="material-symbols-outlined">print</span>In Biên nhận</button>
 </div>
 
@@ -37,5 +55,122 @@
         <!-- Render by JS -->
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- Khung Trượt Form (Slide-over Panel) -->
+<div id="booking-form-panel">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center p-4"
+    style="border-bottom: 1px solid var(--color-border); background: var(--color-background); position: relative; z-index: 10;">
+    <h2 id="booking-form-title" class="mb-0" style="font-size: 20px;">Thêm Biên nhận Cọc Lần 1</h2>
+    <button id="btn-close-booking-form" data-dismiss="side-panel" class="icon-btn" style="background: transparent; border: none;"><span
+        class="material-symbols-outlined">close</span></button>
+  </div>
+
+  <!-- Body -->
+  <div style="flex: 1; overflow-y: auto; padding: 24px; position: relative;">
+    <!-- Thẻ 1 -->
+    <div class="card mb-4" style="box-shadow: none; overflow: visible;">
+      <div class="card-header d-flex justify-content-between align-items-center"
+        style="padding: 16px; background: var(--color-background); font-size: 14px; color: var(--color-text-secondary);">
+        <span>1. Thông Tin Khách Hàng</span>
+        <!-- Công cụ tìm khách hàng (Component) -->
+        <div id="customer-search-container"></div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-12">
+            <label class="form-label">Tên Chú rể & Cô dâu</label>
+            <div class="d-flex gap-2">
+              <input type="text" id="inp-tenchure" class="ui-input flex-grow-1" placeholder="Tên Chú rể">
+              <span class="d-flex align-items-center">&</span>
+              <input type="text" id="inp-tencodau" class="ui-input flex-grow-1" placeholder="Tên Cô dâu">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Điện thoại</label>
+            <input type="text" id="inp-dienthoai" class="ui-input w-100" placeholder="SĐT liên hệ chính">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input type="text" id="inp-email" class="ui-input w-100" placeholder="Email nhận thông báo">
+          </div>
+          <!-- Hidden Mã chứng từ -->
+          <input type="hidden" id="inp-machungtu" value="BNCC-AUTO">
+        </div>
+      </div>
+    </div>
+
+    <!-- Thẻ 2 -->
+    <div class="card mb-4" style="box-shadow: none;">
+      <div class="card-header"
+        style="padding: 16px; background: var(--color-background); font-size: 14px; color: var(--color-text-secondary);">
+        2. Thông Tin Tiệc</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Ngày tổ chức</label>
+            <input type="date" id="inp-ngaytochuc" class="ui-input w-100">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Ca tiệc</label>
+            <select id="sel-catiec" class="ui-input w-100">
+              <option value="S">Sáng (08h-11h)</option>
+              <option value="T" selected>Trưa (11h-14h)</option>
+              <option value="C">Chiều (17h-22h)</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Số Bàn Đặt</label>
+            <div class="d-flex gap-2 align-items-center">
+              <input type="number" id="inp-ban-man" class="ui-input flex-grow-1" placeholder="Mặn" min="0">
+              <span style="color: var(--color-text-secondary);">+</span>
+              <input type="number" id="inp-ban-chay" class="ui-input flex-grow-1" placeholder="Chay" min="0">
+              <span style="color: var(--color-text-secondary);">=</span>
+              <input type="number" id="inp-tong-ban" class="ui-input flex-grow-1" placeholder="Tổng" readonly
+                style="background: #e0e7ff; color: var(--color-primary); font-weight: 700;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thẻ 3 -->
+    <div class="card" style="box-shadow: none;">
+      <div class="card-header"
+        style="padding: 16px; background: var(--color-background); font-size: 14px; color: var(--color-text-secondary);">
+        3. Sảnh & Đặt Cọc</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Sảnh Đặt (Sảnh chính)</label>
+          <select id="sel-sanh" class="ui-input w-100">
+            <option value="">-- Chọn Sảnh --</option>
+            <option value="S01">Diamond Hall</option>
+            <option value="S02">Ruby Hall</option>
+            <option value="S03">Queen Plaza</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Số tiền cọc (VNĐ) <span style="color: var(--color-danger);">*</span></label>
+          <input type="text" id="inp-tiencoc" class="ui-input w-100" placeholder="VD: 20,000,000"
+            style="font-size: 16px; font-weight: bold; color: var(--color-success);">
+        </div>
+        <div>
+          <label class="form-label">Ghi chú</label>
+          <textarea id="inp-ghichu" rows="2" class="ui-input w-100" placeholder="Ghi chú thêm..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="d-flex justify-content-end gap-2 p-3"
+    style="border-top: 1px solid var(--color-border); background: var(--color-background); position: relative; z-index: 10;">
+    <button id="btn-cancel-booking-form" data-dismiss="side-panel" class="btn btn-secondary">Hủy Bỏ</button>
+    <button id="btn-save-booking" class="btn btn-primary d-flex align-items-center gap-2">
+      <span class="material-symbols-outlined" style="font-size: 18px;">save</span>
+      Lưu Phiếu Cọc
+    </button>
   </div>
 </div>

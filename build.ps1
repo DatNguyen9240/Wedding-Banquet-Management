@@ -41,7 +41,9 @@ $cssFiles = @(
   "components\tooltip\tooltip.css",
   "components\total-bar\total-bar.css",
   "components\tree\tree.css",
-  "components\user-profile\user-profile.css"
+  "components\user-profile\user-profile.css",
+  "components\search-dropdown\search-dropdown.css",
+  "components\side-panel\side-panel.css"
 )
 
 # ====== DANH SACH JS ======
@@ -85,7 +87,9 @@ $jsFiles = @(
   "components\toast\Toast.js",
   "components\popover\Popover.js",
   "components\header\Header.js",
-  "components\sidebar\Sidebar.js"
+  "components\sidebar\Sidebar.js",
+  "components\search-dropdown\SearchDropdown.js",
+  "components\side-panel\SidePanel.js"
 )
 
 # --- Build CSS ---

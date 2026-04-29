@@ -1,0 +1,164 @@
+USE [QLTiec]
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:      Antigravity
+-- Create date: 2026-04-29
+-- Description: API Lưu (Thêm/Sửa) Biên nhận cọc chỗ (Cọc lần 1 & Lần 2)
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[API_Booking_Save]
+    @DocumentID VARCHAR(50) = NULL OUTPUT, -- Nếu NULL: Thêm mới, Ngược lại: Cập nhật
+    -- Thông tin Khách hàng
+    @Makh VARCHAR(50) = NULL OUTPUT, -- Nếu NULL: Tạo khách hàng mới
+    @Tenchure NVARCHAR(255) = NULL,
+    @Tencodau NVARCHAR(255) = NULL,
+    @Dienthoai NVARCHAR(50) = NULL,
+    @Diachi NVARCHAR(500) = NULL,
+    @Mail NVARCHAR(100) = NULL,
+    
+    -- Thông tin Phiếu Cọc
+    @DocumentDate DATETIME = NULL,
+    @Ngaytochuc DATETIME = NULL,
+    @Nhamngay NVARCHAR(100) = NULL,
+    @Loaitiecid VARCHAR(50) = NULL,
+    @Thoigianid VARCHAR(50) = NULL, -- Ca tiệc
+    @SobanManchinhthuc INT = 0,
+    @SobanChaychinhthuc INT = 0,
+    @Tongtien DECIMAL(18,2) = 0, -- Số tiền đặt cọc
+    @Solan TINYINT = 1, -- 1: Cọc lần 1, 2: Cọc lần 2
+    @Ghichu NVARCHAR(500) = NULL,
+    @Manv VARCHAR(50) = NULL,
+    @UserCreate VARCHAR(50) = 'System',
+    
+    -- Danh sách Sảnh đặt (Dạng JSON: [{"Sanhtiecid":"S01", "IsSanhchinh": 1}, ...])
+    @JsonSanhTiec NVARCHAR(MAX) = NULL 
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        DECLARE @Now DATETIME = GETDATE();
+        DECLARE @Tongsoban INT = ISNULL(@SobanManchinhthuc, 0) + ISNULL(@SobanChaychinhthuc, 0);
+
+        -- ==========================================================
+        -- 1. XỬ LÝ KHÁCH HÀNG (dmkhachhang)
+        -- ==========================================================
+        IF (@Makh IS NULL OR @Makh = '')
+        BEGIN
+            -- Phát sinh mã khách hàng tự động (Đơn giản hóa: KH + yymmdd + hhmmss)
+            SET @Makh = 'KH' + FORMAT(@Now, 'yyMMddHHmmss');
+            
+            INSERT INTO dmkhachhang (
+                Makh, Tenkh, Tenchure, Tencodau, Dienthoai, Diachi, Mail, 
+                IsKhachhang, DateCreate, UserCreate
+            )
+            VALUES (
+                @Makh, ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, ''), 
+                @Tenchure, @Tencodau, @Dienthoai, @Diachi, @Mail, 
+                1, @Now, @UserCreate
+            );
+        END
+        ELSE
+        BEGIN
+            -- Cập nhật thông tin khách hàng nếu đã tồn tại
+            UPDATE dmkhachhang
+            SET 
+                Tenkh = ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, ''),
+                Tenchure = @Tenchure,
+                Tencodau = @Tencodau,
+                Dienthoai = @Dienthoai,
+                Diachi = @Diachi,
+                Mail = @Mail,
+                DateUpdate = @Now,
+                UserUpdate = @UserCreate
+            WHERE Makh = @Makh;
+        END
+
+        -- ==========================================================
+        -- 2. XỬ LÝ PHIẾU BIÊN NHẬN CỌC CHỖ (tbmk_Biennhancoccho)
+        -- ==========================================================
+        IF (@DocumentID IS NULL OR @DocumentID = '')
+        BEGIN
+            -- Phát sinh mã phiếu (DocumentID & SoBN)
+            -- SoBN thường theo định dạng: BNCC-YYMM-XXXX
+            DECLARE @SoBN VARCHAR(50) = 'BNCC' + FORMAT(@Now, 'yyMMddHHmmss');
+            SET @DocumentID = @SoBN; -- Tạm dùng SoBN làm DocumentID nếu không có logic AutoID phức tạp
+
+            INSERT INTO tbmk_Biennhancoccho (
+                DocumentID, SoBN, DocumentDate, Makh, Solan, Manv, Loaitiecid,
+                Ngaytochuc, Nhamngay, Tongtien, Tongsoban, SobanManchinhthuc, SobanChaychinhthuc,
+                Thoigianid, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate
+            )
+            VALUES (
+                @DocumentID, @SoBN, ISNULL(@DocumentDate, @Now), @Makh, @Solan, @Manv, @Loaitiecid,
+                @Ngaytochuc, @Nhamngay, @Tongtien, @Tongsoban, @SobanManchinhthuc, @SobanChaychinhthuc,
+                @Thoigianid, @Ghichu, 0, 0, @Now, @UserCreate
+            );
+        END
+        ELSE
+        BEGIN
+            -- Cập nhật phiếu cọc
+            UPDATE tbmk_Biennhancoccho
+            SET 
+                Makh = @Makh,
+                Solan = @Solan,
+                Loaitiecid = @Loaitiecid,
+                Ngaytochuc = @Ngaytochuc,
+                Nhamngay = @Nhamngay,
+                Tongtien = @Tongtien,
+                Tongsoban = @Tongsoban,
+                SobanManchinhthuc = @SobanManchinhthuc,
+                SobanChaychinhthuc = @SobanChaychinhthuc,
+                Thoigianid = @Thoigianid,
+                Ghichu = @Ghichu,
+                DateUpdate = @Now,
+                UserUpdate = @UserCreate
+            WHERE DocumentID = @DocumentID;
+        END
+
+        -- ==========================================================
+        -- 3. XỬ LÝ CHI TIẾT SẢNH TIỆC (tbmk_Biennhancocchosanhtiec)
+        -- ==========================================================
+        -- Chỉ xử lý nếu có truyền danh sách Sảnh
+        IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
+        BEGIN
+            -- Xóa sảnh cũ của phiếu này
+            DELETE FROM tbmk_Biennhancocchosanhtiec WHERE DocumentID = @DocumentID;
+
+            -- Parse JSON và Insert sảnh mới (Yêu cầu SQL Server 2016+)
+            INSERT INTO tbmk_Biennhancocchosanhtiec (
+                UserAutoid, DocumentID, Sanhtiecid, IsSanhchinh, 
+                DateCreate, UserCreate
+            )
+            SELECT 
+                NEWID(), -- Tự sinh GUID cho UserAutoid
+                @DocumentID, 
+                JSON_VALUE(value, '$.Sanhtiecid'),
+                ISNULL(CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0),
+                @Now,
+                @UserCreate
+            FROM OPENJSON(@JsonSanhTiec);
+        END
+
+        COMMIT TRANSACTION;
+        
+        -- Trả về kết quả thành công kèm ID
+        SELECT 1 AS [Success], N'Lưu biên nhận cọc thành công' AS [Message], @DocumentID AS [DocumentID], @Makh AS [Makh];
+        
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+            
+        -- Trả về lỗi
+        SELECT 0 AS [Success], ERROR_MESSAGE() AS [Message], NULL AS [DocumentID], NULL AS [Makh];
+    END CATCH
+END
+GO

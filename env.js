@@ -30,7 +30,14 @@ window.API_CONFIG = {
 
         BOOKING: {
             LIST: '/api/API_Booking_List',
-            CREATE: '/api/API_Booking_Create',
+            SAVE: '/api/API_Booking_Save',
+            CANCEL: '/api/API_Booking_Cancel',
+        },
+        CUSTOMER: {
+            SEARCH: '/api/API_Customer_Search',
+        },
+        SYSTEM: {
+            HALLS: '/api/API_Hall_List',
         },
         CONTRACT: {
             LIST: '/api/API_Contract_List',

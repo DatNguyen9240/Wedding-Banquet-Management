@@ -1,4 +1,4 @@
-/* --- mockData.js --- */
+﻿/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -603,66 +603,6 @@ var Navbar = (function () {
   }
 
   /* ─────────────────────────────────────────
-     SHARED: Top Bar Right Section
-     Dùng chung cho cả Navbar và Sidebar mode
-  ───────────────────────────────────────── */
-  function _buildSharedTopBarHTML(prefix) {
-    return `
-      <!-- Theme Toggle -->
-      <div class="shared-icon-btn"
-        onclick="var d=document.body.classList.toggle('dark-theme');localStorage.setItem('pmql_theme',d?'dark':'light');this.querySelector('span').innerText=d?'light_mode':'dark_mode';"
-        title="Chuyển giao diện">
-        <span class="material-symbols-outlined" id="${prefix}-theme-icon">dark_mode</span>
-      </div>
-      <script>
-        setTimeout(function(){
-          var d=document.body.classList.contains('dark-theme');
-          var ic=document.getElementById('${prefix}-theme-icon');
-          if(ic) ic.innerText=d?'light_mode':'dark_mode';
-        },100);
-      </script>
-
-      <!-- Notifications -->
-      <div class="shared-icon-btn" id="${prefix}-btn-notif" title="Thông báo">
-        <span class="material-symbols-outlined">notifications</span>
-        <span class="badge-dot"></span>
-      </div>
-
-      <!-- User Avatar + Dropdown -->
-      <div class="shared-user" id="${prefix}-user">
-        <div class="shared-avatar">
-          <img src="https://ui-avatars.com/api/?name=Admin&background=3C50E0&color=fff" alt="User">
-        </div>
-        <span class="material-symbols-outlined shared-expand">expand_more</span>
-
-        <div class="user-dropdown" id="${prefix}-dropdown">
-          <div class="user-dropdown-header">
-            <div class="user-dropdown-name">Admin</div>
-            <div class="user-dropdown-role">Qu&#7843;n tr&#7883; h&#7879; th&#7889;ng</div>
-          </div>
-          <div class="user-dropdown-item">
-            <span class="material-symbols-outlined">person</span>
-            H&#7891; s&#417; c&#225; nh&#226;n
-          </div>
-          <div class="user-dropdown-item" onclick="Alert.info('Th&#244;ng b&#225;o','B&#7841;n kh&#244;ng c&#243; th&#244;ng b&#225;o m&#7899;i')">
-            <span class="material-symbols-outlined">notifications</span>
-            Th&#244;ng b&#225;o
-          </div>
-          <a href="#/appearance" class="user-dropdown-item" style="text-decoration:none;">
-            <span class="material-symbols-outlined">palette</span>
-            C&#224;i &#273;&#7863;t Giao di&#7879;n
-          </a>
-          <div class="dropdown-divider"></div>
-          <div class="user-dropdown-item danger" onclick="ConfirmModal.show({title:'&#272;&#259;ng xu&#7845;t',message:'B&#7841;n mu&#7889;n &#273;&#259;ng xu&#7845;t kh&#7887;i h&#7879; th&#7889;ng?',onConfirm:window.logoutApp})">
-            <span class="material-symbols-outlined">logout</span>
-            &#272;&#259;ng xu&#7845;t
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  /* ─────────────────────────────────────────
      Render — Horizontal (Navbar) mode
   ───────────────────────────────────────── */
   function _renderHorizontal(container) {
@@ -671,16 +611,10 @@ var Navbar = (function () {
       <!-- ═══ TOP NAVBAR ═══ -->
       <nav class="app-navbar" id="app-navbar">
 
-        <!-- Hamburger (mobile only) -->
-        <button class="navbar-hamburger" id="navbar-hamburger">
-          <span class="material-symbols-outlined">menu</span>
-        </button>
-
-
         <!-- Brand -->
         <a href="#/dashboard" class="navbar-brand">
           <span class="material-symbols-outlined brand-icon">diamond</span>
-          <span class="brand-title">Quản lý tiệc cưới</span>
+          Quản lý tiệc cưới
         </a>
 
         <!-- Desktop Menu -->
@@ -688,9 +622,69 @@ var Navbar = (function () {
           ${_buildMenuHTML()}
         </ul>
 
-        <!-- Right Actions (Shared Component) -->
-        <div class="shared-top-bar-right" id="navbar-user-wrapper">
-          ${_buildSharedTopBarHTML('navbar')}
+        <!-- Right Actions -->
+        <div class="navbar-right">
+          <!-- Toggle Theme -->
+            <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
+              <span class="material-symbols-outlined" id="header-theme-icon-horizontal">dark_mode</span>
+            </div>
+            <script>
+              setTimeout(function() {
+                var isDark = document.body.classList.contains(\'dark-theme\');
+                var icon = document.getElementById(\'header-theme-icon-horizontal\');
+                if (icon) icon.innerText = isDark ? \'light_mode\' : \'dark_mode\';
+              }, 100);
+            </script>
+
+            <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
+            <span class="material-symbols-outlined">notifications</span>
+            <span class="badge-dot"></span>
+          </div>
+
+          <!-- User Profile + dropdown -->
+          <div class="navbar-user" id="navbar-user">
+            <div class="user-avatar-nav">
+              <img src="https://ui-avatars.com/api/?name=Admin&background=3C50E0&color=fff" alt="User">
+            </div>
+            <div class="user-info-nav">
+              <div class="user-name-nav">Admin</div>
+              <div class="user-role-nav">Quản trị hệ thống</div>
+            </div>
+            <span class="material-symbols-outlined expand-icon">expand_more</span>
+
+            <!-- User dropdown -->
+            <div class="user-dropdown" id="user-dropdown">
+              <div class="user-dropdown-header">
+                <div class="user-dropdown-name">Admin</div>
+                <div class="user-dropdown-role">Quản trị hệ thống</div>
+              </div>
+
+              <div class="user-dropdown-item">
+                <span class="material-symbols-outlined">person</span>
+                Hồ sơ cá nhân
+              </div>
+              <div class="user-dropdown-item" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
+                <span class="material-symbols-outlined">notifications</span>
+                Thông báo
+              </div>
+              <a href="#/appearance" class="user-dropdown-item" style="text-decoration: none;">
+                <span class="material-symbols-outlined">palette</span>
+                Cài đặt Giao diện
+              </a>
+
+              <div class="dropdown-divider"></div>
+
+              <div class="user-dropdown-item danger" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất khỏi hệ thống?', onConfirm: window.logoutApp })">
+                <span class="material-symbols-outlined">logout</span>
+                Đăng xuất
+              </div>
+            </div>
+          </div>
+
+          <!-- Hamburger (mobile only) -->
+          <button class="navbar-hamburger" id="navbar-hamburger">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
         </div>
       </nav>
 
@@ -713,23 +707,6 @@ var Navbar = (function () {
     `;
     container.innerHTML = html;
     _attachHorizontalEvents();
-
-    // Fix mobile navbar padding via global resize listener
-    if (!window._navbarMobileFix) {
-      window._navbarMobileFix = function() {
-        var $nav = document.getElementById('app-navbar');
-        if (!$nav) return;
-        if (window.innerWidth <= 1024) {
-          $nav.style.setProperty('padding', '0 8px', 'important');
-          $nav.style.setProperty('justify-content', 'flex-start', 'important');
-        } else {
-          $nav.style.removeProperty('padding');
-          $nav.style.removeProperty('justify-content');
-        }
-      };
-      window.addEventListener('resize', window._navbarMobileFix);
-    }
-    window._navbarMobileFix();
   }
 
   /* ─────────────────────────────────────────
@@ -750,7 +727,7 @@ var Navbar = (function () {
               Quản lí tiệc cưới
             </div>
             <button class="btn-close-sidebar" id="btn-close-sidebar">
-              <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+              <span class="material-symbols-outlined">arrow_back</span>
             </button>
           </div>
           <nav class="sidebar-nav" id="sidebar-nav">
@@ -764,16 +741,71 @@ var Navbar = (function () {
         <!-- Main area (header + content) -->
         <div class="vertical-main" id="vertical-main">
 
-          <!-- Shared Top Bar (same as Navbar mode) -->
-          <header class="app-top-bar" id="app-header">
-            <!-- Hamburger -->
-            <button class="top-bar-hamburger" id="btn-hamburger">
-              <span class="material-symbols-outlined">menu</span>
-            </button>
+          <!-- Vertical Header -->
+          <header class="app-header" id="app-header">
+            <div class="header-left">
+              <button class="btn-hamburger" id="btn-hamburger">
+                <span class="material-symbols-outlined">menu</span>
+              </button>
+              <div class="search-box">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" placeholder="Type to search...">
+              </div>
+            </div>
 
-            <!-- Right Actions (Shared Component) -->
-            <div class="shared-top-bar-right" id="vertical-user-wrapper">
-              ${_buildSharedTopBarHTML('vertical')}
+            <div class="header-right">
+              <!-- Toggle Theme -->
+              <div class="icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
+                <span class="material-symbols-outlined" id="header-theme-icon-vertical">dark_mode</span>
+              </div>
+              <script>
+                setTimeout(function() {
+                  var isDark = document.body.classList.contains('dark-theme');
+                  var icon = document.getElementById('header-theme-icon-vertical');
+                  if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
+                }, 100);
+              </script>
+
+              <div class="icon-btn" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
+                <span class="material-symbols-outlined" style="font-size:20px">notifications</span>
+                <span class="badge"></span>
+              </div>
+
+
+              <!-- User profile with layout switcher dropdown -->
+              <div class="user-profile" id="vertical-user-profile">
+                <div class="user-text">
+                  <div class="user-name">Admin</div>
+                  <div class="user-role">Quản trị hệ thống</div>
+                </div>
+                <div class="user-avatar">
+                  <img src="https://ui-avatars.com/api/?name=Admin&background=3C50E0&color=fff" alt="User">
+                </div>
+                <span class="material-symbols-outlined" style="color:var(--color-text-secondary)">expand_more</span>
+
+                <!-- Vertical user dropdown -->
+                <div class="vertical-user-dropdown" id="vertical-user-dropdown">
+                  <div class="user-dropdown-header">
+                    <div class="user-dropdown-name">Admin</div>
+                    <div class="user-dropdown-role">Quản trị hệ thống</div>
+                  </div>
+                  <div class="user-dropdown-item">
+                    <span class="material-symbols-outlined">person</span>
+                    Hồ sơ cá nhân
+                  </div>
+                  <a href="#/appearance" class="user-dropdown-item" style="text-decoration: none;">
+                    <span class="material-symbols-outlined">palette</span>
+                    Cài đặt Giao diện
+                  </a>
+
+                  <div class="dropdown-divider"></div>
+
+                  <div class="user-dropdown-item danger" onclick="ConfirmModal.show({ title: 'Đăng xuất', message: 'Bạn muốn đăng xuất?', onConfirm: window.logoutApp })">
+                    <span class="material-symbols-outlined">logout</span>
+                    Đăng xuất
+                  </div>
+                </div>
+              </div>
             </div>
           </header>
 
@@ -851,23 +883,24 @@ var Navbar = (function () {
       }
     });
 
-    // User dropdown (shared component) — horizontal mode
     var $user = document.getElementById('navbar-user');
-    var $userDrop = document.getElementById('navbar-dropdown');
     if ($user) {
       $user.addEventListener('click', function (e) {
         e.stopPropagation();
         var isOpen = $user.classList.contains('open');
         groups.forEach(function (g) { g.classList.remove('open'); });
-        if (isOpen) { _closeUserDropdown(); }
-        else { $user.classList.add('open'); }
+        if (isOpen) {
+          _closeUserDropdown();
+        } else {
+          $user.classList.add('open');
+        }
       });
     }
 
     var $notif = document.getElementById('navbar-btn-notif');
     if ($notif) {
       $notif.addEventListener('click', function () {
-        Alert.info('Th\u00f4ng b\u00e1o', 'B\u1ea1n kh\u00f4ng c\u00f3 th\u00f4ng b\u00e1o m\u1edbi');
+        Alert.info('Thông báo', 'Bạn không có thông báo mới');
       });
     }
 
@@ -917,20 +950,18 @@ var Navbar = (function () {
     if ($btnClose) $btnClose.addEventListener('click', closeSidebar);
     if ($overlay)  $overlay.addEventListener('click', closeSidebar);
 
-    // User dropdown (shared component) — vertical mode
-    var $uProf = document.getElementById('vertical-user');
-    var $uDrop = document.getElementById('vertical-dropdown');
+    // User dropdown in vertical header
+    var $uProf = document.getElementById('vertical-user-profile');
+    var $uDrop = document.getElementById('vertical-user-dropdown');
     if ($uProf && $uDrop) {
       $uProf.addEventListener('click', function (e) {
         e.stopPropagation();
         var isOpen = $uDrop.classList.contains('open');
         $uDrop.classList.toggle('open', !isOpen);
+        $uProf.querySelector('.material-symbols-outlined:last-child')
+          .textContent = isOpen ? 'expand_more' : 'expand_less';
       });
     }
-
-    // Notifications
-    var $notifV = document.getElementById('vertical-btn-notif');
-    if ($notifV) $notifV.addEventListener('click', function() { Alert.info('Th\u00f4ng b\u00e1o', 'B\u1ea1n kh\u00f4ng c\u00f3 th\u00f4ng b\u00e1o m\u1edbi'); });
 
     document.addEventListener('click', function () {
       if ($uDrop) $uDrop.classList.remove('open');
@@ -946,8 +977,6 @@ var Navbar = (function () {
   function _closeUserDropdown() {
     var $user = document.getElementById('navbar-user');
     if ($user) $user.classList.remove('open');
-    var $drop = document.getElementById('navbar-dropdown');
-    if ($drop) $drop.classList.remove('open');
   }
 
   function _highlightActive() {
@@ -3974,6 +4003,171 @@ var Sidebar = (function () {
   return {
     render: render
   };
+})();
+
+
+/* --- SearchDropdown.js --- */
+/**
+ * Search Dropdown Component
+ * Autocomplete / Custom search results list with input and search button
+ */
+var UIControls = window.UIControls || {};
+
+UIControls.createSearchDropdown = function (options) {
+  var wrapper = document.createElement('div');
+  wrapper.className = 'ui-search-dropdown-wrapper d-flex gap-2 align-items-center';
+  wrapper.style.position = 'relative';
+  wrapper.style.zIndex = '100'; // To avoid overlap issues in cards
+  if (options.width) wrapper.style.width = options.width;
+
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'ui-input flex-grow-1';
+  input.placeholder = options.placeholder || 'Tìm kiếm...';
+  input.style.height = '32px';
+  input.style.fontSize = '13px';
+
+  var btn = document.createElement('button');
+  btn.className = 'btn btn-outline-primary d-flex align-items-center gap-1';
+  btn.style.height = '32px';
+  btn.style.padding = '0 12px';
+  btn.style.fontSize = '13px';
+  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">search</span>' + (options.btnText || 'Tìm');
+
+  var dropdown = document.createElement('div');
+  dropdown.className = 'ui-search-dropdown-menu';
+  
+  wrapper.appendChild(input);
+  wrapper.appendChild(btn);
+  wrapper.appendChild(dropdown);
+
+  function showDropdown() {
+    dropdown.classList.add('show');
+  }
+
+  function hideDropdown() {
+    dropdown.classList.remove('show');
+  }
+
+  function renderResults(results) {
+    dropdown.innerHTML = '';
+    if (!results || results.length === 0) {
+      dropdown.innerHTML = '<div class="p-3 text-center text-secondary">Không tìm thấy kết quả!</div>';
+    } else {
+      results.forEach(function (item) {
+        var div = document.createElement('a');
+        div.className = 'ui-search-dropdown-item border-bottom';
+        div.style.cursor = 'pointer';
+        div.innerHTML = options.renderItem ? options.renderItem(item) : item.toString();
+        div.addEventListener('click', function () {
+          hideDropdown();
+          if (typeof options.onSelect === 'function') {
+            options.onSelect(item);
+          }
+        });
+        dropdown.appendChild(div);
+      });
+    }
+    showDropdown();
+  }
+
+  btn.addEventListener('click', function (e) {
+    e.preventDefault();
+    var keyword = input.value.trim();
+    if (!keyword && options.requireKeyword) {
+      if (window.UIToast) UIToast.show('Vui lòng nhập từ khóa', 'warning');
+      return;
+    }
+    dropdown.innerHTML = '<div class="p-3 text-center text-secondary">Đang tìm kiếm...</div>';
+    showDropdown();
+    
+    if (typeof options.onSearch === 'function') {
+      options.onSearch(keyword, renderResults, hideDropdown);
+    }
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      btn.click();
+    }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!wrapper.contains(e.target)) hideDropdown();
+  });
+
+  return wrapper;
+};
+
+
+/* --- SidePanel.js --- */
+/**
+ * SidePanel Component (Right Drawer)
+ * Automatically handles overlays, sliding animations, and shadow-safe hiding.
+ */
+var UISidePanel = (function () {
+  function SidePanel(selectorOrElement) {
+    this.panel = typeof selectorOrElement === 'string' 
+      ? document.querySelector(selectorOrElement) 
+      : selectorOrElement;
+      
+    if (!this.panel) return;
+
+    this.panel.classList.add('ui-side-panel');
+    
+    // Ensure initial state is off-screen and display:none
+    this.panel.style.display = 'none';
+    this.panel.style.right = '-1000px';
+
+    // Automatically find or create an overlay
+    this.overlay = document.querySelector('.ui-side-panel-overlay');
+    if (!this.overlay) {
+      this.overlay = document.createElement('div');
+      this.overlay.className = 'ui-side-panel-overlay';
+      document.body.appendChild(this.overlay);
+    }
+
+    var self = this;
+    
+    // Bind close buttons
+    var closeBtns = this.panel.querySelectorAll('[data-dismiss="side-panel"]');
+    closeBtns.forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        self.hide();
+      });
+    });
+
+    this.overlay.addEventListener('click', function() {
+      self.hide();
+    });
+  }
+
+  SidePanel.prototype.show = function() {
+    var self = this;
+    this.panel.style.display = 'flex';
+    this.overlay.classList.add('show');
+    // Tiny delay to allow display:flex to register before animation
+    setTimeout(function() {
+      self.panel.classList.add('show');
+    }, 10);
+  };
+
+  SidePanel.prototype.hide = function() {
+    var self = this;
+    this.overlay.classList.remove('show');
+    this.panel.classList.remove('show');
+    // Wait for transition to finish before display:none
+    setTimeout(function() {
+      if (!self.panel.classList.contains('show')) {
+        self.panel.style.display = 'none';
+        self.panel.style.right = '-1000px';
+      }
+    }, 300);
+  };
+
+  return SidePanel;
 })();
 
 
