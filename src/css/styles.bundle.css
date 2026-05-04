@@ -438,6 +438,21 @@ img {
   }
 }
 
+/* ════ GLOBAL COMPONENTS ════ */
+.panel-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 10004;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+.panel-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* ════ ANIMATIONS ════ */
 @keyframes slideUp {
   from {
