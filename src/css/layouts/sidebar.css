@@ -43,15 +43,21 @@
 
 .btn-close-sidebar {
   display: none;
-  background: rgba(255, 255, 255, 0.1);
+  background: transparent;
   border: none;
   border-radius: 50%;
   width: 36px;
   height: 36px;
-  color: #fff;
+  color: var(--color-text-secondary);
   cursor: pointer;
   align-items: center;
   justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.btn-close-sidebar:hover {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-nav {

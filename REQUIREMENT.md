@@ -561,7 +561,7 @@ Bao gồm các báo cáo quản trị tổng hợp:
 | `#/calendar` | Lịch tiệc | HopDong | ⏳ Placeholder |
 | `#/hall-status` | Trạng thái Sảnh | HopDong | ❌ Chưa code |
 | `#/visitor` | Khách tham quan | HopDong | ✅ Đã có Form đầy đủ |
-| `#/booking` | Biên nhận cọc | HopDong | ⏳ Placeholder |
+| `#/booking` | Biên nhận cọc | HopDong | ✅ Đã có Form đầy đủ |
 | `#/contract` | Hợp đồng tiệc | HopDong | ⏳ Placeholder |
 | `#/checkout` | Quyết toán | QuyetToan | ⏳ Placeholder |
 | `#/staff` | Nhân viên phục vụ | NhanSu | ❌ Chưa code |

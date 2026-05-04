@@ -3,9 +3,9 @@
    ═══════════════════════════════════════════ -->
 
 <!-- Tiêu đề & Công cụ -->
-<div class="page-title-bar d-flex justify-content-between align-items-center">
+<div class="page-title-bar d-flex justify-content-between align-items-center flex-wrap gap-3">
   <span>Quản Lý Khách Tham Quan</span>
-  <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-add-visitor" style="padding: 10px 16px;">
+  <button class="btn btn-primary d-flex align-items-center justify-content-center gap-2 flex-grow-1 flex-md-grow-0" id="btn-add-visitor" style="padding: 10px 16px;">
     <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
     Thêm Khách Mới
   </button>
@@ -13,13 +13,26 @@
 
 <!-- Bảng Danh sách -->
 <div class="card mb-4" style="animation: slideUp 0.3s ease forwards;">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <div class="search-box d-flex align-items-center" style="border: 1px solid var(--color-border); padding: 8px 12px; border-radius: var(--radius-md);">
-      <span class="material-symbols-outlined me-2" style="color: var(--color-text-secondary);">search</span>
-      <input type="text" placeholder="Tìm tên khách hoặc SĐT..." style="border: none; outline: none; background: transparent; width: 200px;">
+  <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+    <!-- Date Filter -->
+    <div class="d-flex gap-2 w-100 w-md-auto">
+      <div class="d-flex flex-column flex-grow-1" style="min-width: 0;">
+        <label style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 2px; font-weight: 500;">Từ ngày</label>
+        <input type="date" id="visitor-date-from" style="border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 4px 8px; font-size: 13px; outline: none; background: var(--color-surface); color: var(--color-text); height: 32px; width: 100%;">
+      </div>
+      <div class="d-flex flex-column flex-grow-1" style="min-width: 0;">
+        <label style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 2px; font-weight: 500;">Đến ngày</label>
+        <input type="date" id="visitor-date-to" style="border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 4px 8px; font-size: 13px; outline: none; background: var(--color-surface); color: var(--color-text); height: 32px; width: 100%;">
+      </div>
     </div>
-    <div class="d-flex gap-2">
-      <button class="icon-btn tooltip"><span class="material-symbols-outlined">filter_list</span></button>
+
+    <!-- Search -->
+    <div class="d-flex gap-2 w-100 w-md-auto">
+      <div class="search-box d-flex align-items-center w-100" style="border: 1px solid var(--color-border); padding: 8px 12px; border-radius: var(--radius-md);">
+        <span class="material-symbols-outlined me-2" style="color: var(--color-text-secondary);">search</span>
+        <input type="text" id="visitor-search-input" placeholder="Tìm tên khách hoặc SĐT..." style="border: none; outline: none; background: transparent; width: 100%;">
+      </div>
+      <button class="icon-btn tooltip flex-shrink-0"><span class="material-symbols-outlined">filter_list</span></button>
     </div>
   </div>
   <div class="card-body p-0">
@@ -35,26 +48,7 @@
             <th class="text-end">Thao Tác</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td class="fw-semibold">TQ10426/002</td>
-            <td>
-              <div class="fw-medium">Trần Văn Khoa - Lê Nhã Kỳ</div>
-              <div style="font-size: 13px; color: var(--color-text-secondary);">0982.42.33.88</div>
-            </td>
-            <td>
-              20/11/2026
-              <div style="font-size: 12px; color: var(--color-text-secondary);">Nhằm 10/10 ÂL</div>
-            </td>
-            <td>
-              <div class="fw-medium">Gói Lộc Phát</div>
-              <div style="font-size: 13px; color: var(--color-text-secondary);">Diamond Hall</div>
-            </td>
-            <td><span class="status-badge warning">Đang Tư Vấn</span></td>
-            <td class="text-end">
-              <button class="icon-btn btn-edit-visitor" style="display: inline-flex;"><span class="material-symbols-outlined">edit</span></button>
-            </td>
-          </tr>
+        <tbody id="visitor-tbody">
         </tbody>
       </table>
     </div>
@@ -62,8 +56,8 @@
 </div>
 
 <!-- Khung Trượt Form (Slide-over Panel) -->
-<div id="visitor-form-overlay" class="sidebar-overlay"></div>
-<div id="visitor-form-panel" style="position: fixed; top: 0; right: -800px; width: 100%; max-width: 800px; height: 100vh; background: var(--color-surface); box-shadow: -10px 0 30px rgba(0,0,0,0.1); transition: right 0.3s ease; z-index: 10000; display: flex; flex-direction: column;">
+<div id="visitor-form-overlay" class="sidebar-overlay" style="z-index: 10004;"></div>
+<div id="visitor-form-panel" style="position: fixed; top: 0; right: -800px; width: 100%; max-width: 800px; height: 100vh; background: var(--color-surface); box-shadow: -10px 0 30px rgba(0,0,0,0.1); transition: right 0.3s ease; z-index: 10005; display: flex; flex-direction: column;">
   
   <!-- Panel Header -->
   <div class="d-flex justify-content-between align-items-center p-4" style="border-bottom: 1px solid var(--color-border); background: var(--color-background);">

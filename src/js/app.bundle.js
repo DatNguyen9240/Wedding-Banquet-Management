@@ -635,11 +635,16 @@ var Navbar = (function () {
       <!-- ═══ TOP NAVBAR ═══ -->
       <nav class="app-navbar" id="app-navbar">
 
-        <!-- Brand -->
-        <a href="#/dashboard" class="navbar-brand">
+        <!-- Hamburger (mobile only) -->
+        <button class="navbar-hamburger" id="navbar-hamburger">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+
+        <!-- Brand / Logo -->
+        <div class="navbar-brand" onclick="window.location.hash='#/'">
           <span class="material-symbols-outlined brand-icon">diamond</span>
-          Quản lý tiệc cưới
-        </a>
+          <span class="brand-text">PMQL Tiệc Cưới</span>
+        </div>
 
         <!-- Desktop Menu -->
         <ul class="navbar-menu" id="navbar-menu">
@@ -648,24 +653,13 @@ var Navbar = (function () {
 
         <!-- Right Actions -->
         <div class="navbar-right">
-          <!-- Toggle Theme -->
-            <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
-              <span class="material-symbols-outlined" id="header-theme-icon-horizontal">dark_mode</span>
-            </div>
-            <script>
-              setTimeout(function() {
-                var isDark = document.body.classList.contains(\'dark-theme\');
-                var icon = document.getElementById(\'header-theme-icon-horizontal\');
-                if (icon) icon.innerText = isDark ? \'light_mode\' : \'dark_mode\';
-              }, 100);
-            </script>
-
-            <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
+          <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
+            <span class="material-symbols-outlined" id="header-theme-icon-horizontal">dark_mode</span>
+          </div>
+          <div class="navbar-icon-btn" id="navbar-btn-notif" title="Thông báo">
             <span class="material-symbols-outlined">notifications</span>
             <span class="badge-dot"></span>
           </div>
-
-          <!-- User Profile + dropdown -->
           <div class="navbar-user" id="navbar-user">
             <div class="user-avatar-nav">
               <img src="https://ui-avatars.com/api/?name=Admin&background=3C50E0&color=fff" alt="User">
@@ -704,11 +698,6 @@ var Navbar = (function () {
               </div>
             </div>
           </div>
-
-          <!-- Hamburger (mobile only) -->
-          <button class="navbar-hamburger" id="navbar-hamburger">
-            <span class="material-symbols-outlined">menu</span>
-          </button>
         </div>
       </nav>
 
@@ -717,11 +706,11 @@ var Navbar = (function () {
       <div class="mobile-drawer" id="mobile-drawer">
         <div class="mobile-drawer-header">
           <div class="mobile-drawer-brand">
-            <span class="material-symbols-outlined brand-icon">diamond</span>
+            <span class="material-symbols-outlined brand-icon" style="margin-right:12px;font-size:28px;color:var(--color-primary)">diamond</span>
             Quản lý tiệc cưới
           </div>
           <button class="mobile-drawer-close" id="mobile-drawer-close">
-            <span class="material-symbols-outlined" style="font-size:18px">close</span>
+            <span class="material-symbols-outlined">arrow_back</span>
           </button>
         </div>
         <nav class="mobile-drawer-nav" id="mobile-drawer-nav">
@@ -745,10 +734,10 @@ var Navbar = (function () {
         <!-- Sidebar -->
         <aside class="app-sidebar" id="app-sidebar">
           <div class="sidebar-header">
-            <div style="display:flex;align-items:center;">
+            <div style="display:flex;align-items:center;font-size:18px;font-weight:700;">
               <span class="material-symbols-outlined"
                 style="margin-right:12px;font-size:28px;color:var(--color-primary)">diamond</span>
-              Quản lí tiệc cưới
+              Quản lý tiệc cưới
             </div>
             <button class="btn-close-sidebar" id="btn-close-sidebar">
               <span class="material-symbols-outlined">arrow_back</span>
@@ -778,25 +767,13 @@ var Navbar = (function () {
             </div>
 
             <div class="header-right">
-              <!-- Toggle Theme -->
               <div class="navbar-icon-btn" onclick="var isDark = document.body.classList.toggle('dark-theme'); localStorage.setItem('pmql_theme', isDark ? 'dark' : 'light'); this.querySelector('span').innerText = isDark ? 'light_mode' : 'dark_mode';" title="Chuyển giao diện">
                 <span class="material-symbols-outlined" id="header-theme-icon-vertical">dark_mode</span>
               </div>
-              <script>
-                setTimeout(function() {
-                  var isDark = document.body.classList.contains('dark-theme');
-                  var icon = document.getElementById('header-theme-icon-vertical');
-                  if (icon) icon.innerText = isDark ? 'light_mode' : 'dark_mode';
-                }, 100);
-              </script>
-
               <div class="navbar-icon-btn" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
                 <span class="material-symbols-outlined">notifications</span>
                 <span class="badge-dot"></span>
               </div>
-
-
-              <!-- User Profile (Synchronized with Navbar style) -->
               <div class="navbar-user" id="vertical-user-profile">
                 <div class="user-avatar-nav">
                   <img src="https://ui-avatars.com/api/?name=Admin&background=3C50E0&color=fff" alt="User">

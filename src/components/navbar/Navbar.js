@@ -233,11 +233,16 @@ var Navbar = (function () {
       <!-- ═══ TOP NAVBAR ═══ -->
       <nav class="app-navbar" id="app-navbar">
 
-        <!-- Brand -->
-        <a href="#/dashboard" class="navbar-brand">
+        <!-- Hamburger (mobile only) -->
+        <button class="navbar-hamburger" id="navbar-hamburger">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+
+        <!-- Brand / Logo -->
+        <div class="navbar-brand" onclick="window.location.hash='#/'">
           <span class="material-symbols-outlined brand-icon">diamond</span>
-          Quản lý tiệc cưới
-        </a>
+          <span class="brand-text">PMQL Tiệc Cưới</span>
+        </div>
 
         <!-- Desktop Menu -->
         <ul class="navbar-menu" id="navbar-menu">
@@ -291,11 +296,6 @@ var Navbar = (function () {
               </div>
             </div>
           </div>
-
-          <!-- Hamburger (mobile only) -->
-          <button class="navbar-hamburger" id="navbar-hamburger">
-            <span class="material-symbols-outlined">menu</span>
-          </button>
         </div>
       </nav>
 
@@ -304,11 +304,11 @@ var Navbar = (function () {
       <div class="mobile-drawer" id="mobile-drawer">
         <div class="mobile-drawer-header">
           <div class="mobile-drawer-brand">
-            <span class="material-symbols-outlined brand-icon">diamond</span>
+            <span class="material-symbols-outlined brand-icon" style="margin-right:12px;font-size:28px;color:var(--color-primary)">diamond</span>
             Quản lý tiệc cưới
           </div>
           <button class="mobile-drawer-close" id="mobile-drawer-close">
-            <span class="material-symbols-outlined" style="font-size:18px">close</span>
+            <span class="material-symbols-outlined">arrow_back</span>
           </button>
         </div>
         <nav class="mobile-drawer-nav" id="mobile-drawer-nav">
@@ -332,10 +332,10 @@ var Navbar = (function () {
         <!-- Sidebar -->
         <aside class="app-sidebar" id="app-sidebar">
           <div class="sidebar-header">
-            <div style="display:flex;align-items:center;">
+            <div style="display:flex;align-items:center;font-size:18px;font-weight:700;">
               <span class="material-symbols-outlined"
                 style="margin-right:12px;font-size:28px;color:var(--color-primary)">diamond</span>
-              Quản lí tiệc cưới
+              Quản lý tiệc cưới
             </div>
             <button class="btn-close-sidebar" id="btn-close-sidebar">
               <span class="material-symbols-outlined">arrow_back</span>
