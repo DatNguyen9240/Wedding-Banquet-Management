@@ -308,44 +308,70 @@ UIControls.utils = (function() {
    */
   function computeDropdownPosition(inputElement, dropdownElement) {
     var rect = inputElement.getBoundingClientRect();
-    
-    dropdownElement.style.position = 'fixed';
-    dropdownElement.style.zIndex = '99999';
-    dropdownElement.style.left = rect.left + 'px';
-    dropdownElement.style.minWidth = rect.width + 'px';
-    
-    // Khôi phục chiều cao mặc định
-    dropdownElement.style.maxHeight = '300px';
 
-    // Hiện tạm để đo chiều cao thật
-    var wasActive = dropdownElement.classList.contains('active');
-    if (!wasActive) {
+    // Navbar: giới hạn top khi mở lên trên
+    var navbarBottom = 0;
+    var navbar = document.querySelector('.app-navbar');
+    if (navbar) navbarBottom = navbar.getBoundingClientRect().bottom;
+
+    // position:fixed — tọa độ viewport, không bị ảnh hưởng bởi overflow:hidden
+    dropdownElement.style.position   = 'fixed';
+    dropdownElement.style.zIndex     = '9000';
+    dropdownElement.style.left       = rect.left + 'px';
+    dropdownElement.style.minWidth   = rect.width + 'px';
+    dropdownElement.style.transition = 'opacity 0.15s ease, visibility 0.15s ease';
+
+    var isActive = dropdownElement.classList.contains('active');
+    if (!isActive) {
+      dropdownElement.style.maxHeight  = '300px';
       dropdownElement.style.visibility = 'hidden';
       dropdownElement.classList.add('active');
     }
 
     var dropHeight = dropdownElement.offsetHeight;
     var spaceBelow = window.innerHeight - rect.bottom;
-    var spaceAbove = rect.top;
+    var spaceAbove = rect.top - navbarBottom;
 
     if (spaceBelow < dropHeight && spaceAbove > spaceBelow) {
       if (spaceAbove < dropHeight) {
-        dropdownElement.style.maxHeight = (spaceAbove - 10) + 'px';
+        dropdownElement.style.maxHeight = (spaceAbove - 4) + 'px';
         dropHeight = dropdownElement.offsetHeight;
       }
-      dropdownElement.style.top = (rect.top - dropHeight - 4) + 'px';
+      var topPos = Math.max(rect.top - dropHeight, navbarBottom + 4);
+      dropdownElement.style.top = topPos + 'px';
     } else {
       if (spaceBelow < dropHeight) {
-        dropdownElement.style.maxHeight = (spaceBelow - 10) + 'px';
+        dropdownElement.style.maxHeight = (spaceBelow - 4) + 'px';
       }
-      dropdownElement.style.top = (rect.bottom + 4) + 'px';
+      dropdownElement.style.top = rect.bottom + 'px';
     }
 
-    if (!wasActive) {
+    if (!isActive) {
       dropdownElement.classList.remove('active');
       dropdownElement.style.visibility = '';
     }
   }
+
+  /**
+   * Tìm tất cả scrollable ancestors từ một element
+   */
+  function getScrollableAncestors(el) {
+    var ancestors = [];
+    var node = el.parentElement;
+    while (node && node !== document.documentElement) {
+      var style = window.getComputedStyle(node);
+      var ov = style.overflow + style.overflowY + style.overflowX;
+      if (/auto|scroll/.test(ov)) {
+        ancestors.push(node);
+      }
+      node = node.parentElement;
+    }
+    ancestors.push(window);
+    return ancestors;
+  }
+
+
+
 
   /**
    * Sinh HTML cho Dropdown Table List
@@ -370,6 +396,7 @@ UIControls.utils = (function() {
 
   return {
     computeDropdownPosition: computeDropdownPosition,
+    getScrollableAncestors: getScrollableAncestors,
     createDropdownTableHTML: createDropdownTableHTML,
     /**
      * Setup single row selection for a table
@@ -1058,7 +1085,7 @@ var UIControls = window.UIControls || {};
 UIControls.createDataComboBox = function(options) {
   var container = document.createElement('div');
   container.className = 'combo-box-container';
-  
+
   // Input
   var input = document.createElement('input');
   input.type = 'text';
@@ -1066,7 +1093,7 @@ UIControls.createDataComboBox = function(options) {
   input.placeholder = options.placeholder || '';
   if (options.id) input.id = options.id;
 
-  // Actions block
+  // Actions block – chỉ giữ nút mũi tên
   var actions = document.createElement('div');
   actions.className = 'combo-box-actions';
 
@@ -1074,37 +1101,70 @@ UIControls.createDataComboBox = function(options) {
   btnArrow.className = 'combo-action-btn';
   btnArrow.innerHTML = '<span class="material-symbols-outlined">arrow_drop_down</span>';
   btnArrow.title = 'Mở danh sách (F4)';
-
-  var btnLookup = document.createElement('button');
-  btnLookup.className = 'combo-action-btn';
-  btnLookup.innerHTML = '<span class="material-symbols-outlined">more_horiz</span>';
-  btnLookup.title = 'Tra cứu (F3)';
-
-  var btnAdd = document.createElement('button');
-  btnAdd.className = 'combo-action-btn';
-  btnAdd.innerHTML = '<span class="material-symbols-outlined">note_add</span>';
-  btnAdd.title = 'Thêm mới (F2)';
+  btnArrow.type = 'button';
 
   actions.appendChild(btnArrow);
-  actions.appendChild(btnLookup);
-  actions.appendChild(btnAdd);
 
-  // Dropdown Panel
+  // ── Dropdown Panel ──────────────────────────────────────────────
   var dropdown = document.createElement('div');
   dropdown.className = 'data-dropdown-menu';
-  
+
+  // Search bar bên trong dropdown
+  var searchWrapper = document.createElement('div');
+  searchWrapper.className = 'dd-search-wrapper';
+
+  var searchIcon = document.createElement('span');
+  searchIcon.className = 'material-symbols-outlined dd-search-icon';
+  searchIcon.textContent = 'search';
+
+  var searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.className = 'dd-search-input';
+  searchInput.placeholder = 'Tìm kiếm...';
+
+  searchWrapper.appendChild(searchIcon);
+  searchWrapper.appendChild(searchInput);
+
+  // Table wrapper (scrollable)
+  var tableWrapper = document.createElement('div');
+  tableWrapper.className = 'dd-table-wrapper';
+
+  // Footer "+ Thêm mới"
+  var footer = document.createElement('div');
+  footer.className = 'dd-footer';
+
+  var btnAddNew = document.createElement('button');
+  btnAddNew.type = 'button';
+  btnAddNew.className = 'dd-footer-add-btn';
+  btnAddNew.innerHTML = '<span class="material-symbols-outlined">add</span> Thêm mới';
+
+  btnAddNew.addEventListener('click', function(e) {
+    e.stopPropagation();
+    hideDropdown();
+    if (typeof options.onF2 === 'function') options.onF2();
+  });
+
+  footer.appendChild(btnAddNew);
+
+  dropdown.appendChild(searchWrapper);
+  dropdown.appendChild(tableWrapper);
+  dropdown.appendChild(footer);
+
+  // ── Data & Render ───────────────────────────────────────────────
   var fullData = options.data || [];
-  
+
   function renderTable(displayData) {
     if (UIControls.utils) {
-      dropdown.innerHTML = UIControls.utils.createDropdownTableHTML(options.headers || [], displayData, options.colHighlightIndex || 0);
-      var rows = dropdown.querySelectorAll('tbody tr');
-      rows.forEach(row => {
+      tableWrapper.innerHTML = UIControls.utils.createDropdownTableHTML(
+        options.headers || [], displayData, options.colHighlightIndex || 0
+      );
+      var rows = tableWrapper.querySelectorAll('tbody tr');
+      rows.forEach(function(row) {
         row.addEventListener('click', function() {
           var dataRow = displayData[row.getAttribute('data-index')];
           input.value = dataRow[options.colFilterIndex || 0];
           hideDropdown();
-          if(typeof options.onSelect === 'function') {
+          if (typeof options.onSelect === 'function') {
             options.onSelect(dataRow);
           }
         });
@@ -1112,46 +1172,88 @@ UIControls.createDataComboBox = function(options) {
     }
   }
 
+  // ── Scroll listeners trên đúng container đang scroll ───────────
+  var _scrollTargets = [];
+  var _scrollHandler = null;
+
+  function attachScrollListeners() {
+    if (_scrollHandler) return;
+    _scrollHandler = function() {
+      if (UIControls.utils) {
+        UIControls.utils.computeDropdownPosition(container, dropdown);
+      }
+    };
+    // Tìm tất cả scrollable ancestors của combo-box-container
+    _scrollTargets = UIControls.utils
+      ? UIControls.utils.getScrollableAncestors(container)
+      : [window];
+    _scrollTargets.forEach(function(target) {
+      target.addEventListener('scroll', _scrollHandler, { passive: true, capture: false });
+    });
+    window.addEventListener('resize', _scrollHandler, { passive: true });
+  }
+
+  function detachScrollListeners() {
+    if (!_scrollHandler) return;
+    _scrollTargets.forEach(function(target) {
+      target.removeEventListener('scroll', _scrollHandler, { capture: false });
+    });
+    window.removeEventListener('resize', _scrollHandler);
+    _scrollHandler = null;
+    _scrollTargets = [];
+  }
+
   function showDropdown() {
     if (dropdown.parentNode !== document.body) {
       document.body.appendChild(dropdown);
     }
     renderTable(fullData);
+    searchInput.value = '';
     if (UIControls.utils) {
       UIControls.utils.computeDropdownPosition(container, dropdown);
     }
     dropdown.classList.add('active');
+    attachScrollListeners();
+    setTimeout(function() { searchInput.focus(); }, 50);
   }
 
   function hideDropdown() {
+    detachScrollListeners();
     dropdown.classList.remove('active');
     if (dropdown.parentNode) dropdown.parentNode.removeChild(dropdown);
   }
 
+
+
+  // ── Search bên trong dropdown ───────────────────────────────────
+  searchInput.addEventListener('input', function() {
+    var val = searchInput.value.toLowerCase();
+    if (!val) {
+      renderTable(fullData);
+      return;
+    }
+    var filtered = fullData.filter(function(row) {
+      var cellContent = (row[options.colFilterIndex || 0] || '').toString().toLowerCase();
+      return cellContent.includes(val);
+    });
+    renderTable(filtered);
+  });
+
+  // Ngăn click trong dropdown đóng nó
+  searchInput.addEventListener('click', function(e) { e.stopPropagation(); });
+
+  // ── Events ──────────────────────────────────────────────────────
   btnArrow.addEventListener('click', function(e) {
     e.preventDefault();
     dropdown.classList.contains('active') ? hideDropdown() : showDropdown();
   });
 
-  btnAdd.addEventListener('click', function(e) {
-    e.preventDefault();
-    if(options.onF2) options.onF2();
-  });
-
-  btnLookup.addEventListener('click', function(e) {
-    e.preventDefault();
-    if(options.onF3) options.onF3();
-  });
-
+  // Gõ vào input chính vẫn mở & filter
   input.addEventListener('input', function(e) {
     var val = e.target.value.toLowerCase();
-    dropdown.classList.add('active');
-    
-    if(!val) {
-      renderTable(fullData);
-      return;
+    if (!dropdown.classList.contains('active')) {
+      showDropdown();
     }
-    
     var filtered = fullData.filter(function(row) {
       var cellContent = (row[options.colFilterIndex || 0] || '').toString().toLowerCase();
       return cellContent.includes(val);
@@ -1160,15 +1262,17 @@ UIControls.createDataComboBox = function(options) {
   });
 
   document.addEventListener('click', function(e) {
-    if(!container.contains(e.target) && !dropdown.contains(e.target)) {
+    if (!container.contains(e.target) && !dropdown.contains(e.target)) {
       hideDropdown();
     }
   });
 
-  input.addEventListener('kb:open', function() { dropdown.classList.contains('active') ? hideDropdown() : showDropdown(); });
-  input.addEventListener('kb:lookup', function() { if(options.onF3) options.onF3(); });
-  input.addEventListener('kb:new', function() { if(options.onF2) options.onF2(); });
-  input.addEventListener('kb:close', function() { hideDropdown(); });
+  input.addEventListener('kb:open', function() {
+    dropdown.classList.contains('active') ? hideDropdown() : showDropdown();
+  });
+  input.addEventListener('kb:lookup', function() { if (options.onF3) options.onF3(); });
+  input.addEventListener('kb:new',    function() { if (options.onF2) options.onF2(); });
+  input.addEventListener('kb:close',  function() { hideDropdown(); });
 
   container.appendChild(input);
   container.appendChild(actions);
