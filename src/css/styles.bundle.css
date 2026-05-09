@@ -2391,6 +2391,7 @@ body.dark-theme .icon-btn:hover {
 /* ── Dropdown: Table wrapper ──────────────────────────────────── */
 .dd-table-wrapper {
   overflow-y: auto;
+  overflow-x: auto;
   max-height: 220px;
   flex: 1;
   background: var(--color-surface);
@@ -2970,7 +2971,7 @@ body.dark-theme .icon-btn:hover {
   /* position & top/left set dynamically by UIUtils.computeDropdownPosition (fixed) */
   width: max-content;
   min-width: 100%;
-  max-width: min(600px, 95vw);
+  max-width: 95vw;
   background: var(--color-surface);
   backdrop-filter: blur(8px);
   border: 1px solid var(--color-border);
@@ -3029,8 +3030,7 @@ body.dark-theme .icon-btn:hover {
   padding: 8px 12px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text);
-  white-space: normal;
-  word-break: break-word;
+  white-space: nowrap;
   line-height: 1.4;
 }
 

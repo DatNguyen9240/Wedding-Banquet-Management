@@ -100,6 +100,7 @@
 /* ── Dropdown: Table wrapper ──────────────────────────────────── */
 .dd-table-wrapper {
   overflow-y: auto;
+  overflow-x: auto;
   max-height: 220px;
   flex: 1;
   background: var(--color-surface);
