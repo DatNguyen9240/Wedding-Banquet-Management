@@ -2440,6 +2440,17 @@ body.dark-theme .icon-btn:hover {
   flex-shrink: 0;
 }
 
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .combo-box-container .ui-input {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+  .dd-search-input {
+    font-size: 13px;
+  }
+}
+
 
 /* --- context-menu.css --- */
 /* ═══════════════════════════════════════════
@@ -3037,6 +3048,20 @@ body.dark-theme .icon-btn:hover {
 
 .dropdown-table tbody tr:hover {
   background: rgba(60, 80, 224, 0.08);
+}
+
+/* Mobile: Reduce font size and tighten spacing */
+@media (max-width: 768px) {
+  .dropdown-table {
+    font-size: 12px;
+  }
+  .dropdown-table th {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .dropdown-table td {
+    padding: 4px 8px;
+  }
 }
 
 
@@ -4239,6 +4264,13 @@ body.dark-theme .data-table tbody tr:hover {
 .ui-search-dropdown-item:hover {
   background: var(--color-background);
   color: var(--color-text);
+}
+
+@media (max-width: 768px) {
+  .ui-search-dropdown-item {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
 }
 
 

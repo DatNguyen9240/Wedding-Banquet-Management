@@ -49,3 +49,10 @@
   background: var(--color-background);
   color: var(--color-text);
 }
+
+@media (max-width: 768px) {
+  .ui-search-dropdown-item {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+}
