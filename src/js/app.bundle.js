@@ -316,10 +316,9 @@ UIControls.utils = (function() {
 
     // position:fixed — tọa độ viewport, không bị ảnh hưởng bởi overflow:hidden
     dropdownElement.style.position   = 'fixed';
-    dropdownElement.style.zIndex     = '9000';
-    dropdownElement.style.left       = rect.left + 'px';
-    dropdownElement.style.minWidth   = rect.width + 'px';
+    dropdownElement.style.zIndex     = '10001';
     dropdownElement.style.transition = 'opacity 0.15s ease, visibility 0.15s ease';
+    dropdownElement.style.minWidth   = rect.width + 'px';
 
     var isActive = dropdownElement.classList.contains('active');
     if (!isActive) {
@@ -328,7 +327,20 @@ UIControls.utils = (function() {
       dropdownElement.classList.add('active');
     }
 
+    var dropWidth  = dropdownElement.offsetWidth;
     var dropHeight = dropdownElement.offsetHeight;
+
+    // --- Tính toán Left ---
+    var leftPos = rect.left;
+    if (leftPos + dropWidth > window.innerWidth - 10) {
+      // Nếu tràn phải -> Căn lề phải với input
+      leftPos = rect.right - dropWidth;
+    }
+    // Đảm bảo không tràn trái
+    leftPos = Math.max(10, leftPos);
+    dropdownElement.style.left = leftPos + 'px';
+
+    // --- Tính toán Top ---
     var spaceBelow = window.innerHeight - rect.bottom;
     var spaceAbove = rect.top - navbarBottom;
 
