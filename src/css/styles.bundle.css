@@ -1,4 +1,4 @@
-/* --- design-tokens.css --- */
+﻿/* --- design-tokens.css --- */
 /* ═══════════════════════════════════════════
    Design Tokens — TailAdmin Style
    Dành cho Quản lý Tiệc Cưới
@@ -2300,37 +2300,37 @@ body.dark-theme .icon-btn:hover {
 .combo-box-container .ui-input {
   flex: 1;
   min-width: 0;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  padding: 8px 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: var(--radius, 8px) 0 0 var(--radius, 8px);
   outline: none;
-  font-size: 14px;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  font-size: 14.5px;
+  transition: border-color 0.15s, box-shadow 0.15s;
   font-family: inherit;
-  color: var(--color-text);
-  background: var(--color-surface);
+  color: var(--text, #1e293b);
+  background: var(--surface, #fff);
 }
 
 .combo-box-container .ui-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: inset 0 0 0 1px var(--color-primary);
+  border-color: var(--primary, #6366f1);
+  box-shadow: inset 0 0 0 1px var(--primary, #6366f1);
 }
 
 .combo-box-actions {
   display: flex;
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e2e8f0);
   border-left: none;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-radius: 0 var(--radius, 8px) var(--radius, 8px) 0;
   overflow: hidden;
 }
 
 .combo-action-btn {
   background: transparent;
   border: none;
-  border-left: 1px solid var(--color-border);
+  border-left: 1px solid var(--border, #e2e8f0);
   padding: 0 8px;
-  color: var(--color-text-secondary);
+  color: var(--muted, #94a3b8);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2338,18 +2338,14 @@ body.dark-theme .icon-btn:hover {
   transition: background 0.2s ease, color 0.2s ease;
 }
 
-.combo-action-btn:first-child {
-  border-left: none;
-}
+.combo-action-btn:first-child { border-left: none; }
 
 .combo-action-btn:hover {
-  background: rgba(60, 80, 224, 0.1);
-  color: var(--color-primary);
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary, #6366f1);
 }
 
-.combo-action-btn .material-symbols-outlined {
-  font-size: 18px;
-}
+.combo-action-btn .material-symbols-outlined { font-size: 22px; }
 
 /* ── Dropdown: Search bar ─────────────────────────────────────── */
 .dd-search-wrapper {
@@ -2357,8 +2353,8 @@ body.dark-theme .icon-btn:hover {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  background: var(--surface, #fff);
   position: sticky;
   top: 0;
   z-index: 3;
@@ -2366,7 +2362,7 @@ body.dark-theme .icon-btn:hover {
 
 .dd-search-icon {
   font-size: 18px;
-  color: var(--color-primary);
+  color: var(--primary, #6366f1);
   flex-shrink: 0;
   pointer-events: none;
   opacity: 0.7;
@@ -2376,17 +2372,17 @@ body.dark-theme .icon-btn:hover {
   flex: 1;
   border: none;
   outline: none;
-  font-size: 14px;
+  font-size: 14.5px;
   font-family: inherit;
-  color: var(--color-text);
+  color: var(--text, #1e293b);
   background: transparent;
   padding: 0;
   line-height: 1.5;
 }
 
 .dd-search-input::placeholder {
-  color: var(--color-text-secondary);
-  opacity: 0.6;
+  color: var(--muted, #94a3b8);
+  opacity: 0.8;
 }
 
 /* ── Dropdown: Table wrapper ──────────────────────────────────── */
@@ -2395,21 +2391,19 @@ body.dark-theme .icon-btn:hover {
   overflow-x: auto;
   max-height: 220px;
   flex: 1;
-  background: var(--color-surface);
+  background: var(--surface, #fff);
 }
 
-.dd-table-wrapper::-webkit-scrollbar {
-  width: 5px;
-}
+.dd-table-wrapper::-webkit-scrollbar { width: 5px; }
 .dd-table-wrapper::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: var(--border, #e2e8f0);
   border-radius: 4px;
 }
 
 /* ── Dropdown: Footer "+ Thêm mới" ───────────────────────────── */
 .dd-footer {
-  border-top: 2px solid var(--color-border);
-  background: var(--color-surface);
+  border-top: 2px solid var(--border, #e2e8f0);
+  background: var(--surface, #fff);
   position: sticky;
   bottom: 0;
   z-index: 3;
@@ -2424,7 +2418,7 @@ body.dark-theme .icon-btn:hover {
   width: 100%;
   border: none;
   background: transparent;
-  color: var(--color-primary);
+  color: var(--primary, #6366f1);
   font-size: 13px;
   font-family: inherit;
   font-weight: 600;
@@ -2433,24 +2427,11 @@ body.dark-theme .icon-btn:hover {
   transition: background 0.15s ease;
 }
 
-.dd-footer-add-btn:hover {
-  background: rgba(60, 80, 224, 0.08);
-}
+.dd-footer-add-btn:hover { background: rgba(99, 102, 241, 0.08); }
 
 .dd-footer-add-btn .material-symbols-outlined {
   font-size: 16px;
   flex-shrink: 0;
-}
-
-/* Mobile adjustments */
-@media (max-width: 768px) {
-  .combo-box-container .ui-input {
-    font-size: 13px;
-    padding: 8px 10px;
-  }
-  .dd-search-input {
-    font-size: 13px;
-  }
 }
 
 

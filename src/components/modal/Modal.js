@@ -46,8 +46,14 @@ var UIModal = (function () {
 
     document.getElementById('modal-container').appendChild(overlay);
 
+    var modalId = config.id || 'modal-' + Date.now();
+    history.pushState({ modalId: modalId }, null, "");
+
     function close() {
       overlay.remove();
+      if (history.state && history.state.modalId === modalId) {
+        history.back();
+      }
       if (typeof config.onClose === 'function') config.onClose();
     }
 
@@ -67,3 +73,11 @@ var UIModal = (function () {
     show: show
   };
 })();
+
+// Xử lý nút Back của trình duyệt/điện thoại
+window.addEventListener('popstate', function (e) {
+  // Đóng tất cả modal do UIModal tạo ra (thường nằm trong modal-container)
+  document.querySelectorAll('#modal-container .modal-overlay').forEach(function(m) {
+     m.remove();
+  });
+});

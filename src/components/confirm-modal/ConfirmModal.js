@@ -72,11 +72,15 @@ var ConfirmModal = (function () {
     newBtnClose.addEventListener('click', hide);
 
     modalOverlay.style.display = 'flex';
+    history.pushState({ modalId: 'confirm-modal' }, null, "");
   }
 
   function hide() {
-    if (modalOverlay) {
+    if (modalOverlay && modalOverlay.style.display !== 'none') {
       modalOverlay.style.display = 'none';
+      if (history.state && history.state.modalId === 'confirm-modal') {
+        history.back();
+      }
     }
   }
 
@@ -85,3 +89,11 @@ var ConfirmModal = (function () {
     hide: hide
   };
 })();
+
+// Xử lý nút Back của trình duyệt/điện thoại
+window.addEventListener('popstate', function (e) {
+  var overlay = document.getElementById('confirm-modal-overlay');
+  if (overlay && overlay.style.display !== 'none') {
+    overlay.style.display = 'none';
+  }
+});
