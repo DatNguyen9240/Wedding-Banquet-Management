@@ -1,4 +1,4 @@
-﻿/* --- design-tokens.css --- */
+/* --- design-tokens.css --- */
 /* ═══════════════════════════════════════════
    Design Tokens — TailAdmin Style
    Dành cho Quản lý Tiệc Cưới
@@ -1836,6 +1836,7 @@ body.dark-theme .icon-btn:hover {
   border-left: 4px solid var(--color-primary);
   transform: translateX(120%);
   opacity: 0;
+  pointer-events: auto;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
