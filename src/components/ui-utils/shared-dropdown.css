@@ -1,29 +1,26 @@
 /* 3. DATAGRID DROPDOWN MENU (FOR COMBOBOX/GRID CELL) */
 .data-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
+  /* position & top/left set dynamically by UIUtils.computeDropdownPosition (fixed) */
   width: max-content;
   min-width: 100%;
-  max-width: 90vw;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
+  max-width: 95vw;
+  background: var(--color-surface);
+  backdrop-filter: blur(8px);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  z-index: 1000;
-  overflow: auto;
-  max-height: 300px;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 9000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-10px);
-  transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 
 .data-dropdown-menu.active {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
 }
 
 /* Custom Scrollbar for Dropdown Menu */
@@ -32,7 +29,7 @@
   height: 6px;
 }
 .data-dropdown-menu::-webkit-scrollbar-thumb {
-  background-color: rgba(0,0,0,0.15);
+  background-color: var(--color-border);
   border-radius: 4px;
 }
 
@@ -66,6 +63,7 @@
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text);
   white-space: nowrap;
+  line-height: 1.4;
 }
 
 /* Nổi bật cột chính (ví dụ Tên nhân viên/Tên hàng) */
@@ -76,10 +74,25 @@
 
 .dropdown-table tbody tr {
   cursor: pointer;
+  background: var(--color-surface);
   transition: background 0.15s ease;
 }
 
 .dropdown-table tbody tr:hover {
   background: rgba(60, 80, 224, 0.08);
+}
+
+/* Mobile: Reduce font size and tighten spacing */
+@media (max-width: 768px) {
+  .dropdown-table {
+    font-size: 12px;
+  }
+  .dropdown-table th {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+  .dropdown-table td {
+    padding: 4px 8px;
+  }
 }
 
