@@ -3227,6 +3227,7 @@ body.dark-theme .icon-btn:hover {
 
 .table-wrapper {
   overflow-x: auto;
+  overflow-y: hidden; /* Ensure vertical corners are clipped */
   border-radius: var(--radius-sm);
 }
 
@@ -3253,6 +3254,11 @@ body.dark-theme .icon-btn:hover {
   font-size: var(--font-size-sm);
   color: var(--color-text);
   font-weight: 500;
+}
+
+.data-table th:last-child,
+.data-table td:last-child {
+  padding-right: 32px;
 }
 
 .data-table tbody tr {
@@ -3305,8 +3311,6 @@ body.dark-theme .data-table tbody tr:hover {
     padding: 12px 12px;
   }
 }
-
-
 
 
 /* --- tabs.css --- */

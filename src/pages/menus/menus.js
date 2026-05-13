@@ -195,20 +195,20 @@ var MenusPage = (function () {
 
     var parentTableHTML = '<div style="margin-bottom:20px;">'
       + '<div style="font-weight:700; color:var(--color-text-primary); margin-bottom:8px; font-size:14px; text-transform:uppercase;">' + UIIcon.renderHtml('folder_open', 'vertical-align:bottom;font-size:18px;') + ' Thông tin Thư mục hiện tại (Nhấp đúp để sửa)</div>'
-      + '<div class="table-wrapper" style="border-radius:10px;overflow:visible;border:1px solid var(--color-primary);">'
+      + '<div class="table-wrapper" style="border-radius:10px;border:1px solid var(--color-primary);">'
       + '<table class="data-table" style="margin:0; table-layout:fixed; width:100%;">'
       + '<thead style="background:rgba(var(--color-primary-rgb), 0.1); white-space:nowrap;">'
       + '<tr>'
       + '<th style="width:80px;text-align:center;">Root</th>'
       + '<th style="width:110px;">Menu ID</th>'
       + '<th style="width:100px;">Parent ID</th>'
-      + '<th style="width:60px;text-align:center;">Icon</th>'
+      + '<th style="width:80px;text-align:center;">Icon</th>'
       + '<th style="width:20%;">Tên Menu (VN)</th>'
       + '<th style="width:12%;">Tên (EN)</th>'
       + '<th style="width:15%;">Tên Form</th>'
       + '<th style="width:15%;">Form Key</th>'
       + '<th>URL</th>'
-      + '<th style="width:90px; text-align:center;">Thao tác</th>'
+      + '<th style="width:120px; text-align:center;">Thao tác</th>'
       + '</tr>'
       + '</thead>'
       + '<tbody>' + parentRowHTML + '</tbody>'
@@ -251,19 +251,19 @@ var MenusPage = (function () {
           + '</tr>';
       }).join('');
 
-      var table = '<div class="table-wrapper" style="border-radius:10px;overflow:visible;border:1px solid var(--color-border);">'
+      var table = '<div class="table-wrapper" style="border-radius:10px;border:1px solid var(--color-border);">'
         + '<table class="data-table child-drag-table" style="margin:0; table-layout:fixed; width:100%;">'
         + '<thead style="white-space:nowrap;"><tr>'
         + '<th style="width:80px;text-align:center;">Kéo/STT</th>'
         + '<th style="width:110px;">Menu ID</th>'
         + '<th style="width:100px;">Parent ID</th>'
-        + '<th style="width:60px;text-align:center;">Icon</th>'
+        + '<th style="width:80px;text-align:center;">Icon</th>'
         + '<th style="width:20%;">Tên Menu (VN)</th>'
         + '<th style="width:12%;">Tên (EN)</th>'
         + '<th style="width:15%;">Tên Form</th>'
         + '<th style="width:15%;">Form Key</th>'
         + '<th>URL</th>'
-        + '<th style="width:90px; text-align:center;">Thao tác</th>'
+        + '<th style="width:120px; text-align:center;">Thao tác</th>'
         + '</tr></thead>'
         + '<tbody>' + rows + '</tbody>'
         + '</table></div>'
@@ -318,7 +318,7 @@ var MenusPage = (function () {
         tr.innerHTML = '<td style="color:var(--color-text-secondary);text-align:center;">' + UIIcon.renderHtml('add_circle', 'font-size:18px; color:var(--color-primary);') + '</td>'
           + '<td><input type="text" class="form-control inline-new-id" placeholder="VD: 0305" style="' + idInputStyle + '" autofocus></td>'
           + '<td style="text-align:center;"><code style="background:rgba(0,0,0,0.05);padding:5px 10px;border-radius:6px;font-size:12px;font-weight:700;color:var(--color-text-secondary);">' + parentItem.id + '</code></td>'
-          + '<td><div style="display:flex;align-items:center;background:#fff;border:1px solid var(--color-border);border-radius:6px;padding:0 4px;transition:0.2s;"><span class="material-symbols-outlined inline-icon-preview" style="font-size:18px;color:var(--color-primary);margin:0 2px;">horizontal_rule</span><input type="text" class="form-control inline-new-icon" placeholder="Icon..." value="horizontal_rule" style="border:none;outline:none;width:100%;font-size:13px;padding:6px 4px;background:transparent;"></div></td>'
+          + '<td><input type="text" class="form-control inline-new-icon" value="horizontal_rule" style="width:32px; height:32px; padding:0; font-size:20px; font-family:\'Material Symbols Outlined\'; margin:0 auto; text-align:center; border-radius:6px; border:1px solid var(--color-border); outline:none; display:block; color:var(--color-primary); background:#fff;" title="Gõ tên Icon"></td>'
           + '<td><input type="text" class="form-control inline-new-label" placeholder="VD: Báo cáo mới..." style="' + focusInputStyle + '"></td>'
           + '<td><input type="text" class="form-control inline-new-en" placeholder="VD: New Report" style="' + baseInputStyle + '"></td>'
           + '<td><input type="text" class="form-control inline-new-formname" placeholder="Tên Form" style="' + baseInputStyle + '"></td>'
@@ -335,10 +335,59 @@ var MenusPage = (function () {
 
         // Hiệu ứng focus cho icon
         var iconInput = tr.querySelector('.inline-new-icon');
-        iconInput.addEventListener('focus', function () { this.parentElement.style.borderColor = 'var(--color-primary)'; });
-        iconInput.addEventListener('blur', function () { this.parentElement.style.borderColor = 'var(--color-border)'; });
-        iconInput.addEventListener('input', function () {
-          tr.querySelector('.inline-icon-preview').textContent = this.value.trim() || 'horizontal_rule';
+        iconInput.addEventListener('focus', function () { 
+          this.style.borderColor = 'var(--color-primary)'; 
+          if (document.querySelector('.inline-icon-picker')) return;
+
+          var picker = document.createElement('div');
+          picker.className = 'inline-icon-picker';
+          picker.style.cssText = 'position:fixed; transform:translateX(-50%); width:220px; background:#fff; border:1px solid var(--color-border); box-shadow:0 10px 25px rgba(0,0,0,0.15); border-radius:8px; padding:8px; z-index:9999; display:flex; flex-wrap:wrap; gap:4px; justify-content:center; cursor:default;';
+
+          var updatePickerPos = function() {
+            if (!document.body.contains(picker)) {
+              window.removeEventListener('scroll', updatePickerPos, true);
+              window.removeEventListener('resize', updatePickerPos);
+              return;
+            }
+            var rect = iconInput.getBoundingClientRect();
+            var pickerHeight = 240;
+            var topPos = rect.bottom + 4;
+            if (topPos + pickerHeight > window.innerHeight && rect.top - pickerHeight > 0) topPos = rect.top - pickerHeight - 4;
+            picker.style.top = topPos + 'px';
+            picker.style.left = (rect.left + rect.width / 2) + 'px';
+          };
+
+          var icons = ['article', 'dashboard', 'people', 'bar_chart', 'settings', 'receipt', 'restaurant', 'point_of_sale', 'calendar_month', 'inventory_2', 'assignment', 'group', 'local_shipping', 'local_dining', 'category', 'notifications', 'monitoring', 'event', 'attach_money', 'print', 'folder', 'home', 'description', 'list', 'add', 'edit', 'delete', 'search', 'event_note', 'storefront'];
+          icons.forEach(function (ico) {
+            var btn = document.createElement('div');
+            btn.style.cssText = 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:4px; transition:background 0.2s;';
+            btn.innerHTML = UIIcon.renderHtml(ico, 'font-size:20px;color:var(--color-primary);');
+            btn.title = ico;
+            btn.onmouseenter = function () { btn.style.background = 'rgba(0,0,0,0.05)'; };
+            btn.onmouseleave = function () { btn.style.background = 'transparent'; };
+            btn.onmousedown = function (e) {
+              e.preventDefault();
+              iconInput.value = ico;
+              if (document.querySelector('.inline-icon-picker')) document.querySelector('.inline-icon-picker').remove();
+            };
+            picker.appendChild(btn);
+          });
+
+          document.body.appendChild(picker);
+          updatePickerPos();
+          window.addEventListener('scroll', updatePickerPos, true);
+          window.addEventListener('resize', updatePickerPos);
+        });
+
+        iconInput.addEventListener('blur', function () { 
+          this.style.borderColor = 'var(--color-border)'; 
+          if (document.querySelector('.inline-icon-picker')) document.querySelector('.inline-icon-picker').remove();
+        });
+
+        iconInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && document.querySelector('.inline-icon-picker')) {
+            document.querySelector('.inline-icon-picker').remove();
+          }
         });
 
         // Nút hủy
@@ -501,19 +550,34 @@ var MenusPage = (function () {
         }
 
         if (field === 'icon') {
-          input.style.cssText = 'width:calc(100% - 10px); padding:4px; font-size:13px; margin:0; text-align:center;';
-          input.placeholder = 'Gõ tên icon...';
+          input.style.cssText = 'width:32px; height:32px; padding:0; font-size:20px; font-family:"Material Symbols Outlined"; margin:0 auto; text-align:center; border-radius:6px; display:block; color:var(--color-primary);';
+          input.placeholder = '...';
         }
 
         this.innerHTML = '';
         this.appendChild(input);
 
         if (field === 'icon') {
-          this.style.position = 'relative';
           var picker = document.createElement('div');
           picker.className = 'inline-icon-picker';
-          picker.style.cssText = 'position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%); width:220px; background:#fff; border:1px solid var(--color-border); box-shadow:0 10px 25px rgba(0,0,0,0.15); border-radius:8px; padding:8px; z-index:999; display:flex; flex-wrap:wrap; gap:4px; justify-content:center; cursor:default;';
+          picker.style.cssText = 'position:fixed; transform:translateX(-50%); width:220px; background:#fff; border:1px solid var(--color-border); box-shadow:0 10px 25px rgba(0,0,0,0.15); border-radius:8px; padding:8px; z-index:9999; display:flex; flex-wrap:wrap; gap:4px; justify-content:center; cursor:default;';
 
+          var cell = this;
+          var updatePickerPos = function() {
+            if (!document.body.contains(picker)) {
+              window.removeEventListener('scroll', updatePickerPos, true);
+              window.removeEventListener('resize', updatePickerPos);
+              return;
+            }
+            var rect = cell.getBoundingClientRect();
+            var pickerHeight = 240;
+            var topPos = rect.bottom + 4;
+            if (topPos + pickerHeight > window.innerHeight && rect.top - pickerHeight > 0) {
+              topPos = rect.top - pickerHeight - 4;
+            }
+            picker.style.top = topPos + 'px';
+            picker.style.left = (rect.left + rect.width / 2) + 'px';
+          };
           var icons = ['article', 'dashboard', 'people', 'bar_chart', 'settings', 'receipt', 'restaurant', 'point_of_sale', 'calendar_month', 'inventory_2', 'assignment', 'group', 'local_shipping', 'local_dining', 'category', 'notifications', 'monitoring', 'event', 'attach_money', 'print', 'folder', 'home', 'description', 'list', 'add', 'edit', 'delete', 'search', 'event_note', 'storefront'];
 
           icons.forEach(function (ico) {
@@ -530,7 +594,10 @@ var MenusPage = (function () {
             };
             picker.appendChild(btn);
           });
-          this.appendChild(picker);
+          document.body.appendChild(picker);
+          updatePickerPos();
+          window.addEventListener('scroll', updatePickerPos, true);
+          window.addEventListener('resize', updatePickerPos);
         }
         input.focus();
 
@@ -542,10 +609,12 @@ var MenusPage = (function () {
           if (newVal === val || (field === 'id' && newVal === '')) {
             // Hủy sửa
             td.innerHTML = originalHtml;
+            if (document.querySelector('.inline-icon-picker')) document.querySelector('.inline-icon-picker').remove();
             return;
           }
 
           td.innerHTML = '<span style="opacity:0.5;">Đang lưu...</span>';
+          if (document.querySelector('.inline-icon-picker')) document.querySelector('.inline-icon-picker').remove();
 
           var menu = allMenus.find(function (m) { return m.id === rowId; });
           if (!menu) return;
@@ -595,6 +664,7 @@ var MenusPage = (function () {
             input.blur(); // Tự trỏ ra Blur để kích hoạt hàm phía dưới
           } else if (e.key === 'Escape') {
             td.innerHTML = originalHtml; // Hủy
+            if (document.querySelector('.inline-icon-picker')) document.querySelector('.inline-icon-picker').remove();
           }
         });
 
