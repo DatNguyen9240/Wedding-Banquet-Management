@@ -141,12 +141,36 @@ var ComponentsDemoPage = (function () {
 
   // ── 8. MODAL & CONFIRM ──
   function _mountModals() {
-    var el = document.getElementById('demo-modals');
-    if (!el) return;
-    el.innerHTML = [
-      '<button class="btn btn-primary" onclick="Modal.show({ title: \'Modal Demo\', content: \'<div class=p-4><p>Đây là nội dung bên trong Modal.</p><div class=form-group><label>Tên khách</label><input type=text class=ui-input placeholder=Nhập...></div></div>\', width: \'500px\', onConfirm: function() { UIToast.show(\'Đã xác nhận\'); return true; } })">Mở Modal</button>',
-      '<button class="btn btn-secondary" onclick="ConfirmModal.show({ title: \'Xác nhận xóa?\', message: \'Bạn có chắc muốn xóa bản ghi này? Thao tác không thể hoàn tác.\', onConfirm: function() { UIToast.show(\'Đã xóa!\', \'success\'); } })">Confirm Dialog</button>'
-    ].join('');
+    var confirmEl = document.getElementById('demo-confirm-modal');
+    if (confirmEl) {
+      confirmEl.innerHTML = '<button class="btn btn-secondary" onclick="ConfirmModal.show({ title: \'Xác nhận xóa?\', message: \'Bạn có chắc muốn xóa bản ghi này? Thao tác không thể hoàn tác.\', onConfirm: function() { UIToast.show(\'Đã xóa!\', \'success\'); } })">Confirm Dialog</button>';
+    }
+    
+    var uiEl = document.getElementById('demo-ui-modal');
+    if (uiEl) {
+      uiEl.innerHTML = '';
+      var btn = document.createElement('button');
+      btn.className = 'btn btn-primary';
+      btn.textContent = 'Mở Modal';
+      btn.onclick = function() {
+        var footer = document.createElement('div');
+        footer.innerHTML = '<button class="btn btn-secondary btn-cancel">Hủy</button><button class="btn btn-primary btn-confirm">Xác nhận</button>';
+        
+        var m = UIModal.show({
+          title: 'Modal Demo',
+          width: '500px',
+          content: '<div class="p-4"><p>Đây là nội dung bên trong Modal.</p><div class="form-group"><label>Tên khách</label><input type="text" class="ui-input w-100" placeholder="Nhập..."></div></div>',
+          footer: footer
+        });
+        
+        footer.querySelector('.btn-cancel').onclick = function() { m.close(); };
+        footer.querySelector('.btn-confirm').onclick = function() { 
+          UIToast.show('Đã xác nhận', 'success'); 
+          m.close(); 
+        };
+      };
+      uiEl.appendChild(btn);
+    }
   }
 
   // ── 9. TABS ──
@@ -329,7 +353,13 @@ var ComponentsDemoPage = (function () {
     if (!el) return;
     if (typeof UICalendar !== 'undefined') {
       el.appendChild(UICalendar.create({
-        onSelect: function (date) { UIToast.show('Đã chọn ngày: ' + date); }
+        events: {
+          15: [{ type: 'primary', label: 'Sảnh Kim Cương (30)' }],
+          22: [{ type: 'primary', label: 'Sảnh Ngọc Trai (45)' }, { type: 'success', label: 'Sảnh B (X)' }]
+        },
+        onSelect: function (date, events) { 
+          UIToast.show('Đã chọn ngày: ' + date + ' - Sự kiện: ' + (events ? events.length : 0)); 
+        }
       }));
     } else { el.innerHTML = '<p style="color:var(--color-text-secondary)">UICalendar chưa được khai báo.</p>'; }
   }
