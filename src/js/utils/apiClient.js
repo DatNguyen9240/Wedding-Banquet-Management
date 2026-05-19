@@ -4,7 +4,7 @@
  * Yêu cầu: Phải load sau env.js đ\u1ec3 s\u1eed d\u1ee5ng \u0111\u01b0\u1ee3c window.API_CONFIG
  */
 
-const ApiClient = (function() {
+const ApiClient = (function () {
     // Lấy Base URL từ env.js
     const getBaseUrl = () => {
         return window.API_CONFIG ? window.API_CONFIG.BASE_URL : '';
@@ -42,7 +42,7 @@ const ApiClient = (function() {
         const baseUrl = getBaseUrl();
         // Nếu endpoint đã là URL đầy đủ thì không nối BaseUrl nữa
         const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
-        
+
         // Thiết lập Headers mặc định
         const headers = {
             'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ const ApiClient = (function() {
 
         try {
             const response = await fetch(url, config);
-            
+
             // Xử lý status 401 (Hết hạn token / Chưa đăng nhập)
             if (response.status === 401) {
                 console.warn('[ApiClient] 401 Unauthorized. Token expired?');
@@ -81,7 +81,7 @@ const ApiClient = (function() {
                 let errorData;
                 try {
                     errorData = await response.json();
-                } catch(e) {
+                } catch (e) {
                     errorData = { message: response.statusText || 'Lỗi kết nối Server' };
                 }
                 const error = new Error(errorData.message || 'Lỗi Server');
@@ -94,12 +94,12 @@ const ApiClient = (function() {
             const textResponse = await response.text();
             try {
                 // Trả về Object nếu JSON hợp lệ
-                return textResponse ? JSON.parse(textResponse) : {}; 
+                return textResponse ? JSON.parse(textResponse) : {};
             } catch (err) {
                 // Trả về text nguyên bản nếu trả v\u1ec1 \u0111\u1ecbnh d\u1ea1ng kh\u00e1c (plain text)
-                return textResponse; 
+                return textResponse;
             }
-            
+
         } catch (error) {
             // Catch error network hoặc error tự throw ở trên
             console.error(`[API Error] ${options.method || 'GET'} ${url} :`, error);
@@ -111,14 +111,14 @@ const ApiClient = (function() {
         /**
          * G\u1eedi request GET
          */
-        get: function(endpoint, options = {}) {
+        get: function (endpoint, options = {}) {
             return request(endpoint, { ...options, method: 'GET' });
         },
 
         /**
          * G\u1eedi request POST (Dữ liệu truyền vào th\u00f4ng qua body)
          */
-        post: function(endpoint, data, options = {}) {
+        post: function (endpoint, data, options = {}) {
             return request(endpoint, {
                 ...options,
                 method: 'POST',
@@ -129,7 +129,7 @@ const ApiClient = (function() {
         /**
          * G\u1eedi request PUT (Th\u01b0\u1eddng d\u00f9ng \u0111\u1ec3 update)
          */
-        put: function(endpoint, data, options = {}) {
+        put: function (endpoint, data, options = {}) {
             return request(endpoint, {
                 ...options,
                 method: 'PUT',
@@ -140,7 +140,7 @@ const ApiClient = (function() {
         /**
          * G\u1eedi request DELETE
          */
-        delete: function(endpoint, options = {}) {
+        delete: function (endpoint, options = {}) {
             return request(endpoint, { ...options, method: 'DELETE' });
         },
 

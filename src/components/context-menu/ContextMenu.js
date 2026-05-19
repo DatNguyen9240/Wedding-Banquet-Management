@@ -5,6 +5,7 @@
 var UIContextMenu = (function () {
   
   var currentMenu = null;
+  var activeTrigger = null;
 
   /**
    * Khởi tạo Menu 
@@ -12,8 +13,21 @@ var UIContextMenu = (function () {
    * @param {Array} items - [{ label, icon, onClick }, '|' ]
    */
   function show(e, items) {
-    e.preventDefault();
+    var trigger = e ? (e.currentTarget || e.target) : null;
+
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Toggle: Nếu bấm lại chính nút đang mở menu -> chỉ cần đóng menu
+    if (currentMenu && activeTrigger && trigger && (activeTrigger === trigger || activeTrigger.contains(trigger))) {
+      hide();
+      return;
+    }
+
     hide();
+    activeTrigger = trigger;
 
     var menu = document.createElement('div');
     menu.className = 'ui-context-menu';
@@ -46,6 +60,43 @@ var UIContextMenu = (function () {
     document.body.appendChild(menu);
     currentMenu = menu;
 
+    // Tính toán và điều chỉnh vị trí để không bị khuất màn hình (Edge detection)
+    requestAnimationFrame(function() {
+      var rect = menu.getBoundingClientRect();
+      var left, top;
+
+      // Nếu menu mở từ một nút bấm (trigger), thì định vị thẳng xuống dưới nút đó
+      if (activeTrigger) {
+        var triggerRect = activeTrigger.getBoundingClientRect();
+        top = triggerRect.bottom + window.scrollY + 8; // Cách nút 8px
+        left = triggerRect.right + window.scrollX - rect.width; // Căn phải với nút
+      } else {
+        // Fallback: Mở theo vị trí con trỏ chuột
+        left = e.pageX;
+        top = e.pageY + 12;
+      }
+
+      // Tràn lề phải
+      if (left < 10) {
+        left = 10;
+      } else if (left + rect.width > window.innerWidth) {
+        left = window.innerWidth - rect.width - 10;
+      }
+
+      // Tràn lề dưới (trừ khi trang rất dài, thì tính theo scroll)
+      if (top - window.scrollY + rect.height > window.innerHeight) {
+        if (activeTrigger) {
+           var triggerRect = activeTrigger.getBoundingClientRect();
+           top = triggerRect.top + window.scrollY - rect.height - 8; // Lật lên trên nút
+        } else {
+           top = e.pageY - rect.height - 8; // Lật lên trên con trỏ chuột
+        }
+      }
+
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+    });
+
     // Nghe sự kiện click ngoài -> Đóng menu
     document.addEventListener('click', hideOnOutsideClick);
   }
@@ -54,6 +105,7 @@ var UIContextMenu = (function () {
     if (currentMenu) {
       currentMenu.remove();
       currentMenu = null;
+      activeTrigger = null;
     }
   }
 

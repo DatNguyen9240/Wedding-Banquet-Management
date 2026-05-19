@@ -88,6 +88,7 @@
   font-weight: 500;
   border-radius: var(--radius-sm);
   box-shadow: none;
+  white-space: nowrap;
 }
 
 .btn-tool:hover {

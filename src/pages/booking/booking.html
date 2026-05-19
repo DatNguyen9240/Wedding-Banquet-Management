@@ -20,19 +20,39 @@
   <span>Quản lý Biên nhận Cọc chỗ</span>
 </div>
 
-<!-- THANH CÔNG CỤ -->
-<div class="button-bar mb-4" style="animation: slideUp 0.3s ease forwards;">
-  <button class="btn btn-tool" id="btn-add-deposit1"><span class="material-symbols-outlined">add_circle</span>Thêm Cọc
-    Lần 1</button>
-  <button class="btn btn-tool" id="btn-edit-deposit"><span class="material-symbols-outlined">edit</span>Thay đổi
-    Cọc</button>
-  <button class="btn btn-tool" id="btn-add-deposit2"><span class="material-symbols-outlined">payments</span>Tiếp nhận
-    Cọc Lần 2</button>
-  <div class="divider"></div>
-  <button class="btn btn-tool text-danger" id="btn-delete"><span class="material-symbols-outlined">delete</span>Hủy
-    Cọc</button>
-  <button class="btn btn-tool" id="btn-print"><span class="material-symbols-outlined">print</span>In Biên nhận</button>
+<!-- THANH CÔNG CỤ DESKTOP -->
+<div class="d-none d-md-flex flex-row align-items-center gap-4 mb-4" style="border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-background); box-shadow: 0 1px 2px rgba(0,0,0,0.02); animation: slideUp 0.3s ease forwards; padding: 12px 20px;">
+  <div class="d-flex align-items-center gap-2" id="btn-add-deposit1" style="color: var(--color-text-secondary); font-weight: 500; font-size: 13px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-secondary)'">
+    <span class="material-symbols-outlined" style="font-size: 18px;">add_circle</span>Thêm Cọc Lần 1
+  </div>
+  <div class="d-flex align-items-center gap-2" id="btn-edit-booking" style="color: var(--color-text-secondary); font-weight: 500; font-size: 13px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-secondary)'">
+    <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>Thay đổi Cọc
+  </div>
+  <div class="d-flex align-items-center gap-2" id="btn-add-deposit2" style="color: var(--color-text-secondary); font-weight: 500; font-size: 13px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-secondary)'">
+    <span class="material-symbols-outlined" style="font-size: 18px;">payments</span>Tiếp nhận Cọc Lần 2
+  </div>
+  <div style="width: 1px; height: 16px; background: var(--color-border);"></div>
+  <div class="d-flex align-items-center gap-2" id="btn-cancel-booking" style="color: var(--color-danger); font-weight: 500; font-size: 13px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
+    <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>Hủy Cọc
+  </div>
+  <div class="d-flex align-items-center gap-2" id="btn-create-contract" style="color: var(--color-primary); font-weight: 500; font-size: 13px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+    <span class="material-symbols-outlined" style="font-size: 18px;">description</span>Lập Hợp Đồng
+  </div>
 </div>
+
+<!-- THANH CÔNG CỤ MOBILE -->
+<div class="d-flex d-md-none align-items-center mb-4 gap-2" style="animation: slideUp 0.3s ease forwards;">
+  <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-add-deposit1-mobile" style="border-radius: 8px;">
+    <span class="material-symbols-outlined" style="font-size: 20px;">add_circle</span>Thêm Cọc Mới
+  </button>
+  
+  <button class="btn btn-secondary ms-auto d-flex align-items-center justify-content-center shadow-sm" id="btn-booking-more" style="width: 38px; height: 38px; padding: 0; border-radius: 8px; background: white;" title="Tùy chọn khác">
+    <span class="material-symbols-outlined">more_vert</span>
+  </button>
+</div>
+
+<!-- BỘ LỌC (FILTER) -->
+<div id="booking-filter" class="mb-4" style="animation: slideUp 0.3s ease forwards;"></div>
 
 <!-- DATAGRID -->
 <div class="card" style="animation: slideUp 0.4s ease forwards;">
@@ -143,13 +163,16 @@
         3. Sảnh & Đặt Cọc</div>
       <div class="card-body">
         <div class="mb-3">
-          <label class="form-label">Sảnh Đặt (Sảnh chính)</label>
+          <label class="form-label">Sảnh Đặt (Sảnh chính) <span style="color: var(--color-danger);">*</span></label>
           <select id="sel-sanh" class="ui-input w-100">
             <option value="">-- Chọn Sảnh --</option>
-            <option value="S01">Diamond Hall</option>
-            <option value="S02">Ruby Hall</option>
-            <option value="S03">Queen Plaza</option>
           </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Sảnh Phụ (Ghép sảnh - Tùy chọn)</label>
+          <select id="sel-sanh-phu" class="ui-input w-100" multiple style="height: 80px;">
+          </select>
+          <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 4px;">Giữ phím Ctrl (hoặc Cmd) để chọn nhiều sảnh phụ ghép cùng</div>
         </div>
         <div class="mb-3">
           <label class="form-label">Số tiền cọc (VNĐ) <span style="color: var(--color-danger);">*</span></label>

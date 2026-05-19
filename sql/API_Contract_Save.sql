@@ -104,7 +104,11 @@ BEGIN
                 IsKhachhang, DateCreate, UserCreate
             )
             VALUES (
-                @Makh, ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, ''), 
+                @Makh, 
+                CASE 
+                    WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '')
+                    ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') 
+                END, 
                 @Tenchure, @Tencodau, @Dienthoai, @Diachi, @Mail, 
                 1, @Now, @UserCreate
             );
@@ -113,7 +117,10 @@ BEGIN
         BEGIN
             UPDATE dmkhachhang
             SET 
-                Tenkh = ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, ''),
+                Tenkh = CASE 
+                            WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '')
+                            ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') 
+                        END,
                 Tenchure = @Tenchure,
                 Tencodau = @Tencodau,
                 Dienthoai = @Dienthoai,

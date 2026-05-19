@@ -5,8 +5,16 @@
 var CalendarPage = (function () {
   var $container;
   var uiCalendarInstance;
-  var currentYear = new Date().getFullYear();
-  var currentMonth = new Date().getMonth();
+  // Khôi phục tháng/năm đã xem lần trước từ sessionStorage (nếu có)
+  var _savedState = (function() {
+    try { return JSON.parse(sessionStorage.getItem('calendarState') || 'null'); } catch(e) { return null; }
+  })();
+  var currentYear  = (_savedState && _savedState.year)  ? _savedState.year  : new Date().getFullYear();
+  var currentMonth = (_savedState && _savedState.month != null) ? _savedState.month : new Date().getMonth();
+
+  function _saveState() {
+    try { sessionStorage.setItem('calendarState', JSON.stringify({ year: currentYear, month: currentMonth })); } catch(e) {}
+  }
 
   function invalidateCache() {
     CalendarService.invalidateCache();
@@ -40,32 +48,91 @@ var CalendarPage = (function () {
       if (!config || config.length === 0) {
         return; // Không có dữ liệu từ API thì không render
       }
-      var html = '';
+      container.innerHTML = '';
       config.forEach(function(item) {
-        // API returns properties capitalized (Label, Color, Type, Icon) or lowercase depending on C# serializer
         var type = item.Type || item.type;
         var color = item.Color || item.color;
         var label = item.Label || item.label;
         var icon = item.Icon || item.icon;
 
-        if (type === 'dot') {
-          var bgMap = { 'success': 'rgba(16, 185, 129, 0.08)', 'danger': 'rgba(239, 68, 68, 0.08)' };
-          var borderMap = { 'success': 'rgba(16, 185, 129, 0.2)', 'danger': 'rgba(239, 68, 68, 0.2)' };
-          var bgColor = bgMap[color] || 'var(--color-bg-subtle)';
-          var borderColor = borderMap[color] || 'var(--color-border)';
+        // Xác định route điều hướng khi click
+        var route = null;
+        if (color === 'success') route = '#/booking';
+        else if (color === 'danger') route = '#/contract';
+        else if (color === 'secondary') route = '#/contract';
 
-          html += '<div class="d-flex align-items-center gap-1 gap-sm-2 px-2 px-sm-3" style="height: 26px; background: ' + bgColor + '; border-radius: 20px; border: 1px solid ' + borderColor + '; color: var(--color-' + color + ');">' +
-                  '<div style="width: 6px; height: 6px; border-radius: 50%; background: var(--color-' + color + '); box-shadow: 0 0 0 2px ' + borderColor + ';"></div>' +
-                  label +
-                  '</div>';
-        } else {
-          html += '<div class="d-flex align-items-center gap-1 gap-sm-2 px-2 px-sm-3" style="height: 26px; background: var(--color-bg-subtle); border-radius: 20px; border: 1px solid var(--color-border); color: var(--color-' + color + ');">' +
-                  '<span class="material-symbols-outlined" style="font-size: 14px; margin-right: -2px;">' + icon + '</span>' +
-                  label +
-                  '</div>';
+        var chip = document.createElement('div');
+        chip.className = 'd-flex align-items-center gap-1 gap-sm-2 px-2 px-sm-3 animate-pop';
+        chip.style.height = '28px';
+        chip.style.borderRadius = '20px';
+        chip.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+        chip.style.userSelect = 'none';
+
+        if (route) {
+          chip.style.cursor = 'pointer';
+          chip.title = 'Nhấn để chuyển đến danh sách';
+          chip.addEventListener('click', function() {
+            window.location.hash = route;
+          });
+          chip.addEventListener('mouseenter', function() { 
+             chip.style.transform = 'translateY(-1px)';
+             chip.style.boxShadow = '0 3px 6px rgba(0,0,0,0.08)';
+             chip.style.filter = 'brightness(0.97)';
+          });
+          chip.addEventListener('mouseleave', function() { 
+             chip.style.transform = 'translateY(0)';
+             chip.style.boxShadow = 'none';
+             chip.style.filter = 'none';
+          });
+          chip.addEventListener('mousedown', function() {
+             chip.style.transform = 'translateY(1px)';
+             chip.style.boxShadow = 'none';
+          });
+          chip.addEventListener('mouseup', function() {
+             chip.style.transform = 'translateY(-1px)';
+          });
         }
+
+        if (type === 'dot') {
+          var bgMap = { 'success': 'rgba(16, 185, 129, 0.1)', 'danger': 'rgba(239, 68, 68, 0.1)' };
+          var borderMap = { 'success': 'rgba(16, 185, 129, 0.25)', 'danger': 'rgba(239, 68, 68, 0.25)' };
+          chip.style.background = bgMap[color] || 'var(--color-bg-subtle)';
+          chip.style.border = '1px solid ' + (borderMap[color] || 'var(--color-border)');
+          chip.style.color = 'var(--color-' + color + ')';
+          chip.style.fontWeight = '600';
+
+          var dot = document.createElement('div');
+          dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:var(--color-' + color + ');box-shadow:0 0 0 2px ' + (borderMap[color] || 'var(--color-border)') + '; transition: transform 0.2s ease;';
+          chip.appendChild(dot);
+          
+          if(route) {
+             chip.addEventListener('mouseenter', function() { dot.style.transform = 'scale(1.2)'; });
+             chip.addEventListener('mouseleave', function() { dot.style.transform = 'scale(1)'; });
+          }
+        } else {
+          chip.style.background = 'var(--color-surface)';
+          chip.style.border = '1px solid var(--color-border-strong)';
+          chip.style.color = 'var(--color-text-secondary)';
+          chip.style.fontWeight = '600';
+
+          var ico = document.createElement('span');
+          ico.className = 'material-symbols-outlined';
+          ico.style.cssText = 'font-size:15px;margin-right:-2px; transition: transform 0.2s ease;';
+          ico.innerText = icon;
+          chip.appendChild(ico);
+          
+          if(route) {
+             chip.addEventListener('mouseenter', function() { ico.style.transform = 'scale(1.1) rotate(-5deg)'; });
+             chip.addEventListener('mouseleave', function() { ico.style.transform = 'scale(1) rotate(0)'; });
+          }
+        }
+
+        var txt = document.createElement('span');
+        txt.style.letterSpacing = '0.3px';
+        txt.innerText = label;
+        chip.appendChild(txt);
+        container.appendChild(chip);
       });
-      container.innerHTML = html;
     });
   }
 
@@ -86,6 +153,7 @@ var CalendarPage = (function () {
             onChangeMonth: function(y, m) {
               currentYear = y;
               currentMonth = m;
+              _saveState(); // Lưu tháng đang xem vào sessionStorage
               _loadEvents(); // Load lại data khi đổi tháng
             },
             onSelect: function(dateStr, evts) {
@@ -112,11 +180,17 @@ var CalendarPage = (function () {
                     
                     evtsBySanh[sanh].forEach(function(e, idx) {
                         var rd = e.rawData;
-                        var typeName = rd.LoaiPhieu === 1 ? 'Mới Cọc' : 'Đã Ký HĐ';
-                        var statusColor = rd.LoaiPhieu === 1 ? 'var(--color-success)' : 'var(--color-danger)';
-                        var bgSoft = rd.LoaiPhieu === 1 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(220, 38, 38, 0.08)';
-                        var btnClass = rd.LoaiPhieu === 1 ? 'btn-outline-success' : 'btn-outline-danger';
-                        var hashRoute = rd.LoaiPhieu === 1 ? '#/booking' : '#/contract';
+                        var lp = rd.LoaiPhieu !== undefined ? rd.LoaiPhieu : rd.loaiPhieu;
+                        var laSanhChinh = rd.LaSanhChinh !== undefined ? rd.LaSanhChinh : rd.laSanhChinh;
+                        var soBan = rd.SoBan !== undefined ? rd.SoBan : rd.soBan;
+                        var maChungTu = rd.MaChungTu || rd.maChungTu || '';
+                        var tenKhachHang = rd.TenKhachHang || rd.tenKhachHang || '';
+                        
+                        var typeName = lp === 1 ? 'Mới Cọc' : 'Đã Ký HĐ';
+                        var statusColor = lp === 1 ? 'var(--color-success)' : 'var(--color-danger)';
+                        var bgSoft = lp === 1 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(220, 38, 38, 0.08)';
+                        var btnClass = lp === 1 ? 'btn-outline-success' : 'btn-outline-danger';
+                        var hashRoute = lp === 1 ? '#/booking' : '#/contract';
                         
                         contentStr += `
                           <div class="col-12 col-md-6 col-lg-4">
@@ -128,7 +202,7 @@ var CalendarPage = (function () {
                                 <div class="d-flex justify-content-between align-items-start">
                                   <div>
                                     <div style="font-weight: 700; font-size: 15px; color: var(--color-text); margin-bottom: 4px;">
-                                      ${rd.TenKhachHang}
+                                      ${tenKhachHang}
                                     </div>
                                     <span style="display: inline-flex; padding: 4px 10px; border-radius: 6px; background: ${bgSoft}; color: ${statusColor}; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
                                       ${typeName}
@@ -142,15 +216,15 @@ var CalendarPage = (function () {
                                 <div style="font-size: 13px; color: var(--color-text-secondary); display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
                                   <div class="d-flex align-items-center gap-2">
                                     <span class="material-symbols-outlined" style="font-size: 16px; opacity: 0.7;">table_restaurant</span>
-                                    <span>${rd.LaSanhChinh === 1 ? rd.SoBan + ' Bàn (Sảnh Chính)' : 'Sảnh Phụ / Ghép'}</span>
+                                    <span>${laSanhChinh === 1 ? soBan + ' Bàn (Sảnh Chính)' : 'Sảnh Phụ / Ghép'}</span>
                                   </div>
                                   <div class="d-flex align-items-center gap-2">
                                     <span class="material-symbols-outlined" style="font-size: 16px; opacity: 0.7;">receipt_long</span>
-                                    <span>Mã: <strong>${rd.MaChungTu}</strong></span>
+                                    <span>Mã: <strong>${maChungTu}</strong></span>
                                   </div>
                                 </div>
                                 
-                                <button class="btn ${btnClass} w-100 d-flex justify-content-center align-items-center gap-2" style="padding: 6px 12px; font-weight: 600; font-size: 13px; border-radius: var(--radius-sm);" onclick="window.location.hash = '${hashRoute}?id=${rd.MaChungTu}'; document.querySelector('.btn-close-modal').click();">
+                                <button class="btn ${btnClass} w-100 d-flex justify-content-center align-items-center gap-2" style="padding: 6px 12px; font-weight: 600; font-size: 13px; border-radius: var(--radius-sm);" onclick="window.location.hash = '${hashRoute}?id=${maChungTu}'; document.querySelector('.btn-close-modal').click();">
                                   <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
                                   Chi Tiết
                                 </button>
@@ -166,7 +240,16 @@ var CalendarPage = (function () {
                     `;
                  });
                  
-                 contentStr += '</div>';
+                 // Thêm nút bấm lập thêm hợp đồng cho ngày này ở chân modal
+                  contentStr += `
+                    <div class="d-flex justify-content-end mt-3 pt-3" style="border-top: 1px solid var(--color-border); width: 100%;">
+                      <button class="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-4" onclick="document.querySelector('.btn-close-modal').click(); setTimeout(function(){ window.showCreateBanquetModal('${dateStr}'); }, 150);">
+                        <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+                        Lập Thêm Hợp Đồng Ngày Này
+                      </button>
+                    </div>
+                  `;
+                  contentStr += '</div>';
 
                  UIModal.show({
                     title: 'Chi Tiết Lịch Tiệc - ' + displayDate,
@@ -174,7 +257,7 @@ var CalendarPage = (function () {
                     content: contentStr
                  });
               } else {
-                 UIToast.show('Ngày ' + displayDate + ' chưa có tiệc.');
+                 window.showCreateBanquetModal(dateStr);
               }
             }
           });
@@ -189,7 +272,7 @@ var CalendarPage = (function () {
 })();
 
 // Hàm Mở Modal Tạo Tiệc Mới (Thay thế cho Mock cũ)
-window.showCreateBanquetModal = function() {
+window.showCreateBanquetModal = function(prefillDate) {
   var contentHtml = `
     <form id="form-create-banquet">
       <div class="row g-4 p-2">
@@ -197,13 +280,13 @@ window.showCreateBanquetModal = function() {
         <div class="col-12">
           <h6 class="fw-bold mb-3" style="color: var(--color-primary); border-bottom: 2px solid var(--color-border); padding-bottom: 8px;">1. Thông tin Khách hàng</h6>
           <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label" style="font-size: 13px; font-weight: 600;">Tên Chú Rể</label>
-              <input type="text" class="ui-input w-100" name="Tenchure" placeholder="Nhập tên chú rể" required>
+            <div class="col-md-4" id="col-ten-chure">
+              <label class="form-label" id="lbl-ten-chure" style="font-size: 13px; font-weight: 600;">Tên Chú Rể</label>
+              <input type="text" class="ui-input w-100" name="Tenchure" id="inp-ten-chure" placeholder="Nhập tên chú rể" required>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4" id="col-ten-codau">
               <label class="form-label" style="font-size: 13px; font-weight: 600;">Tên Cô Dâu</label>
-              <input type="text" class="ui-input w-100" name="Tencodau" placeholder="Nhập tên cô dâu" required>
+              <input type="text" class="ui-input w-100" name="Tencodau" id="inp-ten-codau" placeholder="Nhập tên cô dâu" required>
             </div>
             <div class="col-md-4">
               <label class="form-label" style="font-size: 13px; font-weight: 600;">Số Điện Thoại</label>
@@ -245,19 +328,27 @@ window.showCreateBanquetModal = function() {
         <div class="col-12">
           <h6 class="fw-bold mb-3" style="color: var(--color-primary); border-bottom: 2px solid var(--color-border); padding-bottom: 8px;">3. Quy mô & Tiền cọc</h6>
           <div class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
               <label class="form-label" style="font-size: 13px; font-weight: 600;">Số Bàn Mặn</label>
               <input type="number" class="ui-input w-100" name="SobanManchinhthuc" value="0" min="0" onfocus="this.select()">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Dự Phòng Mặn</label>
+              <input type="number" class="ui-input w-100" name="SobanManduphong" value="0" min="0" onfocus="this.select()">
+            </div>
+            <div class="col-md-2">
               <label class="form-label" style="font-size: 13px; font-weight: 600;">Số Bàn Chay</label>
               <input type="number" class="ui-input w-100" name="SobanChaychinhthuc" value="0" min="0" onfocus="this.select()">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Dự Phòng Chay</label>
+              <input type="number" class="ui-input w-100" name="SobanChayduphong" value="0" min="0" onfocus="this.select()">
+            </div>
+            <div class="col-md-2">
               <label class="form-label" style="font-size: 13px; font-weight: 600;">Tổng Tiền (Dự kiến)</label>
               <input type="number" class="ui-input w-100" name="Tongtienhopdong" value="0" min="0" onfocus="this.select()">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
               <label class="form-label" style="font-size: 13px; font-weight: 600;">Tiền Đặt Cọc</label>
               <input type="number" class="ui-input w-100" name="Sotiencoccho" value="0" min="0" onfocus="this.select()">
             </div>
@@ -288,7 +379,8 @@ window.showCreateBanquetModal = function() {
       altInput: true,
       altFormat: "d/m/Y",
       allowInput: true,
-      minDate: "today", // Chỉ cho phép chọn từ hôm nay trở đi
+      defaultDate: prefillDate || null,
+      minDate: prefillDate ? prefillDate : "today", // Cọc ngày trong quá khứ/tương lai linh hoạt
       disableMobile: true, // Ép buộc dùng giao diện đẹp của Flatpickr trên mọi thiết bị (kể cả máy tính có màn hình cảm ứng)
       locale: "vn"
     });
@@ -335,7 +427,34 @@ window.showCreateBanquetModal = function() {
       if (selLoaiTiec && records.length > 0) {
         selLoaiTiec.innerHTML = '<option value="">-- Chọn Loại Tiệc --</option>';
         records.forEach(function (t) {
-          selLoaiTiec.innerHTML += '<option value="' + t.Loaihinhtiecid + '">' + t.Tenloaihinhtiec + '</option>';
+          var isHoiNghiFlag = (String(t.isHoiNghi) === '1' || String(t.isHoiNghi).toLowerCase() === 'true') ? '1' : '0';
+          selLoaiTiec.innerHTML += '<option value="' + t.Loaihinhtiecid + '" data-ishoinghi="' + isHoiNghiFlag + '">' + t.Tenloaihinhtiec + '</option>';
+        });
+        
+        // Bắt sự kiện đổi loại tiệc để thay đổi giao diện Chú rể / Cô dâu
+        selLoaiTiec.addEventListener('change', function() {
+          var isHoiNghi = this.options[this.selectedIndex].getAttribute('data-ishoinghi') === '1';
+          var isWedding = !isHoiNghi;
+          
+          var colCodau = document.getElementById('col-ten-codau');
+          var inpCodau = document.getElementById('inp-ten-codau');
+          var lblChure = document.getElementById('lbl-ten-chure');
+          var inpChure = document.getElementById('inp-ten-chure');
+          
+          if (isWedding) {
+            if (colCodau) colCodau.style.display = '';
+            if (inpCodau) inpCodau.required = true;
+            if (lblChure) lblChure.innerText = 'Tên Chú Rể';
+            if (inpChure) inpChure.placeholder = 'Nhập tên chú rể';
+          } else {
+            if (colCodau) colCodau.style.display = 'none';
+            if (inpCodau) {
+              inpCodau.required = false;
+              inpCodau.value = ''; // Xóa value khi ẩn đi
+            }
+            if (lblChure) lblChure.innerText = 'Tên Khách Hàng / Đơn vị';
+            if (inpChure) inpChure.placeholder = 'Nhập tên khách hàng...';
+          }
         });
       } else if (selLoaiTiec) {
         selLoaiTiec.innerHTML = '<option value="">-- Không có dữ liệu --</option>';
@@ -369,7 +488,9 @@ window.submitCreateBanquet = function(btn) {
     Loaitiecid: formData.get('Loaihinhtiecid'), // Map name
     Thoigianid: formData.get('Thoigianid'),
     SobanManchinhthuc: parseInt(formData.get('SobanManchinhthuc')) || 0,
+    SobanManduphong: parseInt(formData.get('SobanManduphong')) || 0,
     SobanChaychinhthuc: parseInt(formData.get('SobanChaychinhthuc')) || 0,
+    SobanChayduphong: parseInt(formData.get('SobanChayduphong')) || 0,
     Tongtienhopdong: parseFloat(formData.get('Tongtienhopdong')) || 0,
     Sotiencoccho: parseFloat(formData.get('Sotiencoccho')) || 0,
     UserCreate: 'Admin'
@@ -385,7 +506,7 @@ window.submitCreateBanquet = function(btn) {
   }
 
   // Calculate TongSoBan
-  payload.TongSoBan = payload.SobanManchinhthuc + payload.SobanChaychinhthuc;
+  payload.TongSoBan = payload.SobanManchinhthuc + payload.SobanChaychinhthuc + payload.SobanManduphong + payload.SobanChayduphong;
   payload.Tongtiencoc = payload.Sotiencoccho;
 
   if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.SAVE) {
@@ -397,15 +518,17 @@ window.submitCreateBanquet = function(btn) {
 
   ApiClient.post(API_CONFIG.ENDPOINTS.CALENDAR.SAVE, payload)
     .then(function(res) {
-      if (res && res.Success === 1) {
+      var responseObj = Array.isArray(res) ? res[0] : res;
+      
+      if (responseObj && (responseObj.Success === 1 || responseObj.Success === true)) {
         document.querySelector('.btn-close-modal').click();
-        UIToast.show(res.Message || 'Đã lập hợp đồng tiệc thành công!', 'success');
+        UIToast.show(responseObj.Message || 'Đã lập hợp đồng tiệc thành công!', 'success');
         
         if (typeof EventBus !== 'undefined') {
           EventBus.emit('BANQUET_MUTATED', { type: 'create' });
         }
       } else {
-        UIToast.show(res.Message || 'Lỗi lưu hợp đồng', 'danger');
+        UIToast.show((responseObj && responseObj.Message) ? responseObj.Message : 'Lỗi lưu hợp đồng', 'danger');
       }
     })
     .catch(function(err) {
@@ -417,4 +540,6 @@ window.submitCreateBanquet = function(btn) {
       btn.disabled = false;
     });
 };
+
+
 

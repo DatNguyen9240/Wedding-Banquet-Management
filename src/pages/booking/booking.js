@@ -13,17 +13,39 @@ var BookingPage = (function () {
   // Khai báo Object chung để quản lý bộ lọc dễ dàng dán vào các input Date/Search sau này
   var filterParams = {
     Keyword: "",
-    TuNgay: "2020-01-01", // Tương lai sẽ cập nhật lấy từ Component DatePicker
-    DenNgay: "2026-12-31"
+    TuNgay: "",
+    DenNgay: ""
   };
 
   function render(containerElement) {
     $container = containerElement;
 
+    bookingData = [];
+
     fetch('./src/pages/booking/booking.html')
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
+
+        // Bắt tham số date hoặc id từ URL (ví dụ: ?date=2023-03-03 hoặc ?id=BN123)
+        var hashParts = window.location.hash.split('?');
+        if (hashParts.length > 1) {
+          var params = new URLSearchParams(hashParts[1]);
+          var dateParam = params.get('date');
+          var idParam = params.get('id');
+          
+          if (dateParam) {
+            filterParams.TuNgay = dateParam;
+            filterParams.DenNgay = dateParam;
+          }
+          if (idParam) {
+            filterParams.Keyword = idParam;
+            // Xóa bộ lọc ngày nếu đang tìm theo ID cụ thể
+            filterParams.TuNgay = "";
+            filterParams.DenNgay = "";
+          }
+        }
+
         _bindEvents();
         _loadData();
       });
@@ -59,10 +81,13 @@ var BookingPage = (function () {
       ApiClient.get(API_CONFIG.ENDPOINTS.SYSTEM.HALLS).then(function (halls) {
         var records = (halls && halls.records) ? halls.records : (Array.isArray(halls) ? halls : []);
         var selSanh = $container.querySelector('#sel-sanh');
+        var selSanhPhu = $container.querySelector('#sel-sanh-phu');
         if (selSanh && records.length > 0) {
           selSanh.innerHTML = '<option value="">-- Chọn Sảnh --</option>';
+          if (selSanhPhu) selSanhPhu.innerHTML = '';
           records.forEach(function (h) {
             selSanh.innerHTML += '<option value="' + h.Sanhtiecid + '">' + h.Tensanhtiec + '</option>';
+            if (selSanhPhu) selSanhPhu.innerHTML += '<option value="' + h.Sanhtiecid + '">' + h.Tensanhtiec + '</option>';
           });
         }
       }).catch(e => console.warn('Không load được sảnh', e));
@@ -79,6 +104,11 @@ var BookingPage = (function () {
   function _renderTable() {
     var tbody = $container.querySelector('#booking-table tbody');
     tbody.innerHTML = '';
+    
+    if (!bookingData || bookingData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5" style="color: var(--color-text-secondary); font-size: 14px;">Không có dữ liệu cọc chỗ</td></tr>';
+      return;
+    }
 
     bookingData.forEach((row, idx) => {
       // Dùng tên trường của Backend trả về (TrangThai), dự phòng status cũ
@@ -106,6 +136,29 @@ var BookingPage = (function () {
   }
 
   function _bindEvents() {
+    var filterContainer = $container.querySelector('#booking-filter');
+    if (filterContainer && typeof UIFilter !== 'undefined') {
+      UIFilter.create(filterContainer, {
+        keyword: true,
+        keywordPlaceholder: 'Tìm Mã phiếu, Số ĐT...',
+        dateRange: true,
+        dateLabel: 'Ngày tổ chức',
+        status: [
+          { value: '1', label: 'Giữ chỗ (Lần 1)' },
+          { value: '2', label: 'Giữ chỗ (Lần 2)' },
+          { value: '3', label: 'Đã lên Hợp đồng' },
+          { value: '4', label: 'Đã hủy' }
+        ],
+        onFilter: function(params) {
+          filterParams.Keyword = params.keyword || '';
+          filterParams.TuNgay = params.fromDate || '';
+          filterParams.DenNgay = params.toDate || '';
+          filterParams.TrangThai = params.status || '';
+          _loadData();
+        }
+      });
+    }
+
     // Row selection logic
     var tbody = $container.querySelector('#booking-table tbody');
     if (window.UIControls && UIControls.utils && UIControls.utils.setupTableSelection) {
@@ -122,15 +175,13 @@ var BookingPage = (function () {
     $container.querySelector('#btn-add-deposit1').addEventListener('click', function () {
       openForm('add1', null);
     });
-
-    $container.querySelector('#btn-edit-deposit').addEventListener('click', function () {
-      var selected = getSelectedRow();
-      if (!selected) {
-        UIToast.show('Vui lòng chọn một Biên nhận cọc để sửa!', 'warning');
-        return;
-      }
-      openForm('edit', selected);
-    });
+    
+    var btnMobileAdd = $container.querySelector('#btn-add-deposit1-mobile');
+    if (btnMobileAdd) {
+      btnMobileAdd.addEventListener('click', function () {
+        openForm('add1', null);
+      });
+    }
 
     $container.querySelector('#btn-add-deposit2').addEventListener('click', function () {
       var selected = getSelectedRow();
@@ -141,25 +192,92 @@ var BookingPage = (function () {
       openForm('add2', selected);
     });
 
-    $container.querySelector('#btn-delete').addEventListener('click', function () {
-      var selected = getSelectedRow();
-      if (!selected) {
-        UIToast.show('Vui lòng chọn một Biên nhận cọc để hủy!', 'warning');
-        return;
-      }
-      var docId = selected.MaChungTu || selected.id;
-      if (confirm('Bạn có chắc chắn muốn hủy phiếu cọc ' + docId + ' không?')) {
-        if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
-          var payload = { DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' };
-          ApiClient.post(API_CONFIG.ENDPOINTS.BOOKING.CANCEL, payload).then(function () {
-            UIToast.show('Hủy phiếu cọc thành công', 'success');
-            _loadData();
-          }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
-        } else {
-          UIToast.show('Chưa cấu hình API CANCEL', 'warning');
+    var btnEdit = $container.querySelector('#btn-edit-booking');
+    if (btnEdit) {
+      btnEdit.addEventListener('click', function() {
+        var selected = getSelectedRow();
+        if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận!', 'warning');
+        openForm('edit', selected); 
+      });
+    }
+
+    var btnCancel = $container.querySelector('#btn-cancel-booking');
+    if (btnCancel) {
+      btnCancel.addEventListener('click', function() {
+        var selected = getSelectedRow();
+        if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận để hủy!', 'warning');
+        var docId = selected.MaChungTu || selected.id;
+        if (confirm('Bạn có chắc chắn muốn hủy phiếu cọc ' + docId + ' không?')) {
+          if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
+            var payload = { DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' };
+            ApiClient.post(API_CONFIG.ENDPOINTS.BOOKING.CANCEL, payload).then(function () {
+              UIToast.show('Hủy phiếu cọc thành công', 'success');
+              _loadData();
+            }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
+          } else {
+            UIToast.show('Chưa cấu hình API CANCEL', 'warning');
+          }
         }
-      }
-    });
+      });
+    }
+
+    var btnCreateContract = $container.querySelector('#btn-create-contract');
+    if (btnCreateContract) {
+      btnCreateContract.addEventListener('click', function() {
+        var selected = getSelectedRow();
+        if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận!', 'warning');
+        var docId = selected.MaChungTu || selected.id;
+        window.location.hash = '#/contract?bookingId=' + docId;
+      });
+    }
+
+    var btnMore = $container.querySelector('#btn-booking-more');
+    if (btnMore) {
+      btnMore.addEventListener('click', function(e) {
+        var selected = getSelectedRow();
+        if (typeof UIContextMenu !== 'undefined') {
+          UIContextMenu.show(e, [
+            { 
+              label: 'Thay Đổi Cọc', 
+              icon: 'edit', 
+              onClick: function() { 
+                if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận!', 'warning');
+                openForm('edit', selected); 
+              } 
+            },
+            { 
+              label: 'Lập Hợp Đồng', 
+              icon: 'description', 
+              onClick: function() { 
+                if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận!', 'warning');
+                var docId = selected.MaChungTu || selected.id;
+                window.location.hash = '#/contract?bookingId=' + docId;
+              } 
+            },
+            '|',
+            { 
+              label: '<span class="text-danger">Hủy Phiếu Cọc</span>', 
+              icon: 'delete', 
+              onClick: function() { 
+                if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận để hủy!', 'warning');
+                var docId = selected.MaChungTu || selected.id;
+                if (confirm('Bạn có chắc chắn muốn hủy phiếu cọc ' + docId + ' không?')) {
+                  if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
+                    var payload = { DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' };
+                    ApiClient.post(API_CONFIG.ENDPOINTS.BOOKING.CANCEL, payload).then(function () {
+                      UIToast.show('Hủy phiếu cọc thành công', 'success');
+                      _loadData();
+                    }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
+                  } else {
+                    UIToast.show('Chưa cấu hình API CANCEL', 'warning');
+                  }
+                }
+              } 
+            }
+          ]);
+        }
+      });
+    }
 
     // Form events - using the new UISidePanel component
     var bookingPanel = null;
@@ -229,6 +347,17 @@ var BookingPage = (function () {
       var banMan = parseInt($container.querySelector('#inp-ban-man').value) || 0;
       var banChay = parseInt($container.querySelector('#inp-ban-chay').value) || 0;
       var sanhId = $container.querySelector('#sel-sanh').value;
+      var selSanhPhu = $container.querySelector('#sel-sanh-phu');
+      var dsSanh = [];
+      if (sanhId) dsSanh.push({ Sanhtiecid: sanhId, IsSanhchinh: 1 });
+      if (selSanhPhu && selSanhPhu.selectedOptions) {
+        Array.from(selSanhPhu.selectedOptions).forEach(function(opt) {
+          if (opt.value && opt.value !== sanhId) {
+            dsSanh.push({ Sanhtiecid: opt.value, IsSanhchinh: 0 });
+          }
+        });
+      }
+
       var tienCocRaw = $container.querySelector('#inp-tiencoc').value || '0';
       var tienCoc = parseFloat(tienCocRaw.replace(/,/g, ''));
       var ghiChu = $container.querySelector('#inp-ghichu').value;
@@ -248,7 +377,7 @@ var BookingPage = (function () {
         Tongtien: tienCoc,
         Solan: isCocLan2 ? 2 : 1,
         Ghichu: ghiChu,
-        JsonSanhTiec: sanhId ? JSON.stringify([{ Sanhtiecid: sanhId, IsSanhchinh: 1 }]) : "[]"
+        JsonSanhTiec: JSON.stringify(dsSanh)
       };
 
       // Kiểm tra và sử dụng ENDPOINT từ env.js

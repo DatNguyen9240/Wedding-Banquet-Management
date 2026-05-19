@@ -36,7 +36,7 @@ var Router = (function () {
   var _currentRoute = null;
   var _loadedScripts = {};
   var _templateCache = {};
-  var _appVersion = '2.2'; // Bump để làm mới cache html/script động
+  var _appVersion = '2.3'; // Bump để làm mới cache html/script động
   var _isNavigating = false;    // Guard chống double-navigate
 
   // ── Template cache (dùng chung cho cả Router lẫn Page modules) ─────────
@@ -152,20 +152,24 @@ var Router = (function () {
 
     var $content = document.getElementById('app-content');
     var $pageTitle = document.getElementById('page-title');
-    var hash = window.location.hash.replace('#', '') || '/dashboard';
-    var route = _findRoute(hash);
+    var rawHash = window.location.hash.replace('#', '') || '/dashboard';
+    
+    // Tách phần path và query (vd: /contract?date=...)
+    var hashParts = rawHash.split('?');
+    var pathOnly = hashParts[0];
+    var route = _findRoute(pathOnly);
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'instant' });
 
     // Cập nhật nav UI
-    _updateNavActive(hash);
+    _updateNavActive(pathOnly);
 
     // 404
     if (!route) {
       if ($pageTitle) $pageTitle.innerText = '404 — Không tìm thấy';
       document.title = '404 | Quản lý Tiệc Cưới';
-      _render404($content, hash);
+      _render404($content, rawHash);
       _isNavigating = false;
       return;
     }
@@ -181,7 +185,7 @@ var Router = (function () {
     // Cập nhật title
     if ($pageTitle) $pageTitle.innerText = route.title;
     document.title = route.title + ' | Quản lý Tiệc Cưới';
-    document.body.setAttribute('data-page', hash.replace('/', ''));
+    document.body.setAttribute('data-page', pathOnly.replace('/', ''));
 
     // ── Trường hợp 1: Có script → load script → pageFn.render() ──
     // (Page module tự fetch template bên trong render nếu cần)

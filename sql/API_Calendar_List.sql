@@ -20,7 +20,7 @@ BEGIN
     -- 1. Lấy dữ liệu CỌC CHỖ (Chưa lên hợp đồng và Chưa hủy)
     SELECT 
         b.DocumentID AS [MaChungTu],
-        b.Ngaytochuc AS [NgayToChuc],
+        CONVERT(VARCHAR(10), b.Ngaytochuc, 23) AS [NgayToChuc],
         1 AS [LoaiPhieu], -- 1 = Mới cọc chỗ (Màu xanh)
         ISNULL(b.Tongsoban, 0) AS [SoBan],
         ISNULL(s.Tensanhtiec, N'Chưa chọn sảnh') AS [TenSanh],
@@ -49,7 +49,7 @@ BEGIN
     -- 2. Lấy dữ liệu HỢP ĐỒNG (Đã ký hợp đồng và Chưa hủy)
     SELECT 
         h.Sohopdong AS [MaChungTu],
-        h.Ngaytochuc AS [NgayToChuc],
+        CONVERT(VARCHAR(10), h.Ngaytochuc, 23) AS [NgayToChuc],
         2 AS [LoaiPhieu], -- 2 = Hợp đồng (Màu đỏ)
         ISNULL(h.TongSoBan, 0) AS [SoBan],
         ISNULL(s.Tensanhtiec, N'Chưa chọn sảnh') AS [TenSanh],

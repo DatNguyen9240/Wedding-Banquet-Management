@@ -36,6 +36,7 @@
   cursor: pointer;
   position: relative;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .ui-tab-btn:hover {

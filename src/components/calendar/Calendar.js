@@ -279,25 +279,38 @@ var UICalendar = (function () {
         evtDiv.className = 'calendar-events';
         
         var isInitialMonth = (year === currentYear && month === currentMonth);
-        var dayEvents = (isInitialMonth && config.events) ? config.events[i] : null;
+        var dayEvents = config.events ? config.events[i] : null;
         
         if (dayEvents && dayEvents.length > 0) {
            var cocCount = 0;
            var hdCount = 0;
            
            dayEvents.forEach(function(e) {
-              if (e.rawData && e.rawData.LoaiPhieu === 1) cocCount++;
-              else hdCount++;
+              if (e.rawData) {
+                 var lp = e.rawData.LoaiPhieu !== undefined ? e.rawData.LoaiPhieu : e.rawData.loaiPhieu;
+                 if (lp === 1) cocCount++;
+                 else hdCount++;
+              }
            });
+
+           var dateStrCell = year + '-' + (month + 1).toString().padStart(2, '0') + '-' + i.toString().padStart(2, '0');
 
            // Render Desktop Summary Labels
            if (cocCount > 0) {
-              var cocHtml = '<div class="calendar-event-label success" style="text-align: center; font-weight: 600; font-size: 11px; padding: 3px 6px;">' + cocCount + ' Cọc Chỗ</div>';
-              evtDiv.insertAdjacentHTML('beforeend', cocHtml);
+              var cocLabel = document.createElement('div');
+              cocLabel.className = 'calendar-event-label success';
+              cocLabel.style.cssText = 'text-align: center; font-weight: 600; font-size: 11px; padding: 3px 6px;';
+              cocLabel.title = 'Có ' + cocCount + ' Biên nhận cọc chỗ';
+              cocLabel.innerText = cocCount + ' Cọc Chỗ';
+              evtDiv.appendChild(cocLabel);
            }
            if (hdCount > 0) {
-              var hdHtml = '<div class="calendar-event-label primary" style="text-align: center; font-weight: 600; font-size: 11px; padding: 3px 6px;">' + hdCount + ' Hợp Đồng</div>';
-              evtDiv.insertAdjacentHTML('beforeend', hdHtml);
+              var hdLabel = document.createElement('div');
+              hdLabel.className = 'calendar-event-label primary';
+              hdLabel.style.cssText = 'text-align: center; font-weight: 600; font-size: 11px; padding: 3px 6px;';
+              hdLabel.title = 'Có ' + hdCount + ' Hợp đồng';
+              hdLabel.innerText = hdCount + ' Hợp Đồng';
+              evtDiv.appendChild(hdLabel);
            }
 
            // Render Mobile Dots

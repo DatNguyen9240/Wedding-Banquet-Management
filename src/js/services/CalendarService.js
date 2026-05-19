@@ -46,18 +46,24 @@ var CalendarService = (function () {
   function formatData(data) {
     var eventsData = {};
     data.forEach(function (row) {
-      if (!row.NgayToChuc) return;
-      var d = new Date(row.NgayToChuc);
+      var ngay = row.NgayToChuc || row.ngayToChuc || row.Ngaytochuc || row.ngaytochuc;
+      if (!ngay) return;
+      var d = new Date(ngay);
       var day = d.getDate();
 
       if (!eventsData[day]) eventsData[day] = [];
 
+      var loaiPhieu = row.LoaiPhieu !== undefined ? row.LoaiPhieu : row.loaiPhieu;
+      var laSanhChinh = row.LaSanhChinh !== undefined ? row.LaSanhChinh : row.laSanhChinh;
+      var tenSanh = row.TenSanh || row.tenSanh || '';
+      var soBan = row.SoBan || row.soBan || 0;
+
       // LoaiPhieu = 1 -> Xanh (Mới cọc), 2 -> Đỏ (Đã HĐ)
-      var type = row.LoaiPhieu === 1 ? 'success' : 'primary';
+      var type = loaiPhieu === 1 ? 'success' : 'primary';
 
       // Sảnh chính thì ghi số bàn, sảnh phụ ghi X
-      var suffix = row.LaSanhChinh === 1 ? row.SoBan : 'X';
-      var label = row.TenSanh + ' (' + suffix + ')';
+      var suffix = laSanhChinh === 1 ? soBan : 'X';
+      var label = tenSanh + ' (' + suffix + ')';
 
       eventsData[day].push({
         type: type,
@@ -67,6 +73,8 @@ var CalendarService = (function () {
     });
     return eventsData;
   }
+
+  var _pendingResolvers = [];
 
   function fetchEvents(year, month, forceRefresh) {
     forceRefresh = forceRefresh || false;
@@ -78,7 +86,11 @@ var CalendarService = (function () {
         return resolve(_calendarCache[cacheKey]);
       }
 
-      if (_isFetching) return;
+      // Nếu đang fetch cùng tháng đó rồi, xếp vào queue chờ
+      if (_isFetching) {
+        _pendingResolvers.push({ resolve: resolve, reject: reject, cacheKey: cacheKey });
+        return;
+      }
 
       if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.LIST) {
         console.warn('Chưa cấu hình API_CONFIG.ENDPOINTS.CALENDAR.LIST.');
@@ -97,10 +109,18 @@ var CalendarService = (function () {
           var eventsData = formatData(data);
           _calendarCache[cacheKey] = eventsData;
           resolve(eventsData);
+          // Flush pending resolvers
+          _pendingResolvers.forEach(function(p) {
+            var cached = _calendarCache[p.cacheKey];
+            if (cached) p.resolve(cached); else p.reject('No data');
+          });
+          _pendingResolvers = [];
         })
         .catch(function (err) {
           console.error('[CalendarService] Lỗi khi tải lịch:', err);
           reject(err);
+          _pendingResolvers.forEach(function(p) { p.reject(err); });
+          _pendingResolvers = [];
         })
         .finally(function () {
           _isFetching = false;

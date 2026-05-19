@@ -61,11 +61,11 @@ BEGIN
         dmkhachhang k ON b.Makh = k.Makh
     WHERE 
         -- Nếu có tìm kiếm thì ưu tiên
-        (@Keyword IS NULL OR b.DocumentID LIKE '%' + @Keyword + '%' OR b.SoBN LIKE '%' + @Keyword + '%' OR k.Dienthoai LIKE '%' + @Keyword + '%')
+        (@Keyword IS NULL OR @Keyword = '' OR b.DocumentID LIKE '%' + @Keyword + '%' OR b.SoBN LIKE '%' + @Keyword + '%' OR k.Dienthoai LIKE '%' + @Keyword + '%' OR k.Tenkh LIKE N'%' + @Keyword + '%' OR k.Tenchure LIKE N'%' + @Keyword + '%' OR k.Tencodau LIKE N'%' + @Keyword + '%')
         
-        -- Lọc ngày cọc nếu truyền TuNgay / DenNgay
-        AND (@TuNgay IS NULL OR b.DocumentDate >= @TuNgay)
-        AND (@DenNgay IS NULL OR b.DocumentDate <= @DenNgay)
+        -- Lọc ngày tổ chức nếu truyền TuNgay / DenNgay (bỏ qua nếu là chuỗi rỗng / 1900-01-01)
+        AND (@TuNgay IS NULL OR CAST(@TuNgay AS DATE) <= '1900-01-01' OR b.Ngaytochuc >= @TuNgay)
+        AND (@DenNgay IS NULL OR CAST(@DenNgay AS DATE) <= '1900-01-01' OR b.Ngaytochuc <= @DenNgay)
         
     ORDER BY 
         b.Ngaytochuc DESC, b.DocumentDate DESC;

@@ -16,7 +16,8 @@ BEGIN
 
     SELECT 
         Loaitiecid AS Loaihinhtiecid,
-        Tenloaitiec AS Tenloaihinhtiec
+        Tenloaitiec AS Tenloaihinhtiec,
+        ISNULL(isHoiNghi, 0) AS isHoiNghi
     FROM dmLoaihinhtiec
     ORDER BY Tenloaitiec ASC;
 END
