@@ -36,7 +36,7 @@ var Router = (function () {
   var _currentRoute = null;
   var _loadedScripts = {};
   var _templateCache = {};
-  var _appVersion = '1.0';
+  var _appVersion = '2.2'; // Bump để làm mới cache html/script động
   var _isNavigating = false;    // Guard chống double-navigate
 
   // ── Template cache (dùng chung cho cả Router lẫn Page modules) ─────────

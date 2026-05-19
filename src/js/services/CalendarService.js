@@ -2,15 +2,38 @@
  * Lớp Dịch vụ Quản lý Dữ liệu Lịch (Calendar Service)
  * Đảm nhiệm việc fetch dữ liệu API, quản lý In-memory Cache, và format dữ liệu
  */
-var CalendarService = (function() {
+var CalendarService = (function () {
   var _calendarCache = {};
   var _isFetching = false;
 
   // Lắng nghe sự kiện toàn cục để tự động quét dọn Cache
   if (typeof EventBus !== 'undefined') {
-    EventBus.on('BANQUET_MUTATED', function() {
+    EventBus.on('BANQUET_MUTATED', function () {
       console.log('🔄 [CalendarService] Phát hiện có thay đổi Dữ liệu Tiệc, tự động quét sạch Lịch đệm.');
       invalidateCache();
+    });
+  }
+
+  var _legendCache = null;
+
+  function getLegend() {
+    return new Promise(function(resolve, reject) {
+      if (_legendCache) {
+        return resolve(_legendCache);
+      }
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.LEGEND) {
+        return reject('Missing API_CONFIG.ENDPOINTS.CALENDAR.LEGEND');
+      }
+      ApiClient.get(API_CONFIG.ENDPOINTS.CALENDAR.LEGEND)
+        .then(function(res) {
+          var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
+          _legendCache = records;
+          resolve(records);
+        })
+        .catch(function(err) {
+          console.warn('[CalendarService] Lỗi lấy Legend', err);
+          resolve([]); // Trả về mảng rỗng nếu API lỗi để không bị crash FE
+        });
     });
   }
 
@@ -22,25 +45,25 @@ var CalendarService = (function() {
   // Chuyển logic format từ page vào service luôn để tái sử dụng
   function formatData(data) {
     var eventsData = {};
-    data.forEach(function(row) {
-       if (!row.NgayToChuc) return;
-       var d = new Date(row.NgayToChuc);
-       var day = d.getDate();
-       
-       if (!eventsData[day]) eventsData[day] = [];
-       
-       // LoaiPhieu = 1 -> Xanh (Mới cọc), 2 -> Đỏ (Đã HĐ)
-       var type = row.LoaiPhieu === 1 ? 'success' : 'primary';
-       
-       // Sảnh chính thì ghi số bàn, sảnh phụ ghi X
-       var suffix = row.LaSanhChinh === 1 ? row.SoBan : 'X';
-       var label = row.TenSanh + ' (' + suffix + ')';
+    data.forEach(function (row) {
+      if (!row.NgayToChuc) return;
+      var d = new Date(row.NgayToChuc);
+      var day = d.getDate();
 
-       eventsData[day].push({
-         type: type,
-         label: label,
-         rawData: row
-       });
+      if (!eventsData[day]) eventsData[day] = [];
+
+      // LoaiPhieu = 1 -> Xanh (Mới cọc), 2 -> Đỏ (Đã HĐ)
+      var type = row.LoaiPhieu === 1 ? 'success' : 'primary';
+
+      // Sảnh chính thì ghi số bàn, sảnh phụ ghi X
+      var suffix = row.LaSanhChinh === 1 ? row.SoBan : 'X';
+      var label = row.TenSanh + ' (' + suffix + ')';
+
+      eventsData[day].push({
+        type: type,
+        label: label,
+        rawData: row
+      });
     });
     return eventsData;
   }
@@ -49,7 +72,7 @@ var CalendarService = (function() {
     forceRefresh = forceRefresh || false;
     var cacheKey = year + '-' + (month + 1).toString().padStart(2, '0');
 
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
       if (!forceRefresh && _calendarCache[cacheKey]) {
         console.log('⚡ [CalendarService] Cache Hit cho tháng:', cacheKey);
         return resolve(_calendarCache[cacheKey]);
@@ -59,7 +82,7 @@ var CalendarService = (function() {
 
       if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.LIST) {
         console.warn('Chưa cấu hình API_CONFIG.ENDPOINTS.CALENDAR.LIST.');
-        return reject('Missing API_CONFIG'); 
+        return reject('Missing API_CONFIG');
       }
 
       console.log('🌐 [CalendarService] Fetching dữ liệu lịch cho tháng:', cacheKey);
@@ -69,17 +92,17 @@ var CalendarService = (function() {
       var endpoint = API_CONFIG.ENDPOINTS.CALENDAR.LIST + '?q=' + payloadString;
 
       ApiClient.get(endpoint)
-        .then(function(res) {
+        .then(function (res) {
           var data = res.records || res.data || res || [];
           var eventsData = formatData(data);
           _calendarCache[cacheKey] = eventsData;
           resolve(eventsData);
         })
-        .catch(function(err) {
+        .catch(function (err) {
           console.error('[CalendarService] Lỗi khi tải lịch:', err);
           reject(err);
         })
-        .finally(function() {
+        .finally(function () {
           _isFetching = false;
         });
     });
@@ -87,6 +110,7 @@ var CalendarService = (function() {
 
   return {
     fetchEvents: fetchEvents,
+    getLegend: getLegend,
     invalidateCache: invalidateCache
   };
 })();

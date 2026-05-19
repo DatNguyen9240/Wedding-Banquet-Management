@@ -39,12 +39,15 @@ window.API_CONFIG = {
         SYSTEM: {
             HALLS: '/api/API_Hall_List',
             SHIFTS: '/api/API_Shift_List',
+            BANQUET_TYPES: '/api/API_Loaihinhtiec_List'
         },
         CONTRACT: {
             LIST: '/api/API_Contract_List',
         },
         CALENDAR: {
             LIST: '/api/API_Calendar_List',
+            SAVE: '/api/API_Contract_Save',
+            LEGEND: '/api/API_Calendar_Legend'
         },
         VISITOR: {
             LIST: '/api/API_Visitor_List',

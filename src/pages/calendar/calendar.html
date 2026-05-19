@@ -5,8 +5,8 @@
 <div class="page-title-bar d-flex align-items-center justify-content-between flex-wrap gap-3" style="margin-bottom: 24px;">
   <div class="d-flex align-items-center gap-3">
     <div class="d-flex flex-column">
-      <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: var(--color-text);">Lịch Tiệc</h1>
-      <span style="font-size: 13px; color: var(--color-text-secondary); font-weight: 500;">Quản lý và theo dõi sự kiện trong tháng</span>
+      <h1 style="margin: 0; font-size: clamp(24px, 3vw, 32px); font-weight: 800; letter-spacing: -0.5px; color: var(--color-text);">Lịch Tiệc</h1>
+      <span style="font-size: clamp(13px, 1.5vw, 15px); color: var(--color-text-secondary); font-weight: 500;">Quản lý và theo dõi sự kiện trong tháng</span>
     </div>
   </div>
   <button class="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-4" onclick="window.showCreateBanquetModal()" style="height: 44px; font-weight: 700;">
@@ -17,10 +17,8 @@
 
 <!-- Chú thích lịch -->
 <div class="mb-3" style="animation: slideUp 0.3s ease forwards;">
-  <div class="d-flex gap-3 flex-wrap align-items-center justify-content-center justify-content-sm-end" style="font-size:12px; color:var(--color-text-secondary);">
-    <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:10px; height:10px; background:var(--color-success); border-radius:2px;"></span> Mới Cọc</div>
-    <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:10px; height:10px; background:var(--color-danger); border-radius:2px;"></span> Đã Ký HĐ</div>
-    <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:10px; height:10px; border:1px solid #ccc; font-weight:bold; text-align:center; line-height:10px; font-size:8px;">X</span> Sảnh Phụ</div>
+  <!-- Container để render Chú thích động từ JS -->
+  <div id="calendar-legend-container" class="d-flex gap-1 gap-sm-2 flex-wrap align-items-center justify-content-center justify-content-sm-end" style="font-size: clamp(11px, 3.5vw, 13px); font-weight: 500;">
   </div>
 </div>
 

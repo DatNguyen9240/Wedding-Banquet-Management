@@ -18,6 +18,10 @@
   <!-- App Styles (design-tokens + global + layouts + 30 components) -->
   <link rel="stylesheet" href="./src/css/styles.bundle.css?v=35">
 
+  <!-- Thư viện Flatpickr (Datepicker đẹp) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+
   <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,16 +61,18 @@
   <!-- 1. Thư viện ngoài (defer = không block render) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr" defer></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js" defer></script>
 
   <!-- APP CONFIG -->
   <script src="./env.js?v=2"></script>
   <script src="./src/js/utils/apiClient.js?v=1"></script>
 
   <!-- 2. App Bundle (mockData + utils + 33 components) -->
-  <script src="./src/js/app.bundle.js?v=30"></script>
+  <script src="./src/js/app.bundle.js?v=35"></script>
 
   <!-- 3. Router + Bootstrap -->
-  <script src="./src/js/core/router.js?v=23"></script>
+  <script src="./src/js/core/router.js?v=34"></script>
   <script src="./src/js/core/index.js?v=23"></script>
 
   <!-- 4. Tắt splash → hiện app -->

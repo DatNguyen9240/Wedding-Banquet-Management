@@ -57,6 +57,41 @@ BEGIN
         DECLARE @Now DATETIME = GETDATE();
 
         -- ==========================================================
+        -- 0. KIỂM TRA TRÙNG LỊCH SẢNH (CONFLICT VALIDATION)
+        -- ==========================================================
+        IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
+        BEGIN
+            IF EXISTS (
+                -- Kiểm tra trùng với Hợp đồng khác
+                SELECT 1 
+                FROM tbmk_Hopdong h
+                INNER JOIN tbmk_Hopdongsanhtiec hs ON h.Sohopdong = hs.Sohopdong
+                INNER JOIN OPENJSON(@JsonSanhTiec) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
+                WHERE h.Ngaytochuc = @Ngaytochuc 
+                  AND h.Thoigianid = @Thoigianid
+                  AND ISNULL(h.IsHuy, 0) = 0
+                  AND h.Sohopdong != ISNULL(@Sohopdong, '')
+                  
+                UNION ALL
+                
+                -- Kiểm tra trùng với Cọc chỗ khác (chưa lên Hợp đồng)
+                SELECT 1 
+                FROM tbmk_Biennhancoccho b
+                INNER JOIN tbmk_Biennhancocchosanhtiec bs ON b.DocumentID = bs.DocumentID
+                INNER JOIN OPENJSON(@JsonSanhTiec) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
+                WHERE b.Ngaytochuc = @Ngaytochuc 
+                  AND b.Thoigianid = @Thoigianid
+                  AND ISNULL(b.IsHuy, 0) = 0
+                  AND ISNULL(b.IsKetthuc, 0) = 0
+                  AND b.DocumentID != ISNULL(@Sobiennhan, '')
+            )
+            BEGIN
+                SELECT 0 AS [Success], N'Lỗi: Sảnh bạn chọn đã được đặt hoặc cọc trước đó trong ca tiệc này. Vui lòng kiểm tra lại!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+                RETURN;
+            END
+        END
+
+        -- ==========================================================
         -- 1. XỬ LÝ KHÁCH HÀNG (dmkhachhang)
         -- ==========================================================
         IF (@Makh IS NULL OR @Makh = '')
@@ -101,13 +136,13 @@ BEGIN
                 Sohopdong, Sobiennhan, Ngayhopdong, Ngaytochuc, Nhamngay, Makh, Loaitiecid, Thoigianid,
                 SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong, TongSoBan,
                 Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongtiencoc,
-                Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate
+                Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID
             )
             VALUES (
                 @Sohopdong, @Sobiennhan, ISNULL(@Ngayhopdong, @Now), @Ngaytochuc, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
                 @SobanManchinhthuc, @SobanManduphong, @SobanChaychinhthuc, @SobanChayduphong, @TongSoBan,
                 @Tongtienhopdong, @Sotiencoccho, @Sotiencochopdong, @Tongtiencoc,
-                @Manv, @Ghichu, 0, 0, @Now, @UserCreate
+                @Manv, @Ghichu, 0, 0, @Now, @UserCreate, ''
             );
 
             -- Cập nhật trạng thái phiếu cọc nếu có truyền Sobiennhan

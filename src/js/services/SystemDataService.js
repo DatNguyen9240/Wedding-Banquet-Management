@@ -60,6 +60,22 @@ var SystemDataService = (function() {
     });
   }
 
+  function getBanquetTypes(forceRefresh) {
+    forceRefresh = forceRefresh || false;
+    return new Promise(function(resolve, reject) {
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.SYSTEM || !API_CONFIG.ENDPOINTS.SYSTEM.BANQUET_TYPES) {
+        return reject('Missing API_CONFIG.ENDPOINTS.SYSTEM.BANQUET_TYPES');
+      }
+
+      ApiClient.get(API_CONFIG.ENDPOINTS.SYSTEM.BANQUET_TYPES)
+        .then(function(res) {
+          var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
+          resolve(records);
+        })
+        .catch(reject);
+    });
+  }
+
   function invalidateCache() {
     _hallsCache = null;
     _shiftsCache = null;
@@ -68,6 +84,7 @@ var SystemDataService = (function() {
   return {
     getHalls: getHalls,
     getShifts: getShifts,
+    getBanquetTypes: getBanquetTypes,
     invalidateCache: invalidateCache
   };
 })();
