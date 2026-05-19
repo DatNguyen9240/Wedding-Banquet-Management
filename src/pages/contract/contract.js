@@ -433,6 +433,32 @@ var ContractPage = (function () {
           .p-4.mx-auto > .d-flex button span.material-symbols-outlined {
             font-size: 14px !important;
           }
+          
+          /* Compact table styling for mobile */
+          .table-responsive table {
+            font-size: 12px !important;
+            min-width: 500px !important;
+          }
+          .table-responsive th, .table-responsive td {
+            padding: 6px 6px !important;
+            line-height: 1.3 !important;
+          }
+          .table-responsive th {
+            font-size: 12px !important;
+            font-weight: 700 !important;
+          }
+          .table-responsive td span {
+            padding: 2px 6px !important;
+            font-size: 11px !important;
+          }
+          
+          /* Tighter specific columns on mobile */
+          .table-responsive th:first-child, .table-responsive td:first-child {
+            width: 45px !important; /* STT column */
+          }
+          .table-responsive th:last-child, .table-responsive td:last-child {
+            width: 50px !important; /* Action delete button column */
+          }
         }
       </style>
 
