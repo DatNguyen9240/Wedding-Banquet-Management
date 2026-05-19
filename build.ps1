@@ -50,9 +50,12 @@ $cssFiles = @(
 $jsFiles = @(
   "js\data\mockData.js",
   "js\utils\permission.js",
+  "js\core\EventBus.js",
   "js\core\KeyboardManager.js",
   "js\utils\FormatUtils.js",
   "js\utils\PrintUtils.js",
+  "js\services\CalendarService.js",
+  "js\services\SystemDataService.js",
   "components\ui-utils\UIUtils.js",
   "components\navbar\Navbar.js",
   "components\checkbox\Checkbox.js",

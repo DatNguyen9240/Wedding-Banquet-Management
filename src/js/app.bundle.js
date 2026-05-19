@@ -149,6 +149,44 @@ var Permission = (function () {
 })();
 
 
+/* --- EventBus.js --- */
+/**
+ * Global Event Bus - Lõi Pub/Sub để các component giao tiếp với nhau
+ * Giúp đồng bộ dữ liệu toàn hệ thống mà không cần truyền biến phức tạp
+ */
+var EventBus = (function() {
+  var listeners = {};
+
+  return {
+    // Đăng ký lắng nghe sự kiện
+    on: function(event, callback) {
+      if (!listeners[event]) {
+        listeners[event] = [];
+      }
+      listeners[event].push(callback);
+    },
+
+    // Bỏ đăng ký lắng nghe
+    off: function(event, callback) {
+      if (!listeners[event]) return;
+      listeners[event] = listeners[event].filter(function(cb) {
+        return cb !== callback;
+      });
+    },
+
+    // Phát sự kiện toàn cục kèm theo dữ liệu (nếu có)
+    emit: function(event, data) {
+      console.log('📢 [EventBus] Phát sự kiện:', event, data ? data : '');
+      if (listeners[event]) {
+        listeners[event].forEach(function(callback) {
+          callback(data);
+        });
+      }
+    }
+  };
+})();
+
+
 /* --- KeyboardManager.js --- */
 /**
  * KeyboardManager — Quản lý phím tắt tập trung
@@ -292,6 +330,177 @@ var PrintUtils = (function () {
 
   return {
     printElement: printElement
+  };
+})();
+
+
+/* --- CalendarService.js --- */
+/**
+ * Lớp Dịch vụ Quản lý Dữ liệu Lịch (Calendar Service)
+ * Đảm nhiệm việc fetch dữ liệu API, quản lý In-memory Cache, và format dữ liệu
+ */
+var CalendarService = (function() {
+  var _calendarCache = {};
+  var _isFetching = false;
+
+  // Lắng nghe sự kiện toàn cục để tự động quét dọn Cache
+  if (typeof EventBus !== 'undefined') {
+    EventBus.on('BANQUET_MUTATED', function() {
+      console.log('🔄 [CalendarService] Phát hiện có thay đổi Dữ liệu Tiệc, tự động quét sạch Lịch đệm.');
+      invalidateCache();
+    });
+  }
+
+  function invalidateCache() {
+    console.log('🧹 [CalendarService] Đã xóa toàn bộ cache lịch.');
+    _calendarCache = {};
+  }
+
+  // Chuyển logic format từ page vào service luôn để tái sử dụng
+  function formatData(data) {
+    var eventsData = {};
+    data.forEach(function(row) {
+       if (!row.NgayToChuc) return;
+       var d = new Date(row.NgayToChuc);
+       var day = d.getDate();
+       
+       if (!eventsData[day]) eventsData[day] = [];
+       
+       // LoaiPhieu = 1 -> Xanh (Mới cọc), 2 -> Đỏ (Đã HĐ)
+       var type = row.LoaiPhieu === 1 ? 'success' : 'primary';
+       
+       // Sảnh chính thì ghi số bàn, sảnh phụ ghi X
+       var suffix = row.LaSanhChinh === 1 ? row.SoBan : 'X';
+       var label = row.TenSanh + ' (' + suffix + ')';
+
+       eventsData[day].push({
+         type: type,
+         label: label,
+         rawData: row
+       });
+    });
+    return eventsData;
+  }
+
+  function fetchEvents(year, month, forceRefresh) {
+    forceRefresh = forceRefresh || false;
+    var cacheKey = year + '-' + (month + 1).toString().padStart(2, '0');
+
+    return new Promise(function(resolve, reject) {
+      if (!forceRefresh && _calendarCache[cacheKey]) {
+        console.log('⚡ [CalendarService] Cache Hit cho tháng:', cacheKey);
+        return resolve(_calendarCache[cacheKey]);
+      }
+
+      if (_isFetching) return;
+
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.LIST) {
+        console.warn('Chưa cấu hình API_CONFIG.ENDPOINTS.CALENDAR.LIST.');
+        return reject('Missing API_CONFIG'); 
+      }
+
+      console.log('🌐 [CalendarService] Fetching dữ liệu lịch cho tháng:', cacheKey);
+      _isFetching = true;
+
+      var payloadString = encodeURIComponent(JSON.stringify({ Thang: month + 1, Nam: year }));
+      var endpoint = API_CONFIG.ENDPOINTS.CALENDAR.LIST + '?q=' + payloadString;
+
+      ApiClient.get(endpoint)
+        .then(function(res) {
+          var data = res.records || res.data || res || [];
+          var eventsData = formatData(data);
+          _calendarCache[cacheKey] = eventsData;
+          resolve(eventsData);
+        })
+        .catch(function(err) {
+          console.error('[CalendarService] Lỗi khi tải lịch:', err);
+          reject(err);
+        })
+        .finally(function() {
+          _isFetching = false;
+        });
+    });
+  }
+
+  return {
+    fetchEvents: fetchEvents,
+    invalidateCache: invalidateCache
+  };
+})();
+
+
+/* --- SystemDataService.js --- */
+/**
+ * Lớp Dịch vụ lấy dữ liệu Danh mục dùng chung (Sảnh, Ca Tiệc...)
+ * Đảm nhiệm việc fetch dữ liệu API, quản lý In-memory Cache để tái sử dụng
+ */
+var SystemDataService = (function() {
+  var _hallsCache = null;
+  var _shiftsCache = null;
+  var _isFetchingHalls = false;
+  var _isFetchingShifts = false;
+
+  function getHalls(forceRefresh) {
+    forceRefresh = forceRefresh || false;
+    return new Promise(function(resolve, reject) {
+      if (!forceRefresh && _hallsCache) {
+        return resolve(_hallsCache);
+      }
+      if (_isFetchingHalls) return;
+
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.SYSTEM || !API_CONFIG.ENDPOINTS.SYSTEM.HALLS) {
+        return reject('Missing API_CONFIG.ENDPOINTS.SYSTEM.HALLS');
+      }
+
+      _isFetchingHalls = true;
+      ApiClient.get(API_CONFIG.ENDPOINTS.SYSTEM.HALLS)
+        .then(function(res) {
+          var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
+          _hallsCache = records;
+          resolve(records);
+        })
+        .catch(reject)
+        .finally(function() {
+          _isFetchingHalls = false;
+        });
+    });
+  }
+
+  function getShifts(forceRefresh) {
+    forceRefresh = forceRefresh || false;
+    return new Promise(function(resolve, reject) {
+      if (!forceRefresh && _shiftsCache) {
+        return resolve(_shiftsCache);
+      }
+      if (_isFetchingShifts) return;
+
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.SYSTEM || !API_CONFIG.ENDPOINTS.SYSTEM.SHIFTS) {
+        return reject('Missing API_CONFIG.ENDPOINTS.SYSTEM.SHIFTS');
+      }
+
+      _isFetchingShifts = true;
+      ApiClient.get(API_CONFIG.ENDPOINTS.SYSTEM.SHIFTS)
+        .then(function(res) {
+          var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
+          _shiftsCache = records;
+          resolve(records);
+        })
+        .catch(reject)
+        .finally(function() {
+          _isFetchingShifts = false;
+        });
+    });
+  }
+
+  function invalidateCache() {
+    _hallsCache = null;
+    _shiftsCache = null;
+  }
+
+  return {
+    getHalls: getHalls,
+    getShifts: getShifts,
+    invalidateCache: invalidateCache
   };
 })();
 

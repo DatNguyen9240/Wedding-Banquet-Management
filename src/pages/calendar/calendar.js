@@ -8,54 +8,28 @@ var CalendarPage = (function () {
   var currentYear = new Date().getFullYear();
   var currentMonth = new Date().getMonth();
 
-  function _loadEvents() {
-    if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.LIST) {
-      console.warn('Chưa cấu hình API_CONFIG.ENDPOINTS.CALENDAR.LIST.');
-      return; 
-    }
+  function invalidateCache() {
+    CalendarService.invalidateCache();
+  }
 
-    var payloadString = encodeURIComponent(JSON.stringify({ Thang: currentMonth + 1, Nam: currentYear }));
-    var endpoint = API_CONFIG.ENDPOINTS.CALENDAR.LIST + '?q=' + payloadString;
-
-    ApiClient.get(endpoint)
-      .then(function(res) {
-        var data = res.records || res.data || res || [];
-        var eventsData = _formatDataForCalendar(data);
+  function _loadEvents(forceRefresh = false) {
+    CalendarService.fetchEvents(currentYear, currentMonth, forceRefresh)
+      .then(function(eventsData) {
         if (uiCalendarInstance) {
           uiCalendarInstance.updateEvents(eventsData);
         }
       })
       .catch(function(err) {
-        console.error('Lỗi khi tải lịch:', err);
+        console.error('Lỗi khi tải lịch từ Service:', err);
       });
   }
 
-  function _formatDataForCalendar(data) {
-    var eventsData = {};
-    
-    // data là mảng các record từ DB
-    data.forEach(function(row) {
-       if (!row.NgayToChuc) return;
-       var d = new Date(row.NgayToChuc);
-       var day = d.getDate();
-       
-       if (!eventsData[day]) eventsData[day] = [];
-       
-       // LoaiPhieu = 1 -> Xanh (Mới cọc), 2 -> Đỏ (Đã HĐ)
-       var type = row.LoaiPhieu === 1 ? 'success' : 'primary';
-       
-       // Sảnh chính thì ghi số bàn, sảnh phụ ghi X
-       var suffix = row.LaSanhChinh === 1 ? row.SoBan : 'X';
-       var label = row.TenSanh + ' (' + suffix + ')';
-
-       eventsData[day].push({
-         type: type,
-         label: label,
-         rawData: row
-       });
+  // Tự động làm mới UI trang Lịch nếu nghe thấy có người sửa/tạo Tiệc mới
+  if (typeof EventBus !== 'undefined') {
+    EventBus.on('BANQUET_MUTATED', function() {
+      console.log('🔄 [CalendarPage] Cập nhật lại giao diện ngay lập tức.');
+      _loadEvents(true); // Buộc tải lại lịch từ API (lúc này service đã tự xóa cache)
     });
-
-    return eventsData;
   }
 
   function render(containerElement) {
@@ -173,6 +147,152 @@ var CalendarPage = (function () {
       });
   }
 
-  return { render: render };
+  return { render: render  };
 })();
 
+// Hàm Mở Modal Tạo Tiệc Mới (Thay thế cho Mock cũ)
+window.showCreateBanquetModal = function() {
+  var contentHtml = `
+    <form id="form-create-banquet">
+      <div class="row g-4 p-2">
+        <!-- Khách Hàng -->
+        <div class="col-12">
+          <h6 class="fw-bold mb-3" style="color: var(--color-primary); border-bottom: 2px solid var(--color-border); padding-bottom: 8px;">1. Thông tin Khách hàng</h6>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Tên Chú Rể</label>
+              <input type="text" class="ui-input w-100" name="Tenchure" placeholder="Nhập tên chú rể" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Tên Cô Dâu</label>
+              <input type="text" class="ui-input w-100" name="Tencodau" placeholder="Nhập tên cô dâu" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Số Điện Thoại</label>
+              <input type="text" class="ui-input w-100" name="Dienthoai" placeholder="Nhập SĐT liên hệ" required>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Thời gian & Không gian -->
+        <div class="col-12">
+          <h6 class="fw-bold mb-3" style="color: var(--color-primary); border-bottom: 2px solid var(--color-border); padding-bottom: 8px;">2. Thời gian & Địa điểm</h6>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Ngày Tổ Chức</label>
+              <input type="date" class="ui-input w-100" name="Ngaytochuc" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Ca Tiệc</label>
+              <select class="ui-input w-100" name="Thoigianid" id="modal-sel-catiec">
+                <option value="">-- Đang tải ca tiệc... --</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Sảnh Chính</label>
+              <select class="ui-input w-100" name="Sanhtiecid" id="modal-sel-sanh">
+                <option value="">-- Đang tải sảnh... --</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Số lượng & Thanh toán -->
+        <div class="col-12">
+          <h6 class="fw-bold mb-3" style="color: var(--color-primary); border-bottom: 2px solid var(--color-border); padding-bottom: 8px;">3. Quy mô & Tiền cọc</h6>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Số Bàn Mặn</label>
+              <input type="number" class="ui-input w-100" name="SobanManchinhthuc" value="0" min="0">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Số Bàn Chay</label>
+              <input type="number" class="ui-input w-100" name="SobanChaychinhthuc" value="0" min="0">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Tổng Tiền (Dự kiến)</label>
+              <input type="number" class="ui-input w-100" name="Tongtienhopdong" value="0" min="0">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label" style="font-size: 13px; font-weight: 600;">Tiền Đặt Cọc</label>
+              <input type="number" class="ui-input w-100" name="Tongtiencoc" value="0" min="0">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="d-flex justify-content-end gap-2 mt-4 pt-3" style="border-top: 1px solid var(--color-border);">
+        <button type="button" class="btn btn-outline" onclick="document.querySelector('.btn-close-modal').click()">Hủy Bỏ</button>
+        <button type="button" class="btn btn-primary d-flex align-items-center gap-2" onclick="window.submitCreateBanquet(this)">
+          <span class="material-symbols-outlined" style="font-size: 20px;">save</span>
+          Lưu Hợp Đồng Tiệc
+        </button>
+      </div>
+    </form>
+  `;
+
+  UIModal.show({
+    title: 'Lập Hợp Đồng Tiệc Mới',
+    width: '900px',
+    content: contentHtml
+  });
+
+  // Tải danh sách Sảnh từ SystemDataService
+  if (typeof SystemDataService !== 'undefined') {
+    SystemDataService.getHalls().then(function (records) {
+      var selSanh = document.getElementById('modal-sel-sanh');
+      if (selSanh && records.length > 0) {
+        selSanh.innerHTML = '<option value="">-- Chọn Sảnh --</option>';
+        records.forEach(function (h) {
+          selSanh.innerHTML += '<option value="' + h.Sanhtiecid + '">' + h.Tensanhtiec + ' (Max: ' + (h.Succhua || 0) + ' bàn)</option>';
+        });
+      } else if (selSanh) {
+        selSanh.innerHTML = '<option value="">-- Không có dữ liệu sảnh --</option>';
+      }
+    }).catch(function (e) {
+      console.warn('Lỗi tải sảnh:', e);
+      var selSanh = document.getElementById('modal-sel-sanh');
+      if (selSanh) selSanh.innerHTML = '<option value="">-- Lỗi tải sảnh --</option>';
+    });
+
+    // Tải danh sách Ca Tiệc từ SystemDataService
+    SystemDataService.getShifts().then(function (records) {
+      var selCaTiec = document.getElementById('modal-sel-catiec');
+      if (selCaTiec && records.length > 0) {
+        selCaTiec.innerHTML = '<option value="">-- Chọn Ca Tiệc --</option>';
+        records.forEach(function (c) {
+          selCaTiec.innerHTML += '<option value="' + c.Thoigianid + '">' + (c.Thoigianid.includes('SANG') ? 'Buổi Sáng' : c.Thoigianid.includes('CHIEU') ? 'Buổi Chiều' : 'Cả Ngày') + ' (' + c.Thoigian + ')</option>';
+        });
+      } else if (selCaTiec) {
+        selCaTiec.innerHTML = '<option value="">-- Không có dữ liệu ca tiệc --</option>';
+      }
+    }).catch(function (e) {
+      console.warn('Lỗi tải ca tiệc:', e);
+      var selCaTiec = document.getElementById('modal-sel-catiec');
+      if (selCaTiec) selCaTiec.innerHTML = '<option value="">-- Lỗi tải ca tiệc --</option>';
+    });
+  }
+};
+
+window.submitCreateBanquet = function(btn) {
+  var form = document.getElementById('form-create-banquet');
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+  
+  // Tạm thời hiển thị Toast và phát sự kiện EventBus giả lập (Chờ ghép nối API thật)
+  var btnOriginalText = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang lưu...';
+  btn.disabled = true;
+
+  setTimeout(function() {
+    document.querySelector('.btn-close-modal').click();
+    UIToast.show('Đã lập hợp đồng tiệc thành công!', 'success');
+    
+    // GỌI EVENT BUS ĐỂ ĐỒNG BỘ LẠI TOÀN BỘ LỊCH
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('BANQUET_MUTATED', { type: 'create' });
+    }
+  }, 600);
+};

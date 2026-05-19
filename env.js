@@ -38,6 +38,7 @@ window.API_CONFIG = {
         },
         SYSTEM: {
             HALLS: '/api/API_Hall_List',
+            SHIFTS: '/api/API_Shift_List',
         },
         CONTRACT: {
             LIST: '/api/API_Contract_List',
