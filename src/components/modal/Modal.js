@@ -17,15 +17,15 @@ var UIModal = (function () {
     var contentWidth = config.width || '600px';
 
     var html = `
-      <div class="modal-content" style="width: ${contentWidth}; animation: fadeIn 0.2s ease;">
-        <div class="modal-header">
+      <div class="modal-content" style="width: ${contentWidth}; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; animation: fadeIn 0.2s ease;">
+        <div class="modal-header" style="flex-shrink: 0;">
           <h3>${config.title || 'Tiêu đề'}</h3>
           <button class="btn-close-modal">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
-        <div class="card-body ui-modal-body"></div>
-        <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--color-background); border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
+        <div class="card-body ui-modal-body" style="overflow-y: auto; padding: 16px;"></div>
+        <div class="modal-footer" style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--color-background); border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
       </div>
     `;
     overlay.innerHTML = html;

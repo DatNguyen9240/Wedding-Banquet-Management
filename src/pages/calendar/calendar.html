@@ -2,36 +2,32 @@
    LỊCH TIỆC TRONG THÁNG - HTML Template
    ═══════════════════════════════════════════ -->
 
-<div class="page-title-bar">
-  <span>Lịch Tổ Chức Tiệc Trong Tháng</span>
+<div class="page-title-bar d-flex align-items-center justify-content-between flex-wrap gap-3" style="margin-bottom: 24px;">
+  <div class="d-flex align-items-center gap-3">
+    <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--color-primary); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 16px rgba(0,0,0,0.15);">
+      <span class="material-symbols-outlined" style="color: white; font-size: 26px;">calendar_month</span>
+    </div>
+    <div class="d-flex flex-column">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: var(--color-text);">Lịch Tiệc</h1>
+      <span style="font-size: 13px; color: var(--color-text-secondary); font-weight: 500;">Quản lý và theo dõi sự kiện trong tháng</span>
+    </div>
+  </div>
+  <button class="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-4" onclick="alert('Tính năng Thêm Lịch đang được phát triển!')" style="height: 44px; font-weight: 700;">
+    <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
+    Tạo Tiệc Mới
+  </button>
 </div>
 
-<!-- Thanh điều hướng tháng -->
-<div class="card mb-4" style="animation: slideUp 0.3s ease forwards;">
-  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 p-3">
-    <div class="d-flex align-items-center gap-3 w-100 w-md-auto justify-content-between justify-content-md-start">
-      <button class="btn btn-secondary d-flex align-items-center justify-content-center" id="btn-prev-month" style="width: 36px; height: 36px; padding: 0;"><span class="material-symbols-outlined">chevron_left</span></button>
-      <span class="fw-bold text-nowrap text-center" style="font-size: 18px; flex: 1;" id="calendar-month-label">Tháng 11 / 2026</span>
-      <button class="btn btn-secondary d-flex align-items-center justify-content-center" id="btn-next-month" style="width: 36px; height: 36px; padding: 0;"><span class="material-symbols-outlined">chevron_right</span></button>
-    </div>
-    <div class="d-flex gap-3 flex-wrap" style="font-size:13px; color:var(--color-text-secondary);">
-      <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:12px; height:12px; background:var(--color-success); border-radius:3px;"></span> Mới Cọc (Chưa Ký HĐ)</div>
-      <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:12px; height:12px; background:var(--color-danger); border-radius:3px;"></span> Đã ký Hợp Đồng</div>
-      <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:12px; height:12px; border:1px solid #ccc; font-weight:bold; text-align:center; line-height:12px;">X</span> Sảnh Phụ / Ghép</div>
-    </div>
+<!-- Chú thích lịch -->
+<div class="mb-3" style="animation: slideUp 0.3s ease forwards;">
+  <div class="d-flex gap-3 flex-wrap align-items-center justify-content-center justify-content-sm-end" style="font-size:12px; color:var(--color-text-secondary);">
+    <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:10px; height:10px; background:var(--color-success); border-radius:2px;"></span> Mới Cọc</div>
+    <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:10px; height:10px; background:var(--color-danger); border-radius:2px;"></span> Đã Ký HĐ</div>
+    <div class="d-flex align-items-center gap-1"><span style="display:inline-block; width:10px; height:10px; border:1px solid #ccc; font-weight:bold; text-align:center; line-height:10px; font-size:8px;">X</span> Sảnh Phụ</div>
   </div>
 </div>
 
-<!-- Lưới lịch -->
-<div class="card" style="animation: slideUp 0.4s ease forwards;">
-  <div class="p-4" style="overflow-x: auto;">
-    <!-- Header ngày trong tuần -->
-    <div id="calendar-weekday-header" style="display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 12px; margin-bottom: 12px; min-width:800px;">
-      <!-- JS RENDER -->
-    </div>
-    <!-- Body: Các ô ngày -->
-    <div id="calendar-grid-body" style="display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); grid-auto-rows: minmax(110px, auto); gap: 12px; min-width:800px;">
-      <!-- JS RENDER -->
-    </div>
-  </div>
+<!-- Lưới lịch Container (render từ UICalendar) -->
+<div style="animation: slideUp 0.4s ease forwards;" id="calendar-component-container">
+  <!-- JS RENDER -->
 </div>

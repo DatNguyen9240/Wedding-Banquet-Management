@@ -34,11 +34,15 @@
   background: var(--color-primary);
   color: white;
   border-color: var(--color-primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--color-primary-dark);
   border-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
 }
 
 .btn-secondary {
@@ -104,4 +108,50 @@
   height: 24px;
   background: var(--color-border);
   margin: 0 4px;
+}
+
+/* OUTLINE BUTTONS */
+.btn-outline-primary {
+  background: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.btn-outline-primary:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-outline-success {
+  background: transparent;
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+.btn-outline-success:hover:not(:disabled) {
+  background: var(--color-success);
+  color: white;
+}
+
+.btn-outline-danger {
+  background: transparent;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+.btn-outline-danger:hover:not(:disabled) {
+  background: var(--color-danger);
+  color: white;
+}
+
+/* GENERIC OUTLINE (ELEVATED ON HOVER) */
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  transition: all 0.2s ease;
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }

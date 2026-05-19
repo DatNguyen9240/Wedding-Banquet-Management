@@ -42,6 +42,9 @@ window.API_CONFIG = {
         CONTRACT: {
             LIST: '/api/API_Contract_List',
         },
+        CALENDAR: {
+            LIST: '/api/API_Calendar_List',
+        },
         VISITOR: {
             LIST: '/api/API_Visitor_List',
             SAVE: '/api/API_Visitor_Save',

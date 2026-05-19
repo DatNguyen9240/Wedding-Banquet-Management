@@ -1,9 +1,62 @@
-﻿/**
+/**
  * Màn hình Xem Lịch Tiệc Trong Tháng (Calendar)
- * HTML Template: src/pages/calendar.html
+ * HTML Template: src/pages/calendar/calendar.html
  */
 var CalendarPage = (function () {
   var $container;
+  var uiCalendarInstance;
+  var currentYear = new Date().getFullYear();
+  var currentMonth = new Date().getMonth();
+
+  function _loadEvents() {
+    if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.LIST) {
+      console.warn('Chưa cấu hình API_CONFIG.ENDPOINTS.CALENDAR.LIST.');
+      return; 
+    }
+
+    var payloadString = encodeURIComponent(JSON.stringify({ Thang: currentMonth + 1, Nam: currentYear }));
+    var endpoint = API_CONFIG.ENDPOINTS.CALENDAR.LIST + '?q=' + payloadString;
+
+    ApiClient.get(endpoint)
+      .then(function(res) {
+        var data = res.records || res.data || res || [];
+        var eventsData = _formatDataForCalendar(data);
+        if (uiCalendarInstance) {
+          uiCalendarInstance.updateEvents(eventsData);
+        }
+      })
+      .catch(function(err) {
+        console.error('Lỗi khi tải lịch:', err);
+      });
+  }
+
+  function _formatDataForCalendar(data) {
+    var eventsData = {};
+    
+    // data là mảng các record từ DB
+    data.forEach(function(row) {
+       if (!row.NgayToChuc) return;
+       var d = new Date(row.NgayToChuc);
+       var day = d.getDate();
+       
+       if (!eventsData[day]) eventsData[day] = [];
+       
+       // LoaiPhieu = 1 -> Xanh (Mới cọc), 2 -> Đỏ (Đã HĐ)
+       var type = row.LoaiPhieu === 1 ? 'success' : 'primary';
+       
+       // Sảnh chính thì ghi số bàn, sảnh phụ ghi X
+       var suffix = row.LaSanhChinh === 1 ? row.SoBan : 'X';
+       var label = row.TenSanh + ' (' + suffix + ')';
+
+       eventsData[day].push({
+         type: type,
+         label: label,
+         rawData: row
+       });
+    });
+
+    return eventsData;
+  }
 
   function render(containerElement) {
     $container = containerElement;
@@ -12,56 +65,114 @@ var CalendarPage = (function () {
       .then(function(res) { return res.text(); })
       .then(function(html) {
         $container.innerHTML = html;
-        _renderWeekdayHeader();
-        _renderCalendarGrid();
+        var calendarContainer = $container.querySelector('#calendar-component-container');
+        if (calendarContainer) {
+          uiCalendarInstance = UICalendar.create({
+            year: currentYear,
+            month: currentMonth,
+            events: {}, // Dữ liệu sẽ load từ API
+            onChangeMonth: function(y, m) {
+              currentYear = y;
+              currentMonth = m;
+              _loadEvents(); // Load lại data khi đổi tháng
+            },
+            onSelect: function(dateStr, evts) {
+              var displayDate = dateStr.split('-').reverse().join('/');
+              if (evts && evts.length > 0) {
+                 var evtsBySanh = {};
+                 evts.forEach(function(e) {
+                    var sanh = e.rawData.TenSanh || 'Chưa chọn sảnh';
+                    if (!evtsBySanh[sanh]) evtsBySanh[sanh] = [];
+                    evtsBySanh[sanh].push(e);
+                 });
+                 
+                 var contentStr = '<div class="calendar-modal-content d-flex flex-column gap-4" style="padding: 8px;">';
+                 
+                 Object.keys(evtsBySanh).forEach(function(sanh) {
+                    contentStr += `
+                      <div class="sanh-group">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                          <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 22px;">storefront</span>
+                          <h6 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--color-text); text-transform: uppercase; letter-spacing: 0.5px;">SẢNH: ${sanh}</h6>
+                        </div>
+                        <div class="row g-3">
+                    `;
+                    
+                    evtsBySanh[sanh].forEach(function(e, idx) {
+                        var rd = e.rawData;
+                        var typeName = rd.LoaiPhieu === 1 ? 'Mới Cọc' : 'Đã Ký HĐ';
+                        var statusColor = rd.LoaiPhieu === 1 ? 'var(--color-success)' : 'var(--color-danger)';
+                        var bgSoft = rd.LoaiPhieu === 1 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(220, 38, 38, 0.08)';
+                        var btnClass = rd.LoaiPhieu === 1 ? 'btn-outline-success' : 'btn-outline-danger';
+                        var hashRoute = rd.LoaiPhieu === 1 ? '#/booking' : '#/contract';
+                        
+                        contentStr += `
+                          <div class="col-12 col-md-6 col-lg-4">
+                            <div class="card h-100 position-relative" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); transition: all 0.3s ease; background: var(--color-surface); overflow: hidden;">
+                              <!-- Accent Top Bar -->
+                              <div style="height: 4px; width: 100%; background: ${statusColor};"></div>
+                              
+                              <div class="card-body p-3 d-flex flex-column gap-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                  <div>
+                                    <div style="font-weight: 700; font-size: 15px; color: var(--color-text); margin-bottom: 4px;">
+                                      ${rd.TenKhachHang}
+                                    </div>
+                                    <span style="display: inline-flex; padding: 4px 10px; border-radius: 6px; background: ${bgSoft}; color: ${statusColor}; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                      ${typeName}
+                                    </span>
+                                  </div>
+                                  <div style="background: ${statusColor}; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">
+                                    ${idx + 1}
+                                  </div>
+                                </div>
+                                
+                                <div style="font-size: 13px; color: var(--color-text-secondary); display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+                                  <div class="d-flex align-items-center gap-2">
+                                    <span class="material-symbols-outlined" style="font-size: 16px; opacity: 0.7;">table_restaurant</span>
+                                    <span>${rd.LaSanhChinh === 1 ? rd.SoBan + ' Bàn (Sảnh Chính)' : 'Sảnh Phụ / Ghép'}</span>
+                                  </div>
+                                  <div class="d-flex align-items-center gap-2">
+                                    <span class="material-symbols-outlined" style="font-size: 16px; opacity: 0.7;">receipt_long</span>
+                                    <span>Mã: <strong>${rd.MaChungTu}</strong></span>
+                                  </div>
+                                </div>
+                                
+                                <button class="btn ${btnClass} w-100 d-flex justify-content-center align-items-center gap-2" style="padding: 6px 12px; font-weight: 600; font-size: 13px; border-radius: var(--radius-sm);" onclick="window.location.hash = '${hashRoute}?id=${rd.MaChungTu}'; document.querySelector('.btn-close-modal').click();">
+                                  <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
+                                  Chi Tiết
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        `;
+                    });
+                    
+                    contentStr += `
+                        </div>
+                      </div>
+                    `;
+                 });
+                 
+                 contentStr += '</div>';
+
+                 UIModal.show({
+                    title: 'Chi Tiết Lịch Tiệc - ' + displayDate,
+                    width: '1000px', // Thu bé lại cho gọn gàng
+                    content: contentStr
+                 });
+              } else {
+                 UIToast.show('Ngày ' + displayDate + ' chưa có tiệc.');
+              }
+            }
+          });
+          calendarContainer.appendChild(uiCalendarInstance);
+          
+          _loadEvents(); // Gọi API ngay lần đầu render
+        }
       });
-  }
-
-  function _renderWeekdayHeader() {
-    var header = $container.querySelector('#calendar-weekday-header');
-    ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'].forEach(function(d) {
-      var div = document.createElement('div');
-      div.className = 'text-center fw-bold';
-      div.style.cssText = 'color:var(--color-text-secondary); padding:8px; background: var(--color-background); border-radius:6px;';
-      div.textContent = d;
-      header.appendChild(div);
-    });
-  }
-
-  function _renderCalendarGrid() {
-    var body = $container.querySelector('#calendar-grid-body');
-    body.innerHTML = '';
-
-    // Empty start days (Nov 2026 starts on Sunday → 6 blanks if Mon-start)
-    for (var b = 0; b < 6; b++) {
-      var blank = document.createElement('div');
-      blank.style.cssText = 'border:1px dashed var(--color-border); border-radius:8px; opacity:0.5; background: var(--color-surface);';
-      body.appendChild(blank);
-    }
-
-    // Days 1 to 30
-    for (var i = 1; i <= 30; i++) {
-      var cell = document.createElement('div');
-      cell.className = 'calendar-day-hover';
-      cell.style.cssText = 'border:1px solid var(--color-border); border-radius:8px; padding:8px; min-height:100px; display:flex; flex-direction:column; gap:4px; background: var(--color-surface); transition:all 0.2s; cursor:pointer;';
-
-      var eventsHtml = '';
-      if (i === 10) eventsHtml = '<div style="background:rgba(16,185,129,0.1); color:var(--color-success); border:1px solid var(--color-success); border-radius:4px; padding:4px 6px; font-size:11px; font-weight:600;">Đại sảnh (50)</div>';
-      if (i === 15) eventsHtml = '<div style="background:rgba(239,68,68,0.1); color:var(--color-danger); border:1px solid var(--color-danger); border-radius:4px; padding:4px 6px; font-size:11px; font-weight:600;">Sảnh Kim Cương (30)</div>';
-      if (i === 22) eventsHtml = '<div style="background:rgba(239,68,68,0.1); color:var(--color-danger); border:1px solid var(--color-danger); border-radius:4px; padding:4px 6px; font-size:11px; font-weight:600; margin-bottom:4px;">Sảnh Ngọc Trai (45)</div><div style="background:rgba(16,185,129,0.1); color:var(--color-success); border:1px dashed var(--color-success); border-radius:4px; padding:4px 6px; font-size:11px; font-weight:600;">Sảnh B (X)</div>';
-
-      cell.innerHTML = '<div style="text-align:right; font-weight:600; color:' + (eventsHtml ? 'var(--color-primary)' : 'var(--color-text)') + '; padding-bottom:4px; border-bottom:1px solid var(--color-border); margin-bottom:4px;">' + i + '</div><div style="flex:1;">' + eventsHtml + '</div>';
-      body.appendChild(cell);
-    }
-
-    // Inject hover style
-    if (!document.getElementById('calendar-hover-style')) {
-      var style = document.createElement('style');
-      style.id = 'calendar-hover-style';
-      style.textContent = '.calendar-day-hover:hover { border-color: var(--color-primary) !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); z-index:1; transform:translateY(-2px); }';
-      document.head.appendChild(style);
-    }
   }
 
   return { render: render };
 })();
+
