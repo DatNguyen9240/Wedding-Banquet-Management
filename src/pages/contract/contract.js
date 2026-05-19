@@ -966,6 +966,50 @@ var ContractPage = (function () {
     }
 
     var modalContent = `
+      <style>
+        .food-grid-container {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+        .food-card {
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-md);
+          padding: 12px;
+          background: var(--color-surface);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          height: 100%;
+          min-height: 135px;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .food-card:hover {
+          border-color: #F59E0B;
+          box-shadow: var(--shadow-sm);
+        }
+        @media (max-width: 1100px) {
+          .food-grid-container {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+          }
+        }
+        @media (max-width: 850px) {
+          .food-grid-container {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+        @media (max-width: 600px) {
+          .food-grid-container {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+        @media (max-width: 400px) {
+          .food-grid-container {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+          }
+        }
+      </style>
       <div style="padding: 4px;">
         <div class="d-flex gap-2 mb-3" style="width: 100%;">
           <input type="text" id="modal-food-search" class="ui-input" placeholder="Tìm kiếm tên hoặc mã..." style="flex-grow: 1; border-radius: 8px; padding: 8px 12px; height: 38px; border: 1px solid var(--color-border);">
@@ -973,35 +1017,22 @@ var ContractPage = (function () {
             <span class="material-symbols-outlined" style="font-size: 20px;">search</span> Tìm
           </button>
         </div>
-        <div class="table-responsive" style="max-height: 400px; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow-x: hidden;">
-          <table class="table table-hover table-striped m-0" style="font-size: 13px; table-layout: fixed; width: 100%;">
-            <thead style="background: var(--color-surface); position: sticky; top: 0; z-index: 10; border-bottom: 2px solid var(--color-border);">
-              <tr>
-                <th style="width: 80px; padding: 10px 8px; font-weight: 600;">Mã</th>
-                <th style="padding: 10px 8px; font-weight: 600;">Tên Món / Hàng hóa</th>
-                <th style="width: 130px; padding: 10px 8px; font-weight: 600;">Phân Loại</th>
-                <th class="text-end" style="width: 110px; padding: 10px 8px; font-weight: 600;">Đơn Giá</th>
-                <th class="text-center" style="width: 60px; padding: 10px 8px; font-weight: 600;">Chọn</th>
-              </tr>
-            </thead>
-            <tbody id="modal-food-list-body">
-              <tr><td colspan="5" class="text-center py-4 text-muted">Đang tải danh sách...</td></tr>
-            </tbody>
-          </table>
+        <div id="modal-food-grid-wrapper" style="max-height: 550px; overflow-y: auto; padding-right: 4px;">
+          <div class="text-center py-4 text-muted">Đang tải danh sách...</div>
         </div>
       </div>
     `;
 
     var m = UIModal.show({
       title: title,
-      width: '650px',
+      width: '1200px',
       content: modalContent
     });
 
     function loadModalFoods(keyword = '') {
-      var tbody = document.getElementById('modal-food-list-body');
-      if (!tbody) return;
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Đang tải danh sách...</td></tr>';
+      var wrapper = document.getElementById('modal-food-grid-wrapper');
+      if (!wrapper) return;
+      wrapper.innerHTML = '<div class="text-center py-4 text-muted">Đang tải danh sách...</div>';
 
       var params = {
         Keyword: keyword,
@@ -1035,37 +1066,76 @@ var ContractPage = (function () {
     }
 
     function _renderModalList(items) {
-      var tbody = document.getElementById('modal-food-list-body');
-      if (!tbody) return;
+      var wrapper = document.getElementById('modal-food-grid-wrapper');
+      if (!wrapper) return;
 
       if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Không tìm thấy món ăn phù hợp.</td></tr>';
+        wrapper.innerHTML = '<div class="text-center py-4 text-muted">Không tìm thấy món ăn phù hợp.</div>';
         return;
       }
 
-      tbody.innerHTML = items.map(item => {
-        var price = item.DonGia || item.Dongia || 0;
-        var formattedPrice = new Intl.NumberFormat('vi-VN').format(price) + ' đ';
-        var maMon = item.MaMon || item.Mahang;
-        var tenMon = item.TenMon || item.Tenhang;
+      // Group items by their category
+      var groups = {};
+      items.forEach(item => {
         var phanLoai = item.PhanLoai || item.Phanloai || item.Tennhomhang || 'Khác';
-        
-        var escapedItem = JSON.stringify(item).replace(/"/g, '&quot;');
+        if (!groups[phanLoai]) {
+          groups[phanLoai] = [];
+        }
+        groups[phanLoai].push(item);
+      });
 
-        return `
-          <tr>
-            <td class="fw-semibold text-primary" style="padding: 10px 8px;">${maMon}</td>
-            <td class="fw-medium" style="padding: 10px 8px;">${tenMon}</td>
-            <td style="padding: 10px 8px;"><span class="badge" style="background: rgba(148, 163, 184, 0.15); color: var(--color-text-secondary);">${phanLoai}</span></td>
-            <td class="text-end fw-semibold" style="color: var(--color-danger); padding: 10px 8px;">${formattedPrice}</td>
-            <td class="text-center" style="padding: 10px 8px;">
-              <button class="btn btn-primary btn-sm rounded-circle p-1 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px;" onclick="ContractPage.addFood('${type}', '${escapedItem}')">
-                <span class="material-symbols-outlined" style="font-size: 16px;">add</span>
-              </button>
-            </td>
-          </tr>
+      var html = '';
+      var groupNames = Object.keys(groups);
+
+      groupNames.forEach(groupName => {
+        var groupItems = groups[groupName];
+        
+        // Render Category Section Header
+        html += `
+          <div class="food-category-section mb-4">
+            <div style="font-size: 14px; font-weight: 700; color: #D97706; border-bottom: 2px solid rgba(245, 158, 11, 0.2); padding-bottom: 6px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+              <span class="material-symbols-outlined" style="font-size: 20px; color: #D97706;">folder_open</span>
+              <span>${groupName} (${groupItems.length} mặt hàng)</span>
+            </div>
+            <div class="food-grid-container">
         `;
-      }).join('');
+
+        // Render Food Cards inside this category
+        groupItems.forEach(item => {
+          var price = item.DonGia || item.Dongia || 0;
+          var formattedPrice = new Intl.NumberFormat('vi-VN').format(price) + ' đ';
+          var maMon = item.MaMon || item.Mahang;
+          var tenMon = item.TenMon || item.Tenhang;
+          
+          var escapedItem = JSON.stringify(item).replace(/"/g, '&quot;');
+
+          html += `
+            <div class="food-card">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 4px;">
+                <span class="badge" style="background: rgba(79, 70, 229, 0.08); color: var(--color-primary); font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(79, 70, 229, 0.15); font-family: monospace;">${maMon}</span>
+              </div>
+              
+              <div class="fw-semibold mt-2 mb-2" style="font-size: 13px; line-height: 1.4; color: var(--color-text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 36px;" title="${tenMon}">
+                ${tenMon}
+              </div>
+              
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 8px; border-top: 1px dashed var(--color-border);">
+                <span class="fw-bold text-danger" style="font-size: 13px;">${formattedPrice}</span>
+                <button class="btn btn-primary btn-sm rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; background: #F59E0B; border: none; flex-shrink: 0;" onclick="ContractPage.addFood('${type}', '${escapedItem}')">
+                  <span class="material-symbols-outlined" style="font-size: 16px; color: white;">add</span>
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      wrapper.innerHTML = html;
     }
 
     setTimeout(() => {
