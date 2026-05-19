@@ -67,3 +67,24 @@
   background: var(--color-background);
   color: var(--color-danger);
 }
+
+/* Make Modals Full-Screen on Mobile Viewports */
+@media (max-width: 600px) {
+  .modal-overlay {
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+  }
+  .modal-overlay .modal-content {
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0px !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+  .modal-overlay .ui-modal-body {
+    padding: 12px 8px !important;
+    flex: 1 !important;
+  }
+}
