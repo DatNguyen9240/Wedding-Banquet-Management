@@ -16,7 +16,16 @@ var UIBadge = (function () {
     return badge;
   }
 
+  /**
+   * Sinh HTML chuỗi cho Badge
+   */
+  function createHTML(text, type, extraStyle) {
+    var styleAttr = extraStyle ? ` style="${extraStyle}"` : '';
+    return `<span class="status-badge ${type || 'primary'}"${styleAttr}>${text}</span>`;
+  }
+
   return {
-    create: create
+    create: create,
+    createHTML: createHTML
   };
 })();

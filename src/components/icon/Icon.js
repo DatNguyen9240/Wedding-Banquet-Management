@@ -10,17 +10,18 @@ var UIIcon = (function () {
    * @param {string} style - (Tùy chọn) Style inline bổ sung (VD: 'font-size: 18px;')
    * @param {string} className - (Tùy chọn) Class name bổ sung (VD: 'nav-icon')
    */
-  function renderHtml(iconName, style, className) {
+  function createHTML(iconName, style, className, onClick) {
     if (!iconName) return '';
     var styleAttr = style ? ' style="' + style + '"' : '';
     var extraClass = className ? ' ' + className : '';
+    var onClickAttr = onClick ? ' onclick="' + onClick + '"' : '';
     
     // Nếu có chứa "icon-" hoặc dấu cách, hoặc dấu gạch ngang -> Dùng thẻ <i> cho Icon font
     if (iconName.indexOf('icon-') >= 0 || iconName.indexOf(' ') >= 0 || iconName.indexOf('-') > 0) {
-      return '<i class="' + iconName + extraClass + '"' + styleAttr + '></i>';
+      return '<i class="' + iconName + extraClass + '"' + styleAttr + onClickAttr + '></i>';
     } else {
       // Mặc định: Google Material Symbols Outlined
-      return '<span class="material-symbols-outlined' + extraClass + '"' + styleAttr + '>' + iconName + '</span>';
+      return '<span class="material-symbols-outlined' + extraClass + '"' + styleAttr + onClickAttr + '>' + iconName + '</span>';
     }
   }
 
@@ -44,7 +45,8 @@ var UIIcon = (function () {
   }
 
   return {
-    renderHtml: renderHtml,
+    createHTML: createHTML,
+    renderHtml: createHTML, // Keep for backward compatibility
     create: create
   };
 })();

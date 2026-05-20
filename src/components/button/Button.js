@@ -64,8 +64,43 @@ var UIButton = (function () {
     return bar;
   }
 
+  /**
+   * Sinh HTML chuỗi cho Button
+   */
+  function createHTML(config) {
+    var typeClass = config.type ? 'btn-' + config.type : 'btn-primary';
+    if (config.type === 'tool') typeClass = 'btn-tool';
+    
+    var className = 'btn ' + typeClass + (config.className ? ' ' + config.className : '');
+    var idAttr = config.id ? ` id="${config.id}"` : '';
+    var disabledAttr = config.disabled ? ' disabled' : '';
+    var titleAttr = config.tooltip ? ` title="${config.tooltip}"` : '';
+    var onClickAttr = config.onClick ? ` onclick="${config.onClick}"` : '';
+    var styleAttr = config.style ? ` style="${config.style}"` : '';
+    
+    var dataAttrs = '';
+    if (config.data) {
+      for (var key in config.data) {
+        dataAttrs += ` data-${key}="${config.data[key]}"`;
+      }
+    }
+    
+    var innerHTML = '';
+    if (config.icon) {
+      var iconStyle = config.iconStyle ? ` style="${config.iconStyle}"` : '';
+      innerHTML += `<span class="material-symbols-outlined"${iconStyle}>${config.icon}</span>`;
+    }
+    if (config.text) {
+      var textStyle = config.textStyle ? ` style="${config.textStyle}"` : '';
+      innerHTML += config.icon ? ` <span${textStyle}>${config.text}</span>` : `<span${textStyle}>${config.text}</span>`;
+    }
+
+    return `<button class="${className}"${idAttr}${disabledAttr}${titleAttr}${onClickAttr}${styleAttr}${dataAttrs}>${innerHTML}</button>`;
+  }
+
   return {
     create: create,
-    createBar: createBar
+    createBar: createBar,
+    createHTML: createHTML
   };
 })();

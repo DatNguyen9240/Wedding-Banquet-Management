@@ -99,7 +99,11 @@ var MenusPage = (function () {
     if (countBadge) countBadge.textContent = allMenus.length + ' Menu';
 
     if (records.length === 0) {
-      container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--color-text-secondary);">Chưa có Menu nào.</div>';
+      container.innerHTML = UIEmptyState.createHTML({
+        icon: 'menu_book',
+        title: 'Chưa có Menu nào.',
+        desc: 'Hãy thêm menu mới để quản lý.'
+      });
       return;
     }
 
@@ -216,15 +220,18 @@ var MenusPage = (function () {
     var contentHTML = '';
 
     if (children.length === 0) {
-      contentHTML = '<div style="display:flex;align-items:center;gap:12px;padding:30px 0;justify-content:center;border-top:1px dashed var(--color-border);">'
-        + UIIcon.renderHtml('folder_off', 'font-size:48px;opacity:0.1;')
-        + '<div><div style="font-weight:600; font-size:16px;">Thư mục này hiện chưa có menu con</div>'
-        + '<div style="margin-top:12px;">'
-        + '  <button class="btn btn-primary btn-add-child-inline" data-parent="' + parentItem.id + '" style="padding:6px 16px; border-radius:6px;">'
-        + '    ' + UIIcon.renderHtml('add', 'font-size:16px;vertical-align:middle;margin-right:4px;') + 'Thêm Menu Con Mới'
-        + '  </button>'
-        + '</div></div>'
-        + '</div>';
+      contentHTML = UIEmptyState.createHTML({
+        icon: 'folder_off',
+        title: 'Thư mục này hiện chưa có menu con',
+        actionHtml: '<div style="margin-top:12px;">' + UIButton.createHTML({
+          text: 'Thêm Menu Con Mới',
+          icon: 'add',
+          type: 'primary',
+          className: 'btn-add-child-inline',
+          style: 'padding:6px 16px; border-radius:6px;',
+          data: { parent: parentItem.id }
+        }) + '</div>'
+      });
     } else {
       var rows = children.map(function (c, i) {
         return '<tr class="draggable-child-row" data-id="' + c.id + '">'
@@ -268,9 +275,14 @@ var MenusPage = (function () {
         + '<tbody>' + rows + '</tbody>'
         + '</table></div>'
         + '<div style="margin-top:12px; text-align:center;">'
-        + '  <button class="btn btn-outline-primary btn-add-child-inline" data-parent="' + parentItem.id + '" style="padding:8px 20px; font-weight:600; border-style:dashed; width:100%; border-radius:8px;">'
-        + '    ' + UIIcon.renderHtml('add', 'font-size:18px;vertical-align:middle;margin-right:4px;') + 'Thêm Menu Con Mới'
-        + '  </button>'
+        + UIButton.createHTML({
+            text: 'Thêm Menu Con Mới',
+            icon: 'add',
+            type: 'outline-primary',
+            className: 'btn-add-child-inline',
+            style: 'padding:8px 20px; font-weight:600; border-style:dashed; width:100%; border-radius:8px;',
+            data: { parent: parentItem.id }
+          })
         + '</div>';
 
       contentHTML = '<div style="margin-top:24px; font-weight:700; color:var(--color-text-primary); margin-bottom:8px; font-size:14px; text-transform:uppercase;">'

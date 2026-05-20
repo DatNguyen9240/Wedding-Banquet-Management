@@ -2537,9 +2537,44 @@ var UIButton = (function () {
     return bar;
   }
 
+  /**
+   * Sinh HTML chuỗi cho Button
+   */
+  function createHTML(config) {
+    var typeClass = config.type ? 'btn-' + config.type : 'btn-primary';
+    if (config.type === 'tool') typeClass = 'btn-tool';
+    
+    var className = 'btn ' + typeClass + (config.className ? ' ' + config.className : '');
+    var idAttr = config.id ? ` id="${config.id}"` : '';
+    var disabledAttr = config.disabled ? ' disabled' : '';
+    var titleAttr = config.tooltip ? ` title="${config.tooltip}"` : '';
+    var onClickAttr = config.onClick ? ` onclick="${config.onClick}"` : '';
+    var styleAttr = config.style ? ` style="${config.style}"` : '';
+    
+    var dataAttrs = '';
+    if (config.data) {
+      for (var key in config.data) {
+        dataAttrs += ` data-${key}="${config.data[key]}"`;
+      }
+    }
+    
+    var innerHTML = '';
+    if (config.icon) {
+      var iconStyle = config.iconStyle ? ` style="${config.iconStyle}"` : '';
+      innerHTML += `<span class="material-symbols-outlined"${iconStyle}>${config.icon}</span>`;
+    }
+    if (config.text) {
+      var textStyle = config.textStyle ? ` style="${config.textStyle}"` : '';
+      innerHTML += config.icon ? ` <span${textStyle}>${config.text}</span>` : `<span${textStyle}>${config.text}</span>`;
+    }
+
+    return `<button class="${className}"${idAttr}${disabledAttr}${titleAttr}${onClickAttr}${styleAttr}${dataAttrs}>${innerHTML}</button>`;
+  }
+
   return {
     create: create,
-    createBar: createBar
+    createBar: createBar,
+    createHTML: createHTML
   };
 })();
 
@@ -2557,17 +2592,18 @@ var UIIcon = (function () {
    * @param {string} style - (Tùy chọn) Style inline bổ sung (VD: 'font-size: 18px;')
    * @param {string} className - (Tùy chọn) Class name bổ sung (VD: 'nav-icon')
    */
-  function renderHtml(iconName, style, className) {
+  function createHTML(iconName, style, className, onClick) {
     if (!iconName) return '';
     var styleAttr = style ? ' style="' + style + '"' : '';
     var extraClass = className ? ' ' + className : '';
+    var onClickAttr = onClick ? ' onclick="' + onClick + '"' : '';
     
     // Nếu có chứa "icon-" hoặc dấu cách, hoặc dấu gạch ngang -> Dùng thẻ <i> cho Icon font
     if (iconName.indexOf('icon-') >= 0 || iconName.indexOf(' ') >= 0 || iconName.indexOf('-') > 0) {
-      return '<i class="' + iconName + extraClass + '"' + styleAttr + '></i>';
+      return '<i class="' + iconName + extraClass + '"' + styleAttr + onClickAttr + '></i>';
     } else {
       // Mặc định: Google Material Symbols Outlined
-      return '<span class="material-symbols-outlined' + extraClass + '"' + styleAttr + '>' + iconName + '</span>';
+      return '<span class="material-symbols-outlined' + extraClass + '"' + styleAttr + onClickAttr + '>' + iconName + '</span>';
     }
   }
 
@@ -2591,7 +2627,8 @@ var UIIcon = (function () {
   }
 
   return {
-    renderHtml: renderHtml,
+    createHTML: createHTML,
+    renderHtml: createHTML, // Keep for backward compatibility
     create: create
   };
 })();
@@ -3671,8 +3708,17 @@ var UIBadge = (function () {
     return badge;
   }
 
+  /**
+   * Sinh HTML chuỗi cho Badge
+   */
+  function createHTML(text, type, extraStyle) {
+    var styleAttr = extraStyle ? ` style="${extraStyle}"` : '';
+    return `<span class="status-badge ${type || 'primary'}"${styleAttr}>${text}</span>`;
+  }
+
   return {
-    create: create
+    create: create,
+    createHTML: createHTML
   };
 })();
 
@@ -3879,8 +3925,48 @@ var UIEmptyState = (function () {
     return wrapper;
   }
 
+  /**
+   * Sinh chuỗi HTML trạng thái trống (Dùng cho innerHTML)
+   * @param {Object} config - { icon, title, desc, actionHtml }
+   */
+  function createHTML(config) {
+    var icon = config.icon || 'inbox';
+    var title = config.title || 'Không có dữ liệu';
+    var descHtml = config.desc ? `<div class="ui-empty-desc">${config.desc}</div>` : '';
+    var actionHtml = config.actionHtml ? config.actionHtml : '';
+
+    return `
+      <div class="ui-empty-state">
+        <span class="material-symbols-outlined ui-empty-icon">${icon}</span>
+        <div class="ui-empty-title">${title}</div>
+        ${descHtml}
+        ${actionHtml}
+      </div>
+    `;
+  }
+
+  /**
+   * Sinh chuỗi HTML trạng thái trống cho Table Row
+   * @param {Object} config - { colspan, text, actionHtml }
+   */
+  function createTableRowHTML(config) {
+    var colspan = config.colspan || 1;
+    var text = config.text || 'Chưa có dữ liệu';
+    var actionHtml = config.actionHtml ? ` <span class="ms-1">${config.actionHtml}</span>` : '';
+
+    return `
+      <tr>
+        <td colspan="${colspan}" class="text-center py-4 text-muted">
+          ${text}${actionHtml}
+        </td>
+      </tr>
+    `;
+  }
+
   return {
-    create: create
+    create: create,
+    createHTML: createHTML,
+    createTableRowHTML: createTableRowHTML
   };
 })();
 

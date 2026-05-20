@@ -830,16 +830,23 @@ var ContractPage = (function () {
     }).join('');
 
     if (selectedFoodsMan.length === 0) {
-      rowsHtml = `<tr><td colspan="5" class="text-center py-4 text-muted">Chưa có món ăn nào được chọn. Hãy bấm [Thêm Món] phía trên!</td></tr>`;
+      rowsHtml = UIEmptyState.createTableRowHTML({
+        colspan: 5,
+        text: 'Chưa có món ăn nào được chọn. Hãy bấm [Thêm Món] phía trên!'
+      });
     }
 
     container.innerHTML = `
       <div class="p-4 mx-auto" style="max-width: 1000px;">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="m-0 fw-bold" style="color: var(--color-primary); font-size: 16px;">Danh sách Món Mặn / 1 Bàn</h6>
-          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" onclick="ContractPage.openFoodSelectionModal('man')">
-            <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Thêm Món
-          </button>
+          ${UIButton.createHTML({
+            text: 'Thêm Món',
+            icon: 'add',
+            type: 'outline-primary',
+            className: 'btn-sm d-flex align-items-center gap-1',
+            onClick: "ContractPage.openFoodSelectionModal('man')"
+          })}
         </div>
         <div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">
           <table class="table table-hover m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 650px;">
@@ -885,23 +892,30 @@ var ContractPage = (function () {
           <td class="align-middle fw-medium text-start">${item.TenMon}</td>
           <td class="text-end align-middle fw-semibold text-success">${formattedPrice}</td>
           <td class="text-center align-middle">
-            <span class="material-symbols-outlined text-danger" style="cursor: pointer; font-size: 18px;" onclick="ContractPage.removeFood('chay', ${idx})">delete</span>
+            ${UIIcon.createHTML('delete', 'cursor: pointer; font-size: 18px;', 'text-danger', `ContractPage.removeFood('chay', ${idx})`)}
           </td>
         </tr>
       `;
     }).join('');
 
     if (selectedFoodsChay.length === 0) {
-      rowsHtml = `<tr><td colspan="5" class="text-center py-4 text-muted">Chưa có món ăn nào được chọn. Hãy bấm [Thêm Món Chay] phía trên!</td></tr>`;
+      rowsHtml = UIEmptyState.createTableRowHTML({
+        colspan: 5,
+        text: 'Chưa có món ăn nào được chọn. Hãy bấm [Thêm Món Chay] phía trên!'
+      });
     }
 
     container.innerHTML = `
       <div class="p-4 mx-auto" style="max-width: 1000px;">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="m-0 fw-bold" style="color: var(--color-success); font-size: 16px;">Danh sách Món Chay / 1 Bàn</h6>
-          <button class="btn btn-outline-success btn-sm d-flex align-items-center gap-1" onclick="ContractPage.openFoodSelectionModal('chay')">
-            <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Thêm Món Chay
-          </button>
+          ${UIButton.createHTML({
+            text: 'Thêm Món Chay',
+            icon: 'add',
+            type: 'outline-success',
+            className: 'btn-sm d-flex align-items-center gap-1',
+            onClick: "ContractPage.openFoodSelectionModal('chay')"
+          })}
         </div>
         <div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">
           <table class="table table-hover m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 650px;">
@@ -956,23 +970,30 @@ var ContractPage = (function () {
           </td>
           <td class="text-end align-middle fw-semibold text-danger">${formattedSubTotal}</td>
           <td class="text-center align-middle">
-            <span class="material-symbols-outlined text-danger" style="cursor: pointer; font-size: 18px;" onclick="ContractPage.removeFood('drink', ${idx})">delete</span>
+            ${UIIcon.createHTML('delete', 'cursor: pointer; font-size: 18px;', 'text-danger', `ContractPage.removeFood('drink', ${idx})`)}
           </td>
         </tr>
       `;
     }).join('');
 
     if (selectedThucUong.length === 0) {
-      rowsHtml = `<tr><td colspan="6" class="text-center py-4 text-muted">Chưa có thức uống nào được chọn. Hãy bấm [Thêm Thức Uống] phía trên!</td></tr>`;
+      rowsHtml = UIEmptyState.createTableRowHTML({
+        colspan: 6,
+        text: 'Chưa có thức uống nào được chọn. Hãy bấm [Thêm Thức Uống] phía trên!'
+      });
     }
 
     container.innerHTML = `
       <div class="p-4 mx-auto" style="max-width: 1000px;">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="m-0 fw-bold" style="color: var(--color-primary); font-size: 16px;">Danh sách Thức Uống & Phí Phục Vụ</h6>
-          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" onclick="ContractPage.openFoodSelectionModal('drink')">
-            <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Thêm Thức Uống
-          </button>
+          ${UIButton.createHTML({
+            text: 'Thêm Thức Uống',
+            icon: 'add',
+            type: 'outline-primary',
+            className: 'btn-sm d-flex align-items-center gap-1',
+            onClick: "ContractPage.openFoodSelectionModal('drink')"
+          })}
         </div>
         <div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">
           <table class="table table-hover m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 650px;">
@@ -1028,23 +1049,30 @@ var ContractPage = (function () {
           </td>
           <td class="text-end align-middle fw-semibold text-danger">${formattedSubTotal}</td>
           <td class="text-center align-middle">
-            <span class="material-symbols-outlined text-danger" style="cursor: pointer; font-size: 18px;" onclick="ContractPage.removeFood('service', ${idx})">delete</span>
+            ${UIIcon.createHTML('delete', 'cursor: pointer; font-size: 18px;', 'text-danger', `ContractPage.removeFood('service', ${idx})`)}
           </td>
         </tr>
       `;
     }).join('');
 
     if (selectedDichVu.length === 0) {
-      rowsHtml = `<tr><td colspan="6" class="text-center py-4 text-muted">Chưa có dịch vụ nào được chọn. Hãy bấm [Thêm Dịch Vụ] phía trên!</td></tr>`;
+      rowsHtml = UIEmptyState.createTableRowHTML({
+        colspan: 6,
+        text: 'Chưa có dịch vụ nào được chọn. Hãy bấm [Thêm Dịch Vụ] phía trên!'
+      });
     }
 
     container.innerHTML = `
       <div class="p-4 mx-auto" style="max-width: 1000px;">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="m-0 fw-bold" style="color: var(--color-primary); font-size: 16px;">Danh sách Dịch Vụ & Nghi Lễ Đi Kèm</h6>
-          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" onclick="ContractPage.openFoodSelectionModal('service')">
-            <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Thêm Dịch Vụ
-          </button>
+          ${UIButton.createHTML({
+            text: 'Thêm Dịch Vụ',
+            icon: 'add',
+            type: 'outline-primary',
+            className: 'btn-sm d-flex align-items-center gap-1',
+            onClick: "ContractPage.openFoodSelectionModal('service')"
+          })}
         </div>
         <div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">
           <table class="table table-hover m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 650px;">
@@ -1776,7 +1804,9 @@ var ContractPage = (function () {
         `;
       } else {
         qtyControlHtml = `
-          <span style="font-size: 11px; padding: 3px 8px; margin-left: 8px; flex-shrink: 0; background: #e2e8f0; color: #475569; border-radius: 4px; font-weight: 700; display: inline-block; height: fit-content; line-height: 1;">x1</span>
+          <div style="margin-left: 8px; flex-shrink: 0; display: flex; align-items: center;">
+            ${UIBadge.createHTML('x1', 'secondary', 'font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700; height: fit-content; line-height: 1; background: #e2e8f0; color: #475569;')}
+          </div>
         `;
       }
 

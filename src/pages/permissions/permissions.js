@@ -151,7 +151,10 @@ var PermissionsPage = (function () {
     });
 
     if (!records || records.length === 0) {
-      tbody.innerHTML += '<tr><td colspan="5" class="text-center text-muted">Chưa có dữ liệu phân quyền cho nhóm này</td></tr>';
+      tbody.innerHTML += UIEmptyState.createTableRowHTML({
+        colspan: 12,
+        text: 'Chưa có dữ liệu phân quyền cho nhóm này'
+      });
       return;
     }
 
