@@ -81,7 +81,7 @@ var PermissionsPage = (function () {
       var div = document.createElement('div');
       div.className = 'role-tab';
       if (idx === 0) div.classList.add('active');
-      div.innerHTML = `<span class="material-symbols-outlined">group</span> ${g.name}`;
+      div.innerHTML = `${UIIcon.createHTML('group')} ${g.name}`;
 
       div.addEventListener('click', function () {
         container.querySelectorAll('.role-tab').forEach(function (el) { el.classList.remove('active'); });
@@ -298,13 +298,13 @@ var PermissionsPage = (function () {
     var paddingLeft = data.level * 32 + 16;
 
     var toggleHtml = data.isFolder
-      ? `<span class="material-symbols-outlined tree-toggle ${data.expanded ? 'open' : ''}">chevron_right</span>`
-      : `<span class="material-symbols-outlined tree-toggle empty">chevron_right</span>`;
+      ? UIIcon.createHTML('chevron_right', '', `tree-toggle ${data.expanded ? 'open' : ''}`)
+      : UIIcon.createHTML('chevron_right', '', 'tree-toggle empty');
 
     tdTree.innerHTML = `
       <div class="tree-cell" style="padding-left: ${paddingLeft}px;">
         ${toggleHtml}
-        <span class="material-symbols-outlined tree-icon">${data.icon}</span>
+        ${UIIcon.createHTML(data.icon, '', 'tree-icon')}
         <span class="tree-label" style="font-weight: ${data.isFolder ? '500' : '400'};">${data.label}</span>
       </div>
     `;
@@ -406,7 +406,7 @@ var PermissionsPage = (function () {
     var btn = $container.querySelector('#btn-sync-permission');
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; margin-right: 4px; animation: spin 1s linear infinite;">sync</span> Đang đồng bộ...';
+      btn.innerHTML = `${UIIcon.createHTML('sync', 'font-size: 16px; margin-right: 4px; animation: spin 1s linear infinite;')} Đang đồng bộ...`;
     }
 
     var endpoint = window.API_CONFIG.ENDPOINTS.PERMISSIONS.SYNC || '/api/API_WA_DongBoQuyenTruyCap';

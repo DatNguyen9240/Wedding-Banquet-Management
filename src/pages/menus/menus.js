@@ -188,12 +188,8 @@ var MenusPage = (function () {
       + '<td class="editable-cell" data-field="formKey" data-val="' + (rawParentItem.formKey || '') + '" style="color:var(--color-text-secondary);font-size:12px;cursor:text;" title="Nhấp đúp để sửa">' + (rawParentItem.formKey || '') + '</td>'
       + '<td class="editable-cell" data-field="urlPara" data-val="' + (rawParentItem.urlPara || '') + '" style="color:var(--color-text-secondary);font-size:12px;cursor:text;" title="Nhấp đúp để sửa">' + (rawParentItem.urlPara || '') + '</td>'
       + '<td style="white-space:nowrap; user-select:none; -webkit-user-select:none; text-align:center;">'
-      + '  <button class="btn btn-tool btn-edit-menu-inline" data-id="' + rawParentItem.id + '" style="padding:3px 8px;" title="Sửa">'
-      + '    ' + UIIcon.renderHtml('edit', 'font-size:14px;')
-      + '  </button>'
-      + '  <button class="btn btn-tool btn-delete-menu-inline" data-id="' + rawParentItem.id + '" style="padding:3px 8px;color:var(--color-danger);" title="Xóa">'
-      + '    ' + UIIcon.renderHtml('delete', 'font-size:14px;')
-      + '  </button>'
+      + '  ' + UIButton.createHTML({ icon: 'edit', type: 'tool', className: 'btn-edit-menu-inline', data: { id: rawParentItem.id }, style: 'padding:3px 8px;', tooltip: 'Sửa', iconStyle: 'font-size:14px;' })
+      + '  ' + UIButton.createHTML({ icon: 'delete', type: 'tool', className: 'btn-delete-menu-inline', data: { id: rawParentItem.id }, style: 'padding:3px 8px;color:var(--color-danger);', tooltip: 'Xóa', iconStyle: 'font-size:14px;' })
       + '</td>'
       + '</tr>';
 
@@ -248,12 +244,8 @@ var MenusPage = (function () {
           + '<td class="editable-cell" data-field="formKey" data-val="' + (c.formKey || '') + '" style="color:var(--color-text-secondary);font-size:12px;cursor:text;" title="Nhấp đúp để sửa">' + (c.formKey || '') + '</td>'
           + '<td class="editable-cell" data-field="urlPara" data-val="' + (c.urlPara || '') + '" style="color:var(--color-text-secondary);font-size:12px;cursor:text;" title="Nhấp đúp để sửa">' + (c.urlPara || '') + '</td>'
           + '<td style="white-space:nowrap; user-select:none; -webkit-user-select:none; text-align:center;">'
-          + '  <button class="btn btn-tool btn-edit-menu-inline" data-id="' + c.id + '" style="padding:3px 8px;" title="Sửa">'
-          + '    ' + UIIcon.renderHtml('edit', 'font-size:14px;')
-          + '  </button>'
-          + '  <button class="btn btn-tool btn-delete-menu-inline" data-id="' + c.id + '" style="padding:3px 8px;color:var(--color-danger);" title="Xóa">'
-          + '    ' + UIIcon.renderHtml('delete', 'font-size:14px;')
-          + '  </button>'
+          + '  ' + UIButton.createHTML({ icon: 'edit', type: 'tool', className: 'btn-edit-menu-inline', data: { id: c.id }, style: 'padding:3px 8px;', tooltip: 'Sửa', iconStyle: 'font-size:14px;' })
+          + '  ' + UIButton.createHTML({ icon: 'delete', type: 'tool', className: 'btn-delete-menu-inline', data: { id: c.id }, style: 'padding:3px 8px;color:var(--color-danger);', tooltip: 'Xóa', iconStyle: 'font-size:14px;' })
           + '</td>'
           + '</tr>';
       }).join('');
@@ -338,8 +330,8 @@ var MenusPage = (function () {
           + '<td><input type="text" class="form-control inline-new-urlpara" placeholder="?url=" style="' + baseInputStyle + '"></td>'
           + '<td style="text-align:center; white-space:nowrap;">'
           + '  <div style="display:flex; gap:6px; justify-content:center;">'
-          + '    <button class="btn btn-primary btn-save-inline-new" style="padding:6px 12px;font-size:13px;border-radius:6px;display:flex;align-items:center;gap:4px;font-weight:600;"><span class="material-symbols-outlined" style="font-size:16px;">save</span> Lưu</button>'
-          + '    <button class="btn btn-light btn-cancel-inline-new" style="padding:6px 8px;font-size:13px;border-radius:6px;border:1px solid var(--color-border);display:flex;align-items:center;" title="Hủy bỏ"><span class="material-symbols-outlined" style="font-size:16px;color:var(--color-text-secondary);">close</span></button>'
+          + '    ' + UIButton.createHTML({ text: 'Lưu', icon: 'save', type: 'primary', className: 'btn-save-inline-new', style: 'padding:6px 12px;font-size:13px;border-radius:6px;display:flex;align-items:center;gap:4px;font-weight:600;', iconStyle: 'font-size:16px;' })
+          + '    ' + UIButton.createHTML({ icon: 'close', type: 'light', className: 'btn-cancel-inline-new', style: 'padding:6px 8px;font-size:13px;border-radius:6px;border:1px solid var(--color-border);display:flex;align-items:center;', tooltip: 'Hủy bỏ', iconStyle: 'font-size:16px;color:var(--color-text-secondary);' })
           + '  </div>'
           + '</td>';
 

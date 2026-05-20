@@ -471,26 +471,22 @@ var ContractPage = (function () {
 
       <div class="page-title-bar d-flex flex-wrap justify-content-between align-items-center gap-3">
         <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 0;">
-          <button class="btn btn-secondary text-nowrap flex-shrink-0" onclick="ContractPage.closeDetail()" style="padding:6px 12px;border-radius:8px;">
-            <span class="material-symbols-outlined" style="font-size:20px;">arrow_back</span> <span class="d-none d-sm-inline">Trở về</span>
-          </button>
+          ${UIButton.createHTML({ icon: 'arrow_back', type: 'secondary', className: 'text-nowrap flex-shrink-0', style: 'padding:6px 12px;border-radius:8px;', iconStyle: 'font-size:20px;', onClick: 'ContractPage.closeDetail()', text: '<span class="d-none d-sm-inline">Trở về</span>' })}
           <span class="fw-bold" style="font-size:18px; line-height: 1.3;" id="detail-title-text">${titleText}</span>
         </div>
         <div class="d-flex align-items-center flex-shrink-0">
-          <button class="btn btn-primary d-flex align-items-center gap-2 text-nowrap" onclick="ContractPage.saveContract()" style="border-radius:8px;">
-            <span class="material-symbols-outlined" style="font-size:20px;">save</span> Lưu Hợp Đồng
-          </button>
+          ${UIButton.createHTML({ icon: 'save', text: 'Lưu Hợp Đồng', type: 'primary', className: 'd-flex align-items-center gap-2 text-nowrap', style: 'border-radius:8px;', iconStyle: 'font-size:20px;', onClick: 'ContractPage.saveContract()' })}
         </div>
       </div>
 
       <!-- High-Level Tab Bar Switcher -->
       <div class="d-flex mb-4" style="border-bottom: 2px solid var(--color-border); padding-left: 8px;">
         <button class="high-tab-btn active" id="high-tab-info" onclick="ContractPage.switchHighLevelTab('info')">
-          <span class="material-symbols-outlined" style="font-size: 20px;">description</span>
+          ${UIIcon.createHTML('description', 'font-size: 20px;')}
           <span>1. Thông tin Hợp đồng</span>
         </button>
         <button class="high-tab-btn" id="high-tab-menu" onclick="ContractPage.switchHighLevelTab('menu')">
-          <span class="material-symbols-outlined" style="font-size: 20px;">restaurant_menu</span>
+          ${UIIcon.createHTML('restaurant_menu', 'font-size: 20px;')}
           <span>2. Thực đơn & Dịch vụ</span>
         </button>
       </div>
@@ -823,7 +819,7 @@ var ContractPage = (function () {
           <td class="align-middle fw-medium text-start">${item.TenMon}</td>
           <td class="text-end align-middle fw-semibold text-danger">${formattedPrice}</td>
           <td class="text-center align-middle">
-            <span class="material-symbols-outlined text-danger" style="cursor: pointer; font-size: 18px;" onclick="ContractPage.removeFood('man', ${idx})">delete</span>
+            ${UIButton.createHTML({ icon: 'delete', type: 'tool', className: 'text-danger', style: 'padding: 0; display: inline-flex;', iconStyle: 'font-size: 18px;', onClick: `ContractPage.removeFood('man', ${idx})` })}
           </td>
         </tr>
       `;
@@ -1343,9 +1339,7 @@ var ContractPage = (function () {
         <!-- Search and Grid list -->
         <div class="d-flex gap-2 mb-3" style="width: 100%;">
           <input type="text" id="modal-food-search" class="ui-input" placeholder="Tìm kiếm tên hoặc mã..." style="flex-grow: 1; border-radius: 8px; padding: 8px 12px; height: 38px; border: 1px solid var(--color-border);">
-          <button class="btn btn-primary d-flex align-items-center gap-1" id="btn-modal-food-search" style="border-radius: 8px; height: 38px; padding: 0 16px; flex-shrink: 0;">
-            <span class="material-symbols-outlined" style="font-size: 20px;">search</span> Tìm
-          </button>
+          ${UIButton.createHTML({ icon: 'search', text: 'Tìm', type: 'primary', id: 'btn-modal-food-search', className: 'd-flex align-items-center gap-1', style: 'border-radius: 8px; height: 38px; padding: 0 16px; flex-shrink: 0;', iconStyle: 'font-size: 20px;' })}
         </div>
         <div id="modal-food-grid-wrapper" style="flex: 1; overflow-y: auto; padding: 16px; background: var(--color-background); border-radius: 12px; border: 1px solid var(--color-border);">
           <div class="text-center py-4 text-muted">Đang tải danh sách...</div>
@@ -1355,14 +1349,14 @@ var ContractPage = (function () {
         <div id="modal-selected-drawer" class="selected-drawer collapsed">
           <div class="drawer-header">
             <span class="fw-bold d-flex align-items-center gap-2" style="font-size: 14px; color: var(--color-text);">
-              <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 20px;">list_alt</span>
+              ${UIIcon.createHTML('list_alt', 'color: var(--color-primary); font-size: 20px;')}
               Danh sách món đã chọn
             </span>
-            <span class="material-symbols-outlined close-drawer-btn" style="font-size: 24px;" onclick="ContractPage.toggleSelectedDrawer()">expand_more</span>
+            ${UIIcon.createHTML('expand_more', 'font-size: 24px; cursor: pointer;', 'close-drawer-btn', 'onclick="ContractPage.toggleSelectedDrawer()"')}
           </div>
           <div id="modal-sidebar-list" class="drawer-body">
             <div class="text-center py-5 text-muted" style="font-size: 13px;">
-              <span class="material-symbols-outlined d-block mb-2" style="font-size: 32px; color: var(--color-border-strong);">shopping_cart</span>
+              ${UIIcon.createHTML('shopping_cart', 'font-size: 32px; color: var(--color-border-strong);', 'd-block mb-2')}
               Chưa chọn mặt hàng nào
             </div>
           </div>
@@ -1372,9 +1366,9 @@ var ContractPage = (function () {
         <div class="modal-bottom-bar">
           <div class="modal-bottom-left-sec">
             <button class="btn btn-outline-primary d-flex align-items-center gap-2" onclick="ContractPage.toggleSelectedDrawer()" style="height: 38px; border-radius: 8px; font-weight: 700; font-size: 13px; padding: 0 14px; white-space: nowrap;">
-              <span class="material-symbols-outlined" style="font-size: 20px;">shopping_cart</span>
+              ${UIIcon.createHTML('shopping_cart', 'font-size: 20px;')}
               <span>Đã chọn: <strong id="modal-sidebar-count">0</strong> món</span>
-              <span class="material-symbols-outlined" id="drawer-toggle-arrow" style="font-size: 18px;">expand_less</span>
+              ${UIIcon.createHTML('expand_less', 'font-size: 18px;', '', 'id="drawer-toggle-arrow"')}
             </button>
           </div>
           
@@ -1383,9 +1377,7 @@ var ContractPage = (function () {
               <span class="text-muted fw-semibold" style="font-size: 12px; display: block; line-height: 1.1; margin-bottom: 2px;">Tổng cộng:</span>
               <span class="fw-bold text-danger" id="modal-sidebar-total" style="font-size: 18px;">0 đ</span>
             </div>
-            <button class="btn btn-success d-flex align-items-center justify-content-center gap-2" style="height: 40px; border-radius: 8px; font-weight: 700; font-size: 14px; padding: 0 20px; white-space: nowrap;" onclick="document.querySelector('.btn-close-modal').click()">
-              <span class="material-symbols-outlined" style="font-size: 20px;">check_circle</span> Hoàn Tất & Đóng
-            </button>
+            ${UIButton.createHTML({ icon: 'check_circle', text: 'Hoàn Tất & Đóng', type: 'success', className: 'd-flex align-items-center justify-content-center gap-2', style: 'height: 40px; border-radius: 8px; font-weight: 700; font-size: 14px; padding: 0 20px; white-space: nowrap;', iconStyle: 'font-size: 20px;', onClick: "document.querySelector('.btn-close-modal').click()" })}
           </div>
         </div>
       </div>
@@ -1463,7 +1455,7 @@ var ContractPage = (function () {
           <div class="food-category-section mb-4">
             <div style="font-size: 15px; font-weight: 700; color: var(--color-text); border-bottom: 2px solid var(--color-primary); padding-bottom: 8px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
               <span style="display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 22px;">folder_open</span>
+                ${UIIcon.createHTML('folder_open', 'color: var(--color-primary); font-size: 22px;')}
                 <span>${groupName}</span>
               </span>
               <span style="font-size: 12px; font-weight: 600; color: var(--color-text-secondary); background: rgba(148, 163, 184, 0.15); padding: 3px 10px; border-radius: 20px;">${groupItems.length} mặt hàng</span>
@@ -1502,9 +1494,7 @@ var ContractPage = (function () {
               
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px dashed var(--color-border);">
                 <span class="fw-bold text-danger" style="font-size: 14px; font-weight: 700;">${formattedPrice}</span>
-                <button id="food-btn-${maMon}" class="btn btn-sm rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; ${btnStyle} flex-shrink: 0;" onclick="ContractPage.addFood('${type}', '${escapedItem}')">
-                  <span class="material-symbols-outlined" style="font-size: 16px; color: white;">${iconName}</span>
-                </button>
+                ${UIButton.createHTML({ icon: iconName, id: `food-btn-${maMon}`, className: 'btn-sm rounded-circle p-0 d-inline-flex align-items-center justify-content-center', style: `width: 28px; height: 28px; ${btnStyle} flex-shrink: 0;`, iconStyle: 'font-size: 16px; color: white;', onClick: `ContractPage.addFood('${type}', '${escapedItem}')` })}
               </div>
             </div>
           `;
@@ -1591,7 +1581,7 @@ var ContractPage = (function () {
     if (btn) {
       btn.className = "btn btn-sm rounded-circle p-0 d-inline-flex align-items-center justify-content-center";
       btn.style.cssText = "width: 28px; height: 28px; background: #10B981; border: none; flex-shrink: 0;";
-      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; color: white;">check</span>';
+      btn.innerHTML = UIIcon.createHTML('check', 'font-size: 16px; color: white;');
     }
     
     _renderModalSidebar(type);
@@ -1609,7 +1599,7 @@ var ContractPage = (function () {
     if (btn) {
       btn.className = "btn btn-sm rounded-circle p-0 d-inline-flex align-items-center justify-content-center";
       btn.style.cssText = "width: 28px; height: 28px; background: #F59E0B; border: none; flex-shrink: 0;";
-      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; color: white;">add</span>';
+      btn.innerHTML = UIIcon.createHTML('add', 'font-size: 16px; color: white;');
     }
   }
 
@@ -1819,7 +1809,7 @@ var ContractPage = (function () {
             </div>
           </div>
           ${qtyControlHtml}
-          <span class="material-symbols-outlined text-danger ms-2" style="cursor: pointer; font-size: 18px; flex-shrink: 0;" onclick="event.stopPropagation(); ContractPage.removeModalSidebarItem('${type}', ${idx})">delete</span>
+          ${UIButton.createHTML({ icon: 'delete', type: 'tool', className: 'text-danger ms-2', style: 'padding: 0; display: inline-flex; flex-shrink: 0;', iconStyle: 'font-size: 18px;', onClick: `event.stopPropagation(); ContractPage.removeModalSidebarItem('${type}', ${idx})` })}
         </div>
       `;
     }).join('');
@@ -1827,7 +1817,7 @@ var ContractPage = (function () {
     if (count === 0) {
       html = `
         <div class="text-center py-5 text-muted" style="font-size: 13px;">
-          <span class="material-symbols-outlined d-block mb-2" style="font-size: 32px; color: var(--color-border-strong);">shopping_cart</span>
+          ${UIIcon.createHTML('shopping_cart', 'font-size: 32px; color: var(--color-border-strong);', 'd-block mb-2')}
           Chưa chọn mặt hàng nào
         </div>
       `;

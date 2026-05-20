@@ -90,15 +90,15 @@ var ComponentsDemoPage = (function () {
     var el = document.getElementById('demo-buttons');
     if (!el) return;
     el.innerHTML = [
-      '<button class="btn btn-primary">Primary</button>',
-      '<button class="btn btn-secondary">Secondary</button>',
-      '<button class="btn btn-tool"><span class="material-symbols-outlined">edit</span>Tool Button</button>',
-      '<button class="btn btn-primary" disabled>Disabled</button>',
-      '<button class="btn" style="background:var(--color-success); color:#fff;">Success</button>',
-      '<button class="btn" style="background:var(--color-danger); color:#fff;">Danger</button>',
-      '<button class="btn" style="background:var(--color-warning); color:#fff;">Warning</button>',
-      '<button class="icon-btn"><span class="material-symbols-outlined">settings</span></button>',
-      '<button class="icon-btn"><span class="material-symbols-outlined">delete</span></button>'
+      UIButton.createHTML({ text: 'Primary', type: 'primary' }),
+      UIButton.createHTML({ text: 'Secondary', type: 'secondary' }),
+      UIButton.createHTML({ icon: 'edit', text: 'Tool Button', type: 'tool' }),
+      UIButton.createHTML({ text: 'Disabled', type: 'primary', disabled: true }),
+      UIButton.createHTML({ text: 'Success', style: 'background:var(--color-success); color:#fff;' }),
+      UIButton.createHTML({ text: 'Danger', style: 'background:var(--color-danger); color:#fff;' }),
+      UIButton.createHTML({ text: 'Warning', style: 'background:var(--color-warning); color:#fff;' }),
+      UIButton.createHTML({ icon: 'settings', className: 'icon-btn' }),
+      UIButton.createHTML({ icon: 'delete', className: 'icon-btn' })
     ].join('');
   }
 
@@ -107,11 +107,11 @@ var ComponentsDemoPage = (function () {
     var el = document.getElementById('demo-badges');
     if (!el) return;
     el.innerHTML = [
-      '<span class="status-badge success">Hoàn tất</span>',
-      '<span class="status-badge warning">Đang xử lý</span>',
-      '<span class="status-badge primary">Đã ký HĐ</span>',
-      '<span class="status-badge secondary">Bản nháp</span>',
-      '<span class="status-badge" style="background:var(--color-danger); color:#fff;">Hủy bỏ</span>'
+      UIBadge.createHTML('Hoàn tất', 'success', 'status-badge'),
+      UIBadge.createHTML('Đang xử lý', 'warning', 'status-badge'),
+      UIBadge.createHTML('Đã ký HĐ', 'primary', 'status-badge'),
+      UIBadge.createHTML('Bản nháp', 'secondary', 'status-badge'),
+      UIBadge.createHTML('Hủy bỏ', '', 'status-badge', 'background:var(--color-danger); color:#fff;')
     ].join(' ');
   }
 
@@ -120,10 +120,10 @@ var ComponentsDemoPage = (function () {
     var el = document.getElementById('demo-alerts');
     if (!el) return;
     el.innerHTML = [
-      '<button class="btn btn-primary" onclick="Alert.success(\'Thành công!\', \'Dữ liệu đã được lưu.\')">Alert Success</button>',
-      '<button class="btn" style="background:var(--color-danger);color:#fff;" onclick="Alert.error(\'Lỗi!\', \'Không thể kết nối máy chủ.\')">Alert Error</button>',
-      '<button class="btn" style="background:var(--color-warning);color:#fff;" onclick="Alert.warning(\'Cảnh báo!\', \'Dữ liệu chưa được lưu.\')">Alert Warning</button>',
-      '<button class="btn btn-secondary" onclick="Alert.info(\'Thông tin\', \'Phiên bản hệ thống: v2.0.1\')">Alert Info</button>'
+      UIButton.createHTML({ text: 'Alert Success', type: 'primary', onClick: "Alert.success('Thành công!', 'Dữ liệu đã được lưu.')" }),
+      UIButton.createHTML({ text: 'Alert Error', style: 'background:var(--color-danger);color:#fff;', onClick: "Alert.error('Lỗi!', 'Không thể kết nối máy chủ.')" }),
+      UIButton.createHTML({ text: 'Alert Warning', style: 'background:var(--color-warning);color:#fff;', onClick: "Alert.warning('Cảnh báo!', 'Dữ liệu chưa được lưu.')" }),
+      UIButton.createHTML({ text: 'Alert Info', type: 'secondary', onClick: "Alert.info('Thông tin', 'Phiên bản hệ thống: v2.0.1')" })
     ].join('');
   }
 
@@ -132,10 +132,10 @@ var ComponentsDemoPage = (function () {
     var el = document.getElementById('demo-toasts');
     if (!el) return;
     el.innerHTML = [
-      '<button class="btn btn-primary" onclick="UIToast.show(\'Đây là thông báo mặc định\')">Toast Default</button>',
-      '<button class="btn" style="background:var(--color-success);color:#fff;" onclick="UIToast.show(\'Lưu thành công!\', \'success\')">Toast Success</button>',
-      '<button class="btn" style="background:var(--color-danger);color:#fff;" onclick="UIToast.show(\'Có lỗi xảy ra!\', \'error\')">Toast Error</button>',
-      '<button class="btn" style="background:var(--color-warning);color:#fff;" onclick="UIToast.show(\'Cảnh báo dữ liệu\', \'warning\')">Toast Warning</button>'
+      UIButton.createHTML({ text: 'Toast Default', type: 'primary', onClick: "UIToast.show('Đây là thông báo mặc định')" }),
+      UIButton.createHTML({ text: 'Toast Success', style: 'background:var(--color-success);color:#fff;', onClick: "UIToast.show('Lưu thành công!', 'success')" }),
+      UIButton.createHTML({ text: 'Toast Error', style: 'background:var(--color-danger);color:#fff;', onClick: "UIToast.show('Có lỗi xảy ra!', 'error')" }),
+      UIButton.createHTML({ text: 'Toast Warning', style: 'background:var(--color-warning);color:#fff;', onClick: "UIToast.show('Cảnh báo dữ liệu', 'warning')" })
     ].join('');
   }
 
@@ -143,7 +143,7 @@ var ComponentsDemoPage = (function () {
   function _mountModals() {
     var confirmEl = document.getElementById('demo-confirm-modal');
     if (confirmEl) {
-      confirmEl.innerHTML = '<button class="btn btn-secondary" onclick="ConfirmModal.show({ title: \'Xác nhận xóa?\', message: \'Bạn có chắc muốn xóa bản ghi này? Thao tác không thể hoàn tác.\', onConfirm: function() { UIToast.show(\'Đã xóa!\', \'success\'); } })">Confirm Dialog</button>';
+      confirmEl.innerHTML = UIButton.createHTML({ text: 'Confirm Dialog', type: 'secondary', onClick: "ConfirmModal.show({ title: 'Xác nhận xóa?', message: 'Bạn có chắc muốn xóa bản ghi này? Thao tác không thể hoàn tác.', onConfirm: function() { UIToast.show('Đã xóa!', 'success'); } })" });
     }
     
     var uiEl = document.getElementById('demo-ui-modal');
@@ -154,7 +154,7 @@ var ComponentsDemoPage = (function () {
       btn.textContent = 'Mở Modal';
       btn.onclick = function() {
         var footer = document.createElement('div');
-        footer.innerHTML = '<button class="btn btn-secondary btn-cancel">Hủy</button><button class="btn btn-primary btn-confirm">Xác nhận</button>';
+        footer.innerHTML = UIButton.createHTML({ text: 'Hủy', className: 'btn-cancel' }) + UIButton.createHTML({ text: 'Xác nhận', type: 'primary', className: 'btn-confirm' });
         
         var m = UIModal.show({
           title: 'Modal Demo',
@@ -241,9 +241,7 @@ var ComponentsDemoPage = (function () {
         var icon = item.icon || 'article';
         return [
           '<div style="display:flex; align-items:center; gap:16px; padding:20px 0;">',
-            '<span class="material-symbols-outlined" style="font-size:48px; opacity:0.15;">',
-              icon,
-            '</span>',
+            UIIcon.createHTML(icon, 'font-size:48px; opacity:0.15;'),
             '<div>',
               '<div style="font-size:15px; font-weight:700; margin-bottom:4px;">', item.label, '</div>',
               '<code style="font-size:11px; opacity:0.4; background:rgba(0,0,0,0.05); padding:2px 8px; border-radius:4px;">',
@@ -294,7 +292,7 @@ var ComponentsDemoPage = (function () {
       },
       renderContent: function(item) {
         return '<div style="padding:8px 0;display:flex;align-items:center;gap:12px;">'
-          + '<span class="material-symbols-outlined" style="font-size:36px;opacity:0.15;">' + (item.icon || 'article') + '</span>'
+          + UIIcon.createHTML(item.icon || 'article', 'font-size:36px;opacity:0.15;')
           + '<div>'
           + '<div style="font-weight:700;font-size:15px;">' + item.label + '</div>'
           + '<code style="font-size:11px;opacity:0.35;background:rgba(0,0,0,0.05);padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px;">MenuID: ' + item.id + '</code>'

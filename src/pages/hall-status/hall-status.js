@@ -49,7 +49,7 @@ window.HallStatusPage = (function () {
       if (hall.status === 'DA_COC' || hall.status === 'DA_KY') {
         details = '<div style="font-size:13px;margin-top:12px;border-top:1px solid var(--color-border);padding-top:8px;">' +
                     '<div style="margin-bottom:4px;"><b>Khách:</b> ' + (hall.customer || 'N/A') + '</div>' +
-                    '<div><b>Ca:</b> <span class="badge" style="background:var(--color-bg-secondary);color:var(--color-text);padding:2px 6px;">' + (hall.session || 'N/A') + '</span></div>' +
+                    '<div><b>Ca:</b> ' + UIBadge.createHTML(hall.session || 'N/A', 'light', 'padding:2px 6px;') + '</div>' +
                   '</div>';
       } else {
         details = '<div style="font-size:13px;margin-top:12px;border-top:1px solid var(--color-border);padding-top:8px;">' +
