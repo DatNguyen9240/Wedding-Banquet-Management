@@ -574,7 +574,9 @@ window.showCreateBanquetModal = function (prefillDate) {
         selLoaiTiec.innerHTML = '<option value="">-- Chọn Loại Tiệc --</option>';
         records.forEach(function (t) {
           var isHoiNghiFlag = (String(t.isHoiNghi) === '1' || String(t.isHoiNghi).toLowerCase() === 'true') ? '1' : '0';
-          selLoaiTiec.innerHTML += '<option value="' + t.Loaihinhtiecid + '" data-ishoinghi="' + isHoiNghiFlag + '">' + t.Tenloaihinhtiec + '</option>';
+          var tenLoai = t.Tenloaihinhtiec || t.Tenloaitiec || t.Tenloaihinh || 'Không xác định';
+          var idLoai = t.Loaihinhtiecid || t.Loaitiecid || '';
+          selLoaiTiec.innerHTML += '<option value="' + idLoai + '" data-ishoinghi="' + isHoiNghiFlag + '">' + tenLoai + '</option>';
         });
 
         // Bắt sự kiện đổi loại tiệc để thay đổi giao diện Chú rể / Cô dâu

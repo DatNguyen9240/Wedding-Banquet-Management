@@ -131,7 +131,10 @@ var BookingPage = (function () {
         if (selLoaiTiec && records.length > 0) {
           selLoaiTiec.innerHTML = '<option value="">-- Chọn Loại Tiệc --</option>';
           records.forEach(function (lt) {
-            selLoaiTiec.innerHTML += '<option value="' + lt.Loaihinhtiecid + '">' + lt.Tenloaihinh + '</option>';
+            var isHoiNghiFlag = (String(lt.isHoiNghi) === '1' || String(lt.isHoiNghi).toLowerCase() === 'true') ? '1' : '0';
+            var tenLoai = lt.Tenloaihinhtiec || lt.Tenloaitiec || lt.Tenloaihinh || 'Không xác định';
+            var idLoai = lt.Loaihinhtiecid || lt.Loaitiecid || '';
+            selLoaiTiec.innerHTML += '<option value="' + idLoai + '" data-ishoinghi="' + isHoiNghiFlag + '">' + tenLoai + '</option>';
           });
         }
       }).catch(e => console.warn('Không load được loại tiệc', e));
@@ -450,9 +453,59 @@ var BookingPage = (function () {
       } else {
         console.warn('Thiếu cấu hình API_CONFIG.ENDPOINTS.BOOKING.SAVE');
         UIToast.show('Đang mô phỏng lưu...', 'success');
-        setTimeout(closeForm, 800);
       }
     });
+
+    // Hàm đọc số thành chữ tiếng Việt
+    function _docSoTienVN(n) {
+      if (!n || n === 0) return 'Không đồng';
+      var dvDoc = ['', 'nghìn', 'triệu', 'tỷ'];
+      var soDoc = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+      function docNhom(so) {
+        var tram = Math.floor(so / 100);
+        var chuc = Math.floor((so % 100) / 10);
+        var dv = so % 10;
+        var kq = '';
+        if (tram > 0) kq += soDoc[tram] + ' trăm ';
+        if (chuc === 1) kq += 'mười ';
+        else if (chuc > 1) kq += soDoc[chuc] + ' mươi ';
+        if (dv === 1 && chuc > 1) kq += 'mốt ';
+        else if (dv === 5 && chuc > 0) kq += 'lăm ';
+        else if (dv > 0) kq += soDoc[dv] + ' ';
+        return kq.trim();
+      }
+      var str = Math.round(n).toString();
+      var groups = [];
+      while (str.length > 0) {
+        groups.unshift(str.slice(-3));
+        str = str.slice(0, -3);
+      }
+      var result = '';
+      groups.forEach(function (g, i) {
+        var val = parseInt(g, 10);
+        if (val > 0) {
+          result += docNhom(val) + ' ' + dvDoc[groups.length - 1 - i] + ' ';
+        }
+      });
+      return result.trim() + ' đồng';
+    }
+
+    // Format Tiền Cọc
+    var inpTienCoc = $container.querySelector('#inp-tiencoc');
+    var vnTienCoc = $container.querySelector('#vn-tiencoc');
+    if (inpTienCoc) {
+      inpTienCoc.addEventListener('input', function(e) {
+        var val = this.value.replace(/\D/g, '');
+        if (val) {
+          var raw = parseInt(val, 10);
+          this.value = raw.toLocaleString('vi-VN');
+          if (vnTienCoc) vnTienCoc.innerText = _docSoTienVN(raw);
+        } else {
+          this.value = '';
+          if (vnTienCoc) vnTienCoc.innerText = '';
+        }
+      });
+    }
 
     // Removed auto calculate total tables as the UI uses dp fields now
     
@@ -460,7 +513,9 @@ var BookingPage = (function () {
     var selLoaiTiec = $container.querySelector('#sel-loaitiec');
     if (selLoaiTiec) {
       selLoaiTiec.addEventListener('change', function() {
-        var val = this.value;
+        var selectedOption = this.options[this.selectedIndex];
+        var isHoiNghi = selectedOption ? selectedOption.getAttribute('data-ishoinghi') : '0';
+
         var colCodau = $container.querySelector('#bk-col-ten-codau');
         var colDtCodau = $container.querySelector('#bk-col-dt-codau');
         var colChure = $container.querySelector('#bk-col-ten-chure');
@@ -471,7 +526,7 @@ var BookingPage = (function () {
         var inpDtChure = $container.querySelector('#inp-dtchure');
         var inpCodau = $container.querySelector('#inp-tencodau');
 
-        if (val === 'WEDDING') {
+        if (isHoiNghi !== '1') {
           if (colCodau) colCodau.style.display = 'block';
           if (colDtCodau) colDtCodau.style.display = 'block';
           if (colChure) colChure.className = 'col-md-6';
@@ -611,7 +666,25 @@ var BookingPage = (function () {
     }
 
     var depositStr = (data.DaCocVND != null ? data.DaCocVND : data.deposit).toString();
-    $container.querySelector('#inp-tiencoc').value = depositStr;
+    var inpTienCoc = $container.querySelector('#inp-tiencoc');
+    var vnTienCoc = $container.querySelector('#vn-tiencoc');
+    if (inpTienCoc) {
+      if (depositStr) {
+        var val = depositStr.replace(/\D/g, '');
+        if (val) {
+          var raw = parseInt(val, 10);
+          inpTienCoc.value = raw.toLocaleString('vi-VN');
+          if (vnTienCoc) vnTienCoc.innerText = _docSoTienVN(raw);
+        } else {
+          inpTienCoc.value = '';
+          if (vnTienCoc) vnTienCoc.innerText = '';
+        }
+      } else {
+        inpTienCoc.value = '';
+        if (vnTienCoc) vnTienCoc.innerText = '';
+      }
+    }
+    
     $container.querySelector('#inp-ghichu').value = data.Ghichu || '';
   }
 

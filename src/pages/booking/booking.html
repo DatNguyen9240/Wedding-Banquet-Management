@@ -212,8 +212,9 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Số tiền cọc (VNĐ) <span style="color: var(--color-danger);">*</span></label>
-          <input type="text" id="inp-tiencoc" class="ui-input w-100" placeholder="VD: 20,000,000"
+          <input type="text" id="inp-tiencoc" inputmode="numeric" autocomplete="off" class="ui-input w-100" placeholder="VD: 20,000,000"
             style="font-size: 16px; font-weight: bold; color: var(--color-success);">
+          <div id="vn-tiencoc" style="font-size:11px; color:var(--color-success); margin-top:3px; min-height:16px; font-style:italic;"></div>
         </div>
         <div>
           <label class="form-label">Ghi chú</label>

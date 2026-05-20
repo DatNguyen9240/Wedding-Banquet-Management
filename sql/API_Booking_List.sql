@@ -33,6 +33,7 @@ BEGIN
         
         -- Thông tin tiệc chi tiết
         b.Thoigianid AS [Thoigianid],
+        b.Loaitiecid AS [Loaihinhtiecid],
         b.SobanManchinhthuc AS [SobanManchinhthuc],
         b.SobanChaychinhthuc AS [SobanChaychinhthuc],
         b.Ghichu AS [Ghichu],
