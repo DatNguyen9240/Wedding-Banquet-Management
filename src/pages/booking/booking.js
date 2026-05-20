@@ -400,7 +400,9 @@ var BookingPage = (function () {
       var eventDate = $container.querySelector('#inp-ngaytochuc').value;
       var caTiec = $container.querySelector('#sel-catiec').value;
       var banMan = parseInt($container.querySelector('#inp-ban-man').value) || 0;
+      var banManDp = parseInt($container.querySelector('#inp-ban-man-dp').value) || 0;
       var banChay = parseInt($container.querySelector('#inp-ban-chay').value) || 0;
+      var banChayDp = parseInt($container.querySelector('#inp-ban-chay-dp').value) || 0;
       var sanhId = $container.querySelector('#sel-sanh').value;
       var dsSanh = [];
       if (sanhId) dsSanh.push({ Sanhtiecid: sanhId, IsSanhchinh: 1 });
@@ -431,7 +433,9 @@ var BookingPage = (function () {
         Loaitiecid: loaitiec,
         Thoigianid: caTiec,
         SobanManchinhthuc: banMan,
+        SobanManduphong: banManDp,
         SobanChaychinhthuc: banChay,
+        SobanChayduphong: banChayDp,
         Tongtien: tienCoc,
         Solan: isCocLan2 ? 2 : 1,
         Ghichu: ghiChu,
@@ -456,55 +460,11 @@ var BookingPage = (function () {
       }
     });
 
-    // Hàm đọc số thành chữ tiếng Việt
-    function _docSoTienVN(n) {
-      if (!n || n === 0) return 'Không đồng';
-      var dvDoc = ['', 'nghìn', 'triệu', 'tỷ'];
-      var soDoc = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
-      function docNhom(so) {
-        var tram = Math.floor(so / 100);
-        var chuc = Math.floor((so % 100) / 10);
-        var dv = so % 10;
-        var kq = '';
-        if (tram > 0) kq += soDoc[tram] + ' trăm ';
-        if (chuc === 1) kq += 'mười ';
-        else if (chuc > 1) kq += soDoc[chuc] + ' mươi ';
-        if (dv === 1 && chuc > 1) kq += 'mốt ';
-        else if (dv === 5 && chuc > 0) kq += 'lăm ';
-        else if (dv > 0) kq += soDoc[dv] + ' ';
-        return kq.trim();
-      }
-      var str = Math.round(n).toString();
-      var groups = [];
-      while (str.length > 0) {
-        groups.unshift(str.slice(-3));
-        str = str.slice(0, -3);
-      }
-      var result = '';
-      groups.forEach(function (g, i) {
-        var val = parseInt(g, 10);
-        if (val > 0) {
-          result += docNhom(val) + ' ' + dvDoc[groups.length - 1 - i] + ' ';
-        }
-      });
-      return result.trim() + ' đồng';
-    }
-
     // Format Tiền Cọc
     var inpTienCoc = $container.querySelector('#inp-tiencoc');
     var vnTienCoc = $container.querySelector('#vn-tiencoc');
-    if (inpTienCoc) {
-      inpTienCoc.addEventListener('input', function(e) {
-        var val = this.value.replace(/\D/g, '');
-        if (val) {
-          var raw = parseInt(val, 10);
-          this.value = raw.toLocaleString('vi-VN');
-          if (vnTienCoc) vnTienCoc.innerText = _docSoTienVN(raw);
-        } else {
-          this.value = '';
-          if (vnTienCoc) vnTienCoc.innerText = '';
-        }
-      });
+    if (typeof UIInput !== 'undefined' && UIInput.setupMoneyInput) {
+      UIInput.setupMoneyInput(inpTienCoc, vnTienCoc);
     }
 
     // Removed auto calculate total tables as the UI uses dp fields now
@@ -586,10 +546,11 @@ var BookingPage = (function () {
     $container.querySelector('#inp-dtdai-dien').value = '';
     $container.querySelector('#inp-email').value = '';
     $container.querySelector('#inp-ngaytochuc').value = '';
-    $container.querySelector('#sel-loaitiec').value = 'WEDDING';
-    var ltEvt = new Event('change');
     var ltSel = $container.querySelector('#sel-loaitiec');
-    if(ltSel) ltSel.dispatchEvent(ltEvt);
+    if (ltSel) {
+      ltSel.value = '';
+      ltSel.dispatchEvent(new Event('change'));
+    }
     $container.querySelector('#sel-catiec').value = 'T';
     $container.querySelector('#inp-ban-man').value = '';
     var manDp = $container.querySelector('#inp-ban-man-dp');
@@ -627,19 +588,20 @@ var BookingPage = (function () {
     }
 
     // Trigger update for Loaihinhtiec
-    $container.querySelector('#sel-loaitiec').value = data.Loaihinhtiecid || 'WEDDING';
-    var ltEvt = new Event('change');
     var ltSel = $container.querySelector('#sel-loaitiec');
-    if(ltSel) ltSel.dispatchEvent(ltEvt);
+    if (ltSel) {
+      ltSel.value = data.Loaihinhtiecid || '';
+      ltSel.dispatchEvent(new Event('change'));
+    }
 
     $container.querySelector('#sel-catiec').value = data.Thoigianid || 'T';
     $container.querySelector('#inp-ban-man').value = data.SobanManchinhthuc != null ? data.SobanManchinhthuc : (data.SoBan != null ? data.SoBan : data.totalTables);
     var manDp = $container.querySelector('#inp-ban-man-dp');
-    if (manDp) manDp.value = 0;
+    if (manDp) manDp.value = data.SobanManduphong || 0;
     
     $container.querySelector('#inp-ban-chay').value = data.SobanChaychinhthuc || 0;
     var chayDp = $container.querySelector('#inp-ban-chay-dp');
-    if (chayDp) chayDp.value = 0;
+    if (chayDp) chayDp.value = data.SobanChayduphong || 0;
 
     $container.querySelector('#sel-sanh').value = ''; // Reset select
     _renderSanhPhu('', []);
@@ -674,7 +636,7 @@ var BookingPage = (function () {
         if (val) {
           var raw = parseInt(val, 10);
           inpTienCoc.value = raw.toLocaleString('vi-VN');
-          if (vnTienCoc) vnTienCoc.innerText = _docSoTienVN(raw);
+          if (vnTienCoc) vnTienCoc.innerText = UIInput.docSoTienVN(raw);
         } else {
           inpTienCoc.value = '';
           if (vnTienCoc) vnTienCoc.innerText = '';

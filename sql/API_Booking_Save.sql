@@ -31,7 +31,9 @@ CREATE OR ALTER PROCEDURE [dbo].[API_Booking_Save]
     @Loaitiecid VARCHAR(50) = NULL,
     @Thoigianid VARCHAR(50) = NULL, -- Ca tiệc
     @SobanManchinhthuc INT = 0,
+    @SobanManduphong INT = 0,
     @SobanChaychinhthuc INT = 0,
+    @SobanChayduphong INT = 0,
     @Tongtien DECIMAL(18,2) = 0, -- Số tiền đặt cọc
     @Solan TINYINT = 1, -- 1: Cọc lần 1, 2: Cọc lần 2
     @Ghichu NVARCHAR(500) = NULL,
@@ -107,12 +109,12 @@ BEGIN
 
             INSERT INTO tbmk_Biennhancoccho (
                 DocumentID, SoBN, DocumentDate, Makh, Solan, Manv, Loaitiecid,
-                Ngaytochuc, Nhamngay, Tongtien, Tongsoban, SobanManchinhthuc, SobanChaychinhthuc,
+                Ngaytochuc, Nhamngay, Tongtien, Tongsoban, SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong,
                 Thoigianid, Ghichu, IsHuy, IsKetthuc, GoiThucDonID, DateCreate, UserCreate
             )
             VALUES (
                 @DocumentID, @SoBN, ISNULL(@DocumentDate, @Now), @Makh, @Solan, @Manv, @Loaitiecid,
-                @Ngaytochuc, @Nhamngay, @Tongtien, @Tongsoban, @SobanManchinhthuc, @SobanChaychinhthuc,
+                @Ngaytochuc, @Nhamngay, @Tongtien, @Tongsoban, @SobanManchinhthuc, @SobanManduphong, @SobanChaychinhthuc, @SobanChayduphong,
                 @Thoigianid, @Ghichu, 0, 0, '', @Now, @UserCreate
             );
         END
@@ -129,7 +131,9 @@ BEGIN
                 Tongtien = @Tongtien,
                 Tongsoban = @Tongsoban,
                 SobanManchinhthuc = @SobanManchinhthuc,
+                SobanManduphong = @SobanManduphong,
                 SobanChaychinhthuc = @SobanChaychinhthuc,
+                SobanChayduphong = @SobanChayduphong,
                 Thoigianid = @Thoigianid,
                 Ghichu = @Ghichu,
                 DateUpdate = @Now,

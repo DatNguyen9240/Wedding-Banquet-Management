@@ -64,9 +64,81 @@ var UIInput = (function () {
     return _createBaseWrapper(config, 'date').wrapper;
   }
 
+  /**
+   * Hàm đọc số thành chữ tiếng Việt
+   */
+  function docSoTienVN(n) {
+    if (!n || n === 0) return 'Không đồng';
+    var dvDoc = ['', 'nghìn', 'triệu', 'tỷ', 'nghìn tỷ', 'triệu tỷ', 'tỷ tỷ'];
+    var soDoc = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+    function docNhom(so) {
+      var tram = Math.floor(so / 100);
+      var chuc = Math.floor((so % 100) / 10);
+      var dv = so % 10;
+      var kq = '';
+      if (tram > 0) kq += soDoc[tram] + ' trăm ';
+      if (chuc === 1) kq += 'mười ';
+      else if (chuc > 1) kq += soDoc[chuc] + ' mươi ';
+      if (dv === 1 && chuc > 1) kq += 'mốt ';
+      else if (dv === 5 && chuc > 0) kq += 'lăm ';
+      else if (dv > 0) kq += soDoc[dv] + ' ';
+      return kq.trim();
+    }
+    var str = Math.round(n).toString();
+    var groups = [];
+    while (str.length > 0) {
+      groups.unshift(str.slice(-3));
+      str = str.slice(0, -3);
+    }
+    var result = '';
+    groups.forEach(function (g, i) {
+      var val = parseInt(g, 10);
+      if (val > 0) {
+        result += docNhom(val) + ' ' + dvDoc[groups.length - 1 - i] + ' ';
+      }
+    });
+    return result.trim() + ' đồng';
+  }
+
+  /**
+   * Cài đặt tự động format số tiền + hiển thị text cho một ô input có sẵn
+   */
+  function setupMoneyInput(inputEl, textEl) {
+    if (!inputEl) return;
+    
+    function refresh() {
+      var raw = parseInt(inputEl.value.replace(/\D/g, ''), 10) || 0;
+      inputEl.value = raw === 0 ? '' : raw.toLocaleString('vi-VN');
+      if (textEl) textEl.innerText = raw === 0 ? '' : docSoTienVN(raw);
+    }
+
+    inputEl.addEventListener('input', function () {
+      var pos = this.selectionStart;
+      var oldLen = this.value.length;
+      var raw = parseInt(this.value.replace(/\D/g, ''), 10) || 0;
+      
+      this.value = raw === 0 ? '' : raw.toLocaleString('vi-VN');
+      
+      var diff = this.value.length - oldLen;
+      if (pos !== null) {
+        this.setSelectionRange(pos + diff, pos + diff);
+      }
+      
+      if (textEl) textEl.innerText = raw === 0 ? '' : docSoTienVN(raw);
+    });
+
+    inputEl.addEventListener('blur', function () {
+      refresh();
+    });
+
+    refresh();
+  }
+
   return {
     createText: createText,
     createNumber: createNumber,
-    createDate: createDate
+    createDate: createDate,
+    docSoTienVN: docSoTienVN,
+    setupMoneyInput: setupMoneyInput
   };
 })();

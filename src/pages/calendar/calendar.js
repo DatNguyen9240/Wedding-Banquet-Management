@@ -415,65 +415,13 @@ window.showCreateBanquetModal = function (prefillDate) {
     </form>
   `;
 
-  // ── Hàm đọc số thành chữ tiếng Việt ─────────────────────────────────
-  window._docSoTienVN = function (n) {
-    if (!n || n === 0) return 'Không đồng';
-    var dvDoc = ['', 'nghìn', 'triệu', 'tỷ'];
-    var soDoc = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
-    function docNhom(so) {
-      var tram = Math.floor(so / 100);
-      var chuc = Math.floor((so % 100) / 10);
-      var dv = so % 10;
-      var kq = '';
-      if (tram > 0) kq += soDoc[tram] + ' trăm ';
-      if (chuc === 1) kq += 'mười ';
-      else if (chuc > 1) kq += soDoc[chuc] + ' mươi ';
-      if (dv === 1 && chuc > 1) kq += 'mốt ';
-      else if (dv === 5 && chuc > 0) kq += 'lăm ';
-      else if (dv > 0) kq += soDoc[dv] + ' ';
-      return kq.trim();
-    }
-    var str = Math.round(n).toString();
-    var groups = [];
-    while (str.length > 0) {
-      groups.unshift(str.slice(-3));
-      str = str.slice(0, -3);
-    }
-    var result = '';
-    groups.forEach(function (g, i) {
-      var val = parseInt(g, 10);
-      if (val > 0) {
-        result += docNhom(val) + ' ' + dvDoc[groups.length - 1 - i] + ' ';
-      }
-    });
-    return result.trim() + ' đồng';
-  };
-
-  // ── Format số với dấu chấm, trả về raw number ─────────────────────────
+  // Dùng chung UIInput component
   function _initMoneyInput(inputId, displayId) {
     var inp = document.getElementById(inputId);
     var disp = document.getElementById(displayId);
-    if (!inp || !disp) return;
-    function refresh() {
-      var raw = parseInt(inp.value.replace(/\./g, ''), 10) || 0;
-      inp.value = raw === 0 ? '0' : raw.toLocaleString('vi-VN');
-      disp.textContent = window._docSoTienVN(raw);
+    if (typeof UIInput !== 'undefined' && UIInput.setupMoneyInput) {
+      UIInput.setupMoneyInput(inp, disp);
     }
-    inp.addEventListener('input', function () {
-      var pos = inp.selectionStart;
-      var oldLen = inp.value.length;
-      var raw = parseInt(inp.value.replace(/[^\d]/g, ''), 10) || 0;
-      inp.value = raw === 0 ? '0' : raw.toLocaleString('vi-VN');
-      var diff = inp.value.length - oldLen;
-      inp.setSelectionRange(pos + diff, pos + diff);
-      disp.textContent = window._docSoTienVN(raw);
-    });
-    inp.addEventListener('focus', function () { if (inp.value === '0') { inp.value = ''; } });
-    inp.addEventListener('blur', function () {
-      if (inp.value === '') inp.value = '0';
-      refresh();
-    });
-    refresh();
   }
 
   window._createBanquetModal = UIModal.show({
@@ -656,7 +604,9 @@ window.submitCreateBanquet = function (btn) {
     Loaitiecid:         formData.get('Loaihinhtiecid'),
     Thoigianid:         formData.get('Thoigianid'),
     SobanManchinhthuc:  parseInt(formData.get('SobanManchinhthuc')) || 0,
+    SobanManduphong:    parseInt(formData.get('SobanManduphong')) || 0,
     SobanChaychinhthuc: parseInt(formData.get('SobanChaychinhthuc')) || 0,
+    SobanChayduphong:   parseInt(formData.get('SobanChayduphong')) || 0,
     // API_Booking_Save dùng Tongtien = tiền cọc
     Tongtien:           parseInt((formData.get('Sotiencoccho') || '0').replace(/\./g, ''), 10) || 0,
     Solan:              1, // Cọc lần 1
