@@ -56,6 +56,12 @@ window.API_CONFIG = {
         REPORTS: {
             REVENUE: '/api/API_Report_Revenue',
             COST: '/api/API_Report_Cost',
+        },
+        MENUS: {
+            GET_ALL: '/api/API_LayDanhSachMenuTatCa',
+            SAVE: '/api/API_LuuMenu',
+            DELETE: '/api/API_XoaMenu',
+            UPDATE_ORDER: '/api/API_LuuThuTuMenu',
         }
     }
 };
