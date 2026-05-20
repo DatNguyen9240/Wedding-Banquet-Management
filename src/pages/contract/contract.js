@@ -337,6 +337,11 @@ var ContractPage = (function () {
           grid-template-columns: repeat(2, 1fr);
         }
 
+        /* Make table rows more spacious on desktop */
+        .table-responsive td {
+          padding: 14px 8px !important;
+        }
+
         /* High Level Tab Styles */
         .high-tab-btn {
           background: none;
@@ -407,6 +412,8 @@ var ContractPage = (function () {
           .ui-tab-panel {
             padding: 0 !important;
           }
+          
+
           
           /* Compact horizontal row alignment for table headers on mobile */
           .p-4.mx-auto > .d-flex {
@@ -553,11 +560,12 @@ var ContractPage = (function () {
             </div>
             <div class="form-group">
               <label>Tổng Tiền (Dự kiến)</label>
-              <input type="number" id="inp-tong-tien" class="ui-input text-end" value="${tongtienVal}" readonly style="background: var(--color-background); font-weight: 700; color: var(--color-primary);">
+              <input type="text" id="inp-tong-tien" class="ui-input text-end" value="${tongtienVal.toLocaleString('vi-VN')}" readonly style="background: var(--color-background); font-weight: 700; color: var(--color-primary);">
             </div>
             <div class="form-group">
               <label>Tiền Đặt Cọc</label>
-              <input type="number" id="inp-tiencoc" class="ui-input text-end" value="${tiencocVal}" min="0" style="color: var(--color-success); font-weight: 700;">
+              <input type="text" inputmode="numeric" autocomplete="off" id="inp-tiencoc" class="ui-input text-end" value="${tiencocVal}" style="color: var(--color-success); font-weight: 700;">
+              <div id="vn-tiencoc" style="font-size:11px; color:var(--color-success); margin-top:3px; min-height:16px; font-style:italic;"></div>
             </div>
           </div>
         </div>
@@ -567,6 +575,10 @@ var ContractPage = (function () {
         <div class="card" id="contract-tabs-container"></div>
       </div>
     `;
+
+    if (typeof UIInput !== 'undefined' && UIInput.setupMoneyInput) {
+      UIInput.setupMoneyInput(document.getElementById('inp-tiencoc'), document.getElementById('vn-tiencoc'));
+    }
 
     // Tải danh sách Sảnh, Ca, Loại tiệc động từ Database
     if (typeof SystemDataService !== 'undefined') {
@@ -638,7 +650,16 @@ var ContractPage = (function () {
             }
             
             if (document.getElementById('inp-ban-man')) document.getElementById('inp-ban-man').value = booking.SoBanMan || booking.SobanManchinhthuc || 30;
+            if (document.getElementById('inp-duphong-man')) document.getElementById('inp-duphong-man').value = booking.SobanManduphong || 0;
             if (document.getElementById('inp-ban-chay')) document.getElementById('inp-ban-chay').value = booking.SoBanChay || booking.SobanChaychinhthuc || 0;
+            if (document.getElementById('inp-duphong-chay')) document.getElementById('inp-duphong-chay').value = booking.SobanChayduphong || 0;
+            
+            if (document.getElementById('inp-tiencoc')) {
+              var c = booking.Tongtiencoc || booking.Sotiencochopdong || booking.Sotiencoccho || booking.DaCocVND || 0;
+              var inpTiencoc = document.getElementById('inp-tiencoc');
+              inpTiencoc.value = c;
+              inpTiencoc.dispatchEvent(new Event('input'));
+            }
             
             if (booking.Sanhtiecid || booking.SanhDat) {
               var sanhSel = document.getElementById('sel-sanh');
@@ -1045,19 +1066,31 @@ var ContractPage = (function () {
   }
 
   function removeFood(type, index) {
+    var removedItem = null;
     if (type === 'man') {
+      removedItem = selectedFoodsMan[index];
       selectedFoodsMan.splice(index, 1);
       _renderThucDonMan();
     } else if (type === 'chay') {
+      removedItem = selectedFoodsChay[index];
       selectedFoodsChay.splice(index, 1);
       _renderThucDonChay();
     } else if (type === 'drink') {
+      removedItem = selectedThucUong[index];
       selectedThucUong.splice(index, 1);
       _renderThucUong();
     } else if (type === 'service') {
+      removedItem = selectedDichVu[index];
       selectedDichVu.splice(index, 1);
       _renderDichVu();
     }
+    
+    if (removedItem && removedItem.MaMon) {
+      if (typeof unhighlightFoodCard === 'function') {
+        unhighlightFoodCard(removedItem.MaMon);
+      }
+    }
+    
     UIToast.show('Đã xóa khỏi danh sách', 'success');
   }
 
@@ -1268,7 +1301,7 @@ var ContractPage = (function () {
           }
         }
       </style>
-      <div class="modal-main-container" style="position: relative; display: flex; flex-direction: column; height: 630px; padding-bottom: 64px;">
+      <div class="modal-main-container" style="position: relative; display: flex; flex-direction: column; height: calc(90vh - 65px); min-height: 500px; margin: -16px; padding: 16px; padding-bottom: 80px;">
         <!-- Search and Grid list -->
         <div class="d-flex gap-2 mb-3" style="width: 100%;">
           <input type="text" id="modal-food-search" class="ui-input" placeholder="Tìm kiếm tên hoặc mã..." style="flex-grow: 1; border-radius: 8px; padding: 8px 12px; height: 38px; border: 1px solid var(--color-border);">
@@ -1312,7 +1345,7 @@ var ContractPage = (function () {
               <span class="text-muted fw-semibold" style="font-size: 12px; display: block; line-height: 1.1; margin-bottom: 2px;">Tổng cộng:</span>
               <span class="fw-bold text-danger" id="modal-sidebar-total" style="font-size: 18px;">0 đ</span>
             </div>
-            <button class="btn btn-success d-flex align-items-center justify-content-center gap-2" style="height: 40px; border-radius: 8px; font-weight: 700; font-size: 14px; padding: 0 20px; white-space: nowrap;" onclick="UIModal.hide()">
+            <button class="btn btn-success d-flex align-items-center justify-content-center gap-2" style="height: 40px; border-radius: 8px; font-weight: 700; font-size: 14px; padding: 0 20px; white-space: nowrap;" onclick="document.querySelector('.btn-close-modal').click()">
               <span class="material-symbols-outlined" style="font-size: 20px;">check_circle</span> Hoàn Tất & Đóng
             </button>
           </div>
@@ -1322,7 +1355,7 @@ var ContractPage = (function () {
 
     var m = UIModal.show({
       title: title,
-      width: '1200px',
+      width: '1400px',
       content: modalContent
     });
 
@@ -1408,9 +1441,19 @@ var ContractPage = (function () {
           var tenMon = item.TenMon || item.Tenhang;
           
           var escapedItem = JSON.stringify(item).replace(/"/g, '&quot;');
+          
+          var isSelected = false;
+          if (type === 'man') isSelected = selectedFoodsMan.some(x => x.MaMon === maMon || x.Mahang === maMon);
+          else if (type === 'chay') isSelected = selectedFoodsChay.some(x => x.MaMon === maMon || x.Mahang === maMon);
+          else if (type === 'drink') isSelected = selectedThucUong.some(x => x.MaMon === maMon || x.Mahang === maMon);
+          else if (type === 'service') isSelected = selectedDichVu.some(x => x.MaMon === maMon || x.Mahang === maMon);
+
+          var cardStyle = isSelected ? 'border-color: var(--color-primary); background-color: rgba(79, 70, 229, 0.04);' : '';
+          var btnStyle = isSelected ? 'background: #10B981; border: none;' : 'background: #F59E0B; border: none;';
+          var iconName = isSelected ? 'check' : 'add';
 
           html += `
-            <div class="food-card">
+            <div class="food-card" id="food-card-${maMon}" style="${cardStyle}">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 4px;">
                 <span style="background: rgba(79, 70, 229, 0.08); color: var(--color-primary); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(79, 70, 229, 0.15); font-family: monospace;">${maMon}</span>
               </div>
@@ -1421,8 +1464,8 @@ var ContractPage = (function () {
               
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px dashed var(--color-border);">
                 <span class="fw-bold text-danger" style="font-size: 14px; font-weight: 700;">${formattedPrice}</span>
-                <button class="btn btn-primary btn-sm rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; background: #F59E0B; border: none; flex-shrink: 0;" onclick="ContractPage.addFood('${type}', '${escapedItem}')">
-                  <span class="material-symbols-outlined" style="font-size: 16px; color: white;">add</span>
+                <button id="food-btn-${maMon}" class="btn btn-sm rounded-circle p-0 d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; ${btnStyle} flex-shrink: 0;" onclick="ContractPage.addFood('${type}', '${escapedItem}')">
+                  <span class="material-symbols-outlined" style="font-size: 16px; color: white;">${iconName}</span>
                 </button>
               </div>
             </div>
@@ -1469,18 +1512,11 @@ var ContractPage = (function () {
     else if (type === 'drink') list = selectedThucUong;
     else if (type === 'service') list = selectedDichVu;
 
-    existingItem = list.find(x => x.MaMon === maMon);
+    var existingIndex = list.findIndex(x => x.MaMon === maMon || x.Mahang === maMon);
 
-    if (existingItem) {
-      if (type === 'drink' || type === 'service') {
-        existingItem.SoLuong = (existingItem.SoLuong || 0) + 1;
-        if (type === 'drink') _renderThucUong();
-        else if (type === 'service') _renderDichVu();
-        _renderModalSidebar(type);
-        UIToast.show(`Đã tăng số lượng: ${existingItem.TenMon} (+1)`, 'success');
-      } else {
-        UIToast.show(`Món ăn "${existingItem.TenMon}" đã có trong thực đơn rồi`, 'warning');
-      }
+    if (existingIndex > -1) {
+      removeFood(type, existingIndex);
+      _renderModalSidebar(type);
       return;
     }
 
@@ -1507,8 +1543,36 @@ var ContractPage = (function () {
       _renderDichVu();
     }
     
+    // Đổ bộ trạng thái hiển thị của item trên modal
+    var card = document.getElementById('food-card-' + maMon);
+    var btn = document.getElementById('food-btn-' + maMon);
+    if (card) {
+      card.style.borderColor = 'var(--color-primary)';
+      card.style.backgroundColor = 'rgba(79, 70, 229, 0.04)';
+    }
+    if (btn) {
+      btn.className = "btn btn-sm rounded-circle p-0 d-inline-flex align-items-center justify-content-center";
+      btn.style.cssText = "width: 28px; height: 28px; background: #10B981; border: none; flex-shrink: 0;";
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; color: white;">check</span>';
+    }
+    
     _renderModalSidebar(type);
     UIToast.show(`Đã thêm món: ${item.TenMon}`, 'success');
+  }
+
+  // Khôi phục trạng thái nút "add" khi xoá món
+  function unhighlightFoodCard(maMon) {
+    var card = document.getElementById('food-card-' + maMon);
+    var btn = document.getElementById('food-btn-' + maMon);
+    if (card) {
+      card.style.borderColor = '';
+      card.style.backgroundColor = '';
+    }
+    if (btn) {
+      btn.className = "btn btn-sm rounded-circle p-0 d-inline-flex align-items-center justify-content-center";
+      btn.style.cssText = "width: 28px; height: 28px; background: #F59E0B; border: none; flex-shrink: 0;";
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; color: white;">add</span>';
+    }
   }
 
   function updateBanquetFields() {
@@ -1554,7 +1618,7 @@ var ContractPage = (function () {
     
     var inpTongTien = document.getElementById('inp-tong-tien');
     if (inpTongTien) {
-      inpTongTien.value = tongtienhopdong;
+      inpTongTien.value = tongtienhopdong.toLocaleString('vi-VN');
     }
   }
 
@@ -1570,7 +1634,10 @@ var ContractPage = (function () {
     var banmanDuPhong = parseInt(document.getElementById('inp-duphong-man') ? document.getElementById('inp-duphong-man').value : 0) || 0;
     var banchay = parseInt(document.getElementById('inp-ban-chay') ? document.getElementById('inp-ban-chay').value : 0) || 0;
     var banchayDuPhong = parseInt(document.getElementById('inp-duphong-chay') ? document.getElementById('inp-duphong-chay').value : 0) || 0;
-    var tiencoc = parseFloat(document.getElementById('inp-tiencoc') ? document.getElementById('inp-tiencoc').value : 0) || 0;
+    
+    var tiencocRaw = document.getElementById('inp-tiencoc') ? document.getElementById('inp-tiencoc').value.replace(/\D/g, '') : '0';
+    var tiencoc = parseFloat(tiencocRaw) || 0;
+    
     var sanhVal = document.getElementById('sel-sanh') ? document.getElementById('sel-sanh').value : '';
     var caVal = document.getElementById('sel-ca') ? document.getElementById('sel-ca').value : '';
     var loaiVal = document.getElementById('sel-loai') ? document.getElementById('sel-loai').value : '';
@@ -1685,11 +1752,11 @@ var ContractPage = (function () {
       if (type === 'drink' || type === 'service') {
         qtyControlHtml = `
           <div class="d-flex align-items-center gap-1" style="flex-shrink: 0; margin-left: 8px;">
-            <button class="btn btn-light btn-xs p-0 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--color-border);" onclick="ContractPage.changeModalSidebarQty('${type}', ${idx}, -1)">
+            <button class="btn btn-light btn-xs p-0 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--color-border);" onclick="event.stopPropagation(); ContractPage.changeModalSidebarQty('${type}', ${idx}, -1)">
               <span class="material-symbols-outlined" style="font-size: 14px;">remove</span>
             </button>
             <span class="fw-bold text-center" style="width: 24px; font-size: 13px;">${qty}</span>
-            <button class="btn btn-light btn-xs p-0 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--color-border);" onclick="ContractPage.changeModalSidebarQty('${type}', ${idx}, 1)">
+            <button class="btn btn-light btn-xs p-0 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--color-border);" onclick="event.stopPropagation(); ContractPage.changeModalSidebarQty('${type}', ${idx}, 1)">
               <span class="material-symbols-outlined" style="font-size: 14px;">add</span>
             </button>
           </div>
@@ -1701,7 +1768,7 @@ var ContractPage = (function () {
       }
 
       return `
-        <div class="sidebar-item d-flex gap-2 p-2 mb-2 rounded align-items-center" style="background: var(--color-background); border: 1px solid var(--color-border);">
+        <div class="sidebar-item d-flex gap-2 p-2 mb-2 rounded align-items-center" style="background: var(--color-background); border: 1px solid var(--color-border); cursor: pointer; transition: background 0.2s;" onclick="ContractPage.scrollToFoodCard('${item.MaMon || item.Mahang}')" onmouseover="this.style.background='rgba(79,70,229,0.05)'" onmouseout="this.style.background='var(--color-background)'">
           <div style="flex: 1; min-width: 0;">
             <div class="fw-bold text-dark text-truncate" style="font-size: 13px;" title="${item.TenMon || item.Tenmon}">${item.TenMon || item.Tenmon}</div>
             <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">
@@ -1709,7 +1776,7 @@ var ContractPage = (function () {
             </div>
           </div>
           ${qtyControlHtml}
-          <span class="material-symbols-outlined text-danger ms-2" style="cursor: pointer; font-size: 18px; flex-shrink: 0;" onclick="ContractPage.removeModalSidebarItem('${type}', ${idx})">delete</span>
+          <span class="material-symbols-outlined text-danger ms-2" style="cursor: pointer; font-size: 18px; flex-shrink: 0;" onclick="event.stopPropagation(); ContractPage.removeModalSidebarItem('${type}', ${idx})">delete</span>
         </div>
       `;
     }).join('');
@@ -1743,19 +1810,31 @@ var ContractPage = (function () {
   }
 
   function removeModalSidebarItem(type, index) {
+    var removedItem = null;
     if (type === 'man') {
+      removedItem = selectedFoodsMan[index];
       selectedFoodsMan.splice(index, 1);
       _renderThucDonMan();
     } else if (type === 'chay') {
+      removedItem = selectedFoodsChay[index];
       selectedFoodsChay.splice(index, 1);
       _renderThucDonChay();
     } else if (type === 'drink') {
+      removedItem = selectedThucUong[index];
       selectedThucUong.splice(index, 1);
       _renderThucUong();
     } else if (type === 'service') {
+      removedItem = selectedDichVu[index];
       selectedDichVu.splice(index, 1);
       _renderDichVu();
     }
+    
+    if (removedItem && removedItem.MaMon) {
+      if (typeof unhighlightFoodCard === 'function') {
+        unhighlightFoodCard(removedItem.MaMon);
+      }
+    }
+    
     _renderModalSidebar(type);
     UIToast.show('Đã xóa khỏi danh sách', 'success');
   }
@@ -1771,6 +1850,29 @@ var ContractPage = (function () {
     } else {
       drawer.classList.add('collapsed');
       if (arrow) arrow.innerText = 'expand_less';
+    }
+  }
+
+  function scrollToFoodCard(maMon) {
+    var card = document.getElementById('food-card-' + maMon);
+    var wrapper = document.getElementById('modal-food-grid-wrapper');
+    if (card && wrapper) {
+      // Auto-collapse the drawer so the user can see the main grid
+      var drawer = document.getElementById('modal-selected-drawer');
+      var arrow = document.getElementById('drawer-toggle-arrow');
+      if (drawer && !drawer.classList.contains('collapsed')) {
+        drawer.classList.add('collapsed');
+        if (arrow) arrow.innerText = 'expand_less';
+      }
+
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.style.transition = 'box-shadow 0.3s ease';
+      card.style.boxShadow = '0 0 0 4px rgba(16, 185, 129, 0.4)';
+      setTimeout(() => {
+        card.style.boxShadow = '';
+      }, 1500);
+    } else {
+      UIToast.show('Món ăn này không có trên trang hiện tại', 'warning');
     }
   }
 
@@ -1800,6 +1902,7 @@ var ContractPage = (function () {
     switchHighLevelTab: switchHighLevelTab,
     changeModalSidebarQty: changeModalSidebarQty,
     removeModalSidebarItem: removeModalSidebarItem,
-    toggleSelectedDrawer: toggleSelectedDrawer
+    toggleSelectedDrawer: toggleSelectedDrawer,
+    scrollToFoodCard: scrollToFoodCard
   };
 })();
