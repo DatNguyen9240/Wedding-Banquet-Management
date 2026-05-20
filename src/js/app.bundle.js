@@ -586,6 +586,474 @@ var SystemDataService = (function() {
 })();
 
 
+/* --- BookingService.js --- */
+/**
+ * BookingService
+ * Quản lý toàn bộ API call liên quan đến Biên nhận Cọc chỗ (Booking).
+ */
+var BookingService = (function () {
+
+  /**
+   * Lấy danh sách biên nhận cọc
+   * @param {Object} filterParams - { Keyword, TuNgay, DenNgay }
+   * @returns {Promise<Array>}
+   */
+  function getList(filterParams) {
+    return new Promise(function (resolve, reject) {
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.BOOKING || !API_CONFIG.ENDPOINTS.BOOKING.LIST) {
+        console.warn('[BookingService] Thiếu cấu hình API BOOKING.LIST');
+        return resolve([]);
+      }
+      var payloadString = encodeURIComponent(JSON.stringify(filterParams || {}));
+      var endpoint = API_CONFIG.ENDPOINTS.BOOKING.LIST + '?q=' + payloadString;
+
+      ApiClient.get(endpoint)
+        .then(function (res) {
+          var data = [];
+          if (res && res.records)      data = res.records;
+          else if (res && res.data)    data = res.data;
+          else if (Array.isArray(res)) data = res;
+          resolve(data);
+        })
+        .catch(function (err) {
+          console.error('[BookingService] Lỗi getList:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Hủy phiếu cọc
+   * @param {Object} payload - { DocumentID, Lydohuy }
+   * @returns {Promise}
+   */
+  function cancel(payload) {
+    return new Promise(function (resolve, reject) {
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.BOOKING || !API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
+        return reject('Chưa cấu hình API BOOKING.CANCEL');
+      }
+      ApiClient.post(API_CONFIG.ENDPOINTS.BOOKING.CANCEL, payload)
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[BookingService] Lỗi cancel:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Tìm kiếm khách hàng theo từ khóa
+   * @param {string} keyword
+   * @returns {Promise<Array>}
+   */
+  function searchCustomer(keyword) {
+    return new Promise(function (resolve, reject) {
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CUSTOMER || !API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH) {
+        return resolve([]);
+      }
+      ApiClient.get(API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH + '?Keyword=' + encodeURIComponent(keyword))
+        .then(function (res) {
+          var list = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
+          resolve(list);
+        })
+        .catch(function (err) {
+          console.error('[BookingService] Lỗi searchCustomer:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Lưu biên nhận cọc (thêm mới hoặc cập nhật)
+   * @param {Object} payload
+   * @returns {Promise}
+   */
+  function save(payload) {
+    return new Promise(function (resolve, reject) {
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.BOOKING || !API_CONFIG.ENDPOINTS.BOOKING.SAVE) {
+        return reject('Thiếu cấu hình API BOOKING.SAVE');
+      }
+      ApiClient.post(API_CONFIG.ENDPOINTS.BOOKING.SAVE, payload)
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[BookingService] Lỗi save:', err);
+          reject(err);
+        });
+    });
+  }
+
+  return {
+    getList: getList,
+    cancel: cancel,
+    searchCustomer: searchCustomer,
+    save: save
+  };
+})();
+
+
+/* --- VisitorService.js --- */
+/**
+ * VisitorService
+ * Quản lý toàn bộ API call liên quan đến Khách Tham Quan.
+ */
+var VisitorService = (function () {
+
+  /**
+   * Lấy danh sách khách tham quan
+   * @param {Object} filterParams - { Keyword, TuNgay, DenNgay, ... }
+   * @returns {Promise<Array>}
+   */
+  function getList(filterParams) {
+    return new Promise(function (resolve, reject) {
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.VISITOR || !API_CONFIG.ENDPOINTS.VISITOR.LIST) {
+        console.warn('[VisitorService] Thiếu cấu hình API VISITOR.LIST — trả về mảng rỗng');
+        return resolve([]);
+      }
+
+      var payloadString = encodeURIComponent(JSON.stringify(filterParams || {}));
+      var endpoint = API_CONFIG.ENDPOINTS.VISITOR.LIST + '?q=' + payloadString;
+
+      ApiClient.get(endpoint)
+        .then(function (res) {
+          var data = [];
+          if (res && res.records)      data = res.records;
+          else if (res && res.data)    data = res.data;
+          else if (Array.isArray(res)) data = res;
+          resolve(data);
+        })
+        .catch(function (err) {
+          console.error('[VisitorService] Lỗi getList:', err);
+          reject(err);
+        });
+    });
+  }
+
+  return {
+    getList: getList
+  };
+})();
+
+
+/* --- ContractService.js --- */
+/**
+ * ContractService
+ * Quản lý toàn bộ API call liên quan đến Hợp Đồng Tiệc.
+ */
+var ContractService = (function () {
+
+  /**
+   * Lấy danh sách hợp đồng
+   * @param {Object} filterParams
+   * @returns {Promise<Array>}
+   */
+  function getList(filterParams) {
+    return new Promise(function (resolve, reject) {
+      var base = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.CONTRACT && API_CONFIG.ENDPOINTS.CONTRACT.LIST)
+        ? API_CONFIG.ENDPOINTS.CONTRACT.LIST
+        : '/api/API_Contract_List';
+
+      var payloadString = encodeURIComponent(JSON.stringify(filterParams || {}));
+      var endpoint = base + '?q=' + payloadString;
+
+      ApiClient.get(endpoint)
+        .then(function (res) {
+          var data = [];
+          if (res && res.records)      data = res.records;
+          else if (res && res.data)    data = res.data;
+          else if (Array.isArray(res)) data = res;
+          resolve(data);
+        })
+        .catch(function (err) {
+          console.error('[ContractService] Lỗi getList:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Lấy thông tin booking để tự điền form Hợp Đồng
+   * @param {string} bookingId
+   * @returns {Promise<Object|null>}
+   */
+  function getBookingById(bookingId) {
+    return new Promise(function (resolve, reject) {
+      ApiClient.get('/api/API_Booking_List?Keyword=' + encodeURIComponent(bookingId))
+        .then(function (res) {
+          var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
+          var booking = records.find(function (b) { return (b.MaChungTu || b.id) == bookingId; });
+          resolve(booking || null);
+        })
+        .catch(function (err) {
+          console.error('[ContractService] Lỗi getBookingById:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Lấy danh sách thực đơn
+   * @param {Object} params - { Keyword, PhanLoai, IsChay }
+   * @returns {Promise<Array>}
+   */
+  function getFoods(params) {
+    return new Promise(function (resolve, reject) {
+      var payloadString = encodeURIComponent(JSON.stringify(params || { Keyword: '', PhanLoai: '', IsChay: -1 }));
+      ApiClient.get('/api/API_ThucDon_List?q=' + payloadString)
+        .then(function (res) {
+          var data = [];
+          if (res && res.records)      data = res.records;
+          else if (res && res.data)    data = res.data;
+          else if (Array.isArray(res)) data = res;
+          resolve(data);
+        })
+        .catch(function (err) {
+          console.error('[ContractService] Lỗi getFoods:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Lưu hợp đồng
+   * @param {Object} payload
+   * @returns {Promise}
+   */
+  function save(payload) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.CONTRACT && API_CONFIG.ENDPOINTS.CONTRACT.SAVE)
+        ? API_CONFIG.ENDPOINTS.CONTRACT.SAVE
+        : '/api/API_Contract_Save';
+
+      ApiClient.post(endpoint, payload)
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[ContractService] Lỗi save:', err);
+          reject(err);
+        });
+    });
+  }
+
+  return {
+    getList: getList,
+    getBookingById: getBookingById,
+    getFoods: getFoods,
+    save: save
+  };
+})();
+
+
+/* --- PermissionsService.js --- */
+/**
+ * PermissionsService
+ * Quản lý toàn bộ API call liên quan đến Phân Quyền Người Dùng.
+ */
+var PermissionsService = (function () {
+
+  function _ep(key) {
+    return (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.PERMISSIONS)
+      ? window.API_CONFIG.ENDPOINTS.PERMISSIONS[key]
+      : null;
+  }
+
+  function _currentGroupId() {
+    var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+    return u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
+  }
+
+  /**
+   * Lấy danh sách nhóm quyền
+   * @returns {Promise<Array>}
+   */
+  function getGroups() {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('GET_GROUP_LIST');
+      ApiClient.get(endpoint)
+        .then(function (res) {
+          if (res && res.code === 0 && res.records) {
+            resolve(res.records);
+          } else {
+            resolve([]);
+          }
+        })
+        .catch(function (err) {
+          console.error('[PermissionsService] Lỗi getGroups:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Lấy danh sách menu theo nhóm quyền
+   * @param {string} groupId - ID nhóm cần lấy quyền
+   * @returns {Promise<Array>}
+   */
+  function getMenusByGroup(groupId) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('GET_MENU_BY_GROUP');
+      ApiClient.post(endpoint, {
+        NhomNguoiDangThaoTac: _currentGroupId(),
+        UserGroupID: groupId
+      })
+        .then(function (res) {
+          var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
+          resolve(records);
+        })
+        .catch(function (err) {
+          console.error('[PermissionsService] Lỗi getMenusByGroup:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Lưu quyền cho một menu thuộc nhóm
+   * @param {Object} payload
+   * @returns {Promise}
+   */
+  function savePermission(payload) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('SAVE_GROUP_PERMISSIONS');
+      ApiClient.post(endpoint, payload)
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[PermissionsService] Lỗi savePermission:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Đồng bộ quyền truy cập toàn hệ thống
+   * @returns {Promise}
+   */
+  function sync() {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('SYNC');
+      ApiClient.post(endpoint, { NhomNguoiDangThaoTac: _currentGroupId() })
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[PermissionsService] Lỗi sync:', err);
+          reject(err);
+        });
+    });
+  }
+
+  return {
+    getGroups: getGroups,
+    getMenusByGroup: getMenusByGroup,
+    savePermission: savePermission,
+    sync: sync
+  };
+})();
+
+
+/* --- MenusService.js --- */
+/**
+ * MenusService
+ * Quản lý toàn bộ API call liên quan đến Quản lý Menu Hệ thống.
+ */
+var MenusService = (function () {
+
+  function _ep(key) {
+    return (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
+      ? window.API_CONFIG.ENDPOINTS.MENUS[key]
+      : null;
+  }
+
+  function _currentGroupId() {
+    var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+    return u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
+  }
+
+  /**
+   * Lấy toàn bộ danh sách menu
+   * @returns {Promise<Array>}
+   */
+  function getAll() {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('GET_ALL');
+      ApiClient.post(endpoint, { NhomNguoiDangThaoTac: _currentGroupId() })
+        .then(function (res) {
+          if (res && res.code === 0) {
+            resolve(res.records || []);
+          } else {
+            console.warn('[MenusService] getAll — code != 0:', res && res.msg);
+            resolve([]);
+          }
+        })
+        .catch(function (err) {
+          console.error('[MenusService] Lỗi getAll:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Lưu menu (thêm mới hoặc cập nhật)
+   * @param {Object} payload
+   * @returns {Promise}
+   */
+  function save(payload) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('SAVE');
+      ApiClient.post(endpoint, payload)
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[MenusService] Lỗi save:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Xóa menu
+   * @param {string} menuId
+   * @returns {Promise}
+   */
+  function deleteMenu(menuId) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('DELETE');
+      ApiClient.post(endpoint, { NhomNguoiDangThaoTac: _currentGroupId(), MenuID: menuId })
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[MenusService] Lỗi deleteMenu:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Cập nhật thứ tự hiển thị các menu
+   * @param {Object} params - { type, orderedIds, parentId }
+   * @returns {Promise}
+   */
+  function updateOrder(params) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('UPDATE_ORDER');
+      ApiClient.post(endpoint, {
+        NhomNguoiDangThaoTac: _currentGroupId(),
+        Type: params.type,
+        OrderedIDs: params.orderedIds.join(','),
+        ParentID: params.parentId
+      })
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[MenusService] Lỗi updateOrder:', err);
+          reject(err);
+        });
+    });
+  }
+
+  return {
+    getAll: getAll,
+    save: save,
+    deleteMenu: deleteMenu,
+    updateOrder: updateOrder,
+    currentGroupId: _currentGroupId
+  };
+})();
+
+
 /* --- UIUtils.js --- */
 /**
  * Shared UI Utilities for Components
