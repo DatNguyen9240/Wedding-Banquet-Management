@@ -86,6 +86,7 @@ BEGIN
                   AND b.DocumentID != ISNULL(@Sobiennhan, '')
             )
             BEGIN
+                ROLLBACK TRANSACTION;
                 SELECT 0 AS [Success], N'Lỗi: Sảnh bạn chọn đã được đặt hoặc cọc trước đó trong ca tiệc này. Vui lòng kiểm tra lại!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
                 RETURN;
             END

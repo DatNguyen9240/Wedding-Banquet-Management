@@ -36,8 +36,8 @@ var Router = (function () {
   var _currentRoute = null;
   var _loadedScripts = {};
   var _templateCache = {};
-  var _appVersion = '2.3'; // Bump để làm mới cache html/script động
-  var _isNavigating = false;    // Guard chống double-navigate
+  var _appVersion = '2.4'; // Bump để làm mới cache html/script động
+  var _navId = 0; // Token chặn race-condition
 
   // ── Template cache (dùng chung cho cả Router lẫn Page modules) ─────────
   function fetchTemplate(url) {
@@ -147,12 +147,13 @@ var Router = (function () {
 
   // ── Main Route Handler ─────────────────────────────────────────────────
   function _handleRoute() {
-    if (_isNavigating) return;   // Chống double-trigger
-    _isNavigating = true;
+    _navId++;
+    var currentNav = _navId;
+
+    var rawHash = window.location.hash.replace('#', '') || '/dashboard';
 
     var $content = document.getElementById('app-content');
     var $pageTitle = document.getElementById('page-title');
-    var rawHash = window.location.hash.replace('#', '') || '/dashboard';
     
     // Tách phần path và query (vd: /contract?date=...)
     var hashParts = rawHash.split('?');
@@ -170,7 +171,6 @@ var Router = (function () {
       if ($pageTitle) $pageTitle.innerText = '404 — Không tìm thấy';
       document.title = '404 | Quản lý Tiệc Cưới';
       _render404($content, rawHash);
-      _isNavigating = false;
       return;
     }
 
@@ -178,7 +178,6 @@ var Router = (function () {
     if (!Permission.canView(route.module)) {
       if ($pageTitle) $pageTitle.innerText = 'Từ chối truy cập';
       _renderAccessDenied($content);
-      _isNavigating = false;
       return;
     }
 
@@ -191,23 +190,31 @@ var Router = (function () {
     // (Page module tự fetch template bên trong render nếu cần)
     if (route.script && route.pageFn) {
       _fadeOut($content)
-        .then(function () { return _loadScript(route.script); })
+        .then(function () { 
+          if (currentNav !== _navId) throw new Error('ABORTED');
+          return _loadScript(route.script); 
+        })
         .then(function () {
+          if (currentNav !== _navId) throw new Error('ABORTED');
           var mod = window[route.pageFn];
           if (mod && typeof mod.render === 'function') {
-            mod.render($content);
+            // Xóa sạch nội dung cũ, cấp wrapper mới để các hàm fetch async không ghi đè lên trang khác
+            $content.innerHTML = '';
+            var wrapper = document.createElement('div');
+            wrapper.className = 'page-wrapper';
+            $content.appendChild(wrapper);
+            mod.render(wrapper);
           } else {
             _renderError($content, 'Không tìm thấy module: ' + route.pageFn);
           }
           _fadeIn($content);
           _currentRoute = route;
-          _isNavigating = false;
         })
         .catch(function (err) {
+          if (err.message === 'ABORTED') return; // Bỏ qua nếu là thao tác hủy do click liên tục
           console.error('[Router]', err);
           _renderError($content, 'Lỗi tải module: ' + err.message);
           _fadeIn($content);
-          _isNavigating = false;
         });
       return;
     }
@@ -215,25 +222,27 @@ var Router = (function () {
     // ── Trường hợp 2: Chỉ có template (dashboard, trang tĩnh) ──
     if (route.template) {
       _fadeOut($content)
-        .then(function () { return fetchTemplate(route.template); })
+        .then(function () { 
+          if (currentNav !== _navId) throw new Error('ABORTED');
+          return fetchTemplate(route.template); 
+        })
         .then(function (html) {
+          if (currentNav !== _navId) throw new Error('ABORTED');
           $content.innerHTML = html;
           _fadeIn($content);
           _currentRoute = route;
-          _isNavigating = false;
         })
         .catch(function (err) {
+          if (err.message === 'ABORTED') return;
           console.error('[Router]', err);
           _renderError($content, 'Lỗi tải template: ' + err.message);
           _fadeIn($content);
-          _isNavigating = false;
         });
       return;
     }
 
     // ── Trường hợp 3: Trang chưa code ──
     _renderPlaceholder($content, route.title);
-    _isNavigating = false;
   }
 
   // ── Init ───────────────────────────────────────────────────────────────

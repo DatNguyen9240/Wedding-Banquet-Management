@@ -46,7 +46,7 @@ window.API_CONFIG = {
         },
         CALENDAR: {
             LIST: '/api/API_Calendar_List',
-            SAVE: '/api/API_Contract_Save',
+            SAVE: '/api/API_Booking_Save',
             LEGEND: '/api/API_Calendar_Legend'
         },
         VISITOR: {

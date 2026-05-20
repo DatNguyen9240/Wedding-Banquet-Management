@@ -51,6 +51,38 @@ var BookingPage = (function () {
       });
   }
 
+  var hallRecords = [];
+
+  function _renderSanhPhu(sanhChinhId, selectedIds) {
+    var container = $container.querySelector('#container-sanh-phu');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (!sanhChinhId) {
+      container.innerHTML = '<span class="text-secondary" style="font-size: 12px; margin: auto; font-style: italic;">Vui lòng chọn Sảnh Chính trước</span>';
+      return;
+    }
+    
+    var filtered = hallRecords.filter(function(r) { return r.Sanhtiecid !== sanhChinhId; });
+    if (filtered.length === 0) {
+      container.innerHTML = '<span class="text-secondary" style="font-size: 12px; margin: auto; font-style: italic;">Không có sảnh phụ nào khác</span>';
+      return;
+    }
+    
+    filtered.forEach(function(h) {
+      var isChecked = (selectedIds || []).includes(h.Sanhtiecid) ? 'checked' : '';
+      container.innerHTML += `
+      <label class="modern-checkbox-wrapper mb-0" style="font-size: 13px; background: white; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--color-border); min-width: 160px; display: flex; flex-direction: column; cursor: pointer; transition: all 0.2s;">
+        <div class="d-flex align-items-center gap-2">
+          <input type="checkbox" class="modern-checkbox chk-sanh-phu" value="${h.Sanhtiecid}" ${isChecked}>
+          <span style="font-weight: 600; color: var(--color-primary);">${h.Tensanhtiec}</span>
+        </div>
+        <div style="font-size: 11px; color: var(--color-text-secondary); margin-left: 26px; margin-top: 2px;">Max: ${h.Succhua || 0} bàn</div>
+      </label>
+      `;
+    });
+  }
+
   function _loadData() {
     var tbody = $container.querySelector('#booking-table tbody');
     if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4" style="color: var(--color-text-secondary);">Đang tải dữ liệu...</td></tr>';
@@ -77,20 +109,32 @@ var BookingPage = (function () {
       });
 
     // Load Sảnh Tiệc
-    if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.SYSTEM && API_CONFIG.ENDPOINTS.SYSTEM.HALLS) {
-      ApiClient.get(API_CONFIG.ENDPOINTS.SYSTEM.HALLS).then(function (halls) {
-        var records = (halls && halls.records) ? halls.records : (Array.isArray(halls) ? halls : []);
+    if (typeof SystemDataService !== 'undefined') {
+      SystemDataService.getHalls().then(function (records) {
+        hallRecords = records;
         var selSanh = $container.querySelector('#sel-sanh');
-        var selSanhPhu = $container.querySelector('#sel-sanh-phu');
         if (selSanh && records.length > 0) {
           selSanh.innerHTML = '<option value="">-- Chọn Sảnh --</option>';
-          if (selSanhPhu) selSanhPhu.innerHTML = '';
           records.forEach(function (h) {
-            selSanh.innerHTML += '<option value="' + h.Sanhtiecid + '">' + h.Tensanhtiec + '</option>';
-            if (selSanhPhu) selSanhPhu.innerHTML += '<option value="' + h.Sanhtiecid + '">' + h.Tensanhtiec + '</option>';
+            selSanh.innerHTML += '<option value="' + h.Sanhtiecid + '">' + h.Tensanhtiec + ' (Max: ' + (h.Succhua || 0) + ')</option>';
+          });
+          
+          selSanh.addEventListener('change', function() {
+            _renderSanhPhu(this.value, []);
           });
         }
       }).catch(e => console.warn('Không load được sảnh', e));
+      
+      // Load Loại Tiệc
+      SystemDataService.getBanquetTypes().then(function (records) {
+        var selLoaiTiec = $container.querySelector('#sel-loaitiec');
+        if (selLoaiTiec && records.length > 0) {
+          selLoaiTiec.innerHTML = '<option value="">-- Chọn Loại Tiệc --</option>';
+          records.forEach(function (lt) {
+            selLoaiTiec.innerHTML += '<option value="' + lt.Loaihinhtiecid + '">' + lt.Tenloaihinh + '</option>';
+          });
+        }
+      }).catch(e => console.warn('Không load được loại tiệc', e));
     }
   }
 
@@ -326,8 +370,12 @@ var BookingPage = (function () {
           if (!tenKhach) tenKhach = kh.Tenkh || 'Chưa có tên';
 
           $container.querySelector('#inp-tenchure').value = kh.Tenchure || '';
+          $container.querySelector('#inp-dtchure').value = kh.DTchure || kh.Dienthoai || '';
           $container.querySelector('#inp-tencodau').value = kh.Tencodau || '';
-          $container.querySelector('#inp-dienthoai').value = kh.Dienthoai || '';
+          $container.querySelector('#inp-dtcodau').value = kh.DTcodau || '';
+          $container.querySelector('#inp-diachi').value = kh.Diachi || '';
+          $container.querySelector('#inp-nguoigd').value = kh.Nguoigd || '';
+          $container.querySelector('#inp-dtdai-dien').value = kh.DienThoaiDaiDien || '';
           $container.querySelector('#inp-email').value = kh.Mail || '';
           if (window.UIToast) UIToast.show('Đã chọn: ' + tenKhach, 'success');
         }
@@ -339,28 +387,30 @@ var BookingPage = (function () {
       if (machungtu === 'BNCC-AUTO') machungtu = null; // Null để Server tự sinh mới
 
       var tenchure = $container.querySelector('#inp-tenchure').value;
+      var dtchure = $container.querySelector('#inp-dtchure').value;
       var tencodau = $container.querySelector('#inp-tencodau').value;
-      var phone = $container.querySelector('#inp-dienthoai').value;
+      var dtcodau = $container.querySelector('#inp-dtcodau').value;
+      var diachi = $container.querySelector('#inp-diachi').value;
+      var nguoigd = $container.querySelector('#inp-nguoigd').value;
+      var dtdaidien = $container.querySelector('#inp-dtdai-dien').value;
       var email = $container.querySelector('#inp-email').value;
       var eventDate = $container.querySelector('#inp-ngaytochuc').value;
       var caTiec = $container.querySelector('#sel-catiec').value;
       var banMan = parseInt($container.querySelector('#inp-ban-man').value) || 0;
       var banChay = parseInt($container.querySelector('#inp-ban-chay').value) || 0;
       var sanhId = $container.querySelector('#sel-sanh').value;
-      var selSanhPhu = $container.querySelector('#sel-sanh-phu');
       var dsSanh = [];
       if (sanhId) dsSanh.push({ Sanhtiecid: sanhId, IsSanhchinh: 1 });
-      if (selSanhPhu && selSanhPhu.selectedOptions) {
-        Array.from(selSanhPhu.selectedOptions).forEach(function(opt) {
-          if (opt.value && opt.value !== sanhId) {
-            dsSanh.push({ Sanhtiecid: opt.value, IsSanhchinh: 0 });
-          }
-        });
-      }
+      
+      var chkPhu = $container.querySelectorAll('.chk-sanh-phu:checked');
+      Array.from(chkPhu).forEach(function(chk) {
+        dsSanh.push({ Sanhtiecid: chk.value, IsSanhchinh: 0 });
+      });
 
       var tienCocRaw = $container.querySelector('#inp-tiencoc').value || '0';
       var tienCoc = parseFloat(tienCocRaw.replace(/,/g, ''));
       var ghiChu = $container.querySelector('#inp-ghichu').value;
+      var loaitiec = $container.querySelector('#sel-loaitiec').value;
 
       var isCocLan2 = $container.querySelector('#booking-form-title').textContent.includes('Lần 2');
 
@@ -368,9 +418,14 @@ var BookingPage = (function () {
         DocumentID: machungtu,
         Tenchure: tenchure,
         Tencodau: tencodau,
-        Dienthoai: phone,
+        DTchure: dtchure,
+        DTcodau: dtcodau,
+        Diachi: diachi,
+        Nguoigd: nguoigd,
+        DienThoaiDaiDien: dtdaidien,
         Mail: email,
         Ngaytochuc: eventDate,
+        Loaitiecid: loaitiec,
         Thoigianid: caTiec,
         SobanManchinhthuc: banMan,
         SobanChaychinhthuc: banChay,
@@ -399,19 +454,47 @@ var BookingPage = (function () {
       }
     });
 
-    // Auto calculate total tables
-    var inpMan = $container.querySelector('#inp-ban-man');
-    var inpChay = $container.querySelector('#inp-ban-chay');
-    var inpTong = $container.querySelector('#inp-tong-ban');
+    // Removed auto calculate total tables as the UI uses dp fields now
+    
+    // Dynamic Form Loại Tiệc
+    var selLoaiTiec = $container.querySelector('#sel-loaitiec');
+    if (selLoaiTiec) {
+      selLoaiTiec.addEventListener('change', function() {
+        var val = this.value;
+        var colCodau = $container.querySelector('#bk-col-ten-codau');
+        var colDtCodau = $container.querySelector('#bk-col-dt-codau');
+        var colChure = $container.querySelector('#bk-col-ten-chure');
+        var colDtChure = $container.querySelector('#bk-col-dt-chure');
+        var lblChure = $container.querySelector('#bk-lbl-ten-chure');
+        var lblDtChure = $container.querySelector('#bk-lbl-dt-chure');
+        var inpChure = $container.querySelector('#inp-tenchure');
+        var inpDtChure = $container.querySelector('#inp-dtchure');
+        var inpCodau = $container.querySelector('#inp-tencodau');
 
-    function calcTotal() {
-      var m = parseInt(inpMan.value) || 0;
-      var c = parseInt(inpChay.value) || 0;
-      inpTong.value = m + c;
+        if (val === 'WEDDING') {
+          if (colCodau) colCodau.style.display = 'block';
+          if (colDtCodau) colDtCodau.style.display = 'block';
+          if (colChure) colChure.className = 'col-md-6';
+          if (colDtChure) colDtChure.className = 'col-md-6';
+          if (lblChure) lblChure.innerHTML = 'Tên Chú Rể <span style="color:var(--color-danger)">*</span>';
+          if (inpChure) inpChure.placeholder = 'Nhập tên chú rể';
+          if (lblDtChure) lblDtChure.innerText = 'ĐT Chú Rể';
+          if (inpDtChure) inpDtChure.placeholder = 'SĐT chú rể';
+        } else {
+          if (colCodau) colCodau.style.display = 'none';
+          if (colDtCodau) colDtCodau.style.display = 'none';
+          if (colChure) colChure.className = 'col-md-6';
+          if (colDtChure) colDtChure.className = 'col-md-6';
+          if (inpCodau) {
+            inpCodau.value = '';
+          }
+          if (lblChure) lblChure.innerHTML = 'Tên KH / Đơn vị <span style="color:var(--color-danger)">*</span>';
+          if (inpChure) inpChure.placeholder = 'Nhập tên khách hàng...';
+          if (lblDtChure) lblDtChure.innerText = 'SĐT Khách Hàng';
+          if (inpDtChure) inpDtChure.placeholder = 'SĐT khách hàng';
+        }
+      });
     }
-    inpMan.addEventListener('input', calcTotal);
-    inpChay.addEventListener('input', calcTotal);
-    inpChay.addEventListener('input', calcTotal);
 
   function openForm(mode, data) {
     var title = $container.querySelector('#booking-form-title');
@@ -440,14 +523,25 @@ var BookingPage = (function () {
   function _clearForm() {
     $container.querySelector('#inp-machungtu').value = 'BNCC-AUTO';
     $container.querySelector('#inp-tenchure').value = '';
+    $container.querySelector('#inp-dtchure').value = '';
     $container.querySelector('#inp-tencodau').value = '';
-    $container.querySelector('#inp-dienthoai').value = '';
+    $container.querySelector('#inp-dtcodau').value = '';
+    $container.querySelector('#inp-diachi').value = '';
+    $container.querySelector('#inp-nguoigd').value = '';
+    $container.querySelector('#inp-dtdai-dien').value = '';
     $container.querySelector('#inp-email').value = '';
     $container.querySelector('#inp-ngaytochuc').value = '';
+    $container.querySelector('#sel-loaitiec').value = 'WEDDING';
+    var ltEvt = new Event('change');
+    var ltSel = $container.querySelector('#sel-loaitiec');
+    if(ltSel) ltSel.dispatchEvent(ltEvt);
     $container.querySelector('#sel-catiec').value = 'T';
     $container.querySelector('#inp-ban-man').value = '';
+    var manDp = $container.querySelector('#inp-ban-man-dp');
+    if (manDp) manDp.value = '';
     $container.querySelector('#inp-ban-chay').value = '';
-    $container.querySelector('#inp-tong-ban').value = '';
+    var chayDp = $container.querySelector('#inp-ban-chay-dp');
+    if (chayDp) chayDp.value = '';
     $container.querySelector('#sel-sanh').value = '';
     $container.querySelector('#inp-tiencoc').value = '';
     $container.querySelector('#inp-ghichu').value = '';
@@ -456,13 +550,16 @@ var BookingPage = (function () {
   function _fillForm(data) {
     if (!data) return;
     $container.querySelector('#inp-machungtu').value = data.MaChungTu || data.id || '';
-
     var names = (data.TenKhachHang || data.customerName || '').split('&');
-    $container.querySelector('#inp-tenchure').value = names[0] ? names[0].trim() : '';
-    $container.querySelector('#inp-tencodau').value = names[1] ? names[1].trim() : '';
-
-    $container.querySelector('#inp-dienthoai').value = data.DienThoai || data.phone || '';
-    $container.querySelector('#inp-email').value = '';
+    $container.querySelector('#inp-tenchure').value = data.Tenchure || (names[0] ? names[0].trim() : '');
+    $container.querySelector('#inp-dtchure').value = data.DTchure || data.DienThoai || data.phone || '';
+    $container.querySelector('#inp-tencodau').value = data.Tencodau || (names[1] ? names[1].trim() : '');
+    $container.querySelector('#inp-dtcodau').value = data.DTcodau || '';
+    
+    $container.querySelector('#inp-diachi').value = data.Diachi || '';
+    $container.querySelector('#inp-nguoigd').value = data.Nguoigd || '';
+    $container.querySelector('#inp-dtdai-dien').value = data.DienThoaiDaiDien || '';
+    $container.querySelector('#inp-email').value = data.Mail || '';
 
     var eventDate = data.NgayToChuc || data.eventDate || '';
     if (eventDate.includes('/')) {
@@ -474,20 +571,48 @@ var BookingPage = (function () {
       $container.querySelector('#inp-ngaytochuc').value = '';
     }
 
-    $container.querySelector('#sel-catiec').value = 'T';
-    $container.querySelector('#inp-ban-man').value = data.SoBan != null ? data.SoBan : data.totalTables;
-    $container.querySelector('#inp-ban-chay').value = 0;
-    $container.querySelector('#inp-tong-ban').value = data.SoBan != null ? data.SoBan : data.totalTables;
+    // Trigger update for Loaihinhtiec
+    $container.querySelector('#sel-loaitiec').value = data.Loaihinhtiecid || 'WEDDING';
+    var ltEvt = new Event('change');
+    var ltSel = $container.querySelector('#sel-loaitiec');
+    if(ltSel) ltSel.dispatchEvent(ltEvt);
+
+    $container.querySelector('#sel-catiec').value = data.Thoigianid || 'T';
+    $container.querySelector('#inp-ban-man').value = data.SobanManchinhthuc != null ? data.SobanManchinhthuc : (data.SoBan != null ? data.SoBan : data.totalTables);
+    var manDp = $container.querySelector('#inp-ban-man-dp');
+    if (manDp) manDp.value = 0;
+    
+    $container.querySelector('#inp-ban-chay').value = data.SobanChaychinhthuc || 0;
+    var chayDp = $container.querySelector('#inp-ban-chay-dp');
+    if (chayDp) chayDp.value = 0;
 
     $container.querySelector('#sel-sanh').value = ''; // Reset select
+    _renderSanhPhu('', []);
     var currentHall = data.SanhDat || data.hall || '';
-    if (currentHall.includes('Diamond')) $container.querySelector('#sel-sanh').value = 'S01';
-    else if (currentHall.includes('Ruby')) $container.querySelector('#sel-sanh').value = 'S02';
-    else if (currentHall.includes('Queen')) $container.querySelector('#sel-sanh').value = 'S03';
+    
+    // Nếu có data.JsonSanhTiec, decode ra để fill sảnh chính và sảnh phụ
+    var dsSanh = [];
+    try {
+      if (data.JsonSanhTiec) dsSanh = JSON.parse(data.JsonSanhTiec);
+    } catch(e) {}
+    
+    if (dsSanh.length > 0) {
+      var sanhChinh = dsSanh.find(s => s.IsSanhchinh === 1 || s.IsSanhchinh === true);
+      if (sanhChinh) {
+        $container.querySelector('#sel-sanh').value = sanhChinh.Sanhtiecid;
+        var phuIds = dsSanh.filter(s => s.IsSanhchinh === 0 || s.IsSanhchinh === false).map(s => s.Sanhtiecid);
+        _renderSanhPhu(sanhChinh.Sanhtiecid, phuIds);
+      }
+    } else {
+      if (currentHall.includes('Diamond')) $container.querySelector('#sel-sanh').value = 'S01';
+      else if (currentHall.includes('Ruby')) $container.querySelector('#sel-sanh').value = 'S02';
+      else if (currentHall.includes('Queen')) $container.querySelector('#sel-sanh').value = 'S03';
+      _renderSanhPhu($container.querySelector('#sel-sanh').value, []);
+    }
 
     var depositStr = (data.DaCocVND != null ? data.DaCocVND : data.deposit).toString();
     $container.querySelector('#inp-tiencoc').value = depositStr;
-    $container.querySelector('#inp-ghichu').value = '';
+    $container.querySelector('#inp-ghichu').value = data.Ghichu || '';
   }
 
   function getSelectedRow() {

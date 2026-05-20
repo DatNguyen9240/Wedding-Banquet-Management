@@ -17,8 +17,11 @@ CREATE OR ALTER PROCEDURE [dbo].[API_Booking_Save]
     @Makh VARCHAR(50) = NULL OUTPUT, -- Nếu NULL: Tạo khách hàng mới
     @Tenchure NVARCHAR(255) = NULL,
     @Tencodau NVARCHAR(255) = NULL,
-    @Dienthoai NVARCHAR(50) = NULL,
+    @DTchure NVARCHAR(50) = NULL,           -- ĐT riêng chú rể
+    @DTcodau NVARCHAR(50) = NULL,           -- ĐT riêng cô dâu
     @Diachi NVARCHAR(500) = NULL,
+    @Nguoigd NVARCHAR(100) = NULL,          -- Người đại diện
+    @DienThoaiDaiDien NVARCHAR(50) = NULL,  -- ĐT người đại diện
     @Mail NVARCHAR(100) = NULL,
     
     -- Thông tin Phiếu Cọc
@@ -56,12 +59,16 @@ BEGIN
             SET @Makh = 'KH' + FORMAT(@Now, 'yyMMddHHmmss');
             
             INSERT INTO dmkhachhang (
-                Makh, Tenkh, Tenchure, Tencodau, Dienthoai, Diachi, Mail, 
+                Makh, Tenkh, Tenchure, Tencodau, DTchure, DTcodau, Dienthoai, Diachi, Nguoigd, DienThoaiDaiDien, Mail, 
                 IsKhachhang, DateCreate, UserCreate
             )
             VALUES (
-                @Makh, ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, ''), 
-                @Tenchure, @Tencodau, @Dienthoai, @Diachi, @Mail, 
+                @Makh, 
+                CASE 
+                    WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '')
+                    ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') 
+                END,
+                @Tenchure, @Tencodau, @DTchure, @DTcodau, ISNULL(@DTchure, @DTcodau), @Diachi, @Nguoigd, @DienThoaiDaiDien, @Mail, 
                 1, @Now, @UserCreate
             );
         END
@@ -70,11 +77,18 @@ BEGIN
             -- Cập nhật thông tin khách hàng nếu đã tồn tại
             UPDATE dmkhachhang
             SET 
-                Tenkh = ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, ''),
+                Tenkh = CASE 
+                            WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '')
+                            ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') 
+                        END,
                 Tenchure = @Tenchure,
                 Tencodau = @Tencodau,
-                Dienthoai = @Dienthoai,
+                DTchure = @DTchure,
+                DTcodau = @DTcodau,
+                Dienthoai = ISNULL(@DTchure, @DTcodau),
                 Diachi = @Diachi,
+                Nguoigd = @Nguoigd,
+                DienThoaiDaiDien = @DienThoaiDaiDien,
                 Mail = @Mail,
                 DateUpdate = @Now,
                 UserUpdate = @UserCreate
@@ -94,12 +108,12 @@ BEGIN
             INSERT INTO tbmk_Biennhancoccho (
                 DocumentID, SoBN, DocumentDate, Makh, Solan, Manv, Loaitiecid,
                 Ngaytochuc, Nhamngay, Tongtien, Tongsoban, SobanManchinhthuc, SobanChaychinhthuc,
-                Thoigianid, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate
+                Thoigianid, Ghichu, IsHuy, IsKetthuc, GoiThucDonID, DateCreate, UserCreate
             )
             VALUES (
                 @DocumentID, @SoBN, ISNULL(@DocumentDate, @Now), @Makh, @Solan, @Manv, @Loaitiecid,
                 @Ngaytochuc, @Nhamngay, @Tongtien, @Tongsoban, @SobanManchinhthuc, @SobanChaychinhthuc,
-                @Thoigianid, @Ghichu, 0, 0, @Now, @UserCreate
+                @Thoigianid, @Ghichu, 0, 0, '', @Now, @UserCreate
             );
         END
         ELSE

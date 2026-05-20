@@ -21,6 +21,22 @@ BEGIN
         b.DocumentID AS [MaChungTu],
         b.SoBN AS [SoPhieu],
         
+        -- Thông tin khách hàng chi tiết
+        k.Tenchure AS [Tenchure],
+        k.Tencodau AS [Tencodau],
+        k.DTchure AS [DTchure],
+        k.DTcodau AS [DTcodau],
+        k.Diachi AS [Diachi],
+        k.Nguoigd AS [Nguoigd],
+        k.DienThoaiDaiDien AS [DienThoaiDaiDien],
+        k.Mail AS [Mail],
+        
+        -- Thông tin tiệc chi tiết
+        b.Thoigianid AS [Thoigianid],
+        b.SobanManchinhthuc AS [SobanManchinhthuc],
+        b.SobanChaychinhthuc AS [SobanChaychinhthuc],
+        b.Ghichu AS [Ghichu],
+        
         -- Ghép Tên 2 người, hoặc xài Tên Khách chung chung nếu không có
         CASE 
             WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL 
@@ -46,6 +62,14 @@ BEGIN
         
         -- Tiền đã cọc (lấy từ TongTien)
         ISNULL(b.Tongtien, 0) AS [DaCocVND],
+        
+        -- Danh sách chi tiết sảnh
+        (
+            SELECT Sanhtiecid, IsSanhchinh 
+            FROM tbmk_Biennhancocchosanhtiec 
+            WHERE DocumentID = b.DocumentID 
+            FOR JSON PATH
+        ) AS [JsonSanhTiec],
         
         -- Label trạng thái
         CASE

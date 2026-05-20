@@ -2089,9 +2089,15 @@ var UIModal = (function () {
     document.getElementById('modal-container').appendChild(overlay);
 
     var modalId = config.id || 'modal-' + Date.now();
-    history.pushState({ modalId: modalId }, null, "");
+    // Dùng URL hiện tại (giữ nguyên hash) để không làm mất route
+    history.pushState({ modalId: modalId }, null, window.location.href);
 
+    var _closed = false;
+
+    // Đóng modal VÀ gọi history.back() (dùng cho nút X, nút Hủy)
     function close() {
+      if (_closed) return;
+      _closed = true;
       overlay.remove();
       if (history.state && history.state.modalId === modalId) {
         history.back();
@@ -2099,14 +2105,19 @@ var UIModal = (function () {
       if (typeof config.onClose === 'function') config.onClose();
     }
 
+    // Đóng modal KHÔNG gọi history.back() (dùng khi lưu thành công)
+    function closeNow() {
+      if (_closed) return;
+      _closed = true;
+      overlay.remove();
+      if (typeof config.onClose === 'function') config.onClose();
+    }
+
     overlay.querySelector('.btn-close-modal').addEventListener('click', close);
-    // Optional: close on click outside
-    /* overlay.addEventListener('click', function(e) {
-      if (e.target === overlay) close();
-    }); */
 
     return {
       close: close,
+      closeNow: closeNow,
       node: overlay
     };
   }
@@ -2118,11 +2129,14 @@ var UIModal = (function () {
 
 // Xử lý nút Back của trình duyệt/điện thoại
 window.addEventListener('popstate', function (e) {
-  // Đóng tất cả modal do UIModal tạo ra (thường nằm trong modal-container)
-  document.querySelectorAll('#modal-container .modal-overlay').forEach(function(m) {
-     m.remove();
-  });
+  // Chỉ đóng modal nếu state KHÔNG phải là modal (tránh xóa khi router hashchange)
+  if (!e.state || !e.state.modalId) {
+    document.querySelectorAll('#modal-container .modal-overlay').forEach(function(m) {
+      m.remove();
+    });
+  }
 });
+
 
 
 /* --- Pagination.js --- */
