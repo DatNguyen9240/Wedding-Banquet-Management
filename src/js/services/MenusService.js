@@ -21,7 +21,7 @@ var MenusService = (function () {
    */
   function getAll() {
     return new Promise(function (resolve, reject) {
-      var endpoint = _ep('GET_ALL') || '/api/API_WA_LayDanhSachMenuAll';
+      var endpoint = _ep('GET_ALL');
       ApiClient.post(endpoint, { NhomNguoiDangThaoTac: _currentGroupId() })
         .then(function (res) {
           if (res && res.code === 0) {
@@ -45,7 +45,7 @@ var MenusService = (function () {
    */
   function save(payload) {
     return new Promise(function (resolve, reject) {
-      var endpoint = _ep('SAVE') || '/api/API_WA_LuuMenu';
+      var endpoint = _ep('SAVE');
       ApiClient.post(endpoint, payload)
         .then(resolve)
         .catch(function (err) {
@@ -62,7 +62,7 @@ var MenusService = (function () {
    */
   function deleteMenu(menuId) {
     return new Promise(function (resolve, reject) {
-      var endpoint = _ep('DELETE') || '/api/API_WA_XoaMenu';
+      var endpoint = _ep('DELETE');
       ApiClient.post(endpoint, { NhomNguoiDangThaoTac: _currentGroupId(), MenuID: menuId })
         .then(resolve)
         .catch(function (err) {
@@ -79,7 +79,7 @@ var MenusService = (function () {
    */
   function updateOrder(params) {
     return new Promise(function (resolve, reject) {
-      var endpoint = _ep('UPDATE_ORDER') || '/api/API_WA_LuuThuTuMenu';
+      var endpoint = _ep('UPDATE_ORDER');
       ApiClient.post(endpoint, {
         NhomNguoiDangThaoTac: _currentGroupId(),
         Type: params.type,

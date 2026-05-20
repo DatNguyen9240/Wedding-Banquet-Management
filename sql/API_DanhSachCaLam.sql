@@ -1,11 +1,11 @@
-GO
+﻿GO
 
-/****** Object:  StoredProcedure [dbo].[API_Shift_List] ******/
+/****** Object:  StoredProcedure [dbo].[API_DanhSachCaLam] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[API_Shift_List]
+CREATE PROCEDURE [dbo].[API_DanhSachCaLam]
 AS
 BEGIN
     SET NOCOUNT ON;

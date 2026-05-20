@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -11,7 +11,7 @@ GO
 -- Create date: 2026-04-29
 -- Description: API Lưu (Thêm/Sửa) Biên nhận cọc chỗ (Cọc lần 1 & Lần 2)
 -- =============================================
-CREATE OR ALTER PROCEDURE [dbo].[API_Booking_Save]
+CREATE OR ALTER PROCEDURE [dbo].[API_LuuPhieuCoc]
     @DocumentID VARCHAR(50) = NULL OUTPUT, -- Nếu NULL: Thêm mới, Ngược lại: Cập nhật
     -- Thông tin Khách hàng
     @Makh VARCHAR(50) = NULL OUTPUT, -- Nếu NULL: Tạo khách hàng mới

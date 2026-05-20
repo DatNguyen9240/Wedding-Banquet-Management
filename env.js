@@ -22,36 +22,36 @@ window.API_CONFIG = {
         },
 
         PERMISSIONS: {
-            SYNC: '/api/API_WA_DongBoQuyenTruyCap',
-            GET_MENU_BY_GROUP: '/api/API_WA_LayMenuTheoNhomQuyen',
-            SAVE_GROUP_PERMISSIONS: '/api/API_WA_LuuQuyenCuaNhom',
-            GET_GROUP_LIST: '/api/API_SY_LayDanhSachNhom',
+            SYNC: '/api/API_DongBoQuyenTruyCap',
+            GET_MENU_BY_GROUP: '/api/API_LayMenuTheoNhomQuyen',
+            SAVE_GROUP_PERMISSIONS: '/api/API_LuuQuyenCuaNhom',
+            GET_GROUP_LIST: '/api/API_LayDanhSachNhom',
         },
 
         BOOKING: {
-            LIST: '/api/API_Booking_List',
-            SAVE: '/api/API_Booking_Save',
-            CANCEL: '/api/API_Booking_Cancel',
+            LIST: '/api/API_DanhSachPhieuCoc',
+            SAVE: '/api/API_LuuPhieuCoc',
+            CANCEL: '/api/API_HuyPhieuCoc',
         },
         CUSTOMER: {
-            SEARCH: '/api/API_Customer_Search',
+            SEARCH: '/api/API_TimKiemKhachHang',
         },
         SYSTEM: {
-            HALLS: '/api/API_Hall_List',
-            SHIFTS: '/api/API_Shift_List',
-            BANQUET_TYPES: '/api/API_Loaihinhtiec_List'
+            HALLS: '/api/API_DanhSachSanh',
+            SHIFTS: '/api/API_DanhSachCaLam',
+            BANQUET_TYPES: '/api/API_DanhSachLoaiHinhTiec'
         },
         CONTRACT: {
-            LIST: '/api/API_Contract_List',
+            LIST: '/api/API_DanhSachHopDong',
         },
         CALENDAR: {
-            LIST: '/api/API_Calendar_List',
-            SAVE: '/api/API_Booking_Save',
-            LEGEND: '/api/API_Calendar_Legend'
+            LIST: '/api/API_DanhSachLich',
+            SAVE: '/api/API_LuuPhieuCoc',
+            LEGEND: '/api/API_LayChuThichLich'
         },
         VISITOR: {
-            LIST: '/api/API_Visitor_List',
-            SAVE: '/api/API_Visitor_Save',
+            LIST: '/api/API_DanhSachKhachDen',
+            SAVE: '/api/API_LuuKhachDen',
         },
         REPORTS: {
             REVENUE: '/api/API_Report_Revenue',

@@ -21,7 +21,7 @@ var PermissionsService = (function () {
    */
   function getGroups() {
     return new Promise(function (resolve, reject) {
-      var endpoint = _ep('GET_GROUP_LIST') || '/api/API_SY_LayDanhSachNhom';
+      var endpoint = _ep('GET_GROUP_LIST');
       ApiClient.get(endpoint)
         .then(function (res) {
           if (res && res.code === 0 && res.records) {
@@ -44,7 +44,7 @@ var PermissionsService = (function () {
    */
   function getMenusByGroup(groupId) {
     return new Promise(function (resolve, reject) {
-      var endpoint = _ep('GET_MENU_BY_GROUP') || '/api/API_WA_LayMenuTheoNhomQuyen';
+      var endpoint = _ep('GET_MENU_BY_GROUP');
       ApiClient.post(endpoint, {
         NhomNguoiDangThaoTac: _currentGroupId(),
         UserGroupID: groupId
@@ -67,7 +67,7 @@ var PermissionsService = (function () {
    */
   function savePermission(payload) {
     return new Promise(function (resolve, reject) {
-      var endpoint = _ep('SAVE_GROUP_PERMISSIONS') || '/api/API_WA_LuuQuyenCuaNhom';
+      var endpoint = _ep('SAVE_GROUP_PERMISSIONS');
       ApiClient.post(endpoint, payload)
         .then(resolve)
         .catch(function (err) {
@@ -83,7 +83,7 @@ var PermissionsService = (function () {
    */
   function sync() {
     return new Promise(function (resolve, reject) {
-      var endpoint = _ep('SYNC') || '/api/API_WA_DongBoQuyenTruyCap';
+      var endpoint = _ep('SYNC');
       ApiClient.post(endpoint, { NhomNguoiDangThaoTac: _currentGroupId() })
         .then(resolve)
         .catch(function (err) {

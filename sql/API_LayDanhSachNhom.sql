@@ -1,7 +1,7 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
-CREATE PROCEDURE [dbo].[API_SY_LayDanhSachNhom]
+CREATE PROCEDURE [dbo].[API_LayDanhSachNhom]
 AS
 BEGIN
     SET NOCOUNT ON;

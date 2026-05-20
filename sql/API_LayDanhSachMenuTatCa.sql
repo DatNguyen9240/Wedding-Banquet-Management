@@ -1,13 +1,13 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
-/****** Object:  StoredProcedure [dbo].[API_WA_LayDanhSachMenuAll] ******/
+/****** Object:  StoredProcedure [dbo].[API_LayDanhSachMenuTatCa] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[API_WA_LayDanhSachMenuAll]
+ALTER PROCEDURE [dbo].[API_LayDanhSachMenuTatCa]
     @NhomNguoiDangThaoTac NVARCHAR(50) = ''
 AS
 BEGIN

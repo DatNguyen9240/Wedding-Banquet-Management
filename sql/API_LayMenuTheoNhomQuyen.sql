@@ -1,7 +1,7 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
-CREATE PROCEDURE [dbo].[API_WA_LayMenuTheoNhomQuyen]
+CREATE PROCEDURE [dbo].[API_LayMenuTheoNhomQuyen]
     @NhomNguoiDangThaoTac NVARCHAR(50), -- BẮT BUỘC THÊM: ID Nhóm của người gọi API
     @UserGroupID NVARCHAR(50)           -- ID Nhóm mà người đó CẦN XEM Menu
 AS

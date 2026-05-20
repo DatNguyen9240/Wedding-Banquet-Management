@@ -43,8 +43,9 @@ var ReportOtherPage = (function () {
   function _renderTabs() {
     var wrapper = $container.querySelector('#tabs-wrapper-other');
 
-    // Tab 1: Thống kê Sales
-    var tabContent1 = `
+    // ── Tab 1: Thống kê Sales ────────────────────────────────────────────
+    var tabContent1 = document.createElement('div');
+    tabContent1.innerHTML = `
       <div class="card mb-4">
         <div class="card-header">Lũy kế nhận tiệc trong năm theo Sales</div>
         <div class="table-wrapper">
@@ -66,68 +67,57 @@ var ReportOtherPage = (function () {
       </div>
     `;
 
-    // Tab 2: Khảo sát - Dùng Bootstrap row/col chia đôi biểu đồ
-    var tabContent2 = `
-      <div class="row g-4 p-3">
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">Yếu tố quyết định đặt tiệc</div>
-            <div class="card-body d-flex justify-content-center">
-              <canvas id="chart-factors" width="300" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header">Kênh thông tin tiếp cận</div>
-            <div class="card-body d-flex justify-content-center">
-              <canvas id="chart-channels" width="300" height="300"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    // ── Tab 2: Biểu đồ Khảo sát — dùng UIChart component ────────────────
+    // Lấy màu từ Design Tokens
+    var rs = getComputedStyle(document.documentElement);
+    var cPrimary = rs.getPropertyValue('--color-primary').trim() || '#4F46E5';
+    var cSuccess = rs.getPropertyValue('--color-success').trim() || '#10B981';
+    var cWarning = rs.getPropertyValue('--color-warning').trim() || '#F59E0B';
+    var cDanger  = rs.getPropertyValue('--color-danger').trim()  || '#F43F5E';
+    var cInfo    = rs.getPropertyValue('--color-info').trim()    || '#0EA5E9';
 
+    var makeChartData = function(dataArray, colors) {
+      return {
+        labels: dataArray.map(function(d) { return d.label; }),
+        datasets: [{ data: dataArray.map(function(d) { return d.value; }), backgroundColor: colors }]
+      };
+    };
+
+    var chartFactors = UIChart.create({
+      title: 'Yếu tố quyết định đặt tiệc',
+      type: 'pie',
+      data: makeChartData(factorsData, [cPrimary, cSuccess, cWarning, cInfo, cDanger]),
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    var chartChannels = UIChart.create({
+      title: 'Kênh thông tin tiếp cận',
+      type: 'pie',
+      data: makeChartData(channelsData, [cWarning, cSuccess, cPrimary, cDanger]),
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+
+    var tabContent2 = document.createElement('div');
+    tabContent2.className = 'row g-4 p-3';
+
+    var col1 = document.createElement('div');
+    col1.className = 'col-md-6';
+    col1.appendChild(chartFactors);
+
+    var col2 = document.createElement('div');
+    col2.className = 'col-md-6';
+    col2.appendChild(chartChannels);
+
+    tabContent2.appendChild(col1);
+    tabContent2.appendChild(col2);
+
+    // ── Tạo UITabs với DOM element content ───────────────────────────────
     var tabsEl = UITabs.create([
-      { id: 'tab-stats', title: 'Thống kê (Cọc/Tiệc)', content: tabContent1 },
-      { id: 'tab-surveys', title: 'Khảo sát (Kênh/Yếu tố)', content: tabContent2 }
+      { id: 'tab-stats',   title: 'Thống kê (Cọc/Tiệc)',        content: tabContent1 },
+      { id: 'tab-surveys', title: 'Khảo sát (Kênh/Yếu tố)',    content: tabContent2 }
     ]);
 
     wrapper.appendChild(tabsEl);
-
-    // Lấy hệ màu động từ Design Tokens
-    var rootStyles = getComputedStyle(document.documentElement);
-    var cPrimary = rootStyles.getPropertyValue('--color-primary').trim() || '#4F46E5';
-    var cSuccess = rootStyles.getPropertyValue('--color-success').trim() || '#10B981';
-    var cWarning = rootStyles.getPropertyValue('--color-warning').trim() || '#F59E0B';
-    var cDanger  = rootStyles.getPropertyValue('--color-danger').trim() || '#F43F5E';
-    var cInfo    = rootStyles.getPropertyValue('--color-info').trim() || '#0EA5E9';
-
-    _renderPieChart('chart-factors', factorsData, [cPrimary, cSuccess, cWarning, cInfo, cDanger]);
-    _renderPieChart('chart-channels', channelsData, [cWarning, cSuccess, cPrimary, cDanger]);
-  }
-
-  function _renderPieChart(canvasId, dataArray, colors) {
-    var ctx = document.getElementById(canvasId);
-    if (!ctx) return;
-
-    var labels = dataArray.map(function(d) { return d.label; });
-    var values = dataArray.map(function(d) { return d.value; });
-
-    new Chart(ctx.getContext('2d'), {
-      type: 'pie',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: values,
-          backgroundColor: colors
-        }]
-      },
-      options: {
-        responsive: false,
-        plugins: { legend: { position: 'bottom' } }
-      }
-    });
   }
 
   function _bindEvents() {

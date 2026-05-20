@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -9,7 +9,7 @@ GO
 -- =============================================
 -- API: Lấy danh sách Màn hình Hợp đồng (Contract)
 -- =============================================
-CREATE PROCEDURE [dbo].[API_Contract_List]
+CREATE PROCEDURE [dbo].[API_DanhSachHopDong]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
     @Keyword NVARCHAR(100) = NULL

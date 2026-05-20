@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -10,7 +10,7 @@ GO
 -- API: Lấy dữ liệu Lịch Tiệc theo Tháng
 -- Hiển thị: Mới cọc (Chưa HĐ) - Màu xanh | Đã Hợp đồng - Màu Đỏ
 -- =============================================
-CREATE OR ALTER PROCEDURE [dbo].[API_Calendar_List]
+CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachLich]
     @Thang INT = NULL,
     @Nam INT = NULL
 AS

@@ -1,13 +1,13 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
-/****** Object:  StoredProcedure [dbo].[API_WA_LuuQuyenCuaNhom] ******/
+/****** Object:  StoredProcedure [dbo].[API_LuuQuyenCuaNhom] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[API_WA_LuuQuyenCuaNhom]
+ALTER PROCEDURE [dbo].[API_LuuQuyenCuaNhom]
     @NhomNguoiDangThaoTac NVARCHAR(50), -- BẮT BUỘC THÊM: Truyền Session Nhóm của người ĐANG BẤM NÚT LƯU
     @UserGroupID NVARCHAR(50),          -- Nhóm BỊ gán quyền
     @MenuID NVARCHAR(50),               -- Form BỊ gán quyền

@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -10,7 +10,7 @@ GO
 -- API: Lấy danh sách Chú thích Lịch (Legend) dựa trực tiếp trên dữ liệu thật của DB
 -- Phản ánh số lượng thực tế từ các bảng tbmk_Biennhancoccho và tbmk_Hopdong
 -- =============================================
-CREATE PROCEDURE [dbo].[API_Calendar_Legend]
+CREATE PROCEDURE [dbo].[API_LayChuThichLich]
 AS
 BEGIN
     SET NOCOUNT ON;

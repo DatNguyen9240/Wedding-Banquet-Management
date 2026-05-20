@@ -1,7 +1,7 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
-/****** Object:  StoredProcedure [dbo].[API_ThucDon_List] ******/
+/****** Object:  StoredProcedure [dbo].[API_DanhSachThucDon] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -11,7 +11,7 @@ GO
   API Lấy danh sách Món Ăn (Thực đơn Mặn / Chay / Nước uống)
   Sử dụng dữ liệu thật từ DB: dmHanghoa, dmHanghoadg, dmNhomhang
 */
-CREATE PROCEDURE [dbo].[API_ThucDon_List]
+CREATE PROCEDURE [dbo].[API_DanhSachThucDon]
     @Keyword NVARCHAR(100) = '',
     @PhanLoai NVARCHAR(50) = '', 
     @IsChay INT = -1             

@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -11,7 +11,7 @@ GO
 -- Create date: 2026-04-29
 -- Description: API Lấy danh sách Sảnh Tiệc đang hoạt động
 -- =============================================
-CREATE PROCEDURE [dbo].[API_Hall_List]
+CREATE PROCEDURE [dbo].[API_DanhSachSanh]
 AS
 BEGIN
     SET NOCOUNT ON;

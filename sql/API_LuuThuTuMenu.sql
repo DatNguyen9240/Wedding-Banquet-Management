@@ -1,7 +1,7 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
-ALTER PROCEDURE [dbo].[API_WA_LuuThuTuMenu]
+ALTER PROCEDURE [dbo].[API_LuuThuTuMenu]
     @NhomNguoiDangThaoTac NVARCHAR(50) = '',
     @Type NVARCHAR(20) = 'parent',   
     @OrderedIDs NVARCHAR(MAX) = '',  

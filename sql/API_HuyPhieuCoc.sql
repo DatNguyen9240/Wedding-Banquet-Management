@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -11,7 +11,7 @@ GO
 -- Create date: 2026-04-29
 -- Description: API Hủy Phiếu Biên Nhận Cọc Chỗ
 -- =============================================
-CREATE PROCEDURE [dbo].[API_Booking_Cancel]
+CREATE PROCEDURE [dbo].[API_HuyPhieuCoc]
     @DocumentID VARCHAR(50),
     @Lydohuy NVARCHAR(500) = NULL,
     @UserUpdate VARCHAR(50) = 'System'

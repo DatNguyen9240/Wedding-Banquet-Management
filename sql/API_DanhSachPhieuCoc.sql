@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -9,7 +9,7 @@ GO
 -- =============================================
 -- API: Lấy danh sách Màn hình Booking (Biên nhận cọc chỗ)
 -- =============================================
-CREATE OR ALTER PROCEDURE [dbo].[API_Booking_List]
+CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachPhieuCoc]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
     @Keyword NVARCHAR(100) = NULL

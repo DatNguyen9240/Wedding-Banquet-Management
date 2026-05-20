@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -9,7 +9,7 @@ GO
 -- =============================================
 -- Mô tả: API Lấy danh sách Loại Hình Tiệc (Cưới, Thôi nôi, v.v...)
 -- =============================================
-CREATE PROCEDURE [dbo].[API_Loaihinhtiec_List]
+CREATE PROCEDURE [dbo].[API_DanhSachLoaiHinhTiec]
 AS
 BEGIN
     SET NOCOUNT ON;

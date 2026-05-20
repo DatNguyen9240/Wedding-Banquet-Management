@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -9,7 +9,7 @@ GO
 -- =============================================
 -- API: Lấy danh sách Màn hình Khách Tham Quan (Visitor)
 -- =============================================
-CREATE PROCEDURE [dbo].[API_Visitor_List]
+CREATE PROCEDURE [dbo].[API_DanhSachKhachDen]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
     @Keyword NVARCHAR(100) = NULL

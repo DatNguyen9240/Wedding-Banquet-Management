@@ -1,13 +1,13 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
-/****** Object:  StoredProcedure [dbo].[API_WA_DongBoQuyenTruyCap] ******/
+/****** Object:  StoredProcedure [dbo].[API_DongBoQuyenTruyCap] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[API_WA_DongBoQuyenTruyCap]
+CREATE PROCEDURE [dbo].[API_DongBoQuyenTruyCap]
 AS
 BEGIN
     -- Triệt tiêu dòng báo "N rows affected" để tăng hiệu năng xử lý

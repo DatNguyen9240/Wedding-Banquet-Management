@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -9,7 +9,7 @@ GO
 -- =============================================
 -- API: Thêm mới / Cập nhật Khách Tham Quan (Visitor)
 -- =============================================
-CREATE PROCEDURE [dbo].[API_Visitor_Save]
+CREATE PROCEDURE [dbo].[API_LuuKhachDen]
     @DocumentID VARCHAR(50) = NULL,
     @Makh VARCHAR(50) = NULL,
     @Tenkh NVARCHAR(200) = NULL,

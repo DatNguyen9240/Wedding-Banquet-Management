@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -11,7 +11,7 @@ GO
 -- Create date: 2026-04-29
 -- Description: API Tìm kiếm nhanh thông tin Khách hàng cũ
 -- =============================================
-CREATE PROCEDURE [dbo].[API_Customer_Search]
+CREATE PROCEDURE [dbo].[API_TimKiemKhachHang]
     @Keyword NVARCHAR(100)
 AS
 BEGIN

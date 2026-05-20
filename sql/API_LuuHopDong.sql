@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -11,7 +11,7 @@ GO
 -- Create date: 2026-05-19
 -- Description: API Lưu (Thêm/Sửa) Hợp Đồng Tiệc Cưới (LoaiPhieu = 2)
 -- =============================================
-CREATE PROCEDURE [dbo].[API_Contract_Save]
+CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @Sohopdong VARCHAR(50) = NULL OUTPUT, -- Nếu NULL: Thêm mới HĐ, Ngược lại: Cập nhật
     @Sobiennhan VARCHAR(20) = NULL,       -- ID Biên nhận cọc chỗ
     

@@ -1,13 +1,13 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
-/****** Object:  StoredProcedure [dbo].[API_WA_LuuMenu] ******/
+/****** Object:  StoredProcedure [dbo].[API_LuuMenu] ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[API_WA_LuuMenu]
+ALTER PROCEDURE [dbo].[API_LuuMenu]
     @NhomNguoiDangThaoTac NVARCHAR(50) = '',
     @MenuID NVARCHAR(50),
     @OldMenuID NVARCHAR(50) = '',
