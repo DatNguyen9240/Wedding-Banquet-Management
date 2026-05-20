@@ -62,11 +62,13 @@ var CalendarPage = (function () {
         else if (color === 'secondary') route = '#/contract';
 
         var chip = document.createElement('div');
-        chip.className = 'd-flex align-items-center gap-1 gap-sm-2 px-2 px-sm-3 animate-pop';
+        chip.className = 'd-flex align-items-center gap-1 px-2 animate-pop';
         chip.style.height = '28px';
         chip.style.borderRadius = '20px';
         chip.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
         chip.style.userSelect = 'none';
+        chip.style.flexShrink = '0';
+        chip.style.whiteSpace = 'nowrap';
 
         if (route) {
           chip.style.cursor = 'pointer';

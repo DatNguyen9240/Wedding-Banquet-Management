@@ -2,23 +2,24 @@
    LỊCH TIỆC TRONG THÁNG - HTML Template
    ═══════════════════════════════════════════ -->
 
-<div class="page-title-bar d-flex align-items-center justify-content-between flex-wrap gap-3" style="margin-bottom: 24px;">
-  <div class="d-flex align-items-center gap-3">
-    <div class="d-flex flex-column">
-      <h1 style="margin: 0; font-size: clamp(24px, 3vw, 32px); font-weight: 800; letter-spacing: -0.5px; color: var(--color-text);">Lịch Tiệc</h1>
-      <span style="font-size: clamp(13px, 1.5vw, 15px); color: var(--color-text-secondary); font-weight: 500;">Quản lý và theo dõi sự kiện trong tháng</span>
+<div class="page-title-bar d-flex align-items-center justify-content-between flex-nowrap gap-2 gap-sm-3" style="background: var(--color-surface); padding: clamp(12px, 3vw, 20px) clamp(12px, 4vw, 24px); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--color-border); margin-bottom: 24px;">
+  <div class="d-flex align-items-center gap-3 text-truncate">
+    <div class="d-flex flex-column justify-content-center text-truncate">
+      <h1 class="text-truncate" style="margin: 0; font-size: clamp(18px, 5vw, 28px); font-weight: 800; letter-spacing: -0.5px; color: var(--color-text); line-height: 1.2;">Lịch Tiệc</h1>
+      <span class="text-truncate" style="font-size: clamp(11px, 2.5vw, 15px); color: var(--color-text-secondary); font-weight: 500; margin-top: 4px;">Quản lý và theo dõi sự kiện trong tháng</span>
     </div>
   </div>
-  <button class="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-4" onclick="window.showCreateBanquetModal()" style="height: 44px; font-weight: 700;">
-    <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
-    Tạo Tiệc Mới
+  <button class="btn btn-primary d-flex align-items-center justify-content-center gap-1 gap-sm-2 rounded-pill px-3 px-sm-4 flex-shrink-0" onclick="window.showCreateBanquetModal()" style="height: clamp(36px, 8vw, 44px); font-weight: 700; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); font-size: clamp(12px, 3vw, 15px);">
+    <span class="material-symbols-outlined" style="font-size: clamp(18px, 4vw, 20px);">add</span>
+    <span class="d-none d-sm-inline">Tạo Tiệc Mới</span>
+    <span class="d-inline d-sm-none">Tạo Mới</span>
   </button>
 </div>
 
 <!-- Chú thích lịch -->
 <div class="mb-3" style="animation: slideUp 0.3s ease forwards;">
   <!-- Container để render Chú thích động từ JS -->
-  <div id="calendar-legend-container" class="d-flex gap-1 gap-sm-2 flex-wrap align-items-center justify-content-center justify-content-sm-end" style="font-size: clamp(11px, 3.5vw, 13px); font-weight: 500;">
+  <div id="calendar-legend-container" class="d-flex gap-1 gap-sm-2 flex-nowrap align-items-center justify-content-center justify-content-sm-end w-100" style="font-size: clamp(10px, 3vw, 13px); font-weight: 500; overflow-x: auto; white-space: nowrap; padding-bottom: 4px; scrollbar-width: none;">
   </div>
 </div>
 

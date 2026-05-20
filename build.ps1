@@ -9,6 +9,8 @@ $cssFiles = @(
   "css\design-tokens.css",
   "css\global.css",
   "css\layouts\navbar.css",
+  "css\layouts\sidebar.css",
+  "css\layouts\header.css",
   "css\layouts\dashboard.css",
   "components\accordion\accordion.css",
   "components\alert\alert.css",
