@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Màn hình Quản lý Danh sách Người dùng
  * HTML Template: src/pages/users.html
  */
@@ -32,8 +32,8 @@ var UsersPage = (function () {
       if (idx === selectedRowIndex) tr.classList.add('selected');
       
       var statusIcon = user.disabled 
-        ? '<span class="status-badge" style="background:var(--color-danger); color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;">Khóa</span>'
-        : '<span class="status-badge" style="background:var(--color-success); color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;">Hoạt động</span>';
+        ? UIBadge.createHTML('Khóa', 'danger', 'padding:2px 6px; border-radius:4px; font-size:11px;')
+        : UIBadge.createHTML('Hoạt động', 'success', 'padding:2px 6px; border-radius:4px; font-size:11px;');
 
       tr.innerHTML = `
         <td class="text-center">${idx + 1}</td>
@@ -85,7 +85,7 @@ var UsersPage = (function () {
         <div class="modal-content" style="width: 500px;">
           <div class="modal-header">
             <h3>${isEdit ? 'Sửa thông tin tài khoản' : 'Thêm tài khoản mới'}</h3>
-            <button class="btn-close-modal" id="btn-close"><span class="material-symbols-outlined">close</span></button>
+            <button class="btn-close-modal" id="btn-close">${UIIcon.createHTML('close')}</button>
           </div>
           <div class="modal-body p-3">
             <div class="form-group mb-3">
@@ -108,8 +108,8 @@ var UsersPage = (function () {
             </div>
           </div>
           <div class="modal-footer d-flex justify-content-end gap-2 p-3" style="border-top: 1px solid var(--color-border); background: var(--color-background);">
-            <button class="btn btn-secondary" id="btn-cancel">Hủy bỏ</button>
-            <button class="btn btn-primary" id="btn-save">LƯU THÔNG TIN</button>
+            ${UIButton.createHTML({ id: 'btn-cancel', text: 'Hủy bỏ', type: 'secondary' })}
+            ${UIButton.createHTML({ id: 'btn-save', text: 'LƯU THÔNG TIN', type: 'primary' })}
           </div>
         </div>
       </div>

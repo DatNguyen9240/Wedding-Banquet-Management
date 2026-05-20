@@ -363,8 +363,8 @@ var BookingPage = (function () {
           return `
             <div class="fw-bold" style="font-size: 13px; color: var(--color-text);">${tenKhach}</div>
             <div class="text-secondary mt-1" style="font-size: 12px; display: flex; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <span><span class="material-symbols-outlined" style="font-size:12px;vertical-align:middle;">call</span> ${kh.Dienthoai || '---'}</span>
-              <span><span class="material-symbols-outlined" style="font-size:12px;vertical-align:middle;">pin_drop</span> ${kh.Diachi || '---'}</span>
+              <span>${UIIcon.createHTML('call', 'font-size:12px;vertical-align:middle;')} ${kh.Dienthoai || '---'}</span>
+              <span>${UIIcon.createHTML('pin_drop', 'font-size:12px;vertical-align:middle;')} ${kh.Diachi || '---'}</span>
             </div>
           `;
         },

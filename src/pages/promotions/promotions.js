@@ -43,7 +43,7 @@ var PromotionsPage = (function () {
       '<td><input type="text" class="ui-input w-100" placeholder="Tên ưu đãi..." style="border: none; background: transparent;"></td>' +
       '<td><input type="text" class="ui-input w-100" placeholder="Số lượng / đơn vị" style="border: none; background: transparent;"></td>' +
       '<td><input type="number" class="ui-input w-100" placeholder="0" style="border: none; background: transparent;" min="0"></td>' +
-      '<td><button class="icon-btn btn-remove-benefit" style="color: var(--color-danger);"><span class="material-symbols-outlined" style="font-size: 18px;">delete</span></button></td>';
+      '<td>' + UIButton.createHTML({ icon: 'delete', type: 'tool', className: 'btn-remove-benefit', style: 'color: var(--color-danger);', iconStyle: 'font-size: 18px;' }) + '</td>';
     tbody.appendChild(tr);
     _bindRemoveBenefit(tr.querySelector('.btn-remove-benefit'));
   }

@@ -69,9 +69,13 @@ var CategoriesPage = (function () {
           <div style="position: relative; display: flex; align-items: center;">
             <input type="month" id="ts-month" class="form-control" style="width: 200px; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--color-border-strong); box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 15px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--color-primary)'" onblur="this.style.borderColor='var(--color-border-strong)'" value="2026-07">
           </div>
-          <button class="btn btn-primary" style="padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; background: var(--color-primary); border: none; outline: none; box-shadow: 0 4px 6px -1px var(--color-primary-light); color: white; cursor: pointer; transition: all 0.2s ease;" onclick="CategoriesPage.triggerModuleAction('generate')" onmouseover="this.style.transform='translateY(-1px)'; this.style.opacity='0.9';" onmouseout="this.style.transform='none'; this.style.opacity='1';">
-            <span class="material-symbols-outlined" style="font-size: 20px;">calendar_month</span> Sinh danh sách ngày
-          </button>
+          ${UIButton.createHTML({
+            text: 'Sinh danh sách ngày',
+            icon: 'calendar_month',
+            type: 'primary',
+            className: 'btn-sm',
+            onClick: "CategoriesPage.openModal('sinhngay')"
+          })}
         </div>
         <div class="table-wrapper" style="flex: 1; overflow-y: auto; padding: 0;">
           <table class="data-table" id="time-solar-grid">
@@ -207,8 +211,8 @@ var CategoriesPage = (function () {
     onSelectRow: function(id) {
        var basePrice = Math.floor(Math.random() * 500) * 1000 + 50000;
        document.getElementById('price-history-body').innerHTML = `
-          <tr><td>01/01/2026</td><td style="color:#666;">${(basePrice).toLocaleString()} ₫</td><td style="text-align:right;"><span class="material-symbols-outlined" style="font-size:18px;cursor:pointer;color:#888;">edit</span></td></tr>
-          <tr><td>15/10/2026</td><td style="font-weight: 600; color: var(--color-success);">${(basePrice + 20000).toLocaleString()} ₫ <span class="badge" style="background:#def7ec;color:#03543f;font-size:10px;">Hiện hành</span></td><td style="text-align:right;"><span class="material-symbols-outlined" style="font-size:18px;cursor:pointer;color:#888;">edit</span></td></tr>
+          <tr><td>01/01/2026</td><td style="color:#666;">${(basePrice).toLocaleString()} ₫</td><td style="text-align:right;">${UIIcon.createHTML('edit', 'font-size:18px;cursor:pointer;color:#888;')}</td></tr>
+          <tr><td>15/10/2026</td><td style="font-weight: 600; color: var(--color-success);">${(basePrice + 20000).toLocaleString()} ₫ ${UIBadge.createHTML('Hiện hành', 'success', 'background:#def7ec;color:#03543f;font-size:10px;')}</td><td style="text-align:right;">${UIIcon.createHTML('edit', 'font-size:18px;cursor:pointer;color:#888;')}</td></tr>
        `;
 
        document.getElementById('inventory-parts-body').innerHTML = `
@@ -308,11 +312,11 @@ var CategoriesPage = (function () {
       var li = document.createElement('li');
       var html = `
         <div class="ui-tree-node" data-id="${node.id}">
-          <div class="ui-tree-toggle ${!node.children ? 'empty' : ''}">
-            <span class="material-symbols-outlined">${node.expanded ? 'arrow_drop_down' : 'arrow_right'}</span>
-          </div>
-          <span class="material-symbols-outlined ui-tree-icon" style="${node.children ? 'color:var(--color-warning);' : 'color:var(--color-primary);'}">${node.icon || 'folder'}</span>
-          <span>${node.text}</span>
+        <div class="ui-tree-toggle ${node.children ? '' : 'empty'}">
+          ${node.children ? UIIcon.createHTML(node.expanded ? 'arrow_drop_down' : 'arrow_right') : ''}
+        </div>
+        ${UIIcon.createHTML(node.icon || 'folder', node.children ? 'color:var(--color-warning);' : 'color:var(--color-primary);', 'ui-tree-icon')}
+        <span class="ui-tree-label">${node.text}</span>
         </div>
       `;
       li.innerHTML = html;
@@ -441,7 +445,7 @@ var CategoriesPage = (function () {
            </div>
         </div>
         <div class="mt-3" style="font-size: 13px; color: var(--color-warning);">
-          <span class="material-symbols-outlined" style="font-size: 16px; width: 16px; vertical-align: text-bottom;">info</span> Định lượng NVL thiết lập trong mục Sửa sau.
+          ${UIIcon.createHTML('info', 'font-size: 16px; width: 16px; vertical-align: text-bottom;')} Định lượng NVL thiết lập trong mục Sửa sau.
         </div>
       `;
     } else if (currentNode.id === 'time_solar') {

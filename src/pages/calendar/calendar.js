@@ -174,7 +174,7 @@ var CalendarPage = (function () {
                   contentStr += `
                       <div class="sanh-group">
                         <div class="d-flex align-items-center gap-2 mb-3">
-                          <span class="material-symbols-outlined" style="color: var(--color-primary); font-size: 22px;">storefront</span>
+                          ${UIIcon.createHTML('storefront', 'color: var(--color-primary); font-size: 22px;')}
                           <h6 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--color-text); text-transform: uppercase; letter-spacing: 0.5px;">SẢNH: ${sanh}</h6>
                         </div>
                         <div class="row g-3">
@@ -217,19 +217,16 @@ var CalendarPage = (function () {
                                 
                                 <div style="font-size: 13px; color: var(--color-text-secondary); display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
                                   <div class="d-flex align-items-center gap-2">
-                                    <span class="material-symbols-outlined" style="font-size: 16px; opacity: 0.7;">table_restaurant</span>
+                                    ${UIIcon.createHTML('table_restaurant', 'font-size: 16px; opacity: 0.7;')}
                                     <span>${laSanhChinh === 1 ? soBan + ' Bàn (Sảnh Chính)' : 'Sảnh Phụ / Ghép'}</span>
                                   </div>
                                   <div class="d-flex align-items-center gap-2">
-                                    <span class="material-symbols-outlined" style="font-size: 16px; opacity: 0.7;">receipt_long</span>
+                                    ${UIIcon.createHTML('receipt_long', 'font-size: 16px; opacity: 0.7;')}
                                     <span>Mã: <strong>${maChungTu}</strong></span>
                                   </div>
                                 </div>
                                 
-                                <button class="btn ${btnClass} w-100 d-flex justify-content-center align-items-center gap-2" style="padding: 6px 12px; font-weight: 600; font-size: 13px; border-radius: var(--radius-sm);" onclick="window.location.hash = '${hashRoute}?id=${maChungTu}'; document.querySelector('.btn-close-modal').click();">
-                                  <span class="material-symbols-outlined" style="font-size: 18px;">arrow_forward</span>
-                                  Chi Tiết
-                                </button>
+                                ${UIButton.createHTML({ text: 'Chi Tiết', icon: 'arrow_forward', type: btnClass.replace('btn-outline-', 'outline-'), className: 'w-100 d-flex justify-content-center align-items-center gap-2', style: 'padding: 6px 12px; font-weight: 600; font-size: 13px; border-radius: var(--radius-sm);', iconStyle: 'font-size: 18px;', onClick: `window.location.hash = '${hashRoute}?id=${maChungTu}'; document.querySelector('.btn-close-modal').click();` })}
                               </div>
                             </div>
                           </div>
@@ -245,10 +242,7 @@ var CalendarPage = (function () {
                 // Thêm nút bấm lập thêm hợp đồng cho ngày này ở chân modal
                 contentStr += `
                     <div class="d-flex justify-content-end mt-3 pt-3" style="border-top: 1px solid var(--color-border); width: 100%;">
-                      <button class="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-4" onclick="document.querySelector('.btn-close-modal').click(); setTimeout(function(){ window.showCreateBanquetModal('${dateStr}'); }, 150);">
-                        <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
-                        Lập Thêm Hợp Đồng Ngày Này
-                      </button>
+                      ${UIButton.createHTML({ text: 'Lập Thêm Hợp Đồng Ngày Này', icon: 'add', type: 'primary', className: 'd-flex align-items-center gap-2 rounded-pill px-4', iconStyle: 'font-size: 20px;', onClick: `document.querySelector('.btn-close-modal').click(); setTimeout(function(){ window.showCreateBanquetModal('${dateStr}'); }, 150);` })}
                     </div>
                   `;
                 contentStr += '</div>';
@@ -406,11 +400,8 @@ window.showCreateBanquetModal = function (prefillDate) {
       </div>
       
       <div class="d-flex justify-content-end gap-2 mt-4 pt-3" style="border-top: 1px solid var(--color-border);">
-        <button type="button" class="btn btn-outline" onclick="document.querySelector('.btn-close-modal').click()">Hủy Bỏ</button>
-        <button type="button" class="btn btn-primary d-flex align-items-center gap-2" onclick="window.submitCreateBanquet(this)">
-          <span class="material-symbols-outlined" style="font-size: 20px;">save</span>
-          Lưu Biên Nhận Cọc
-        </button>
+        ${UIButton.createHTML({ text: 'Hủy Bỏ', type: 'outline', onClick: "document.querySelector('.btn-close-modal').click()" })}
+        ${UIButton.createHTML({ text: 'Lưu Biên Nhận Cọc', icon: 'save', type: 'primary', className: 'd-flex align-items-center gap-2', iconStyle: 'font-size: 20px;', onClick: 'window.submitCreateBanquet(this)' })}
       </div>
     </form>
   `;

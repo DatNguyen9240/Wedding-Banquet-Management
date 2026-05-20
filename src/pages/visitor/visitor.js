@@ -110,7 +110,7 @@ var VisitorPage = (function () {
         </td>
         <td><span class="status-badge ${statusClass}">${currentStatus}</span></td>
         <td class="text-end">
-          <button class="icon-btn btn-edit-visitor" data-id="${row.MaPhieu}" style="display: inline-flex;"><span class="material-symbols-outlined">edit</span></button>
+          ${UIButton.createHTML({ icon: 'edit', type: 'tool', className: 'btn-edit-visitor', data: { id: row.MaPhieu }, style: 'display: inline-flex;' })}
         </td>
       `;
       tbody.appendChild(tr);
