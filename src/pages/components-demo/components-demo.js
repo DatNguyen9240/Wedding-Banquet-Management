@@ -550,7 +550,7 @@ var ComponentsDemoPage = (function () {
         { field: 'khach' },
         { field: 'sanh' },
         { field: 'soBan', align: 'right' },
-        { field: 'status', render: function (v) { return '<span class="status-badge ' + (v === 'Đã ký' ? 'success' : 'warning') + '">' + v + '</span>'; } }
+        { field: 'status', render: function (v) { return UIBadge.createHTML(v, v === 'Đã ký' ? 'success' : 'warning'); } }
       ],
       data: [
         { stt: 1, maHD: 'HD-260101', khach: 'Nguyễn Văn A - Lê Thị B', sanh: 'Diamond Hall', soBan: 45, status: 'Đã ký' },

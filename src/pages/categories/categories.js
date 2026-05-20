@@ -251,7 +251,7 @@ var CategoriesPage = (function () {
             <td style="text-align: center;">${i}</td>
             <td style="font-weight: 500;">${node.id.toUpperCase()}_${i.toString().padStart(3, '0')}</td>
             <td>Dữ liệu mô phỏng cho ${node.text} số ${i}</td>
-            <td><span class="status-badge success">Kích hoạt</span></td>
+            <td>${UIBadge.createHTML('Kích hoạt', 'success')}</td>
           </tr>
         `;
       }

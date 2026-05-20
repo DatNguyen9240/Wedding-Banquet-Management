@@ -108,7 +108,7 @@ var VisitorPage = (function () {
           <div class="fw-medium">${packageName}</div>
           <div style="font-size: 13px; color: var(--color-text-secondary);">${hallName}</div>
         </td>
-        <td><span class="status-badge ${statusClass}">${currentStatus}</span></td>
+        <td>${UIBadge.createHTML(currentStatus, statusClass)}</td>
         <td class="text-end">
           ${UIButton.createHTML({ icon: 'edit', type: 'tool', className: 'btn-edit-visitor', data: { id: row.MaPhieu }, style: 'display: inline-flex;' })}
         </td>

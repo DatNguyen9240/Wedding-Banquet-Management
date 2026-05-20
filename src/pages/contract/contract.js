@@ -1365,11 +1365,8 @@ var ContractPage = (function () {
         <!-- Sleek Horizontal Sticky Bottom Bar -->
         <div class="modal-bottom-bar">
           <div class="modal-bottom-left-sec">
-            <button class="btn btn-outline-primary d-flex align-items-center gap-2" onclick="ContractPage.toggleSelectedDrawer()" style="height: 38px; border-radius: 8px; font-weight: 700; font-size: 13px; padding: 0 14px; white-space: nowrap;">
-              ${UIIcon.createHTML('shopping_cart', 'font-size: 20px;')}
-              <span>Đã chọn: <strong id="modal-sidebar-count">0</strong> món</span>
-              ${UIIcon.createHTML('expand_less', 'font-size: 18px;', '', 'id="drawer-toggle-arrow"')}
-            </button>
+            ${UIButton.createHTML({ type: 'outline-primary', className: 'd-flex align-items-center gap-2', style: 'height: 38px; border-radius: 8px; font-weight: 700; font-size: 13px; padding: 0 14px; white-space: nowrap;', onClick: 'ContractPage.toggleSelectedDrawer()',
+              text: `${UIIcon.createHTML('shopping_cart', 'font-size: 20px;')}<span>Đã chọn: <strong id="modal-sidebar-count">0</strong> món</span>${UIIcon.createHTML('expand_less', 'font-size: 18px;', '', 'id="drawer-toggle-arrow"')}` })}
           </div>
           
           <div class="modal-bottom-right-sec" style="display: flex; align-items: center; gap: 16px;">

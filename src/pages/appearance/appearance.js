@@ -42,8 +42,8 @@ var AppearancePage = (function () {
   function _buildLayoutCard(mode, icon, title, desc, currentMode) {
     var isActive = currentMode === mode;
     return '<div class="layout-option" onclick="AppearancePage.changeLayout(\'' + mode + '\', this)" style="flex:1; min-width:260px; max-width:320px; border:2px solid ' + (isActive ? 'var(--color-primary)' : 'var(--color-border)') + '; border-radius:12px; padding:20px; cursor:pointer; text-align:center; transition:all 0.2s; background:' + (isActive ? 'var(--color-primary-light)' : 'var(--color-surface)') + '; position:relative; overflow:hidden;">'
-      + (isActive ? '<div class="layout-check-wrapper" style="position:absolute; top:10px; right:10px; color:var(--color-primary);"><span class="material-symbols-outlined" style="font-size:20px;">check_circle</span></div>' : '')
-      + '<span class="material-symbols-outlined" style="font-size:40px; color:' + (isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)') + '; margin-bottom:12px;">' + icon + '</span>'
+      + (isActive ? '<div class="layout-check-wrapper" style="position:absolute; top:10px; right:10px; color:var(--color-primary);">' + UIIcon.createHTML('check_circle', 'font-size:20px;') + '</div>' : '')
+      + UIIcon.createHTML(icon, 'font-size:40px; color:' + (isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)') + '; margin-bottom:12px;')
       + '<h3 style="margin-bottom:6px; font-size:15px; font-weight:600;">' + title + '</h3>'
       + '<p style="font-size:13px; color:var(--color-text-secondary); margin:0; line-height:1.5;">' + desc + '</p></div>';
   }
@@ -62,7 +62,7 @@ var AppearancePage = (function () {
   function _buildFontCard(fontName, desc, currentFont, isDefault) {
     var isActive = currentFont === fontName;
     return '<div class="font-option" onclick="AppearancePage.changeFont(\'' + fontName + '\', this)" style="flex:1; min-width:200px; border:2px solid ' + (isActive ? 'var(--color-primary)' : 'var(--color-border)') + '; border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; background:' + (isActive ? 'var(--color-primary-light)' : 'var(--color-surface)') + '; position:relative;">'
-      + (isActive ? '<div class="font-check-wrapper" style="position:absolute; top:10px; right:10px; color:var(--color-primary);"><span class="material-symbols-outlined" style="font-size:18px;">check_circle</span></div>' : '')
+      + (isActive ? '<div class="font-check-wrapper" style="position:absolute; top:10px; right:10px; color:var(--color-primary);">' + UIIcon.createHTML('check_circle', 'font-size:18px;') + '</div>' : '')
       + '<h3 style="margin:0 0 4px 0; font-size:16px; font-weight:600; font-family:\'' + fontName + '\', sans-serif;">Aa Bb Cc</h3>'
       + '<div style="font-size:14px; font-weight:600; margin-bottom:4px;">' + fontName + (isDefault ? ' (Mặc định)' : '') + '</div>'
       + '<p style="font-size:12px; color:var(--color-text-secondary); margin:0;">' + desc + '</p></div>';
@@ -77,8 +77,8 @@ var AppearancePage = (function () {
     THEMES.forEach(function(themeDef) {
       var isActive = currentTheme === themeDef.id;
       html += '<div class="theme-option" onclick="AppearancePage.changeTheme(\'' + themeDef.id + '\', this)" style="flex:1; min-width:200px; border:2px solid ' + (isActive ? 'var(--color-primary)' : 'var(--color-border)') + '; border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; background:' + (isActive ? 'var(--color-primary-light)' : 'var(--color-surface)') + '; position:relative;">'
-        + (isActive ? '<div class="theme-check-wrapper" style="position:absolute; top:10px; right:10px; color:var(--color-primary);"><span class="material-symbols-outlined" style="font-size:18px;">check_circle</span></div>' : '')
-        + '<span class="material-symbols-outlined" style="font-size:32px; color:' + (isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)') + '; margin-bottom:12px;">' + themeDef.icon + '</span>'
+        + (isActive ? '<div class="theme-check-wrapper" style="position:absolute; top:10px; right:10px; color:var(--color-primary);">' + UIIcon.createHTML('check_circle', 'font-size:18px;') + '</div>' : '')
+        + UIIcon.createHTML(themeDef.icon, 'font-size:32px; color:' + (isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)') + '; margin-bottom:12px;')
         + '<h3 style="margin:0 0 4px 0; font-size:16px; font-weight:600;">' + themeDef.name + '</h3>'
         + '<p style="font-size:12px; color:var(--color-text-secondary); margin:0;">' + themeDef.desc + '</p></div>';
     });
@@ -94,7 +94,7 @@ var AppearancePage = (function () {
     COLORS.forEach(function(colorDef) {
       var isActive = currentColor === colorDef.id;
       html += '<div class="color-option" onclick="AppearancePage.changeColor(\'' + colorDef.id + '\', this)" style="width:50px; height:50px; border-radius:50%; background:' + colorDef.primary + '; cursor:pointer; position:relative; transition:all 0.2s; border:3px solid ' + (isActive ? colorDef.primary : 'transparent') + '; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin:5px; padding:2px; background-clip:content-box; transform: scale(' + (isActive ? '1.1' : '1') + ');">'
-        + (isActive ? '<div class="color-check-wrapper" style="position:absolute; top:-5px; right:-5px; color:' + colorDef.primary + '; background: var(--color-surface); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.2);"><span class="material-symbols-outlined" style="font-size:14px; font-weight:bold;">check</span></div>' : '')
+        + (isActive ? '<div class="color-check-wrapper" style="position:absolute; top:-5px; right:-5px; color:' + colorDef.primary + '; background: var(--color-surface); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.2);">' + UIIcon.createHTML('check', 'font-size:14px; font-weight:bold;') + '</div>' : '')
         + '</div>';
     });
     container.innerHTML = html;
@@ -127,7 +127,7 @@ var AppearancePage = (function () {
         var checkWrap = document.createElement('div');
         checkWrap.className = 'layout-check-wrapper';
         checkWrap.style = 'position:absolute; top:10px; right:10px; color:var(--color-primary);';
-        checkWrap.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">check_circle</span>';
+        checkWrap.innerHTML = UIIcon.createHTML('check_circle', 'font-size:20px;');
         el.appendChild(checkWrap);
       }
       if (typeof UIToast !== 'undefined') UIToast.show('Đã chuyển đổi giao diện thành công');
@@ -153,7 +153,7 @@ var AppearancePage = (function () {
       var checkWrap = document.createElement('div');
       checkWrap.className = 'font-check-wrapper';
       checkWrap.style = 'position:absolute; top:10px; right:10px; color:var(--color-primary);';
-      checkWrap.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>';
+      checkWrap.innerHTML = UIIcon.createHTML('check_circle', 'font-size:18px;');
       el.appendChild(checkWrap);
     }
     if (typeof UIToast !== 'undefined') UIToast.show('Đã đổi phông chữ sang ' + fontFamily);
@@ -189,7 +189,7 @@ var AppearancePage = (function () {
       var checkWrap = document.createElement('div');
       checkWrap.className = 'theme-check-wrapper';
       checkWrap.style = 'position:absolute; top:10px; right:10px; color:var(--color-primary);';
-      checkWrap.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>';
+      checkWrap.innerHTML = UIIcon.createHTML('check_circle', 'font-size:18px;');
       el.appendChild(checkWrap);
     }
     if (typeof UIToast !== 'undefined') UIToast.show('Đã đổi chủ đề hệ thống');
@@ -221,7 +221,7 @@ var AppearancePage = (function () {
       var checkWrap = document.createElement('div');
       checkWrap.className = 'color-check-wrapper';
       checkWrap.style = 'position:absolute; top:-5px; right:-5px; color:' + colorDef.primary + '; background: var(--color-surface); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 5px rgba(0,0,0,0.2);';
-      checkWrap.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px; font-weight:bold;">check</span>';
+      checkWrap.innerHTML = UIIcon.createHTML('check', 'font-size:14px; font-weight:bold;');
       el.appendChild(checkWrap);
     }
     if (typeof UIToast !== 'undefined') UIToast.show('Đã đổi màu chủ đạo thành ' + colorDef.name);
