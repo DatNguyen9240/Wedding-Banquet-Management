@@ -465,10 +465,30 @@ var CalendarService = (function () {
     });
   }
 
+  /**
+   * Lưu lịch tiệc (đặt cọc lịch)
+   * @param {Object} payload
+   * @returns {Promise}
+   */
+  function save(payload) {
+    return new Promise(function (resolve, reject) {
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.SAVE) {
+        return reject('Chưa cấu hình API CALENDAR.SAVE');
+      }
+      ApiClient.post(API_CONFIG.ENDPOINTS.CALENDAR.SAVE, payload)
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[CalendarService] Lỗi save:', err);
+          reject(err);
+        });
+    });
+  }
+
   return {
     fetchEvents: fetchEvents,
     getLegend: getLegend,
-    invalidateCache: invalidateCache
+    invalidateCache: invalidateCache,
+    save: save
   };
 })();
 
@@ -2494,6 +2514,18 @@ var UIButton = (function () {
     if (config.disabled) btn.disabled = true;
     if (config.tooltip) btn.title = config.tooltip;
 
+    // Raw attribute string support (e.g. 'data-tooltip="..."')
+    if (config.attrs) {
+      var tempEl = document.createElement('div');
+      tempEl.innerHTML = '<span ' + config.attrs + '></span>';
+      var tempSpan = tempEl.firstChild;
+      if (tempSpan && tempSpan.attributes) {
+        for (var i = 0; i < tempSpan.attributes.length; i++) {
+          btn.setAttribute(tempSpan.attributes[i].name, tempSpan.attributes[i].value);
+        }
+      }
+    }
+
     // Build nội dung
     var innerHTML = '';
     if (config.icon) {
@@ -2649,12 +2681,12 @@ var UIActionToolbar = (function () {
     actions = actions || {};
     
     return UIButton.createBar([
-      { text: 'Thêm', icon: 'add', type: 'tool', onClick: actions.onAdd },
-      { text: 'Sửa', icon: 'edit', type: 'tool', onClick: actions.onEdit },
-      { text: 'Xóa', icon: 'delete', type: 'tool', onClick: actions.onDelete },
-      { text: 'Lọc', icon: 'filter_alt', type: 'tool', onClick: actions.onFilter },
-      { text: 'In', icon: 'print', type: 'tool', onClick: actions.onPrint },
-      { text: 'Đóng', icon: 'close', type: 'tool', onClick: actions.onClose }
+      { text: 'Thêm', icon: 'add', type: 'tool', onClick: actions.onAdd, attrs: 'data-tooltip="Thêm bản ghi mới (Ins)"' },
+      { text: 'Sửa', icon: 'edit', type: 'tool', onClick: actions.onEdit, attrs: 'data-tooltip="Sửa bản ghi đã chọn (F2)"' },
+      { text: 'Xóa', icon: 'delete', type: 'tool', onClick: actions.onDelete, attrs: 'data-tooltip="Xóa bản ghi đã chọn (Del)"' },
+      { text: 'Lọc', icon: 'filter_alt', type: 'tool', onClick: actions.onFilter, attrs: 'data-tooltip="Lọc / Tìm kiếm dữ liệu"' },
+      { text: 'In', icon: 'print', type: 'tool', onClick: actions.onPrint, attrs: 'data-tooltip="In danh sách (Ctrl+P)"' },
+      { text: 'Đóng', icon: 'close', type: 'tool', onClick: actions.onClose, attrs: 'data-tooltip="Đóng trang hiện tại"' }
     ]);
   }
 

@@ -62,32 +62,16 @@ var ContractPage = (function () {
     var tbody = $container.querySelector('#contract-table tbody');
     if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4" style="color: var(--color-text-secondary);">Đang tải dữ liệu...</td></tr>';
 
-    var payloadString = encodeURIComponent(JSON.stringify(filterParams));
-    var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.CONTRACT && API_CONFIG.ENDPOINTS.CONTRACT.LIST)
-      ? API_CONFIG.ENDPOINTS.CONTRACT.LIST + '?q=' + payloadString
-      : '/api/API_Contract_List?q=' + payloadString;
-
-    if (typeof ApiClient !== 'undefined') {
-      ApiClient.get(endpoint)
-        .then(function (res) {
-          if (res && res.records) {
-            contractData = res.records;
-          } else if (res && res.data) {
-            contractData = res.data;
-          } else if (Array.isArray(res)) {
-            contractData = res;
-          }
-          _renderTable();
-        })
-        .catch(function (err) {
-          console.error('Lỗi tải dữ liệu Hợp Đồng:', err);
-          contractData = [];
-          _renderTable();
-        });
-    } else {
-      contractData = [];
-      _renderTable();
-    }
+    ContractService.getList(filterParams)
+      .then(function (data) {
+        contractData = data;
+        _renderTable();
+      })
+      .catch(function (err) {
+        console.error('Lỗi tải dữ liệu Hợp Đồng:', err);
+        contractData = [];
+        _renderTable();
+      });
   }
 
   function _renderTable() {
@@ -625,63 +609,60 @@ var ContractPage = (function () {
     }
 
     // Nếu tạo mới từ một Booking cụ thể, tải thông tin thật từ DB
-    if (isNew && bookingId && typeof ApiClient !== 'undefined') {
-      ApiClient.get('/api/API_Booking_List?Keyword=' + encodeURIComponent(bookingId))
-        .then(function(res) {
-          var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
-          var booking = records.find(function(b) { return (b.MaChungTu || b.id) == bookingId; });
-          if (booking) {
-            if (document.getElementById('inp-tenchure')) document.getElementById('inp-tenchure').value = booking.TenChuRe || booking.Tenchure || '';
-            if (document.getElementById('inp-tencodau')) document.getElementById('inp-tencodau').value = booking.TenCoDau || booking.Tencodau || '';
-            if (document.getElementById('inp-dienthoai')) document.getElementById('inp-dienthoai').value = booking.DienThoai || booking.Dienthoai || '';
-            
-            var eventDate = booking.NgayToChuc || booking.Ngaytochuc || '';
-            if (eventDate.includes('/')) {
-              var parts = eventDate.split('/');
-              if (parts.length === 3) {
-                if (document.getElementById('inp-ngaytochuc')) document.getElementById('inp-ngaytochuc').value = parts[2] + '-' + parts[1] + '-' + parts[0];
-              }
-            } else if (eventDate.includes('-')) {
-              if (document.getElementById('inp-ngaytochuc')) document.getElementById('inp-ngaytochuc').value = eventDate.substring(0, 10);
-            }
-            
-            if (document.getElementById('inp-ban-man')) document.getElementById('inp-ban-man').value = booking.SoBanMan || booking.SobanManchinhthuc || 30;
-            if (document.getElementById('inp-duphong-man')) document.getElementById('inp-duphong-man').value = booking.SobanManduphong || 0;
-            if (document.getElementById('inp-ban-chay')) document.getElementById('inp-ban-chay').value = booking.SoBanChay || booking.SobanChaychinhthuc || 0;
-            if (document.getElementById('inp-duphong-chay')) document.getElementById('inp-duphong-chay').value = booking.SobanChayduphong || 0;
-            
-            if (document.getElementById('inp-tiencoc')) {
-              var c = booking.Tongtiencoc || booking.Sotiencochopdong || booking.Sotiencoccho || booking.DaCocVND || 0;
-              var inpTiencoc = document.getElementById('inp-tiencoc');
-              inpTiencoc.value = c;
-              inpTiencoc.dispatchEvent(new Event('input'));
-            }
-            
-            if (booking.Sanhtiecid || booking.SanhDat) {
-              var sanhSel = document.getElementById('sel-sanh');
-              if (sanhSel) {
-                var valToSet = booking.Sanhtiecid || '';
-                if (!valToSet && booking.SanhDat) {
-                  Array.from(sanhSel.options).forEach(function(opt) {
-                    if (opt.text.toLowerCase().includes(booking.SanhDat.toLowerCase())) {
-                      opt.selected = true;
-                    }
-                  });
-                } else {
-                  sanhSel.value = valToSet;
-                }
-              }
-            }
+    if (isNew && bookingId) {
+      ContractService.getBookingById(bookingId)
+        .then(function(booking) {
+          if (!booking) return;
+          if (document.getElementById('inp-tenchure')) document.getElementById('inp-tenchure').value = booking.TenChuRe || booking.Tenchure || '';
+          if (document.getElementById('inp-tencodau')) document.getElementById('inp-tencodau').value = booking.TenCoDau || booking.Tencodau || '';
+          if (document.getElementById('inp-dienthoai')) document.getElementById('inp-dienthoai').value = booking.DienThoai || booking.Dienthoai || '';
 
-            if (booking.CaTiecID || booking.Thoigianid) {
-              if (document.getElementById('sel-ca')) document.getElementById('sel-ca').value = booking.CaTiecID || booking.Thoigianid || '';
+          var eventDate = booking.NgayToChuc || booking.Ngaytochuc || '';
+          if (eventDate.includes('/')) {
+            var parts = eventDate.split('/');
+            if (parts.length === 3) {
+              if (document.getElementById('inp-ngaytochuc')) document.getElementById('inp-ngaytochuc').value = parts[2] + '-' + parts[1] + '-' + parts[0];
             }
-             if (booking.LoaiTiecID || booking.Loaitiecid || booking.Loaihinhtiecid) {
-               if (document.getElementById('sel-loai')) {
-                 document.getElementById('sel-loai').value = booking.LoaiTiecID || booking.Loaitiecid || booking.Loaihinhtiecid || '';
-                 updateBanquetFields();
-               }
-             }
+          } else if (eventDate.includes('-')) {
+            if (document.getElementById('inp-ngaytochuc')) document.getElementById('inp-ngaytochuc').value = eventDate.substring(0, 10);
+          }
+
+          if (document.getElementById('inp-ban-man')) document.getElementById('inp-ban-man').value = booking.SoBanMan || booking.SobanManchinhthuc || 30;
+          if (document.getElementById('inp-duphong-man')) document.getElementById('inp-duphong-man').value = booking.SobanManduphong || 0;
+          if (document.getElementById('inp-ban-chay')) document.getElementById('inp-ban-chay').value = booking.SoBanChay || booking.SobanChaychinhthuc || 0;
+          if (document.getElementById('inp-duphong-chay')) document.getElementById('inp-duphong-chay').value = booking.SobanChayduphong || 0;
+
+          if (document.getElementById('inp-tiencoc')) {
+            var c = booking.Tongtiencoc || booking.Sotiencochopdong || booking.Sotiencoccho || booking.DaCocVND || 0;
+            var inpTiencoc = document.getElementById('inp-tiencoc');
+            inpTiencoc.value = c;
+            inpTiencoc.dispatchEvent(new Event('input'));
+          }
+
+          if (booking.Sanhtiecid || booking.SanhDat) {
+            var sanhSel = document.getElementById('sel-sanh');
+            if (sanhSel) {
+              var valToSet = booking.Sanhtiecid || '';
+              if (!valToSet && booking.SanhDat) {
+                Array.from(sanhSel.options).forEach(function(opt) {
+                  if (opt.text.toLowerCase().includes(booking.SanhDat.toLowerCase())) {
+                    opt.selected = true;
+                  }
+                });
+              } else {
+                sanhSel.value = valToSet;
+              }
+            }
+          }
+
+          if (booking.CaTiecID || booking.Thoigianid) {
+            if (document.getElementById('sel-ca')) document.getElementById('sel-ca').value = booking.CaTiecID || booking.Thoigianid || '';
+          }
+          if (booking.LoaiTiecID || booking.Loaitiecid || booking.Loaihinhtiecid) {
+            if (document.getElementById('sel-loai')) {
+              document.getElementById('sel-loai').value = booking.LoaiTiecID || booking.Loaitiecid || booking.Loaihinhtiecid || '';
+              updateBanquetFields();
+            }
           }
         })
         .catch(function(err) {
@@ -740,17 +721,10 @@ var ContractPage = (function () {
     selectedThucUong = [];
     selectedDichVu = [];
 
-    if (typeof ApiClient !== 'undefined') {
+    if (typeof ContractService !== 'undefined') {
       var params = { Keyword: '', PhanLoai: '', IsChay: -1 };
-      var payloadString = encodeURIComponent(JSON.stringify(params));
-      ApiClient.get('/api/API_ThucDon_List?q=' + payloadString)
-        .then(function (res) {
-          var items = [];
-          if (res && res.records) items = res.records;
-          else if (res && res.data) items = res.data;
-          else if (Array.isArray(res)) items = res;
-
-          // Lọc các món mặc định hợp đồng (IsMacDinhHopDong = 1) từ DB
+      ContractService.getFoods(params)
+        .then(function (items) {
           var defaultItems = items.filter(function (item) {
             return item.IsMacDinhHopDong == 1 || item.IsMacDinhHopDong === true;
           });
@@ -1404,19 +1378,11 @@ var ContractPage = (function () {
         params.IsChay = -1;
       }
 
-      var payloadString = encodeURIComponent(JSON.stringify(params));
-      var apiEndpoint = `/api/API_ThucDon_List?q=${payloadString}`;
-
-      ApiClient.get(apiEndpoint)
-        .then(res => {
-          var items = [];
-          if (res && res.records) items = res.records;
-          else if (res && res.data) items = res.data;
-          else if (Array.isArray(res)) items = res;
-          
+      ContractService.getFoods(params)
+        .then(function(items) {
           _renderModalList(items);
         })
-        .catch(err => {
+        .catch(function(err) {
           console.warn('API error loading food list:', err);
           _renderModalList([]);
         });
@@ -1701,31 +1667,25 @@ var ContractPage = (function () {
 
     UIToast.show('Đang lưu Hợp Đồng...', 'info');
 
-    if (typeof ApiClient !== 'undefined') {
-      ApiClient.post('/api/API_Contract_Save', payload)
-        .then(function(res) {
-          var data = res;
-          if (Array.isArray(res) && res.length > 0) data = res[0];
-          
-          if (data && (data.Success == 1 || data.Success === true || data.Success === "1")) {
-            UIToast.show('Đã lưu Hợp đồng thành công', 'success');
-            closeDetail();
-            _loadData();
-          } else {
-            UIToast.show(data.Message || 'Lỗi khi lưu hợp đồng', 'danger');
-          }
-        })
-        .catch(function(err) {
-          console.error('Lỗi API Contract Save:', err);
-          UIToast.show('Đã lưu Hợp đồng thành công (Mô phỏng lưu thành công)', 'success');
+    ContractService.save(payload)
+      .then(function(res) {
+        var data = res;
+        if (Array.isArray(res) && res.length > 0) data = res[0];
+
+        if (data && (data.Success == 1 || data.Success === true || data.Success === '1')) {
+          UIToast.show('Đã lưu Hợp đồng thành công', 'success');
           closeDetail();
           _loadData();
-        });
-    } else {
-      UIToast.show('Đã lưu Hợp đồng thành công (Mô phỏng offline)', 'success');
-      closeDetail();
-      _loadData();
-    }
+        } else {
+          UIToast.show(data.Message || 'Lỗi khi lưu hợp đồng', 'danger');
+        }
+      })
+      .catch(function(err) {
+        console.error('Lỗi API Contract Save:', err);
+        UIToast.show('Đã lưu Hợp đồng thành công (Mô phỏng lưu thành công)', 'success');
+        closeDetail();
+        _loadData();
+      });
   }
 
   function switchHighLevelTab(tabName) {

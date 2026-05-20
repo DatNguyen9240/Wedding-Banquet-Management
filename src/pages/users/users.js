@@ -10,69 +10,137 @@ var UsersPage = (function () {
 
   var selectedRowIndex = -1;
 
+  var PAGE_SIZE = 8;
+  var currentPage = 1;
+
   function render(containerElement) {
     $container = containerElement;
     selectedRowIndex = -1;
+    currentPage = 1;
 
+    LoadingSpinner.show('Đang tải danh sách người dùng...');
     fetch('./src/pages/users/users.html')
       .then(function(res) { return res.text(); })
       .then(function(html) {
         $container.innerHTML = html;
+        _mountToolbar();
         _renderTable();
         _bindEvents();
+        LoadingSpinner.hide();
       });
+  }
+
+  function _mountToolbar() {
+    var toolbarEl = $container.querySelector('#users-toolbar');
+    if (!toolbarEl) return;
+    toolbarEl.appendChild(UIActionToolbar.create({
+      onAdd: function() { _openUserModal(null); },
+      onEdit: function() {
+        if (selectedRowIndex < 0) return Alert.warn('Vui lòng chọn 1 dòng để sửa!');
+        _openUserModal(selectedRowIndex);
+      },
+      onDelete: function() {
+        if (selectedRowIndex < 0) return Alert.warn('Vui lòng chọn 1 dòng để xóa!');
+        var u = usersData[selectedRowIndex];
+        ConfirmModal.show({
+          title: 'Xác nhận xóa tài khoản',
+          message: 'Bạn có chắc muốn xóa tài khoản <b>' + u.username + '</b>? Hành động này không thể hoàn tác.',
+          onConfirm: function() {
+            usersData.splice(selectedRowIndex, 1);
+            selectedRowIndex = -1;
+            currentPage = 1;
+            _renderTable();
+            UIToast.show('Đã xóa tài khoản thành công', 'success');
+          }
+        });
+      },
+      onPrint: function() { window.print(); },
+      onClose: function() { Alert.info('Đóng trang Người dùng'); }
+    }));
   }
 
   function _renderTable() {
     var tbody = $container.querySelector('#users-table tbody');
     tbody.innerHTML = '';
 
-    usersData.forEach(function(user, idx) {
-      var tr = document.createElement('tr');
-      if (idx === selectedRowIndex) tr.classList.add('selected');
-      
-      var statusIcon = user.disabled 
-        ? UIBadge.createHTML('Khóa', 'danger', 'padding:2px 6px; border-radius:4px; font-size:11px;')
-        : UIBadge.createHTML('Hoạt động', 'success', 'padding:2px 6px; border-radius:4px; font-size:11px;');
+    var total = usersData.length;
+    var startIdx = (currentPage - 1) * PAGE_SIZE;
+    var pageData = usersData.slice(startIdx, startIdx + PAGE_SIZE);
 
-      tr.innerHTML = `
-        <td class="text-center">${idx + 1}</td>
-        <td class="fw-medium" style="color: var(--color-primary);">${user.id}</td>
-        <td>${user.username}</td>
-        <td>${user.name}</td>
-        <td>${user.group}</td>
-        <td class="text-center">${statusIcon}</td>
-      `;
+    if (pageData.length === 0) {
+      tbody.innerHTML = UIEmptyState.createTableRowHTML({ colspan: 6, text: 'Chưa có người dùng nào trong hệ thống.' });
+    } else {
+      pageData.forEach(function(user, idx) {
+        var tr = document.createElement('tr');
+        var absIdx = startIdx + idx;
+        if (absIdx === selectedRowIndex) tr.classList.add('selected');
 
-      tr.addEventListener('click', function() {
-        var rows = tbody.querySelectorAll('tr');
-        rows.forEach(r => r.classList.remove('selected'));
-        tr.classList.add('selected');
-        selectedRowIndex = idx;
+        var statusBadge = user.disabled
+          ? UIBadge.createHTML('Khóa', 'danger', 'padding:2px 6px; border-radius:4px; font-size:11px;')
+          : UIBadge.createHTML('Hoạt động', 'success', 'padding:2px 6px; border-radius:4px; font-size:11px;');
+
+        tr.innerHTML = `
+          <td class="text-center">${absIdx + 1}</td>
+          <td class="fw-medium" style="color: var(--color-primary);">${user.id}</td>
+          <td>${user.username}</td>
+          <td>${user.name}</td>
+          <td>${user.group}</td>
+          <td class="text-center">${statusBadge}</td>
+        `;
+
+        tr.addEventListener('click', function() {
+          tbody.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+          tr.classList.add('selected');
+          selectedRowIndex = absIdx;
+        });
+
+        tbody.appendChild(tr);
       });
+    }
 
-      tbody.appendChild(tr);
-    });
+    // Render Pagination
+    var paginationEl = $container.querySelector('#users-pagination');
+    if (paginationEl) {
+      paginationEl.innerHTML = '';
+      if (total > PAGE_SIZE) {
+        paginationEl.appendChild(Pagination.create({
+          totalItems: total,
+          itemsPerPage: PAGE_SIZE,
+          currentPage: currentPage,
+          onPageChange: function(page) {
+            currentPage = page;
+            selectedRowIndex = -1;
+            _renderTable();
+          }
+        }));
+      }
+    }
   }
 
   function _bindEvents() {
-    $container.querySelector('#btn-add').addEventListener('click', function() {
-      _openUserModal(null);
-    });
-
-    $container.querySelector('#btn-edit').addEventListener('click', function() {
-      if (selectedRowIndex < 0) return alert('Vui lòng chọn 1 dòng để sửa!');
+    // Toolbar buttons are mounted via UIActionToolbar — legacy buttons kept for fallback
+    var btnAdd = $container.querySelector('#btn-add');
+    var btnEdit = $container.querySelector('#btn-edit');
+    var btnDel = $container.querySelector('#btn-delete');
+    if (btnAdd) btnAdd.addEventListener('click', function() { _openUserModal(null); });
+    if (btnEdit) btnEdit.addEventListener('click', function() {
+      if (selectedRowIndex < 0) return Alert.warn('Vui lòng chọn 1 dòng để sửa!');
       _openUserModal(selectedRowIndex);
     });
-
-    $container.querySelector('#btn-delete').addEventListener('click', function() {
-      if (selectedRowIndex < 0) return alert('Vui lòng chọn 1 dòng để xóa!');
-      var confirmDel = confirm('Bạn có chắc muốn xóa tải khoản ' + usersData[selectedRowIndex].username + '?');
-      if(confirmDel) {
-         usersData.splice(selectedRowIndex, 1);
-         selectedRowIndex = -1;
-         _renderTable();
-      }
+    if (btnDel) btnDel.addEventListener('click', function() {
+      if (selectedRowIndex < 0) return Alert.warn('Vui lòng chọn 1 dòng để xóa!');
+      var u = usersData[selectedRowIndex];
+      ConfirmModal.show({
+        title: 'Xác nhận xóa tài khoản',
+        message: 'Bạn có chắc muốn xóa tài khoản <b>' + u.username + '</b>?',
+        onConfirm: function() {
+          usersData.splice(selectedRowIndex, 1);
+          selectedRowIndex = -1;
+          currentPage = 1;
+          _renderTable();
+          UIToast.show('Đã xóa thành công', 'success');
+        }
+      });
     });
   }
 

@@ -56,13 +56,13 @@ var PermissionsPage = (function () {
       container.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--color-text-secondary);">Đang tải dữ liệu...</div>';
     }
 
-    ApiClient.get(window.API_CONFIG.ENDPOINTS.PERMISSIONS.GET_GROUP_LIST || '/api/API_SY_LayDanhSachNhom')
-      .then(function (res) {
-        if (res && res.code === 0 && res.records) {
-          groups = res.records;
+    PermissionsService.getGroups()
+      .then(function (records) {
+        if (records.length > 0) {
+          groups = records;
           _renderRoleTabs();
         } else {
-          if (typeof Alert !== 'undefined') Alert.error('Lỗi', res.msg || 'Không lấy được danh sách nhóm quyền');
+          if (typeof Alert !== 'undefined') Alert.error('Lỗi', 'Không lấy được danh sách nhóm quyền');
           if (container) container.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--color-danger);">Lỗi tải dữ liệu</div>';
         }
       })
@@ -109,24 +109,9 @@ var PermissionsPage = (function () {
     var tbody = $container.querySelector('#permission-tree-table tbody');
     tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 16px;">Đang tải cấu trúc quyền...</td></tr>';
 
-    var endpoint = window.API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MENU_BY_GROUP || '/api/API_WA_LayMenuTheoNhomQuyen';
-
-    var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var myGroupId = currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
-
-    // Gửi POST request để lấy menu theo nhóm
-    ApiClient.post(endpoint, {
-      NhomNguoiDangThaoTac: myGroupId,
-      UserGroupID: group.id
-    })
-      .then(function (res) {
-        if (res && res.code === 0 && res.records) {
-          _buildTreeTableFromApi(group, res.records);
-        } else {
-          // Fallback
-          var data = res.records || res.data || [];
-          _buildTreeTableFromApi(group, data);
-        }
+    PermissionsService.getMenusByGroup(group.id)
+      .then(function (records) {
+        _buildTreeTableFromApi(group, records);
       })
       .catch(function (err) {
         console.error(err);
@@ -390,12 +375,11 @@ var PermissionsPage = (function () {
     
     var label = tr.querySelector('.tree-label') ? tr.querySelector('.tree-label').innerText : id;
 
-    ApiClient.post(endpoint, payload).then(function(res) {
+    PermissionsService.savePermission(payload).then(function(res) {
         if (res && res.code === 0) {
            UIToast.show('Đã cập nhật quyền: <b>' + label + '</b>', 'success');
         } else {
            UIToast.show(res.msg || 'Lỗi cập nhật quyền', 'error');
-           // Revert checkbox ui state implicitly skipped (assumes DB integrity)
         }
     }).catch(function() {
         UIToast.show('Lỗi kết nối khi cập nhật quyền', 'error');
@@ -414,11 +398,10 @@ var PermissionsPage = (function () {
     var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
     var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
 
-    ApiClient.post(endpoint, { NhomNguoiDangThaoTac: myGroupId })
+    PermissionsService.sync()
       .then(function (res) {
         if (res && res.code === 0) {
           if (typeof Alert !== 'undefined') Alert.success('Thành công', 'Đã đồng bộ quyền hệ thống');
-          // Tải lại nhóm quyền hiện tại
           if (currentSelectedGroup) {
             _renderTreeTableForGroup(currentSelectedGroup);
           }

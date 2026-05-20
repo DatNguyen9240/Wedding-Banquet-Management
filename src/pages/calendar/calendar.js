@@ -621,17 +621,9 @@ window.submitCreateBanquet = function (btn) {
     payload.JsonSanhTiec = JSON.stringify(dsSanh);
   }
 
-  if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.SAVE) {
-    UIToast.show('Chưa cấu hình API Lưu', 'danger');
-    btn.innerHTML = btnOriginalText;
-    btn.disabled = false;
-    return;
-  }
-
-  ApiClient.post(API_CONFIG.ENDPOINTS.CALENDAR.SAVE, payload)
+  CalendarService.save(payload)
     .then(function (res) {
       var responseObj = Array.isArray(res) ? res[0] : res;
-      // Dùng == (loose) hoặc convert string để xử lý cả "1" lẫn 1
       function _isOk(v) { return v == 1 || v === true || v === 'true'; }
       var isSuccess = responseObj && (
         _isOk(responseObj.Success) || _isOk(responseObj.success) ||
@@ -639,7 +631,6 @@ window.submitCreateBanquet = function (btn) {
       );
 
       if (isSuccess) {
-        // Đóng modal chắc chắn: xóa thẳng DOM, không cần dựa vào biến instance
         document.querySelectorAll('#modal-container .modal-overlay').forEach(function(m) { m.remove(); });
         window._createBanquetModal = null;
         UIToast.show(responseObj.Message || responseObj.message || (responseObj.DocumentID && ('Đã đặt cọc ' + responseObj.DocumentID + ' thành công!')) || 'Đặt cọc lịch tiệc thành công!', 'success');
@@ -654,7 +645,11 @@ window.submitCreateBanquet = function (btn) {
     })
     .catch(function (err) {
       console.error(err);
-      UIToast.show('Có lỗi xảy ra khi lưu!', 'danger');
+      if (err === 'Chưa cấu hình API CALENDAR.SAVE') {
+        UIToast.show(err, 'danger');
+      } else {
+        UIToast.show('Có lỗi xảy ra khi lưu!', 'danger');
+      }
     })
     .finally(function () {
       btn.innerHTML = btnOriginalText;

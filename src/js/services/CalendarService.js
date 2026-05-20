@@ -128,9 +128,29 @@ var CalendarService = (function () {
     });
   }
 
+  /**
+   * Lưu lịch tiệc (đặt cọc lịch)
+   * @param {Object} payload
+   * @returns {Promise}
+   */
+  function save(payload) {
+    return new Promise(function (resolve, reject) {
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.SAVE) {
+        return reject('Chưa cấu hình API CALENDAR.SAVE');
+      }
+      ApiClient.post(API_CONFIG.ENDPOINTS.CALENDAR.SAVE, payload)
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[CalendarService] Lỗi save:', err);
+          reject(err);
+        });
+    });
+  }
+
   return {
     fetchEvents: fetchEvents,
     getLegend: getLegend,
-    invalidateCache: invalidateCache
+    invalidateCache: invalidateCache,
+    save: save
   };
 })();

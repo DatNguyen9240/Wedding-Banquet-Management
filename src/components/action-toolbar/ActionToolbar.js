@@ -12,12 +12,12 @@ var UIActionToolbar = (function () {
     actions = actions || {};
     
     return UIButton.createBar([
-      { text: 'Thêm', icon: 'add', type: 'tool', onClick: actions.onAdd },
-      { text: 'Sửa', icon: 'edit', type: 'tool', onClick: actions.onEdit },
-      { text: 'Xóa', icon: 'delete', type: 'tool', onClick: actions.onDelete },
-      { text: 'Lọc', icon: 'filter_alt', type: 'tool', onClick: actions.onFilter },
-      { text: 'In', icon: 'print', type: 'tool', onClick: actions.onPrint },
-      { text: 'Đóng', icon: 'close', type: 'tool', onClick: actions.onClose }
+      { text: 'Thêm', icon: 'add', type: 'tool', onClick: actions.onAdd, attrs: 'data-tooltip="Thêm bản ghi mới (Ins)"' },
+      { text: 'Sửa', icon: 'edit', type: 'tool', onClick: actions.onEdit, attrs: 'data-tooltip="Sửa bản ghi đã chọn (F2)"' },
+      { text: 'Xóa', icon: 'delete', type: 'tool', onClick: actions.onDelete, attrs: 'data-tooltip="Xóa bản ghi đã chọn (Del)"' },
+      { text: 'Lọc', icon: 'filter_alt', type: 'tool', onClick: actions.onFilter, attrs: 'data-tooltip="Lọc / Tìm kiếm dữ liệu"' },
+      { text: 'In', icon: 'print', type: 'tool', onClick: actions.onPrint, attrs: 'data-tooltip="In danh sách (Ctrl+P)"' },
+      { text: 'Đóng', icon: 'close', type: 'tool', onClick: actions.onClose, attrs: 'data-tooltip="Đóng trang hiện tại"' }
     ]);
   }
 

@@ -43,33 +43,18 @@ var VisitorPage = (function () {
 
   function _loadData() {
     var tbody = $containerElement.querySelector('#visitor-tbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4" style="color: var(--color-text-secondary);">Đang tải dữ liệu...</td></tr>';
+    LoadingSpinner.show('Đang tải danh sách khách tham quan...');
+    if (tbody) tbody.innerHTML = '';
 
-    if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.VISITOR || !API_CONFIG.ENDPOINTS.VISITOR.LIST) {
-      console.warn('Thiếu cấu hình API VISITOR.LIST');
-      visitorData = [];
-      _renderTable();
-      return;
-    }
-
-    var payloadString = encodeURIComponent(JSON.stringify(filterParams));
-    var endpoint = API_CONFIG.ENDPOINTS.VISITOR.LIST + '?q=' + payloadString;
-
-    ApiClient.get(endpoint)
-      .then(function (res) {
-        if (res && res.records) {
-          visitorData = res.records;
-        } else if (res && res.data) {
-          visitorData = res.data;
-        } else if (Array.isArray(res)) {
-          visitorData = res;
-        } else {
-          visitorData = [];
-        }
+    VisitorService.getList(filterParams)
+      .then(function (data) {
+        visitorData = data;
         _renderTable();
+        LoadingSpinner.hide();
       })
       .catch(function (err) {
         console.error('Lỗi Load Visitor:', err);
+        LoadingSpinner.hide();
         if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Lỗi kết nối API lấy danh sách Khách tham quan!</td></tr>';
       });
   }

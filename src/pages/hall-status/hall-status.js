@@ -21,6 +21,15 @@ window.HallStatusPage = (function () {
     var grid = container.querySelector('#hall-status-grid');
     if (!grid) return;
 
+    // Show skeleton while loading
+    grid.innerHTML = [1,2,3,4,5,6].map(function() {
+      return '<div style="border:1px solid var(--color-border); border-radius:8px; padding:16px; background:var(--color-surface);">' +
+        '<div class="skeleton skeleton-title" style="width:60%; margin-bottom:10px;"></div>' +
+        '<div class="skeleton skeleton-text" style="width:40%;"></div>' +
+        '<div class="skeleton skeleton-text" style="width:80%; margin-top:12px;"></div>' +
+        '</div>';
+    }).join('');
+
     var halls = [];
     if (typeof MockData !== 'undefined' && MockData.sanhTiec) {
       halls = MockData.sanhTiec;

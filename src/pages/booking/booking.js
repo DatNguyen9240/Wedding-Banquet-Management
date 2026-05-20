@@ -87,20 +87,9 @@ var BookingPage = (function () {
     var tbody = $container.querySelector('#booking-table tbody');
     if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4" style="color: var(--color-text-secondary);">Đang tải dữ liệu...</td></tr>';
 
-    var payloadString = encodeURIComponent(JSON.stringify(filterParams));
-    var endpoint = API_CONFIG.ENDPOINTS.BOOKING.LIST + '?q=' + payloadString;
-
-    ApiClient.get(endpoint)
-      .then(function (res) {
-        if (res && res.records) {
-          bookingData = res.records;
-        } else if (res && res.data) {
-          bookingData = res.data;
-        } else if (Array.isArray(res)) {
-          bookingData = res;
-        } else {
-          bookingData = [];
-        }
+    BookingService.getList(filterParams)
+      .then(function (data) {
+        bookingData = data;
         _renderTable();
       })
       .catch(function (err) {
@@ -257,7 +246,7 @@ var BookingPage = (function () {
         if (confirm('Bạn có chắc chắn muốn hủy phiếu cọc ' + docId + ' không?')) {
           if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
             var payload = { DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' };
-            ApiClient.post(API_CONFIG.ENDPOINTS.BOOKING.CANCEL, payload).then(function () {
+            BookingService.cancel(payload).then(function () {
               UIToast.show('Hủy phiếu cọc thành công', 'success');
               _loadData();
             }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
@@ -311,7 +300,7 @@ var BookingPage = (function () {
                 if (confirm('Bạn có chắc chắn muốn hủy phiếu cọc ' + docId + ' không?')) {
                   if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
                     var payload = { DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' };
-                    ApiClient.post(API_CONFIG.ENDPOINTS.BOOKING.CANCEL, payload).then(function () {
+                    BookingService.cancel(payload).then(function () {
                       UIToast.show('Hủy phiếu cọc thành công', 'success');
                       _loadData();
                     }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
@@ -342,9 +331,8 @@ var BookingPage = (function () {
         requireKeyword: true,
         onSearch: function (keyword, renderResults, hideDropdown) {
           if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.CUSTOMER && API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH) {
-            ApiClient.get(API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH + '?Keyword=' + encodeURIComponent(keyword))
-              .then(function (res) {
-                var list = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
+            BookingService.searchCustomer(keyword)
+              .then(function (list) {
                 renderResults(list);
               })
               .catch(function () {
@@ -444,11 +432,11 @@ var BookingPage = (function () {
 
       // Kiểm tra và sử dụng ENDPOINT từ env.js
       if (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.SAVE) {
-        ApiClient.post(API_CONFIG.ENDPOINTS.BOOKING.SAVE, payload)
+        BookingService.save(payload)
           .then(function (res) {
             UIToast.show('Lưu Biên nhận cọc thành công!', 'success');
             closeForm();
-            _loadData(); // Tải lại danh sách sau khi lưu
+            _loadData();
           })
           .catch(function (err) {
             console.error('Lỗi lưu Cọc:', err);

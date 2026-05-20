@@ -55,15 +55,10 @@ var MenusPage = (function () {
       : '/api/API_WA_LayDanhSachMenuAll';
     endpoint = endpoint || '/api/API_WA_LayDanhSachMenuAll';
 
-    ApiClient.post(endpoint, { NhomNguoiDangThaoTac: myGroupId })
-      .then(function (res) {
-        if (res && res.code === 0) {
-          allMenus = res.records || [];
-          _renderNestedTabs();
-        } else {
-          container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--color-danger);">'
-            + 'Lỗi: ' + (res && res.msg ? res.msg : 'Không thể tải') + '</div>';
-        }
+    MenusService.getAll()
+      .then(function (records) {
+        allMenus = records;
+        _renderNestedTabs();
       })
       .catch(function () {
         container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--color-danger);">Lỗi kết nối máy chủ</div>';
@@ -131,20 +126,7 @@ var MenusPage = (function () {
       onTabChange: function (parentId, childId) {
       },
       onReorder: function (type, orderedIds, parentId) {
-        var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-        var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID
-          || currentUser.group || currentUser.NhomQuyen || 'Admin';
-
-        var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
-          ? window.API_CONFIG.ENDPOINTS.MENUS.UPDATE_ORDER
-          : '/api/API_WA_LuuThuTuMenu';
-
-        ApiClient.post(endpoint, {
-          NhomNguoiDangThaoTac: myGroupId,
-          Type: type,
-          OrderedIDs: orderedIds.join(','),
-          ParentID: parentId
-        })
+        MenusService.updateOrder({ type: type, orderedIds: orderedIds, parentId: parentId })
           .then(function (res) {
             if (res && res.code === 0) {
               UIToast.show('Đã cập nhật thứ tự ' + (type === 'parent' ? 'nhóm' : 'menu'), 'success');
@@ -427,8 +409,7 @@ var MenusPage = (function () {
           btnSave.disabled = true;
           btnSave.innerHTML = '...';
 
-          var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS) ? window.API_CONFIG.ENDPOINTS.MENUS.SAVE : '/api/API_WA_LuuMenu';
-          ApiClient.post(endpoint, payload).then(function (res) {
+          MenusService.save(payload).then(function (res) {
             if (res && res.code === 0) {
               UIToast.show('Thêm mới thành công!', 'success');
               _loadMenus();
@@ -505,16 +486,8 @@ var MenusPage = (function () {
           var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
           var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
 
-          var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
-            ? window.API_CONFIG.ENDPOINTS.MENUS.UPDATE_ORDER
-            : '/api/API_WA_LuuThuTuMenu';
-
-          ApiClient.post(endpoint, {
-            NhomNguoiDangThaoTac: myGroupId,
-            Type: 'child',
-            OrderedIDs: orderedIds.join(','),
-            ParentID: parentItem.id
-          }).then(function (res) {
+          MenusService.updateOrder({ type: 'child', orderedIds: orderedIds, parentId: parentItem.id })
+            .then(function (res) {
             if (res && res.code === 0) {
               UIToast.show('Đã cập nhật tự động mã Menu thành công', 'success');
               _loadMenus(); // Tải lại vì ID vừa bị hoán đổi (swap) trên database!
@@ -641,11 +614,7 @@ var MenusPage = (function () {
             IsEdit: 1
           };
 
-          var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
-            ? window.API_CONFIG.ENDPOINTS.MENUS.SAVE
-            : '/api/API_WA_LuuMenu';
-
-          ApiClient.post(endpoint, payload)
+          MenusService.save(payload)
             .then(function (res) {
               if (res && res.code === 0) {
                 UIToast.show('Lưu thành công', 'success');
@@ -852,7 +821,7 @@ var MenusPage = (function () {
       IsEdit: 1
     };
 
-    ApiClient.post(endpoint, payload)
+    MenusService.save(payload)
       .then(function (res) {
         if (res && res.code === 0) {
           UIToast.show('Đã cập nhật Menu thành công!', 'success');
@@ -997,7 +966,7 @@ var MenusPage = (function () {
       : '/api/API_WA_LuuMenu';
     endpoint = endpoint || '/api/API_WA_LuuMenu';
 
-    ApiClient.post(endpoint, payload)
+    MenusService.save(payload)
       .then(function (res) {
         if (res && res.code === 0) {
           Alert.success('Thành công', 'Đã lưu Menu thành công!');
@@ -1029,7 +998,7 @@ var MenusPage = (function () {
       : '/api/API_WA_XoaMenu';
     endpoint = endpoint || '/api/API_WA_XoaMenu';
 
-    ApiClient.post(endpoint, { NhomNguoiDangThaoTac: myGroupId, MenuID: menuId })
+    MenusService.deleteMenu(menuId)
       .then(function (res) {
         if (res && res.code === 0) {
           Alert.success('Thành công', 'Đã xóa Menu!');

@@ -21,6 +21,18 @@ var UIButton = (function () {
     if (config.disabled) btn.disabled = true;
     if (config.tooltip) btn.title = config.tooltip;
 
+    // Raw attribute string support (e.g. 'data-tooltip="..."')
+    if (config.attrs) {
+      var tempEl = document.createElement('div');
+      tempEl.innerHTML = '<span ' + config.attrs + '></span>';
+      var tempSpan = tempEl.firstChild;
+      if (tempSpan && tempSpan.attributes) {
+        for (var i = 0; i < tempSpan.attributes.length; i++) {
+          btn.setAttribute(tempSpan.attributes[i].name, tempSpan.attributes[i].value);
+        }
+      }
+    }
+
     // Build nội dung
     var innerHTML = '';
     if (config.icon) {
