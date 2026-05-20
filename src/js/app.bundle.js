@@ -2361,6 +2361,35 @@ var UIInput = (function () {
   }
 
   /**
+   * Sinh HTML chuỗi cho Bộ chọn số lượng (Quantity Selector)
+   * Dùng cho các Grid/Table sử dụng innerHTML thay vì DOM Nodes.
+   */
+  function createQuantityHTML(config) {
+    var value = config.value || 1;
+    var onDecrease = config.onDecrease || '';
+    var onIncrease = config.onIncrease || '';
+    var onChange = config.onChange || '';
+    var stopPropagation = config.stopPropagation ? 'event.stopPropagation(); ' : '';
+    
+    var h = config.height || 32;
+    var w = config.width || 96;
+    var btnW = config.btnWidth || 30;
+    var inpW = w - (btnW * 2);
+
+    return `
+      <div class="d-flex align-items-center justify-content-center mx-auto" style="width: ${w}px; border: 1px solid var(--color-border); border-radius: 6px; overflow: hidden; background: var(--color-surface); box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+        <button class="btn btn-light d-flex align-items-center justify-content-center p-0" style="width: ${btnW}px; height: ${h}px; border: none; border-radius: 0; background: #f8f9fa; color: #475569;" onclick="${stopPropagation}${onDecrease}" title="Giảm">
+          <span class="material-symbols-outlined" style="font-size: 16px;">remove</span>
+        </button>
+        <input type="text" class="form-control text-center p-0 border-0" style="width: ${inpW}px; height: ${h}px; font-weight: 600; font-size: 13px; background: transparent; box-shadow: none;" value="${value}" onchange="${stopPropagation}${onChange}" title="Nhập số lượng">
+        <button class="btn btn-light d-flex align-items-center justify-content-center p-0" style="width: ${btnW}px; height: ${h}px; border: none; border-radius: 0; background: #f8f9fa; color: #475569;" onclick="${stopPropagation}${onIncrease}" title="Tăng">
+          <span class="material-symbols-outlined" style="font-size: 16px;">add</span>
+        </button>
+      </div>
+    `;
+  }
+
+  /**
    * Hàm đọc số thành chữ tiếng Việt
    */
   function docSoTienVN(n) {
@@ -2434,6 +2463,7 @@ var UIInput = (function () {
     createText: createText,
     createNumber: createNumber,
     createDate: createDate,
+    createQuantityHTML: createQuantityHTML,
     docSoTienVN: docSoTienVN,
     setupMoneyInput: setupMoneyInput
   };

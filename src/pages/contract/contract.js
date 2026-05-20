@@ -946,8 +946,13 @@ var ContractPage = (function () {
           <td class="text-center align-middle">${idx + 1}</td>
           <td class="align-middle fw-medium text-start">${item.TenMon}</td>
           <td class="text-end align-middle fw-semibold text-muted">${formattedPrice}</td>
-          <td class="text-center align-middle" style="width: 120px;">
-            <input type="number" class="form-control form-control-sm text-center mx-auto" style="width: 80px; height: 32px; font-weight: 600;" value="${item.SoLuong || 1}" min="1" onchange="ContractPage.changeQty('drink', ${idx}, this.value)">
+          <td class="text-center align-middle" style="width: 130px;">
+            ${UIInput.createQuantityHTML({
+              value: item.SoLuong || 1,
+              onDecrease: `ContractPage.changeQty('drink', ${idx}, ${(item.SoLuong || 1) - 1})`,
+              onIncrease: `ContractPage.changeQty('drink', ${idx}, ${(item.SoLuong || 1) + 1})`,
+              onChange: `ContractPage.changeQty('drink', ${idx}, this.value)`
+            })}
           </td>
           <td class="text-end align-middle fw-semibold text-danger">${formattedSubTotal}</td>
           <td class="text-center align-middle">
@@ -1013,8 +1018,13 @@ var ContractPage = (function () {
           <td class="text-center align-middle">${idx + 1}</td>
           <td class="align-middle fw-medium text-start">${item.TenMon}</td>
           <td class="text-end align-middle fw-semibold text-muted">${formattedPrice}</td>
-          <td class="text-center align-middle" style="width: 120px;">
-            <input type="number" class="form-control form-control-sm text-center mx-auto" style="width: 80px; height: 32px; font-weight: 600;" value="${item.SoLuong || 1}" min="1" onchange="ContractPage.changeQty('service', ${idx}, this.value)">
+          <td class="text-center align-middle" style="width: 130px;">
+            ${UIInput.createQuantityHTML({
+              value: item.SoLuong || 1,
+              onDecrease: `ContractPage.changeQty('service', ${idx}, ${(item.SoLuong || 1) - 1})`,
+              onIncrease: `ContractPage.changeQty('service', ${idx}, ${(item.SoLuong || 1) + 1})`,
+              onChange: `ContractPage.changeQty('service', ${idx}, this.value)`
+            })}
           </td>
           <td class="text-end align-middle fw-semibold text-danger">${formattedSubTotal}</td>
           <td class="text-center align-middle">
@@ -1751,14 +1761,17 @@ var ContractPage = (function () {
       var qtyControlHtml = '';
       if (type === 'drink' || type === 'service') {
         qtyControlHtml = `
-          <div class="d-flex align-items-center gap-1" style="flex-shrink: 0; margin-left: 8px;">
-            <button class="btn btn-light btn-xs p-0 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--color-border);" onclick="event.stopPropagation(); ContractPage.changeModalSidebarQty('${type}', ${idx}, -1)">
-              <span class="material-symbols-outlined" style="font-size: 14px;">remove</span>
-            </button>
-            <span class="fw-bold text-center" style="width: 24px; font-size: 13px;">${qty}</span>
-            <button class="btn btn-light btn-xs p-0 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--color-border);" onclick="event.stopPropagation(); ContractPage.changeModalSidebarQty('${type}', ${idx}, 1)">
-              <span class="material-symbols-outlined" style="font-size: 14px;">add</span>
-            </button>
+          <div style="flex-shrink: 0; margin-left: 8px;">
+            ${UIInput.createQuantityHTML({
+              value: qty,
+              onDecrease: `ContractPage.changeModalSidebarQty('${type}', ${idx}, -1)`,
+              onIncrease: `ContractPage.changeModalSidebarQty('${type}', ${idx}, 1)`,
+              onChange: '',
+              stopPropagation: true,
+              width: 72,
+              height: 24,
+              btnWidth: 24
+            })}
           </div>
         `;
       } else {
