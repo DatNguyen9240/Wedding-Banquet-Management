@@ -337,8 +337,7 @@ var PermissionsPage = (function () {
   function _saveSingleRowPermission(tr) {
     if (!currentSelectedGroup) return;
 
-    var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
+
 
     var id = tr.getAttribute('data-id');
     var xem = tr.querySelector('.perm-chk[data-action="xem"]')?.checked || false;
@@ -371,7 +370,7 @@ var PermissionsPage = (function () {
       isExportExcel: isExportExcel ? 1 : 0
     };
 
-    var endpoint = window.API_CONFIG.ENDPOINTS.PERMISSIONS.SAVE_GROUP_PERMISSIONS || '/api/API_WA_LuuQuyenCuaNhom';
+
     
     var label = tr.querySelector('.tree-label') ? tr.querySelector('.tree-label').innerText : id;
 
@@ -393,10 +392,7 @@ var PermissionsPage = (function () {
       btn.innerHTML = `${UIIcon.createHTML('sync', 'font-size: 16px; margin-right: 4px; animation: spin 1s linear infinite;')} Đang đồng bộ...`;
     }
 
-    var endpoint = window.API_CONFIG.ENDPOINTS.PERMISSIONS.SYNC || '/api/API_WA_DongBoQuyenTruyCap';
-    
-    var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
+
 
     PermissionsService.sync()
       .then(function (res) {

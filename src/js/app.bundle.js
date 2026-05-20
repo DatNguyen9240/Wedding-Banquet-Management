@@ -176,7 +176,7 @@ var EventBus = (function() {
 
     // Phát sự kiện toàn cục kèm theo dữ liệu (nếu có)
     emit: function(event, data) {
-      console.log('📢 [EventBus] Phát sự kiện:', event, data ? data : '');
+      console.debug('[EventBus] emit:', event, data ? data : '');
       if (listeners[event]) {
         listeners[event].forEach(function(callback) {
           callback(data);
@@ -346,7 +346,7 @@ var CalendarService = (function () {
   // Lắng nghe sự kiện toàn cục để tự động quét dọn Cache
   if (typeof EventBus !== 'undefined') {
     EventBus.on('BANQUET_MUTATED', function () {
-      console.log('🔄 [CalendarService] Phát hiện có thay đổi Dữ liệu Tiệc, tự động quét sạch Lịch đệm.');
+      console.debug('[CalendarService] BANQUET_MUTATED — quét sạch cache lịch.');
       invalidateCache();
     });
   }
@@ -375,7 +375,7 @@ var CalendarService = (function () {
   }
 
   function invalidateCache() {
-    console.log('🧹 [CalendarService] Đã xóa toàn bộ cache lịch.');
+    console.debug('[CalendarService] invalidateCache — đã xóa cache lịch.');
     _calendarCache = {};
   }
 
@@ -419,7 +419,7 @@ var CalendarService = (function () {
 
     return new Promise(function (resolve, reject) {
       if (!forceRefresh && _calendarCache[cacheKey]) {
-        console.log('⚡ [CalendarService] Cache Hit cho tháng:', cacheKey);
+        console.debug('[CalendarService] Cache hit:', cacheKey);
         return resolve(_calendarCache[cacheKey]);
       }
 
@@ -434,7 +434,7 @@ var CalendarService = (function () {
         return reject('Missing API_CONFIG');
       }
 
-      console.log('🌐 [CalendarService] Fetching dữ liệu lịch cho tháng:', cacheKey);
+      console.debug('[CalendarService] Fetching:', cacheKey);
       _isFetching = true;
 
       var payloadString = encodeURIComponent(JSON.stringify({ Thang: month + 1, Nam: year }));

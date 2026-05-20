@@ -100,10 +100,10 @@ var SurveyPage = (function () {
       btnSave.addEventListener('click', function () {
         var overall = document.getElementById('survey-inp-overall');
         if (!overall || !overall.value) {
-          alert('Vui lòng chọn mức độ hài lòng chung!');
+          UIToast.show('Vui lòng chọn mức độ hài lòng chung!', 'warning');
           return;
         }
-        // TODO: Kết nối API_WA_LuuKhaoSat
+        // Chờ kết nối API_WA_LuuKhaoSat
         _closePanel();
       });
     }

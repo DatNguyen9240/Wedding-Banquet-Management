@@ -215,7 +215,7 @@ var UsersPage = (function () {
        var newGroup = uiGroupCombo.querySelector('.ui-input').value.trim();
        var newStatus = uiStatusCheck.querySelector('input').checked;
 
-       if(!newId || !newUser || !newName) return alert('Vui lòng nhập đủ thông tin bắt buộc!');
+       if(!newId || !newUser || !newName) { UIToast.show('Vui lòng nhập đủ thông tin bắt buộc!', 'warning'); return; }
 
        if (isEdit) {
          usersData[editIndex].name = newName;

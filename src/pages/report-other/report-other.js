@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Màn hình Báo cáo Quản lý Khác (Khảo sát, Thống kê)
  * HTML Template: src/pages/report-other.html
  */
@@ -28,7 +28,6 @@ var ReportOtherPage = (function () {
     var filterEl = FilterComponent.create([
       { id: 'fo-year', label: 'Năm', type: 'number', placeholder: 'Năm...' }
     ], function(values) {
-      console.log('Lọc:', values);
       Alert.success('Đã tải lại báo cáo!');
     });
 

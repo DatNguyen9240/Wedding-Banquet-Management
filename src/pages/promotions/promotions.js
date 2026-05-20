@@ -105,10 +105,10 @@ var PromotionsPage = (function () {
       btnSave.addEventListener('click', function () {
         var name = document.getElementById('promo-inp-name');
         if (!name || !name.value.trim()) {
-          alert('Vui lòng nhập tên gói combo!');
+          UIToast.show('Vui lòng nhập tên gói combo!', 'warning');
           return;
         }
-        // TODO: Kết nối API_WA_LuuUuDai
+        // Chờ kết nối API_WA_LuuUuDai
         _closePanel();
       });
     }

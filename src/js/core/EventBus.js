@@ -24,7 +24,7 @@ var EventBus = (function() {
 
     // Phát sự kiện toàn cục kèm theo dữ liệu (nếu có)
     emit: function(event, data) {
-      console.log('📢 [EventBus] Phát sự kiện:', event, data ? data : '');
+      console.debug('[EventBus] emit:', event, data ? data : '');
       if (listeners[event]) {
         listeners[event].forEach(function(callback) {
           callback(data);

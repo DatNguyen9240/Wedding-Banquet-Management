@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Màn hình Báo cáo Chi phí Tiệc
  * HTML Template: src/pages/report-cost.html
  */
@@ -29,7 +29,6 @@ var ReportCostPage = (function () {
       { id: 'fc-to', label: 'Đến ngày', type: 'date' },
       { id: 'fc-code', label: 'Mã HĐ', type: 'text', placeholder: 'Nhập mã HĐ...' }
     ], function(values) {
-      console.log('Đang lọc chi phí:', values);
       Alert.success('Đã tải lại báo cáo chi phí!');
     });
 

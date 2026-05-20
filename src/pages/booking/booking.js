@@ -243,17 +243,20 @@ var BookingPage = (function () {
         var selected = getSelectedRow();
         if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận để hủy!', 'warning');
         var docId = selected.MaChungTu || selected.id;
-        if (confirm('Bạn có chắc chắn muốn hủy phiếu cọc ' + docId + ' không?')) {
-          if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
-            var payload = { DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' };
-            BookingService.cancel(payload).then(function () {
-              UIToast.show('Hủy phiếu cọc thành công', 'success');
-              _loadData();
-            }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
-          } else {
-            UIToast.show('Chưa cấu hình API CANCEL', 'warning');
+        ConfirmModal.show({
+          title: 'Hủy Phiếu Cọc',
+          message: 'Bạn có chắc chắn muốn hủy phiếu cọc <b>' + docId + '</b> không?',
+          onConfirm: function() {
+            if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
+              BookingService.cancel({ DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' }).then(function () {
+                UIToast.show('Hủy phiếu cọc thành công', 'success');
+                _loadData();
+              }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
+            } else {
+              UIToast.show('Chưa cấu hình API CANCEL', 'warning');
+            }
           }
-        }
+        });
       });
     }
 
@@ -297,17 +300,20 @@ var BookingPage = (function () {
               onClick: function() { 
                 if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận để hủy!', 'warning');
                 var docId = selected.MaChungTu || selected.id;
-                if (confirm('Bạn có chắc chắn muốn hủy phiếu cọc ' + docId + ' không?')) {
-                  if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
-                    var payload = { DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' };
-                    BookingService.cancel(payload).then(function () {
-                      UIToast.show('Hủy phiếu cọc thành công', 'success');
-                      _loadData();
-                    }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
-                  } else {
-                    UIToast.show('Chưa cấu hình API CANCEL', 'warning');
+                ConfirmModal.show({
+                  title: 'Hủy Phiếu Cọc',
+                  message: 'Bạn có chắc chắn muốn hủy phiếu cọc <b>' + docId + '</b> không?',
+                  onConfirm: function() {
+                    if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
+                      BookingService.cancel({ DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' }).then(function () {
+                        UIToast.show('Hủy phiếu cọc thành công', 'success');
+                        _loadData();
+                      }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
+                    } else {
+                      UIToast.show('Chưa cấu hình API CANCEL', 'warning');
+                    }
                   }
-                }
+                });
               } 
             }
           ]);

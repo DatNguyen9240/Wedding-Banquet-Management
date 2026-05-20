@@ -33,7 +33,7 @@ var SettingsPage = (function () {
 
     var uploadNode = UIFileUpload.create({
       accept: 'image/jpeg, image/png',
-      onFileSelect: function(file) { console.log('Selected logo:', file.name); }
+      onFileSelect: function(file) { if (window.UIToast) UIToast.show('Đã chọn logo: ' + file.name, 'success'); }
     });
     wrapper.querySelector('#logo-upload-wrapper').appendChild(uploadNode);
     return wrapper;

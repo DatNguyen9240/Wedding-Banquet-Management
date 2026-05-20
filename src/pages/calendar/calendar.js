@@ -35,7 +35,7 @@ var CalendarPage = (function () {
   // Tự động làm mới UI trang Lịch nếu nghe thấy có người sửa/tạo Tiệc mới
   if (typeof EventBus !== 'undefined') {
     EventBus.on('BANQUET_MUTATED', function () {
-      console.log('🔄 [CalendarPage] Cập nhật lại giao diện ngay lập tức.');
+      console.info('[CalendarPage] BANQUET_MUTATED — làm mới lịch.');
       _loadEvents(true); // Buộc tải lại lịch từ API (lúc này service đã tự xóa cache)
     });
   }

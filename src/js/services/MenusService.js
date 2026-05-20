@@ -98,6 +98,7 @@ var MenusService = (function () {
     getAll: getAll,
     save: save,
     deleteMenu: deleteMenu,
-    updateOrder: updateOrder
+    updateOrder: updateOrder,
+    currentGroupId: _currentGroupId
   };
 })();

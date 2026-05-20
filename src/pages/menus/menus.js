@@ -46,15 +46,6 @@ var MenusPage = (function () {
       + UIIcon.renderHtml('menu_book', 'font-size:40px;opacity:0.2;display:block;margin-bottom:12px;')
       + 'Đang tải danh sách...</div>';
 
-    var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID
-      || currentUser.group || currentUser.NhomQuyen || 'Admin';
-
-    var endpoint = window.API_CONFIG && window.API_CONFIG.ENDPOINTS
-      ? (window.API_CONFIG.ENDPOINTS.MENUS && window.API_CONFIG.ENDPOINTS.MENUS.GET_ALL)
-      : '/api/API_WA_LayDanhSachMenuAll';
-    endpoint = endpoint || '/api/API_WA_LayDanhSachMenuAll';
-
     MenusService.getAll()
       .then(function (records) {
         allMenus = records;
@@ -388,11 +379,8 @@ var MenusPage = (function () {
             UIToast.show('Vui lòng nhập ID và Tên Menu', 'error'); return;
           }
 
-          var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-          var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
-
           var payload = {
-            NhomNguoiDangThaoTac: myGroupId,
+            NhomNguoiDangThaoTac: MenusService.currentGroupId(),
             MenuID: id,
             OldMenuID: '',
             ParentID: parentItem.id,
@@ -482,9 +470,6 @@ var MenusPage = (function () {
           newOrderRows.forEach(function (tr) {
             orderedIds.push(tr.dataset.id);
           });
-
-          var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-          var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
 
           MenusService.updateOrder({ type: 'child', orderedIds: orderedIds, parentId: parentItem.id })
             .then(function (res) {
@@ -596,11 +581,8 @@ var MenusPage = (function () {
           var menu = allMenus.find(function (m) { return m.id === rowId; });
           if (!menu) return;
 
-          var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-          var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID || currentUser.group || currentUser.NhomQuyen || 'Admin';
-
           var payload = {
-            NhomNguoiDangThaoTac: myGroupId,
+            NhomNguoiDangThaoTac: MenusService.currentGroupId(),
             MenuID: field === 'id' ? newVal : menu.id,
             OldMenuID: menu.id,
             ParentID: field === 'parent' ? newVal : (menu.parent || ''),
@@ -802,16 +784,8 @@ var MenusPage = (function () {
     btn.disabled = true;
     btn.innerHTML = UIIcon.renderHtml('sync', 'font-size:18px; animation: rotation 2s infinite linear;') + ' Đang lưu...';
 
-    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
-      ? window.API_CONFIG.ENDPOINTS.MENUS.SAVE
-      : '/api/API_WA_LuuMenu';
-
-    var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID
-      || currentUser.group || currentUser.NhomQuyen || 'Admin';
-
     var payload = {
-      NhomNguoiDangThaoTac: myGroupId,
+      NhomNguoiDangThaoTac: MenusService.currentGroupId(),
       MenuID: data.id,
       OldMenuID: data.oldId,
       Label: data.label,
@@ -938,12 +912,8 @@ var MenusPage = (function () {
       return;
     }
 
-    var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID
-      || currentUser.group || currentUser.NhomQuyen || 'Admin';
-
     var payload = {
-      NhomNguoiDangThaoTac: myGroupId,
+      NhomNguoiDangThaoTac: MenusService.currentGroupId(),
       MenuID: id,
       OldMenuID: oldId,
       ParentID: parent,
@@ -960,11 +930,6 @@ var MenusPage = (function () {
     var btn = $container.querySelector('#btn-save-menu');
     btn.disabled = true;
     btn.textContent = 'Đang lưu...';
-
-    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
-      ? window.API_CONFIG.ENDPOINTS.MENUS.SAVE
-      : '/api/API_WA_LuuMenu';
-    endpoint = endpoint || '/api/API_WA_LuuMenu';
 
     MenusService.save(payload)
       .then(function (res) {
@@ -989,15 +954,6 @@ var MenusPage = (function () {
   //  DELETE
   // ════════════════════════════════════════════════════════
   function _deleteMenu(menuId) {
-    var currentUser = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var myGroupId = currentUser.Group || currentUser.GroupUser || currentUser.GroupID
-      || currentUser.group || currentUser.NhomQuyen || 'Admin';
-
-    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.MENUS)
-      ? window.API_CONFIG.ENDPOINTS.MENUS.DELETE
-      : '/api/API_WA_XoaMenu';
-    endpoint = endpoint || '/api/API_WA_XoaMenu';
-
     MenusService.deleteMenu(menuId)
       .then(function (res) {
         if (res && res.code === 0) {
