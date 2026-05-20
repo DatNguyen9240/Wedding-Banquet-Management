@@ -280,7 +280,9 @@ var PermissionsPage = (function () {
 
     // Create First Column (Tree)
     var tdTree = document.createElement('td');
-    var paddingLeft = data.level * 32 + 16;
+    tdTree.style.whiteSpace = 'nowrap';
+    tdTree.style.minWidth = '220px';
+    var paddingLeft = data.level * 20 + 8;
 
     var toggleHtml = data.isFolder
       ? UIIcon.createHTML('chevron_right', '', `tree-toggle ${data.expanded ? 'open' : ''}`)
@@ -323,8 +325,11 @@ var PermissionsPage = (function () {
   function _createCheckboxTd(checked, action) {
     var td = document.createElement('td');
     td.className = 'text-center';
+    td.style.padding = '4px 0';
     var wrap = UIControls.createCheckbox({ label: '', checked: checked });
     wrap.style.justifyContent = 'center';
+    wrap.style.padding = '0';
+    wrap.style.background = 'none';
     var chk = wrap.querySelector('input[type="checkbox"]');
     if (chk && action) {
       chk.classList.add('perm-chk');
