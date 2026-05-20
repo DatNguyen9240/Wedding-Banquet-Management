@@ -2552,72 +2552,49 @@ body.dark-theme .calendar-dropdown-month-btn {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 10px; /* Modern card spacing instead of ugly harsh table lines */
-  background: transparent;
-  border: none;
-  overflow: visible;
-  padding-bottom: 4px;
+  gap: 0;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .calendar-day-header {
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--color-text-secondary);
+  color: var(--color-primary);
+  background: rgba(79, 70, 229, 0.05);
+  border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
   text-transform: uppercase;
   letter-spacing: 1px;
-  padding: 6px 0;
-  background: transparent;
+  padding: 10px 0;
   user-select: none;
-  opacity: 0.9;
-}
-
-/* Tô màu cho cột Thứ 7 (Cột 6) */
-.calendar-grid > div:nth-child(7n+6).calendar-day-header {
-  color: #4338CA; /* Indigo 700 */
-}
-.calendar-grid > div:nth-child(7n+6).calendar-day .calendar-day-number span {
-  color: #4338CA;
-}
-.calendar-grid > div:nth-child(7n+6).calendar-day:not(.empty-day) {
-  background: linear-gradient(180deg, rgba(79, 70, 229, 0.02) 0%, rgba(79, 70, 229, 0.005) 100%);
-  border-color: rgba(79, 70, 229, 0.08);
-}
-
-/* Tô màu cho cột Chủ nhật (Cột 7) */
-.calendar-grid > div:nth-child(7n).calendar-day-header {
-  color: #E11D48; /* Rose 600 */
-}
-.calendar-grid > div:nth-child(7n).calendar-day .calendar-day-number span {
-  color: #E11D48;
-}
-.calendar-grid > div:nth-child(7n).calendar-day:not(.empty-day) {
-  background: linear-gradient(180deg, rgba(244, 63, 94, 0.02) 0%, rgba(244, 63, 94, 0.005) 100%);
-  border-color: rgba(244, 63, 94, 0.08);
 }
 
 /* Individual Schedule Card Slots */
 .calendar-day {
   background: var(--color-surface);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   padding: 8px 10px;
   position: relative;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  min-height: 85px;
+  transition: background 0.15s ease;
+  min-height: 90px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.01);
+  justify-content: flex-start;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
   box-sizing: border-box;
 }
 
 
 /* Empty Slots (Other Month Days) */
 .calendar-day.empty-day {
-  background: rgba(148, 163, 184, 0.02);
-  border: 1px dashed var(--color-border);
+  background: rgba(0, 0, 0, 0.015);
   box-shadow: none;
 }
 
@@ -2632,17 +2609,14 @@ body.dark-theme .calendar-dropdown-month-btn {
   border-color: var(--color-border-strong);
 }
 
-/* Hover effect: raises cell with smooth primary colored shadow glow */
+/* Hover effect: simple background change for table grid */
 .calendar-day:hover:not(.empty-day) {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -6px rgba(79, 70, 229, 0.15), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
-  border-color: rgba(79, 70, 229, 0.3);
-  background: rgba(79, 70, 229, 0.04);
+  background: rgba(79, 70, 229, 0.05);
   z-index: 2;
 }
 
 .calendar-day:active:not(.empty-day) {
-  transform: translateY(-1px) scale(0.98);
+  background: rgba(79, 70, 229, 0.08);
 }
 
 .calendar-day-number {
@@ -2665,9 +2639,7 @@ body.dark-theme .calendar-dropdown-month-btn {
 
 /* Today Cell Accent styling */
 .calendar-day.today {
-  border: 1px solid rgba(79, 70, 229, 0.4);
   background: linear-gradient(135deg, rgba(79, 70, 229, 0.04), rgba(79, 70, 229, 0.01));
-  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.1), 0 4px 12px rgba(79, 70, 229, 0.06);
 }
 
 .calendar-day.today .calendar-day-number span {
@@ -2813,7 +2785,7 @@ body.dark-theme .calendar-dropdown-month-btn {
     white-space: nowrap;
   }
   .calendar-grid {
-    gap: 4px;
+    gap: 0;
   }
   .calendar-day-header {
     font-size: 11px;
