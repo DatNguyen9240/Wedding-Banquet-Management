@@ -26,10 +26,10 @@
   font-size: clamp(20px, 2.5vw, 24px);
   font-weight: 800;
   letter-spacing: -0.5px;
-  color: var(--color-primary-dark);
-  background: linear-gradient(145deg, rgba(79, 70, 229, 0.08), rgba(79, 70, 229, 0.02));
-  border: 1px solid rgba(79, 70, 229, 0.15);
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.05);
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  box-shadow: none;
   cursor: pointer;
   outline: none;
   font-family: inherit;
@@ -48,9 +48,9 @@
 }
 
 .calendar-month-picker:hover {
-  background: linear-gradient(145deg, rgba(79, 70, 229, 0.12), rgba(79, 70, 229, 0.04));
-  border-color: rgba(79, 70, 229, 0.25);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--color-border-strong);
+  box-shadow: none;
   transform: translateY(-1px);
 }
 .calendar-month-picker:hover .material-symbols-outlined {
@@ -109,15 +109,37 @@ body.dark-theme .calendar-dropdown-month-btn {
 }
 
 .calendar-dropdown-month-btn:hover {
-  background: rgba(79, 70, 229, 0.06);
-  color: var(--color-primary);
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--color-text);
 }
 
 .calendar-dropdown-month-btn.active {
-  background: var(--color-primary);
-  color: white;
-  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+  background: var(--color-border-strong);
+  color: var(--color-text);
+  font-weight: 800;
+  box-shadow: none;
 }
+
+.calendar-dropdown-month-btn.has-events {
+  position: relative;
+}
+
+.month-event-dot {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.calendar-dropdown-month-btn.active .month-event-dot {
+  background: var(--color-text);
+}
+
 
 /* Modern Gap-Based Schedule Grid */
 .calendar-grid {
@@ -136,7 +158,7 @@ body.dark-theme .calendar-dropdown-month-btn {
   font-size: 13px;
   font-weight: 700;
   color: var(--color-primary);
-  background: rgba(79, 70, 229, 0.05);
+  background: rgba(79, 70, 229, 0.18);
   border-bottom: 1px solid var(--color-border);
   border-right: 1px solid var(--color-border);
   text-transform: uppercase;
@@ -182,12 +204,12 @@ body.dark-theme .calendar-dropdown-month-btn {
 
 /* Hover effect: simple background change for table grid */
 .calendar-day:hover:not(.empty-day) {
-  background: rgba(79, 70, 229, 0.05);
+  background: var(--color-hover, rgba(0, 0, 0, 0.04));
   z-index: 2;
 }
 
 .calendar-day:active:not(.empty-day) {
-  background: rgba(79, 70, 229, 0.08);
+  background: rgba(0, 0, 0, 0.07);
 }
 
 .calendar-day-number {

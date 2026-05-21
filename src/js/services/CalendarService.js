@@ -147,10 +147,39 @@ var CalendarService = (function () {
     });
   }
 
+  /**
+   * Lấy tóm tắt lịch theo năm: tháng nào có sự kiện
+   * @param {number} year
+   * @returns {Promise<Object>} { 0: count, 1: count, ... } (0-indexed month)
+   */
+  var _yearlySummaryCache = {};
+  function getYearlySummary(year) {
+    if (_yearlySummaryCache[year]) return Promise.resolve(_yearlySummaryCache[year]);
+    if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.LIST) {
+      return Promise.resolve({});
+    }
+    var endpoint = API_CONFIG.ENDPOINTS.CALENDAR.LIST + '?q=' + encodeURIComponent(JSON.stringify({ Nam: year }));
+    return ApiClient.get(endpoint)
+      .then(function (res) {
+        var data = res.records || res.data || res || [];
+        var summary = {};
+        data.forEach(function (row) {
+          var ngay = row.NgayToChuc || row.ngayToChuc || row.Ngaytochuc || row.ngaytochuc;
+          if (!ngay) return;
+          var m = new Date(ngay).getMonth(); // 0-indexed
+          summary[m] = (summary[m] || 0) + 1;
+        });
+        _yearlySummaryCache[year] = summary;
+        return summary;
+      })
+      .catch(function () { return {}; });
+  }
+
   return {
     fetchEvents: fetchEvents,
     getLegend: getLegend,
     invalidateCache: invalidateCache,
+    getYearlySummary: getYearlySummary,
     save: save
   };
 })();

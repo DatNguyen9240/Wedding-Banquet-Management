@@ -76,8 +76,8 @@ var UICalendar = (function () {
         
         var tempYear = year;
         
-        btnPrevYear.onclick = function() { tempYear--; yearLabel.innerText = tempYear; renderMonths(); };
-        btnNextYear.onclick = function() { tempYear++; yearLabel.innerText = tempYear; renderMonths(); };
+        btnPrevYear.onclick = function() { tempYear--; yearLabel.innerText = tempYear; loadSummaryAndRender(); };
+        btnNextYear.onclick = function() { tempYear++; yearLabel.innerText = tempYear; loadSummaryAndRender(); };
         
         yearHeader.appendChild(btnPrevYear);
         yearHeader.appendChild(yearLabel);
@@ -90,11 +90,17 @@ var UICalendar = (function () {
         function renderMonths() {
           monthsGrid.innerHTML = '';
           var monthNames = ['Thg 1', 'Thg 2', 'Thg 3', 'Thg 4', 'Thg 5', 'Thg 6', 'Thg 7', 'Thg 8', 'Thg 9', 'Thg 10', 'Thg 11', 'Thg 12'];
+          var summary = (config.monthSummary && config.monthSummary[tempYear]) ? config.monthSummary[tempYear] : {};
           for (let m = 0; m < 12; m++) {
             var mBtn = document.createElement('button');
             mBtn.className = 'calendar-dropdown-month-btn' + (tempYear === year && m === month ? ' active' : '');
             mBtn.innerText = monthNames[m];
-            
+            if (summary[m] && summary[m] > 0) {
+              mBtn.classList.add('has-events');
+              var dot = document.createElement('span');
+              dot.className = 'month-event-dot';
+              mBtn.appendChild(dot);
+            }
             mBtn.onclick = function() {
               document.body.removeChild(overlay);
               currentYear = tempYear;
@@ -105,8 +111,20 @@ var UICalendar = (function () {
             monthsGrid.appendChild(mBtn);
           }
         }
+
+        // Load summary for current tempYear when navigating years
+        function loadSummaryAndRender() {
+          if (config.monthSummary && !config.monthSummary[tempYear] && typeof config.onLoadYearSummary === 'function') {
+            config.onLoadYearSummary(tempYear).then(function(s) {
+              config.monthSummary[tempYear] = s;
+              renderMonths();
+            });
+          } else {
+            renderMonths();
+          }
+        }
         
-        renderMonths();
+        loadSummaryAndRender();
         dropdown.appendChild(monthsGrid);
         overlay.appendChild(dropdown);
         overlay.onclick = function() { document.body.removeChild(overlay); };

@@ -148,15 +148,23 @@ var CalendarPage = (function () {
         renderLegend();
         var calendarContainer = $container.querySelector('#calendar-component-container');
         if (calendarContainer) {
+          var _monthSummary = {};
           uiCalendarInstance = UICalendar.create({
             year: currentYear,
             month: currentMonth,
-            events: {}, // Dữ liệu sẽ load từ API
+            events: {},
+            monthSummary: _monthSummary,
+            onLoadYearSummary: function(year) {
+              return CalendarService.getYearlySummary(year).then(function(s) {
+                _monthSummary[year] = s;
+                return s;
+              });
+            },
             onChangeMonth: function (y, m) {
               currentYear = y;
               currentMonth = m;
-              _saveState(); // Lưu tháng đang xem vào sessionStorage
-              _loadEvents(); // Load lại data khi đổi tháng
+              _saveState();
+              _loadEvents();
             },
             onSelect: function (dateStr, evts) {
               var displayDate = dateStr.split('-').reverse().join('/');
@@ -260,6 +268,10 @@ var CalendarPage = (function () {
           calendarContainer.appendChild(uiCalendarInstance);
 
           _loadEvents(); // Gọi API ngay lần đầu render
+          // Preload năm hiện tại để dots hiển thị ngay
+          CalendarService.getYearlySummary(currentYear).then(function(s) {
+            _monthSummary[currentYear] = s;
+          });
         }
       });
   }

@@ -484,10 +484,39 @@ var CalendarService = (function () {
     });
   }
 
+  /**
+   * Lấy tóm tắt lịch theo năm: tháng nào có sự kiện
+   * @param {number} year
+   * @returns {Promise<Object>} { 0: count, 1: count, ... } (0-indexed month)
+   */
+  var _yearlySummaryCache = {};
+  function getYearlySummary(year) {
+    if (_yearlySummaryCache[year]) return Promise.resolve(_yearlySummaryCache[year]);
+    if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CALENDAR || !API_CONFIG.ENDPOINTS.CALENDAR.LIST) {
+      return Promise.resolve({});
+    }
+    var endpoint = API_CONFIG.ENDPOINTS.CALENDAR.LIST + '?q=' + encodeURIComponent(JSON.stringify({ Nam: year }));
+    return ApiClient.get(endpoint)
+      .then(function (res) {
+        var data = res.records || res.data || res || [];
+        var summary = {};
+        data.forEach(function (row) {
+          var ngay = row.NgayToChuc || row.ngayToChuc || row.Ngaytochuc || row.ngaytochuc;
+          if (!ngay) return;
+          var m = new Date(ngay).getMonth(); // 0-indexed
+          summary[m] = (summary[m] || 0) + 1;
+        });
+        _yearlySummaryCache[year] = summary;
+        return summary;
+      })
+      .catch(function () { return {}; });
+  }
+
   return {
     fetchEvents: fetchEvents,
     getLegend: getLegend,
     invalidateCache: invalidateCache,
+    getYearlySummary: getYearlySummary,
     save: save
   };
 })();
@@ -4890,8 +4919,8 @@ var UICalendar = (function () {
         
         var tempYear = year;
         
-        btnPrevYear.onclick = function() { tempYear--; yearLabel.innerText = tempYear; renderMonths(); };
-        btnNextYear.onclick = function() { tempYear++; yearLabel.innerText = tempYear; renderMonths(); };
+        btnPrevYear.onclick = function() { tempYear--; yearLabel.innerText = tempYear; loadSummaryAndRender(); };
+        btnNextYear.onclick = function() { tempYear++; yearLabel.innerText = tempYear; loadSummaryAndRender(); };
         
         yearHeader.appendChild(btnPrevYear);
         yearHeader.appendChild(yearLabel);
@@ -4904,11 +4933,17 @@ var UICalendar = (function () {
         function renderMonths() {
           monthsGrid.innerHTML = '';
           var monthNames = ['Thg 1', 'Thg 2', 'Thg 3', 'Thg 4', 'Thg 5', 'Thg 6', 'Thg 7', 'Thg 8', 'Thg 9', 'Thg 10', 'Thg 11', 'Thg 12'];
+          var summary = (config.monthSummary && config.monthSummary[tempYear]) ? config.monthSummary[tempYear] : {};
           for (let m = 0; m < 12; m++) {
             var mBtn = document.createElement('button');
             mBtn.className = 'calendar-dropdown-month-btn' + (tempYear === year && m === month ? ' active' : '');
             mBtn.innerText = monthNames[m];
-            
+            if (summary[m] && summary[m] > 0) {
+              mBtn.classList.add('has-events');
+              var dot = document.createElement('span');
+              dot.className = 'month-event-dot';
+              mBtn.appendChild(dot);
+            }
             mBtn.onclick = function() {
               document.body.removeChild(overlay);
               currentYear = tempYear;
@@ -4919,8 +4954,20 @@ var UICalendar = (function () {
             monthsGrid.appendChild(mBtn);
           }
         }
+
+        // Load summary for current tempYear when navigating years
+        function loadSummaryAndRender() {
+          if (config.monthSummary && !config.monthSummary[tempYear] && typeof config.onLoadYearSummary === 'function') {
+            config.onLoadYearSummary(tempYear).then(function(s) {
+              config.monthSummary[tempYear] = s;
+              renderMonths();
+            });
+          } else {
+            renderMonths();
+          }
+        }
         
-        renderMonths();
+        loadSummaryAndRender();
         dropdown.appendChild(monthsGrid);
         overlay.appendChild(dropdown);
         overlay.onclick = function() { document.body.removeChild(overlay); };
