@@ -203,6 +203,22 @@ var PermissionsPage = (function () {
       return;
     }
 
+    // Inject Root Node for global batch granting
+    var hasRoot = records.some(function(r) { return r.id === '00_ROOT' || r.Id === '00_ROOT' || r.MenuId === '00_ROOT'; });
+    if (!hasRoot) {
+      records.forEach(function(item) {
+        if (!item.parent && !item.Parent) {
+          item.parent = '00_ROOT';
+        }
+      });
+      records.push({
+        id: '00_ROOT',
+        label: 'Tất cả chức năng hệ thống',
+        icon: 'account_tree',
+        parent: ''
+      });
+    }
+
     // ── Bước 1: Build map id → item để tra cứu nhanh ──
     var map = {};
     records.forEach(function (item) {
@@ -229,6 +245,8 @@ var PermissionsPage = (function () {
 
     // ── Bước 4: Sắp xếp để parent luôn render trước con ──
     records.sort(function (a, b) {
+      if (a._id === '00_ROOT') return -1;
+      if (b._id === '00_ROOT') return 1;
       return (a._id || '').localeCompare(b._id || '');
     });
 
@@ -402,8 +420,8 @@ var PermissionsPage = (function () {
     return td;
   }
 
-  function _saveSingleRowPermission(tr) {
-    if (!currentSelectedGroup) return;
+  function _saveSingleRowPermission(tr, suppressToast) {
+    if (!currentSelectedGroup) return Promise.resolve();
 
 
 
@@ -445,14 +463,16 @@ var PermissionsPage = (function () {
     
     var label = tr.querySelector('.tree-label') ? tr.querySelector('.tree-label').innerText : id;
 
-    PermissionsService.savePermission(payload).then(function(res) {
+    return PermissionsService.savePermission(payload).then(function(res) {
         if (res && res.code === 0) {
-           UIToast.show('Đã cập nhật quyền: <b>' + label + '</b>', 'success');
+           if (!suppressToast) UIToast.show('Đã cập nhật quyền: <b>' + label + '</b>', 'success');
         } else {
-           UIToast.show(res.msg || 'Lỗi cập nhật quyền', 'error');
+           if (!suppressToast) UIToast.show(res.msg || 'Lỗi cập nhật quyền', 'error');
         }
+        return res;
     }).catch(function() {
-        UIToast.show('Lỗi kết nối khi cập nhật quyền', 'error');
+        if (!suppressToast) UIToast.show('Lỗi kết nối khi cập nhật quyền', 'error');
+        return null;
     });
   }
 
@@ -532,7 +552,7 @@ var PermissionsPage = (function () {
     var tbody = $container.querySelector('#permission-tree-table tbody');
     tbody.addEventListener('contextmenu', function(e) {
       var tr = e.target.closest('tr.tree-row');
-      if (!tr || tr.getAttribute('data-is-folder') === 'true') return;
+      if (!tr) return;
       e.preventDefault();
       e.stopPropagation(); // Chặn bubble lên document listener để tránh menu bị ẩn ngay lập tức
 
@@ -571,26 +591,54 @@ var PermissionsPage = (function () {
   }
 
   function _applyPreset(tr, preset) {
-    function setChk(action, val) {
-      var chk = tr.querySelector('.perm-chk[data-action="' + action + '"]');
-      if (chk) chk.checked = !!val;
-    }
-    function getChk(action) {
-      var chk = tr.querySelector('.perm-chk[data-action="' + action + '"]');
-      return chk ? chk.checked : false;
+    var isFolder = tr.getAttribute('data-is-folder') === 'true';
+    var targetRows = [];
+    
+    if (isFolder) {
+      var level = parseInt(tr.getAttribute('data-level') || '0', 10);
+      var nextTr = tr.nextElementSibling;
+      while (nextTr && nextTr.classList.contains('tree-row')) {
+        var nextLevel = parseInt(nextTr.getAttribute('data-level') || '0', 10);
+        if (nextLevel <= level) break;
+        if (nextTr.getAttribute('data-is-folder') !== 'true') {
+          targetRows.push(nextTr);
+        }
+        nextTr = nextTr.nextElementSibling;
+      }
+    } else {
+      targetRows.push(tr);
     }
 
-    if (preset.toggle) {
-      // Toggle mode: invert current value
-      setChk(preset.toggle, !getChk(preset.toggle));
-      if (preset.alsoToggle) setChk(preset.alsoToggle, getChk(preset.toggle));
-    } else if (preset.p) {
-      // Preset mode: apply all specified values
-      Object.keys(preset.p).forEach(function(k) { setChk(k, preset.p[k]); });
-    }
+    var suppressToast = targetRows.length > 1;
+    var promises = [];
 
-    // Auto-save after applying preset
-    _saveSingleRowPermission(tr);
+    targetRows.forEach(function(targetTr) {
+      function setChk(action, val) {
+        var chk = targetTr.querySelector('.perm-chk[data-action="' + action + '"]');
+        if (chk) chk.checked = !!val;
+      }
+      function getChk(action) {
+        var chk = targetTr.querySelector('.perm-chk[data-action="' + action + '"]');
+        return chk ? chk.checked : false;
+      }
+
+      if (preset.toggle) {
+        var newVal = !getChk(preset.toggle);
+        setChk(preset.toggle, newVal);
+        if (preset.alsoToggle) setChk(preset.alsoToggle, newVal);
+      } else if (preset.p) {
+        Object.keys(preset.p).forEach(function(k) { setChk(k, preset.p[k]); });
+      }
+
+      promises.push(_saveSingleRowPermission(targetTr, suppressToast));
+    });
+
+    if (suppressToast && promises.length > 0) {
+      Promise.all(promises).then(function() {
+        var label = tr.querySelector('.tree-label') ? tr.querySelector('.tree-label').innerText : 'Nhóm này';
+        UIToast.show('Đã cập nhật quyền hàng loạt cho: <b>' + label + '</b>', 'success');
+      });
+    }
   }
 
   return { render: render };
