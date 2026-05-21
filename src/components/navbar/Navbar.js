@@ -177,12 +177,10 @@ var Navbar = (function () {
           <span class="material-symbols-outlined">menu</span>
         </button>
 
-        <!-- Brand / Logo (Hidden as requested) -->
-        <div class="navbar-brand" onclick="window.location.hash='#/'" style="display:none; align-items:center;">
-          <!-- 
+        <!-- Brand / Logo -->
+        <div class="navbar-brand" onclick="window.location.hash='#/'" style="display:flex; align-items:center;">
           <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 150px; height: auto; margin-left: 16px;">
           <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 150px; height: auto; margin-left: 16px;">
-          -->
         </div>
 
         <!-- Desktop Menu -->
