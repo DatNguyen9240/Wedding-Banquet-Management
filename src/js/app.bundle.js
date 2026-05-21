@@ -2400,6 +2400,7 @@ var Alert = (function () {
       <button class="toast-close">
         <span class="material-symbols-outlined" style="font-size:18px;">close</span>
       </button>
+      <div class="toast-timer" style="animation-duration:${duration}ms"></div>
     `;
 
     toast.innerHTML = html;
