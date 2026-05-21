@@ -1431,9 +1431,9 @@ var Navbar = (function () {
         </button>
 
         <!-- Brand / Logo -->
-        <div class="navbar-brand" onclick="window.location.hash='#/'">
-          <span class="material-symbols-outlined brand-icon">diamond</span>
-          <span class="brand-text">PMQL Tiệc Cưới</span>
+        <div class="navbar-brand" onclick="window.location.hash='#/'" style="display:flex; align-items:center;">
+          <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 130px; height: auto; margin-left: 8px;">
+          <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 130px; height: auto; margin-left: 8px;">
         </div>
 
         <!-- Desktop Menu -->
@@ -1491,9 +1491,9 @@ var Navbar = (function () {
       <div class="mobile-drawer-overlay" id="mobile-drawer-overlay"></div>
       <div class="mobile-drawer" id="mobile-drawer">
         <div class="mobile-drawer-header">
-          <div class="mobile-drawer-brand">
-            <span class="material-symbols-outlined brand-icon" style="margin-right:12px;font-size:28px;color:var(--color-primary)">diamond</span>
-            Quản lý tiệc cưới
+          <div class="mobile-drawer-brand" style="display:flex; align-items:center; justify-content:center; width:100%; margin: 12px 0;">
+            <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 140px; height: auto; border-radius: 6px;">
+            <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 140px; height: auto;">
           </div>
           <button class="mobile-drawer-close" id="mobile-drawer-close">
             <span class="material-symbols-outlined">arrow_back</span>
@@ -1520,10 +1520,9 @@ var Navbar = (function () {
         <!-- Sidebar -->
         <aside class="app-sidebar" id="app-sidebar">
           <div class="sidebar-header">
-            <div style="display:flex;align-items:center;font-size:18px;font-weight:700;">
-              <span class="material-symbols-outlined"
-                style="margin-right:12px;font-size:28px;color:var(--color-primary)">diamond</span>
-              Quản lý tiệc cưới
+            <div style="display:flex; align-items:center; justify-content:center; width:100%; margin: 16px 0;">
+              <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 140px; height: auto; border-radius: 6px;">
+              <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 140px; height: auto;">
             </div>
             <button class="btn-close-sidebar" id="btn-close-sidebar">
               <span class="material-symbols-outlined">arrow_back</span>
@@ -1620,7 +1619,7 @@ var Navbar = (function () {
         _doRender(container);
         return; // Dùng cache, không gọi API lại
       }
-    } catch(e) {}
+    } catch (e) { }
 
     var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.PERMISSIONS)
       ? window.API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MENU_BY_GROUP : null;
@@ -1636,7 +1635,7 @@ var Navbar = (function () {
           // Lưu cache
           try {
             sessionStorage.setItem(CACHE_KEY, JSON.stringify({ groupId: groupId, config: NAV_CONFIG }));
-          } catch(e) {}
+          } catch (e) { }
         }
         _doRender(container);
       }).catch(function (err) {
@@ -1656,9 +1655,9 @@ var Navbar = (function () {
 
   /* Lắng nghe EventBus để tự động clear cache */
   if (window.EventBus) {
-    EventBus.on('user:logout',          clearMenuCache); // khi đăng xuất
-    EventBus.on('permissions:changed',  clearMenuCache); // khi admin đổi quyền
-    EventBus.on('menu:changed',         clearMenuCache); // khi menu được chỉnh sửa
+    EventBus.on('user:logout', clearMenuCache); // khi đăng xuất
+    EventBus.on('permissions:changed', clearMenuCache); // khi admin đổi quyền
+    EventBus.on('menu:changed', clearMenuCache); // khi menu được chỉnh sửa
   }
 
   function _doRender(container) {
@@ -5485,7 +5484,7 @@ var Header = (function () {
  * Cấu trúc thanh điều hướng bên trái
  */
 var Sidebar = (function () {
-  
+
   function render(containerId) {
     var container = document.getElementById(containerId);
     if (!container) return;
@@ -5493,10 +5492,9 @@ var Sidebar = (function () {
     var html = `
       <aside class="app-sidebar" id="app-sidebar">
         <div class="sidebar-header">
-          <div style="display:flex; align-items:center;">
-            <span class="material-symbols-outlined"
-              style="margin-right:12px; font-size:32px; color:var(--color-primary)">diamond</span>
-            Quản lí tiệc cưới
+          <div style="display:flex; align-items:center; justify-content:center; width:100%; margin: 16px 0;">
+            <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 140px; height: auto;">
+            <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 140px; height: auto;">
           </div>
           <!-- Nút đóng Sidebar trên Mobile -->
           <button class="btn-close-sidebar" id="btn-close-sidebar">
@@ -5615,7 +5613,7 @@ var Sidebar = (function () {
     if ($btnCloseSidebar) {
       $btnCloseSidebar.addEventListener('click', closeSidebar);
     }
-    
+
     if ($sidebarOverlay) {
       $sidebarOverlay.addEventListener('click', closeSidebar);
     }
@@ -5628,8 +5626,8 @@ var Sidebar = (function () {
   function _highlightActiveNav() {
     var currentHash = window.location.hash || '#/dashboard';
     var navItems = document.querySelectorAll('.sidebar-nav .nav-item');
-    
-    navItems.forEach(function(item) {
+
+    navItems.forEach(function (item) {
       item.classList.remove('active');
       if (item.getAttribute('href') === currentHash) {
         item.classList.add('active');

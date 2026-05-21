@@ -3,7 +3,7 @@
  * Cấu trúc thanh điều hướng bên trái
  */
 var Sidebar = (function () {
-  
+
   function render(containerId) {
     var container = document.getElementById(containerId);
     if (!container) return;
@@ -11,10 +11,9 @@ var Sidebar = (function () {
     var html = `
       <aside class="app-sidebar" id="app-sidebar">
         <div class="sidebar-header">
-          <div style="display:flex; align-items:center;">
-            <span class="material-symbols-outlined"
-              style="margin-right:12px; font-size:32px; color:var(--color-primary)">diamond</span>
-            Quản lí tiệc cưới
+          <div style="display:flex; align-items:center; justify-content:center; width:100%; margin: 16px 0;">
+            <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 140px; height: auto;">
+            <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 140px; height: auto;">
           </div>
           <!-- Nút đóng Sidebar trên Mobile -->
           <button class="btn-close-sidebar" id="btn-close-sidebar">
@@ -133,7 +132,7 @@ var Sidebar = (function () {
     if ($btnCloseSidebar) {
       $btnCloseSidebar.addEventListener('click', closeSidebar);
     }
-    
+
     if ($sidebarOverlay) {
       $sidebarOverlay.addEventListener('click', closeSidebar);
     }
@@ -146,8 +145,8 @@ var Sidebar = (function () {
   function _highlightActiveNav() {
     var currentHash = window.location.hash || '#/dashboard';
     var navItems = document.querySelectorAll('.sidebar-nav .nav-item');
-    
-    navItems.forEach(function(item) {
+
+    navItems.forEach(function (item) {
       item.classList.remove('active');
       if (item.getAttribute('href') === currentHash) {
         item.classList.add('active');

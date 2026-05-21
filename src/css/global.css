@@ -447,4 +447,6 @@ span.flatpickr-weekday {
 .flatpickr-current-month .flatpickr-monthDropdown-months {
   color: var(--color-primary) !important;
   font-weight: 800 !important;
-}
+}/* ---- LOGO THEME SWITCHING ---- */
+body.dark-theme .app-logo-light { display: none !important; }
+body:not(.dark-theme) .app-logo-dark { display: none !important; }
