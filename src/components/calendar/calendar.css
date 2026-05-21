@@ -218,9 +218,12 @@ body.dark-theme .calendar-dropdown-month-btn {
   align-self: flex-start;
   width: 100%;
   text-align: left;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
 }
 
-.calendar-day-number span {
+.calendar-day-number span.solar-date {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -235,12 +238,25 @@ body.dark-theme .calendar-dropdown-month-btn {
   background: linear-gradient(135deg, rgba(79, 70, 229, 0.04), rgba(79, 70, 229, 0.01));
 }
 
-.calendar-day.today .calendar-day-number span {
+.calendar-day.today .calendar-day-number span.solar-date {
   color: white !important;
   font-weight: 800;
   background: var(--color-primary);
   border-radius: 50%;
   box-shadow: 0 3px 8px rgba(79, 70, 229, 0.25);
+}
+
+.calendar-day-number span.lunar-date {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+.calendar-day-number span.lunar-date.highlight {
+  color: var(--color-danger);
+  font-weight: 700;
+  opacity: 0.9;
 }
 
 /* Event Labels inside Days */
@@ -393,11 +409,19 @@ body.dark-theme .calendar-dropdown-month-btn {
   .calendar-day-number {
     text-align: center;
     align-self: center;
+    flex-direction: column;
+    gap: 0;
   }
-  .calendar-day-number span {
+  .calendar-day-number span.solar-date {
     width: 22px;
     height: 22px;
     font-size: 12px;
+  }
+  .calendar-day-number span.lunar-date {
+    font-size: 9.5px;
+    line-height: 1;
+    margin-top: 1px;
+    white-space: nowrap;
   }
   .calendar-event-label {
     display: none;

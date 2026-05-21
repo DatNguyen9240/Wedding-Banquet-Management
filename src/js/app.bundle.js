@@ -5084,6 +5084,30 @@ var UICalendar = (function () {
       
       var cellIndex = 0;
 
+      // Helper function to generate Lunar date HTML using native Intl API
+      function _getLunarDateHTML(y, m, d) {
+        try {
+          var formatter = new Intl.DateTimeFormat('vi-VN-u-ca-chinese', { day: 'numeric', month: 'numeric' });
+          var parts = formatter.formatToParts(new Date(y, m, d));
+          var lDay = '', lMonth = '';
+          parts.forEach(function(p) {
+            if (p.type === 'day') lDay = p.value;
+            if (p.type === 'month') lMonth = p.value;
+          });
+          var str = formatter.format(new Date(y, m, d));
+          var isLeap = str.toLowerCase().indexOf('nhuận') !== -1 || str.toLowerCase().indexOf('bis') !== -1;
+          var displayStr = lDay;
+          if (lDay === '1' || d === 1) {
+            displayStr = lDay + '/' + lMonth + (isLeap ? ' Nhuận' : '');
+          }
+          var isHighlight = (lDay === '1' || lDay === '15');
+          var highlightClass = isHighlight ? ' highlight' : '';
+          return '<span class="lunar-date' + highlightClass + '" title="Ngày âm lịch">' + displayStr + '</span>';
+        } catch (e) {
+          return '';
+        }
+      }
+
       // ô trước ngày 1 (ngày tháng trước)
       for (let i = 0; i < firstDay; i++) {
         var empty = document.createElement('div');
@@ -5093,20 +5117,20 @@ var UICalendar = (function () {
         var dNum = document.createElement('div');
         dNum.className = 'calendar-day-number';
         var prevDateNum = daysInPrevMonth - firstDay + i + 1;
-        dNum.innerHTML = '<span>' + prevDateNum + '</span>';
+        var prevM = month - 1;
+        var prevY = year;
+        if (prevM < 0) { prevM = 11; prevY--; }
+        dNum.innerHTML = '<span class="solar-date">' + prevDateNum + '</span>' + _getLunarDateHTML(prevY, prevM, prevDateNum);
         empty.appendChild(dNum);
         
-        empty.onclick = (function(d) {
+        empty.onclick = (function(d, pY, pM) {
           return function() {
-            var prevM = month - 1;
-            var prevY = year;
-            if (prevM < 0) { prevM = 11; prevY--; }
             if (typeof config.onSelect === 'function') {
-              var dateStr = prevY + '-' + (prevM + 1).toString().padStart(2, '0') + '-' + d.toString().padStart(2, '0');
+              var dateStr = pY + '-' + (pM + 1).toString().padStart(2, '0') + '-' + d.toString().padStart(2, '0');
               config.onSelect(dateStr, null);
             }
           };
-        })(prevDateNum);
+        })(prevDateNum, prevY, prevM);
 
         grid.appendChild(empty);
         cellIndex++;
@@ -5124,7 +5148,7 @@ var UICalendar = (function () {
 
         var dayNum = document.createElement('div');
         dayNum.className = 'calendar-day-number';
-        dayNum.innerHTML = '<span>' + i + '</span>';
+        dayNum.innerHTML = '<span class="solar-date">' + i + '</span>' + _getLunarDateHTML(year, month, i);
         dayCell.appendChild(dayNum);
 
         // Thêm events
@@ -5199,20 +5223,20 @@ var UICalendar = (function () {
         var dNumEnd = document.createElement('div');
         dNumEnd.className = 'calendar-day-number';
         var nextDateNum = i + 1;
-        dNumEnd.innerHTML = '<span>' + nextDateNum + '</span>';
+        var nextM = month + 1;
+        var nextY = year;
+        if (nextM > 11) { nextM = 0; nextY++; }
+        dNumEnd.innerHTML = '<span class="solar-date">' + nextDateNum + '</span>' + _getLunarDateHTML(nextY, nextM, nextDateNum);
         emptyEnd.appendChild(dNumEnd);
         
-        emptyEnd.onclick = (function(d) {
+        emptyEnd.onclick = (function(d, nY, nM) {
           return function() {
-            var nextM = month + 1;
-            var nextY = year;
-            if (nextM > 11) { nextM = 0; nextY++; }
             if (typeof config.onSelect === 'function') {
-              var dateStr = nextY + '-' + (nextM + 1).toString().padStart(2, '0') + '-' + d.toString().padStart(2, '0');
+              var dateStr = nY + '-' + (nM + 1).toString().padStart(2, '0') + '-' + d.toString().padStart(2, '0');
               config.onSelect(dateStr, null);
             }
           };
-        })(nextDateNum);
+        })(nextDateNum, nextY, nextM);
 
         grid.appendChild(emptyEnd);
         cellIndex++;
