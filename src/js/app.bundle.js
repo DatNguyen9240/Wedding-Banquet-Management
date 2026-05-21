@@ -1481,10 +1481,7 @@ var Navbar = (function () {
 
             <!-- User dropdown -->
             <div class="user-dropdown" id="user-dropdown">
-              <div class="user-dropdown-header">
-                <div class="user-dropdown-name">Admin</div>
-                <div class="user-dropdown-role">Quản trị hệ thống</div>
-              </div>
+              <!-- No Header (Admin/Role removed) -->
 
               <div class="user-dropdown-item">
                 <span class="material-symbols-outlined">person</span>
@@ -1590,10 +1587,7 @@ var Navbar = (function () {
 
                 <!-- Vertical user dropdown -->
                 <div class="user-dropdown" id="vertical-user-dropdown">
-                  <div class="user-dropdown-header">
-                    <div class="user-dropdown-name">Admin</div>
-                    <div class="user-dropdown-role">Quản trị hệ thống</div>
-                  </div>
+                  <!-- No Header (Admin/Role removed) -->
                   <div class="user-dropdown-item">
                     <span class="material-symbols-outlined">person</span>
                     Hồ sơ cá nhân
@@ -1690,11 +1684,11 @@ var Navbar = (function () {
       _renderHorizontal(container);
     }
 
-    // Fetch and update Com1 setup value for user roles
+    // Fetch and update Com1 setup value for user roles (outer nav only)
     if (window.SystemDataService && window.SystemDataService.getSetupValue) {
       SystemDataService.getSetupValue('Com1').then(function(val) {
         if (val) {
-          document.querySelectorAll('.user-role-nav, .user-dropdown-role').forEach(function(el) {
+          document.querySelectorAll('.user-role-nav').forEach(function(el) {
             el.innerText = val;
           });
         }
