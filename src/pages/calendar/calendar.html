@@ -2,15 +2,13 @@
    LỊCH TIỆC TRONG THÁNG - HTML Template
    ═══════════════════════════════════════════ -->
 
-<div class="page-title-bar d-flex align-items-center justify-content-between flex-nowrap gap-2 gap-sm-3" style="background: var(--color-surface); padding: clamp(12px, 3vw, 20px) clamp(12px, 4vw, 24px); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--color-border); margin-bottom: 24px;">
-  <div class="d-flex align-items-center gap-3 text-truncate">
-    <div class="d-flex flex-column justify-content-center text-truncate">
-      <h1 class="text-truncate" style="margin: 0; font-size: clamp(18px, 5vw, 28px); font-weight: 800; letter-spacing: -0.5px; color: var(--color-text); line-height: 1.2;">Lịch Tiệc</h1>
-      <span class="text-truncate" style="font-size: clamp(11px, 2.5vw, 15px); color: var(--color-text-secondary); font-weight: 500; margin-top: 4px;">Quản lý và theo dõi sự kiện trong tháng</span>
-    </div>
+<div class="page-title-bar">
+  <div class="page-title-info">
+    <h1 class="page-title-heading">Lịch Tiệc</h1>
+    <span class="page-title-sub">Quản lý và theo dõi sự kiện trong tháng</span>
   </div>
-  <button class="btn btn-primary d-flex align-items-center justify-content-center gap-1 gap-sm-2 rounded-pill px-3 px-sm-4 flex-shrink-0" onclick="window.showCreateBanquetModal()" style="height: clamp(36px, 8vw, 44px); font-weight: 700; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); font-size: clamp(12px, 3vw, 15px);">
-    <span class="material-symbols-outlined" style="font-size: clamp(18px, 4vw, 20px);">add</span>
+  <button class="btn btn-primary d-flex align-items-center gap-2 rounded-pill flex-shrink-0" onclick="window.showCreateBanquetModal()" style="height: 40px; font-weight: 700;">
+    <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
     <span class="d-none d-sm-inline">Tạo Tiệc Mới</span>
     <span class="d-inline d-sm-none">Tạo Mới</span>
   </button>
