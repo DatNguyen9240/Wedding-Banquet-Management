@@ -1,4 +1,4 @@
-/* --- mockData.js --- */
+﻿/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -906,6 +906,30 @@ var PermissionsService = (function () {
   }
 
   /**
+   * Lấy TẤT CẢ menu + quyền của nhóm (kể cả menu đang bị IsRun=0)
+   * Dùng cho trang Phân Quyền để admin có thể bật/tắt bất kỳ menu nào
+   * @param {string} groupId
+   * @returns {Promise<Array>}
+   */
+  function getFullMenusByGroup(groupId) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('GET_ALL_MENUS_FOR_GROUP');
+      ApiClient.post(endpoint, {
+        NhomNguoiDangThaoTac: _currentGroupId(),
+        UserGroupID: groupId
+      })
+        .then(function (res) {
+          var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
+          resolve(records);
+        })
+        .catch(function (err) {
+          console.error('[PermissionsService] Lỗi getFullMenusByGroup:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
    * Lưu quyền cho một menu thuộc nhóm
    * @param {Object} payload
    * @returns {Promise}
@@ -933,30 +957,6 @@ var PermissionsService = (function () {
         .then(resolve)
         .catch(function (err) {
           console.error('[PermissionsService] Lỗi sync:', err);
-          reject(err);
-        });
-    });
-  }
-
-  /**
-   * Lấy TẤT CẢ menu + quyền của nhóm (kể cả menu đang bị IsRun=0)
-   * Dùng cho trang Phân Quyền để admin có thể bật/tắt bất kỳ menu nào
-   * @param {string} groupId
-   * @returns {Promise<Array>}
-   */
-  function getFullMenusByGroup(groupId) {
-    return new Promise(function (resolve, reject) {
-      var endpoint = _ep('GET_ALL_MENUS_FOR_GROUP');
-      ApiClient.post(endpoint, {
-        NhomNguoiDangThaoTac: _currentGroupId(),
-        UserGroupID: groupId
-      })
-        .then(function (res) {
-          var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
-          resolve(records);
-        })
-        .catch(function (err) {
-          console.error('[PermissionsService] Lỗi getFullMenusByGroup:', err);
           reject(err);
         });
     });
@@ -1235,7 +1235,7 @@ var Navbar = (function () {
   ───────────────────────────────────────── */
   var LAYOUT_KEY = 'pmql_layout_mode';
   var LAYOUT_HORIZONTAL = 'horizontal';
-  var LAYOUT_VERTICAL   = 'vertical';
+  var LAYOUT_VERTICAL = 'vertical';
 
   function getLayout() {
     return localStorage.getItem(LAYOUT_KEY) || LAYOUT_HORIZONTAL;
@@ -1262,82 +1262,44 @@ var Navbar = (function () {
   }
 
   /* ─────────────────────────────────────────
-     Cấu hình menu — groups + single links
+     Cấu hình menu — load từ DB (100% dynamic)
   ───────────────────────────────────────── */
-  var NAV_CONFIG = [
-    // Single link: Tổng quan
-    {
-      type: 'link',
-      href: '#/dashboard',
-      icon: 'dashboard',
-      label: 'Tổng quan'
-    },
+  var NAV_CONFIG = [];
 
-    // Dropdown: Quản lý tiệc
-    {
-      type: 'group',
-      icon: 'celebration',
-      label: 'Quản lý tiệc',
-      items: [
-        { href: '#/customers',   icon: 'manage_accounts', label: 'Hồ sơ khách hàng' },
-        { href: '#/calendar',    icon: 'calendar_month',  label: 'Lịch tiệc' },
-        { href: '#/hall-status', icon: 'meeting_room',    label: 'Trạng thái sảnh' },
-        { href: '#/visitor',     icon: 'hail',            label: 'Khách tham quan' },
-        { href: '#/booking',     icon: 'edit_document',   label: 'Biên nhận cọc' },
-        { href: '#/contract',    icon: 'contract',        label: 'Hợp đồng tiệc' },
-        { href: '#/checkout',    icon: 'receipt_long',    label: 'Quyết toán' }
-      ]
-    },
+  function _buildConfigFromDB(dbMenus) {
+    var config = [];
+    // API trả về: id, parent, label, icon, URLPara
+    var parents = dbMenus.filter(function (m) { return !m.parent || String(m.parent).trim() === ''; });
+    parents.sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
 
-    // Dropdown: Hệ thống
-    {
-      type: 'group',
-      icon: 'admin_panel_settings',
-      label: 'Hệ thống',
-      items: [
-        { href: '#/users',       icon: 'group',                 label: 'Người dùng' },
-        { href: '#/permissions', icon: 'admin_panel_settings',  label: 'Phân quyền' },
-        { href: '#/menus',       icon: 'list_alt',              label: 'Danh mục Menu' },
-        { href: '#/settings',    icon: 'settings_applications', label: 'Thiết lập chung' }
-      ]
-    },
-
-    // Single link: Nhân sự
-    {
-      type: 'link',
-      href: '#/staff',
-      icon: 'badge',
-      label: 'Nhân sự'
-    },
-
-    // Single link: Danh mục
-    {
-      type: 'link',
-      href: '#/categories',
-      icon: 'category',
-      label: 'Danh mục'
-    },
-
-    // Dropdown: Báo cáo
-    {
-      type: 'group',
-      icon: 'bar_chart',
-      label: 'Báo cáo',
-      items: [
-        { href: '#/report-revenue', icon: 'bar_chart',    label: 'Doanh thu tiệc' },
-        { href: '#/report-cost',    icon: 'price_change', label: 'Chi phí tiệc' },
-        { href: '#/report-other',   icon: 'assessment',   label: 'Báo cáo khác' }
-      ]
-    },
-
-    // Single: Components demo
-    {
-      type: 'link',
-      href: '#/components-demo',
-      icon: 'integration_instructions',
-      label: 'UI Demo'
-    }
-  ];
+    parents.forEach(function (p) {
+      var children = dbMenus.filter(function (m) { return m.parent === p.id; });
+      if (children.length > 0) {
+        children.sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
+        var items = children.map(function (c) {
+          return {
+            href: c.URLPara || c.urlPara || c.FormKey || '',
+            icon: c.icon || c.IconClass || 'circle',
+            label: c.label || c.TenMenu || c.VN || ''
+          };
+        });
+        config.push({
+          type: 'group',
+          icon: p.icon || p.IconClass || 'folder',
+          label: p.label || p.TenMenu || p.VN || '',
+          items: items
+        });
+      } else {
+        config.push({
+          type: 'link',
+          href: p.URLPara || p.urlPara || p.FormKey || '',
+          icon: p.icon || p.IconClass || 'link',
+          label: p.label || p.TenMenu || p.VN || ''
+        });
+      }
+    });
+    return config;
+  }
 
   /* ─────────────────────────────────────────
      Build HTML helpers
@@ -1424,29 +1386,6 @@ var Navbar = (function () {
   }
 
   /* ── Layout switcher buttons HTML ── */
-  function _buildLayoutSwitcherHTML(currentLayout) {
-    var isH = currentLayout === LAYOUT_HORIZONTAL;
-    var isV = !isH;
-    return `
-      <div class="layout-switcher-row">
-        <div class="layout-switcher-label">
-          <span class="material-symbols-outlined" style="font-size:15px;opacity:.6">tune</span>
-          Giao diện
-        </div>
-        <div class="layout-toggle-group">
-          <button class="layout-toggle-btn ${isH ? 'active' : ''}" 
-                  id="btn-layout-horizontal" 
-                  title="Thanh ngang (Navbar)">
-            <span class="material-symbols-outlined">view_agenda</span>
-          </button>
-          <button class="layout-toggle-btn ${isV ? 'active' : ''}" 
-                  id="btn-layout-vertical" 
-                  title="Thanh dọc (Sidebar)">
-            <span class="material-symbols-outlined">view_sidebar</span>
-          </button>
-        </div>
-      </div>`;
-  }
 
   /* ─────────────────────────────────────────
      Render — Horizontal (Navbar) mode
@@ -1502,10 +1441,6 @@ var Navbar = (function () {
               <div class="user-dropdown-item">
                 <span class="material-symbols-outlined">person</span>
                 Hồ sơ cá nhân
-              </div>
-              <div class="user-dropdown-item" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
-                <span class="material-symbols-outlined">notifications</span>
-                Thông báo
               </div>
               <a href="#/appearance" class="user-dropdown-item" style="text-decoration: none;">
                 <span class="material-symbols-outlined">palette</span>
@@ -1639,13 +1574,65 @@ var Navbar = (function () {
     _attachVerticalEvents();
   }
 
-  /* ─────────────────────────────────────────
-     Main render — dispatch by layout mode
-  ───────────────────────────────────────── */
+  var CACHE_KEY = 'pmql_nav_cache';
+
   function render(containerId) {
     var container = document.getElementById(containerId);
     if (!container) return;
 
+    var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+    var groupId = u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
+
+    // Nếu đã có cache → render ngay, không chờ API
+    try {
+      var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+      if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
+        NAV_CONFIG = cached.config;
+        _doRender(container);
+        return; // Dùng cache, không gọi API lại
+      }
+    } catch(e) {}
+
+    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.PERMISSIONS)
+      ? window.API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MENU_BY_GROUP : null;
+
+    if (endpoint && window.ApiClient) {
+      ApiClient.post(endpoint, {
+        NhomNguoiDangThaoTac: groupId,
+        UserGroupID: groupId
+      }).then(function (res) {
+        var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
+        if (records && records.length > 0) {
+          NAV_CONFIG = _buildConfigFromDB(records);
+          // Lưu cache
+          try {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({ groupId: groupId, config: NAV_CONFIG }));
+          } catch(e) {}
+        }
+        _doRender(container);
+      }).catch(function (err) {
+        console.error('[Navbar] Lỗi tải menu từ DB:', err);
+        _doRender(container);
+      });
+    } else {
+      _doRender(container);
+    }
+  }
+
+  /* Xóa cache khi logout hoặc đổi nhóm quyền */
+  function clearMenuCache() {
+    sessionStorage.removeItem(CACHE_KEY);
+    NAV_CONFIG = [];
+  }
+
+  /* Lắng nghe EventBus để tự động clear cache */
+  if (window.EventBus) {
+    EventBus.on('user:logout',          clearMenuCache); // khi đăng xuất
+    EventBus.on('permissions:changed',  clearMenuCache); // khi admin đổi quyền
+    EventBus.on('menu:changed',         clearMenuCache); // khi menu được chỉnh sửa
+  }
+
+  function _doRender(container) {
     var mode = getLayout();
     applyLayout(mode);
     _adjustAppLayout(mode);
@@ -1673,7 +1660,7 @@ var Navbar = (function () {
   ───────────────────────────────────────── */
   function _moveContentToVerticalMain() {
     var $vertMain = document.getElementById('vertical-main');
-    var $content  = document.getElementById('app-content');
+    var $content = document.getElementById('app-content');
     if ($vertMain && $content && !$vertMain.contains($content)) {
       $vertMain.appendChild($content);
     }
@@ -1681,7 +1668,7 @@ var Navbar = (function () {
 
   /* Move #app-content back to #app (horizontal mode) */
   function _moveContentToApp() {
-    var $app     = document.getElementById('app');
+    var $app = document.getElementById('app');
     var $content = document.getElementById('app-content');
     if ($app && $content && $content.parentNode !== $app) {
       $app.appendChild($content);
@@ -1733,17 +1720,17 @@ var Navbar = (function () {
     });
 
     // Mobile drawer
-    var $hamburger  = document.getElementById('navbar-hamburger');
-    var $overlay    = document.getElementById('mobile-drawer-overlay');
-    var $drawer     = document.getElementById('mobile-drawer');
+    var $hamburger = document.getElementById('navbar-hamburger');
+    var $overlay = document.getElementById('mobile-drawer-overlay');
+    var $drawer = document.getElementById('mobile-drawer');
     var $drawerClose = document.getElementById('mobile-drawer-close');
 
-    function openDrawer()  { if ($drawer) $drawer.classList.add('open'); if ($overlay) $overlay.classList.add('active'); }
+    function openDrawer() { if ($drawer) $drawer.classList.add('open'); if ($overlay) $overlay.classList.add('active'); }
     function closeDrawer() { if ($drawer) $drawer.classList.remove('open'); if ($overlay) $overlay.classList.remove('active'); }
 
-    if ($hamburger)   $hamburger.addEventListener('click', openDrawer);
+    if ($hamburger) $hamburger.addEventListener('click', openDrawer);
     if ($drawerClose) $drawerClose.addEventListener('click', closeDrawer);
-    if ($overlay)     $overlay.addEventListener('click', closeDrawer);
+    if ($overlay) $overlay.addEventListener('click', closeDrawer);
 
     document.querySelectorAll('.mobile-nav-item').forEach(function (item) {
       item.addEventListener('click', function () { setTimeout(closeDrawer, 150); });
@@ -1761,17 +1748,17 @@ var Navbar = (function () {
     _moveContentToVerticalMain();
 
     // Sidebar toggle
-    var $sidebar  = document.getElementById('app-sidebar');
-    var $overlay  = document.getElementById('sidebar-overlay');
-    var $btnOpen  = document.getElementById('btn-hamburger');
+    var $sidebar = document.getElementById('app-sidebar');
+    var $overlay = document.getElementById('sidebar-overlay');
+    var $btnOpen = document.getElementById('btn-hamburger');
     var $btnClose = document.getElementById('btn-close-sidebar');
 
-    function openSidebar()  { if ($sidebar) $sidebar.classList.add('open'); if ($overlay) $overlay.classList.add('active'); }
+    function openSidebar() { if ($sidebar) $sidebar.classList.add('open'); if ($overlay) $overlay.classList.add('active'); }
     function closeSidebar() { if ($sidebar) $sidebar.classList.remove('open'); if ($overlay) $overlay.classList.remove('active'); }
 
-    if ($btnOpen)  $btnOpen.addEventListener('click', openSidebar);
+    if ($btnOpen) $btnOpen.addEventListener('click', openSidebar);
     if ($btnClose) $btnClose.addEventListener('click', closeSidebar);
-    if ($overlay)  $overlay.addEventListener('click', closeSidebar);
+    if ($overlay) $overlay.addEventListener('click', closeSidebar);
 
     // User dropdown in vertical header
     var $uProf = document.getElementById('vertical-user-profile');
@@ -1781,7 +1768,7 @@ var Navbar = (function () {
         e.stopPropagation();
         var isOpen = $uProf.classList.contains('open');
         $uProf.classList.toggle('open', !isOpen);
-        
+
         // Also toggle 'open' on dropdown if needed by other CSS
         $uDrop.classList.toggle('open', !isOpen);
 
@@ -1834,6 +1821,7 @@ var Navbar = (function () {
     getLayout: getLayout,
     setLayout: setLayout,
     applyLayout: applyLayout,
+    clearMenuCache: clearMenuCache,
     moveContentToApp: _moveContentToApp,
     moveContentToVerticalMain: _moveContentToVerticalMain
   };
