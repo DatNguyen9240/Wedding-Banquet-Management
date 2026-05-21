@@ -40,7 +40,8 @@ window.API_CONFIG = {
         SYSTEM: {
             HALLS: '/api/API_DanhSachSanh',
             SHIFTS: '/api/API_DanhSachCaLam',
-            BANQUET_TYPES: '/api/API_DanhSachLoaiHinhTiec'
+            BANQUET_TYPES: '/api/API_DanhSachLoaiHinhTiec',
+            SETUP_VALUE: '/api/API_LayGiaTriSetup'
         },
         CONTRACT: {
             LIST: '/api/API_DanhSachHopDong',

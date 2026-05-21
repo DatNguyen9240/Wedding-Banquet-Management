@@ -417,6 +417,19 @@ var Navbar = (function () {
     } else {
       _renderHorizontal(container);
     }
+
+    // Fetch and update Com1 setup value for user roles
+    if (window.SystemDataService && window.SystemDataService.getSetupValue) {
+      SystemDataService.getSetupValue('Com1').then(function(val) {
+        if (val) {
+          document.querySelectorAll('.user-role-nav, .user-dropdown-role').forEach(function(el) {
+            el.innerText = val;
+          });
+        }
+      }).catch(function(err) {
+        console.error('[Navbar] Lỗi tải SetupValue Com1:', err);
+      });
+    }
   }
 
   /* Adjust #app and #app-content structure per mode */

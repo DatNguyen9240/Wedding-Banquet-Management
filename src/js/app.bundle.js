@@ -601,6 +601,24 @@ var SystemDataService = (function() {
     });
   }
 
+  function getSetupValue(codeId) {
+    return new Promise(function(resolve, reject) {
+      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.SYSTEM || !API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE) {
+        return reject('Missing API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE');
+      }
+
+      // Append CodeID as a query parameter (though we hardcoded it in SQL, it's good practice in JS)
+      var url = API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE + (codeId ? '?CodeID=' + codeId : '');
+      ApiClient.get(url)
+        .then(function(res) {
+          var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
+          var value = records.length > 0 ? records[0].CodeValue : null;
+          resolve(value);
+        })
+        .catch(reject);
+    });
+  }
+
   function invalidateCache() {
     _hallsCache = null;
     _shiftsCache = null;
@@ -610,6 +628,7 @@ var SystemDataService = (function() {
     getHalls: getHalls,
     getShifts: getShifts,
     getBanquetTypes: getBanquetTypes,
+    getSetupValue: getSetupValue,
     invalidateCache: invalidateCache
   };
 })();
@@ -1669,6 +1688,19 @@ var Navbar = (function () {
       _renderVertical(container);
     } else {
       _renderHorizontal(container);
+    }
+
+    // Fetch and update Com1 setup value for user roles
+    if (window.SystemDataService && window.SystemDataService.getSetupValue) {
+      SystemDataService.getSetupValue('Com1').then(function(val) {
+        if (val) {
+          document.querySelectorAll('.user-role-nav, .user-dropdown-role').forEach(function(el) {
+            el.innerText = val;
+          });
+        }
+      }).catch(function(err) {
+        console.error('[Navbar] Lỗi tải SetupValue Com1:', err);
+      });
     }
   }
 
