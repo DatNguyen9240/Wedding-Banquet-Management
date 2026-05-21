@@ -21,8 +21,8 @@ var ContractService = (function () {
       ApiClient.get(endpoint)
         .then(function (res) {
           var data = [];
-          if (res && res.records)      data = res.records;
-          else if (res && res.data)    data = res.data;
+          if (res && res.records) data = res.records;
+          else if (res && res.data) data = res.data;
           else if (Array.isArray(res)) data = res;
           resolve(data);
         })
@@ -60,12 +60,14 @@ var ContractService = (function () {
    */
   function getFoods(params) {
     return new Promise(function (resolve, reject) {
+      var endpoint = API_CONFIG.ENDPOINTS.FOODS.LIST;
+      
       var payloadString = encodeURIComponent(JSON.stringify(params || { Keyword: '', PhanLoai: '', IsChay: -1 }));
-      ApiClient.get('/api/API_ThucDon_List?q=' + payloadString)
+      ApiClient.get(endpoint + '?q=' + payloadString)
         .then(function (res) {
           var data = [];
-          if (res && res.records)      data = res.records;
-          else if (res && res.data)    data = res.data;
+          if (res && res.records) data = res.records;
+          else if (res && res.data) data = res.data;
           else if (Array.isArray(res)) data = res;
           resolve(data);
         })

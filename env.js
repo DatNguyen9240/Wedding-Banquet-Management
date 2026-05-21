@@ -46,6 +46,9 @@ window.API_CONFIG = {
         CONTRACT: {
             LIST: '/api/API_DanhSachHopDong',
         },
+        FOODS: {
+            LIST: '/api/API_DanhSachThucDon',
+        },
         CALENDAR: {
             LIST: '/api/API_DanhSachLich',
             SAVE: '/api/API_LuuPhieuCoc',

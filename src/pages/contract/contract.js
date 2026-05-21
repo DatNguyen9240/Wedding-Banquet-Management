@@ -1326,7 +1326,7 @@ var ContractPage = (function () {
               ${UIIcon.createHTML('list_alt', 'color: var(--color-primary); font-size: 20px;')}
               Danh sách món đã chọn
             </span>
-            ${UIIcon.createHTML('expand_more', 'font-size: 24px; cursor: pointer;', 'close-drawer-btn', 'onclick="ContractPage.toggleSelectedDrawer()"')}
+            ${UIIcon.createHTML('expand_more', 'font-size: 24px; cursor: pointer;', 'close-drawer-btn', 'ContractPage.toggleSelectedDrawer()')}
           </div>
           <div id="modal-sidebar-list" class="drawer-body">
             <div class="text-center py-5 text-muted" style="font-size: 13px;">
@@ -1339,8 +1339,8 @@ var ContractPage = (function () {
         <!-- Sleek Horizontal Sticky Bottom Bar -->
         <div class="modal-bottom-bar">
           <div class="modal-bottom-left-sec">
-            ${UIButton.createHTML({ type: 'outline-primary', className: 'd-flex align-items-center gap-2', style: 'height: 38px; border-radius: 8px; font-weight: 700; font-size: 13px; padding: 0 14px; white-space: nowrap;', onClick: 'ContractPage.toggleSelectedDrawer()',
-              text: `${UIIcon.createHTML('shopping_cart', 'font-size: 20px;')}<span>Đã chọn: <strong id="modal-sidebar-count">0</strong> món</span>${UIIcon.createHTML('expand_less', 'font-size: 18px;', '', 'id="drawer-toggle-arrow"')}` })}
+            ${UIButton.createHTML({ type: 'outline-primary', className: 'd-flex align-items-center justify-content-center', style: 'height: 38px; border-radius: 8px; font-weight: 700; font-size: 14px; padding: 0 14px; white-space: nowrap; gap: 6px;', onClick: 'ContractPage.toggleSelectedDrawer()',
+              text: `${UIIcon.createHTML('shopping_cart', 'font-size: 20px; transform: translateY(2.5px);')}<span style="transform: translateY(-1px);">Đã chọn: <strong id="modal-sidebar-count">0</strong> món</span>${UIIcon.createHTML('expand_less', 'font-size: 20px; transform: translateY(2.5px);', '', 'id="drawer-toggle-arrow"')}` })}
           </div>
           
           <div class="modal-bottom-right-sec" style="display: flex; align-items: center; gap: 16px;">
