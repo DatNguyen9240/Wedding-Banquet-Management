@@ -11,9 +11,9 @@ var Sidebar = (function () {
     var html = `
       <aside class="app-sidebar" id="app-sidebar">
         <div class="sidebar-header">
-          <div style="display:flex; align-items:center; justify-content:center; width:100%; margin: 16px 0;">
-            <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 140px; height: auto;">
-            <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 140px; height: auto;">
+          <div style="display:flex; align-items:center; justify-content:flex-start; width:100%; margin: 16px 0; padding-left: 16px;">
+            <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 150px; height: auto;">
+            <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 150px; height: auto;">
           </div>
           <!-- Nút đóng Sidebar trên Mobile -->
           <button class="btn-close-sidebar" id="btn-close-sidebar">

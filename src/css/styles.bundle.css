@@ -579,6 +579,12 @@ span.flatpickr-weekday {
 }/* ---- LOGO THEME SWITCHING ---- */
 body.dark-theme .app-logo-light { display: none !important; }
 body:not(.dark-theme) .app-logo-dark { display: none !important; }
+/* Sidebar Text Brightness for Dark Theme */
+body.dark-theme .nav-item { color: #f8fafc; }
+body.dark-theme .nav-item span.icon { color: #f8fafc; opacity: 0.9; }
+body.dark-theme .nav-group-title { color: #94a3b8; font-weight: 600; }
+body.dark-theme .nav-item:hover { color: #ffffff; background: rgba(255,255,255,0.05); }
+body.dark-theme .nav-item:hover span.icon { opacity: 1; }
 
 
 /* --- navbar.css --- */
