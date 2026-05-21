@@ -929,13 +929,13 @@ body.dark-theme .navbar-user:hover {
 
 .nav-item .icon {
   font-size: 20px;
-  opacity: 0.75;
+  opacity: 0.9;
   transition: all var(--transition-fast);
 }
 
 .nav-item:hover {
-  background: rgba(255,255,255,0.05);
-  color: var(--color-text);
+  background: rgba(79, 70, 229, 0.07);
+  color: var(--color-primary);
 }
 
 .nav-item:hover .icon { opacity: 1; }

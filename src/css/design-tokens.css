@@ -37,8 +37,8 @@
   /* Slate 800 */
   --color-text-secondary: #64748B;
   /* Slate 500 */
-  --color-text-sidebar: var(--color-text-secondary);
-  /* Slate 400 */
+  --color-text-sidebar: #334155;
+  /* Slate 700 — dễ đọc trên nền trắng */
 
   /* Borders & Dividers */
   --color-border: #F1F5F9;
