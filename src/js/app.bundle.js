@@ -1,4 +1,4 @@
-﻿/* --- mockData.js --- */
+/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -938,9 +938,34 @@ var PermissionsService = (function () {
     });
   }
 
+  /**
+   * Lấy TẤT CẢ menu + quyền của nhóm (kể cả menu đang bị IsRun=0)
+   * Dùng cho trang Phân Quyền để admin có thể bật/tắt bất kỳ menu nào
+   * @param {string} groupId
+   * @returns {Promise<Array>}
+   */
+  function getFullMenusByGroup(groupId) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('GET_ALL_MENUS_FOR_GROUP');
+      ApiClient.post(endpoint, {
+        NhomNguoiDangThaoTac: _currentGroupId(),
+        UserGroupID: groupId
+      })
+        .then(function (res) {
+          var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
+          resolve(records);
+        })
+        .catch(function (err) {
+          console.error('[PermissionsService] Lỗi getFullMenusByGroup:', err);
+          reject(err);
+        });
+    });
+  }
+
   return {
     getGroups: getGroups,
     getMenusByGroup: getMenusByGroup,
+    getFullMenusByGroup: getFullMenusByGroup,
     savePermission: savePermission,
     sync: sync
   };

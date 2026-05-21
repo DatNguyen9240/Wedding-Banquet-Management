@@ -61,6 +61,30 @@ var PermissionsService = (function () {
   }
 
   /**
+   * Lấy TẤT CẢ menu + quyền của nhóm (kể cả menu đang bị IsRun=0)
+   * Dùng cho trang Phân Quyền để admin có thể bật/tắt bất kỳ menu nào
+   * @param {string} groupId
+   * @returns {Promise<Array>}
+   */
+  function getFullMenusByGroup(groupId) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = _ep('GET_ALL_MENUS_FOR_GROUP');
+      ApiClient.post(endpoint, {
+        NhomNguoiDangThaoTac: _currentGroupId(),
+        UserGroupID: groupId
+      })
+        .then(function (res) {
+          var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
+          resolve(records);
+        })
+        .catch(function (err) {
+          console.error('[PermissionsService] Lỗi getFullMenusByGroup:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
    * Lưu quyền cho một menu thuộc nhóm
    * @param {Object} payload
    * @returns {Promise}
@@ -96,6 +120,7 @@ var PermissionsService = (function () {
   return {
     getGroups: getGroups,
     getMenusByGroup: getMenusByGroup,
+    getFullMenusByGroup: getFullMenusByGroup,
     savePermission: savePermission,
     sync: sync
   };

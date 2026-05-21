@@ -24,6 +24,7 @@ window.API_CONFIG = {
         PERMISSIONS: {
             SYNC: '/api/API_DongBoQuyenTruyCap',
             GET_MENU_BY_GROUP: '/api/API_LayMenuTheoNhomQuyen',
+            GET_ALL_MENUS_FOR_GROUP: '/api/API_LayQuyenNhomDayDu',
             SAVE_GROUP_PERMISSIONS: '/api/API_LuuQuyenCuaNhom',
             GET_GROUP_LIST: '/api/API_LayDanhSachNhom',
         },

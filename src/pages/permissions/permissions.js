@@ -33,12 +33,28 @@ var PermissionsPage = (function () {
             .role-tab { padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--color-text); }
             .role-tab:hover { background: rgba(148, 163, 184, 0.1); }
             .role-tab.active { background: rgba(60, 80, 224, 0.1); color: var(--color-primary); }
+
+            #perm-ctx-menu { position: fixed; z-index: 9999; background: var(--color-surface, #fff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); padding: 4px 0; min-width: 240px; max-height: 80vh; overflow-y: auto; display: none; }
+            #perm-ctx-menu .ctx-item { padding: 6px 14px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 8px; color: var(--color-text, #333); transition: background 0.15s; }
+            #perm-ctx-menu .ctx-item:hover { background: rgba(var(--color-primary-rgb, 99,102,241), 0.08); color: var(--color-primary, #6366f1); }
+            #perm-ctx-menu .ctx-item.danger { color: var(--color-danger, #ef4444); }
+            #perm-ctx-menu .ctx-item.danger:hover { background: rgba(239,68,68,0.08); }
+            #perm-ctx-menu .ctx-divider { border: none; border-top: 1px solid var(--color-border, #e2e8f0); margin: 3px 0; }
           `;
           $container.appendChild(style);
+
+          // Tạo context menu element (attach vào body để tránh bị clip)
+          var ctxMenu = document.getElementById('perm-ctx-menu');
+          if (!ctxMenu) {
+            ctxMenu = document.createElement('div');
+            ctxMenu.id = 'perm-ctx-menu';
+            document.body.appendChild(ctxMenu);
+          }
 
           _renderRoleTabs();
           _setupTreeToggle();
           _setupAutoSave();
+          _setupContextMenu();
 
           var btnSync = $container.querySelector('#btn-sync-permission');
           if (btnSync) btnSync.addEventListener('click', _syncPermissions);
@@ -109,8 +125,14 @@ var PermissionsPage = (function () {
     var tbody = $container.querySelector('#permission-tree-table tbody');
     tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 16px;">Đang tải cấu trúc quyền...</td></tr>';
 
-    PermissionsService.getMenusByGroup(group.id)
+    PermissionsService.getFullMenusByGroup(group.id)
       .then(function (records) {
+        // DEBUG: Xem API trả về gì — xóa log này sau khi fix xong
+        console.log('[Permissions DEBUG] Group:', group.id, '| Total records:', records.length);
+        if (records.length > 0) {
+          console.log('[Permissions DEBUG] Sample record:', JSON.stringify(records[0]));
+          console.log('[Permissions DEBUG] IsRun values (first 5):', records.slice(0, 5).map(function(r) { return r.id + '=' + r.IsRun; }));
+        }
         _buildTreeTableFromApi(group, records);
       })
       .catch(function (err) {
@@ -123,89 +145,81 @@ var PermissionsPage = (function () {
     var tbody = $container.querySelector('#permission-tree-table tbody');
     tbody.innerHTML = '';
 
-    // Root
-    var rootId = 'root';
-    _appendRow(tbody, {
-      id: rootId,
-      parentId: null,
-      level: 0,
-      label: 'Hệ thống Quản lý Tiệc Cưới',
-      icon: 'business',
-      isFolder: true,
-      expanded: true
-    });
-
     if (!records || records.length === 0) {
-      tbody.innerHTML += UIEmptyState.createTableRowHTML({
-        colspan: 12,
-        text: 'Chưa có dữ liệu phân quyền cho nhóm này'
-      });
+      tbody.innerHTML = '<tr><td colspan="12" class="text-center" style="padding:24px;color:var(--color-text-secondary);">Chưa có dữ liệu phân quyền cho nhóm này</td></tr>';
       return;
     }
 
-    records.forEach(function (item, mIdx) {
-      var modId = item.id || item.Id || item.MenuId || ('mod_' + mIdx);
-      var modName = item.label || item.Label || item.name || item.Name || item.TenMenu || item.MenuName || ('Chức năng ' + mIdx);
-      var parent = item.parent || item.Parent;
-      var parentId = parent ? parent : rootId;
-      var level = parent ? 2 : 1;
+    // ── Bước 1: Build map id → item để tra cứu nhanh ──
+    var map = {};
+    records.forEach(function (item) {
+      var id = String(item.id || item.Id || item.MenuId || '');
+      item._id = id;
+      map[id] = item;
+    });
 
-      var isFolder = records.some(function (r) {
-        return (r.parent || r.Parent) === modId;
-      });
+    // ── Bước 2: Xác định folder (có ít nhất 1 item con trỏ vào) ──
+    var folderIds = {};
+    records.forEach(function (item) {
+      var parent = String(item.parent || item.Parent || '');
+      if (parent && map[parent]) folderIds[parent] = true;
+    });
 
-      var canXem = item.xem || item.Xem || item.CanView || item.View || item.IsRun || false;
-      var canThem = item.them || item.Them || item.CanAdd || item.Add || item.IsAdd || false;
-      var canSua = item.sua || item.Sua || item.CanEdit || item.Edit || item.IsUpdate || false;
-      var canXoa = item.xoa || item.Xoa || item.CanDelete || item.Delete || item.IsDelete || false;
-      
-      var isManager = item.isManager || false;
-      var isAdmin = item.isAdmin || false;
-      var isAutoLock = item.isAutoLock || false;
-      var isHideAmount = item.isHideAmount || false;
-      var isLockDoc = item.isLockDoc || false;
-      var isUnLockDoc = item.isUnLockDoc || false;
-      var isExportExcel = item.isExportExcel || false;
+    // ── Bước 3: Tính level động theo chuỗi parent (đệ quy) ──
+    function getLevel(item, depth) {
+      if (!depth) depth = 0;
+      if (depth > 10) return depth;
+      var parent = String(item.parent || item.Parent || '');
+      if (!parent || !map[parent]) return depth;
+      return getLevel(map[parent], depth + 1);
+    }
 
-      var rawIcon = (item.icon || item.IconClass || '').toLowerCase().trim();
-      var parsedIcon = 'folder';
-      if (rawIcon) {
-        if (rawIcon.includes('grid')) parsedIcon = 'grid_view';
-        else if (rawIcon.includes('home')) parsedIcon = 'home';
-        else if (rawIcon.includes('user') || rawIcon.includes('person') || rawIcon.includes('account')) parsedIcon = 'person';
-        else if (rawIcon.includes('setting') || rawIcon.includes('gear') || rawIcon.includes('config')) parsedIcon = 'settings';
-        else if (rawIcon.includes('report') || rawIcon.includes('chart') || rawIcon.includes('stats')) parsedIcon = 'bar_chart';
-        else if (rawIcon.includes('list') || rawIcon.includes('table')) parsedIcon = 'list_alt';
-        else if (rawIcon.includes('file') || rawIcon.includes('doc')) parsedIcon = 'description';
-        else if (rawIcon.includes('bell') || rawIcon.includes('notify')) parsedIcon = 'notifications';
-        else if (rawIcon.indexOf('-') === -1 && rawIcon.indexOf(' ') === -1) {
-          // If it has no spaces or dashes, it might be a valid material icon name (e.g. 'business')
-          parsedIcon = rawIcon;
-        }
+    // ── Bước 4: Sắp xếp để parent luôn render trước con ──
+    records.sort(function (a, b) {
+      return (a._id || '').localeCompare(b._id || '');
+    });
+
+    // ── Bước 5: Render từng dòng ──
+    records.forEach(function (item) {
+      var modId  = item._id;
+      var modName = item.label || item.Label || item.VN || item.TenMenu || modId;
+      var parent  = String(item.parent || item.Parent || '');
+      var parentId = parent || null;
+      var level    = getLevel(item);
+      var isFolder = !!folderIds[modId];
+
+      // Icon: ưu tiên dùng trực tiếp từ DB (Material Symbol name), fallback theo loại
+      var rawIcon = String(item.icon || item.IconClass || '').toLowerCase().trim();
+      var parsedIcon = isFolder ? 'folder' : 'description';
+      if (rawIcon && rawIcon.indexOf(' ') === -1 && rawIcon.indexOf('-') === -1) {
+        parsedIcon = rawIcon; // Tên Material Symbol hợp lệ
       }
 
+      // Chỉ leaf node mới có checkbox, folder chỉ là tiêu đề nhóm
+      var perms = isFolder ? null : {
+        xem:          item.IsRun        == 1,
+        them:         item.IsAdd        == 1,
+        sua:          item.IsUpdate     == 1,
+        xoa:          item.IsDelete     == 1,
+        isManager:    item.isManager    == 1,
+        isAdmin:      item.isAdmin      == 1,
+        isAutoLock:   item.isAutoLock   == 1,
+        isHideAmount: item.isHideAmount == 1,
+        isLockDoc:    item.isLockDoc    == 1,
+        isUnLockDoc:  item.isUnLockDoc  == 1,
+        isExportExcel:item.isExportExcel== 1
+      };
+
       _appendRow(tbody, {
-        id: modId,
+        id:       modId,
         parentId: parentId,
-        level: level,
-        label: modName,
-        icon: parsedIcon,
+        level:    level,
+        label:    modName,
+        icon:     parsedIcon,
         isFolder: isFolder,
-        expanded: isFolder, // Open folders by default
-        hidden: false,
-        perms: {
-          xem: canXem,
-          them: canThem,
-          sua: canSua,
-          xoa: canXoa,
-          isManager: isManager,
-          isAdmin: isAdmin,
-          isAutoLock: isAutoLock,
-          isHideAmount: isHideAmount,
-          isLockDoc: isLockDoc,
-          isUnLockDoc: isUnLockDoc,
-          isExportExcel: isExportExcel
-        }
+        expanded: true,
+        hidden:   false,
+        perms:    perms
       });
     });
   }
@@ -231,11 +245,7 @@ var PermissionsPage = (function () {
         else toggleIcon.classList.remove('open');
       }
       if (folderIcon) {
-        if (id === 'root') {
-          folderIcon.innerText = 'business';
-        } else {
-          folderIcon.innerText = isExpanded ? 'folder_open' : 'folder';
-        }
+        folderIcon.innerText = isExpanded ? 'folder_open' : 'folder';
       }
 
       // Hide/show children recursively
@@ -359,7 +369,10 @@ var PermissionsPage = (function () {
     var isExportExcel = tr.querySelector('.perm-chk[data-action="isExportExcel"]')?.checked || false;
 
     var payload = {
-      NhomNguoiDangThaoTac: myGroupId,
+      NhomNguoiDangThaoTac: (function() {
+        var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+        return u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
+      })(),
       UserGroupID: currentSelectedGroup.id,
       MenuID: id,
       IsRun: xem ? 1 : 0,
@@ -420,6 +433,111 @@ var PermissionsPage = (function () {
           btn.innerText = 'Đồng Bộ';
         }
       });
+  }
+
+  function _setupContextMenu() {
+    var ctxMenu = document.getElementById('perm-ctx-menu');
+    if (!ctxMenu) return;
+
+    var PRESETS = [
+      { label: 'Cấm truy cập',                       icon: 'block',           cls: 'danger', p: { xem:0, them:0, sua:0, xoa:0, isManager:0, isAdmin:0, isAutoLock:0, isHideAmount:0, isLockDoc:0, isUnLockDoc:0, isExportExcel:0 } },
+      { divider: true },
+      { label: 'Cho quyền xem',                       icon: 'visibility',      p: { xem:1, them:0, sua:0, xoa:0, isManager:0, isAdmin:0 } },
+      { label: 'Cho quyền thêm',                      icon: 'add_circle',      p: { xem:1, them:1, sua:0, xoa:0, isManager:0, isAdmin:0 } },
+      { label: 'Cho quyền sửa',                       icon: 'edit',            p: { xem:1, them:0, sua:1, xoa:0, isManager:0, isAdmin:0 } },
+      { label: 'Cho quyền xóa',                       icon: 'delete',          p: { xem:1, them:0, sua:0, xoa:1, isManager:0, isAdmin:0 } },
+      { label: 'Cho quyền xem + thêm + sửa + xóa',   icon: 'done_all',        p: { xem:1, them:1, sua:1, xoa:1, isManager:0, isAdmin:0 } },
+      { divider: true },
+      { label: 'Cho quyền Manager',                   icon: 'manage_accounts', p: { xem:1, them:1, sua:1, xoa:1, isManager:1, isAdmin:0, isExportExcel:1 } },
+      { label: 'Cho quyền Admin (tất cả)',             icon: 'shield',          p: { xem:1, them:1, sua:1, xoa:1, isManager:1, isAdmin:1, isAutoLock:1, isHideAmount:1, isLockDoc:1, isUnLockDoc:1, isExportExcel:1 } },
+      { divider: true },
+      { label: 'Tắt/Mở tự động khóa sau In phiếu',   icon: 'lock_clock',      toggle: 'isAutoLock' },
+      { label: 'Cho/Cấm xem cột số tiền',             icon: 'attach_money',    toggle: 'isHideAmount' },
+      { label: 'Quyền khóa / Mở khóa chứng từ',      icon: 'lock',            toggle: 'isLockDoc', alsoToggle: 'isUnLockDoc' },
+      { label: 'Quyền xuất Excel',                    icon: 'file_download',   toggle: 'isExportExcel' },
+    ];
+
+    // Build menu HTML
+    ctxMenu.innerHTML = PRESETS.map(function(item, idx) {
+      if (item.divider) return '<hr class="ctx-divider">';
+      var icon = item.icon
+        ? '<span class="material-symbols-outlined" style="font-size:18px; flex-shrink:0;">' + item.icon + '</span>'
+        : '<span style="width:18px; flex-shrink:0;"></span>';
+      return '<div class="ctx-item ' + (item.cls || '') + '" data-idx="' + idx + '">' + icon + item.label + '</div>';
+    }).join('');
+
+    // Hide on click outside (left click)
+    document.addEventListener('click', function() { ctxMenu.style.display = 'none'; });
+    // Hide on right-click outside — but skip if inside the table (table listener handles it)
+    document.addEventListener('contextmenu', function(e) {
+      if (!e.target.closest('#perm-ctx-menu') && !e.target.closest('#permission-tree-table')) {
+        ctxMenu.style.display = 'none';
+      }
+    });
+
+    // Show menu on right-click on a leaf row (has checkboxes)
+    var tbody = $container.querySelector('#permission-tree-table tbody');
+    tbody.addEventListener('contextmenu', function(e) {
+      var tr = e.target.closest('tr.tree-row');
+      if (!tr || tr.getAttribute('data-is-folder') === 'true') return;
+      e.preventDefault();
+      e.stopPropagation(); // Chặn bubble lên document listener để tránh menu bị ẩn ngay lập tức
+
+      // Position menu — smart placement
+      var x = e.clientX, y = e.clientY;
+      // Hiện tạm để đo kích thước thực
+      ctxMenu.style.visibility = 'hidden';
+      ctxMenu.style.display    = 'block';
+      var menuW = ctxMenu.offsetWidth  || 280;
+      var menuH = ctxMenu.offsetHeight || 360;
+      ctxMenu.style.visibility = '';
+      // Nếu gần mép phải → hiện sang trái con trỏ
+      if (x + menuW > window.innerWidth  - 8) x = x - menuW;
+      // Nếu gần mép dưới → dịch lên trên con trỏ
+      if (y + menuH > window.innerHeight - 8) y = y - menuH;
+      // Đảm bảo không âm
+      x = Math.max(4, x);
+      y = Math.max(4, y);
+      ctxMenu.style.left    = x + 'px';
+      ctxMenu.style.top     = y + 'px';
+      ctxMenu.style.display = 'block';
+      ctxMenu._targetRow    = tr;
+    });
+
+    // Handle menu item click
+    ctxMenu.addEventListener('click', function(e) {
+      var item = e.target.closest('.ctx-item');
+      if (!item) return;
+      var idx    = parseInt(item.getAttribute('data-idx'));
+      var preset = PRESETS[idx];
+      var tr     = ctxMenu._targetRow;
+      if (!preset || !tr) return;
+      ctxMenu.style.display = 'none';
+      _applyPreset(tr, preset);
+    });
+  }
+
+  function _applyPreset(tr, preset) {
+    function setChk(action, val) {
+      var chk = tr.querySelector('.perm-chk[data-action="' + action + '"]');
+      if (chk) chk.checked = !!val;
+    }
+    function getChk(action) {
+      var chk = tr.querySelector('.perm-chk[data-action="' + action + '"]');
+      return chk ? chk.checked : false;
+    }
+
+    if (preset.toggle) {
+      // Toggle mode: invert current value
+      setChk(preset.toggle, !getChk(preset.toggle));
+      if (preset.alsoToggle) setChk(preset.alsoToggle, getChk(preset.toggle));
+    } else if (preset.p) {
+      // Preset mode: apply all specified values
+      Object.keys(preset.p).forEach(function(k) { setChk(k, preset.p[k]); });
+    }
+
+    // Auto-save after applying preset
+    _saveSingleRowPermission(tr);
   }
 
   return { render: render };
