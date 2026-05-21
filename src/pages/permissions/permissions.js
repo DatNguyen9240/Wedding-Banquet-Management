@@ -40,6 +40,59 @@ var PermissionsPage = (function () {
             #perm-ctx-menu .ctx-item.danger { color: var(--color-danger, #ef4444); }
             #perm-ctx-menu .ctx-item.danger:hover { background: rgba(239,68,68,0.08); }
             #perm-ctx-menu .ctx-divider { border: none; border-top: 1px solid var(--color-border, #e2e8f0); margin: 3px 0; }
+
+            /* Tối ưu Responsive cho màn hình nhỏ (Mobile 320px - 768px) */
+            @media (max-width: 767.98px) {
+              /* Biến danh sách nhóm thành thanh cuộn ngang để tiết kiệm chiều cao */
+              #role-list-container {
+                display: flex;
+                flex-direction: row;
+                overflow-x: auto;
+                gap: 8px;
+                padding: 8px !important;
+                white-space: nowrap;
+                /* Ẩn scrollbar để đẹp hơn trên mobile */
+                scrollbar-width: none; 
+              }
+              #role-list-container::-webkit-scrollbar { display: none; }
+              .role-tab {
+                flex: 0 0 auto;
+                margin-bottom: 0;
+                padding: 8px 16px;
+                font-size: 13px;
+                border: 1px solid var(--color-border);
+              }
+              
+              /* Sửa header card bên phải để rớt dòng thay vì ép ngang */
+              .card-header.d-flex.justify-content-between {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 12px;
+              }
+              .card-header h3 {
+                font-size: 14px !important;
+                white-space: normal;
+                line-height: 1.4;
+              }
+              #btn-sync-permission {
+                width: 100%;
+              }
+
+              /* Thu gọn padding của bảng và kích thước icon */
+              .data-table th, .data-table td {
+                padding: 8px 4px !important;
+                font-size: 12px !important;
+              }
+              .tree-cell {
+                gap: 4px;
+              }
+              .tree-icon, .tree-toggle {
+                font-size: 16px !important;
+              }
+              .tree-toggle {
+                width: 16px;
+              }
+            }
           `;
           $container.appendChild(style);
 
