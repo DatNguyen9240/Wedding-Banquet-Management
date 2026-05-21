@@ -1,15 +1,9 @@
 USE [QLTiec]
 GO
 
-/****** Object: StoredProcedure [dbo].[API_LayQuyenNhomDayDu] ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE PROCEDURE [dbo].[API_LayQuyenNhomDayDu]
-    @NhomNguoiDangThaoTac NVARCHAR(50), -- ID Nhóm của người gọi API
-    @UserGroupID           NVARCHAR(50)  -- ID Nhóm cần xem quyền
+ALTER PROCEDURE [dbo].[API_LayQuyenNhomDayDu]
+    @NhomNguoiDangThaoTac NVARCHAR(50),
+    @UserGroupID           NVARCHAR(50)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -21,14 +15,14 @@ BEGIN
         RETURN;
     END
 
-    -- VẾ 1: Tất cả MENU LÁ (có FormName) + quyền hiện tại (dù IsRun=0 hay 1)
-    -- Dùng LEFT JOIN để menu chưa có trong bảng quyền vẫn hiện với giá trị 0
+    -- VẾ 1: Menu lá (có URLPara) + quyền hiện tại
     SELECT
         M.MenuID        AS [id],
         M.Parent        AS [parent],
         M.VN            AS [label],
         M.IconClass     AS [icon],
         M.FormName      AS [formName],
+        M.URLPara       AS [urlPara],
         ISNULL(P.IsRun,        0) AS IsRun,
         ISNULL(P.IsAdd,        0) AS IsAdd,
         ISNULL(P.IsUpdate,     0) AS IsUpdate,
@@ -44,27 +38,28 @@ BEGIN
     LEFT JOIN WA_UserGroupPermisstion P
         ON M.MenuID = P.MenuID AND P.UserGroupID = @UserGroupID
     WHERE COALESCE(M.isDisable, 0) = 0
-      AND COALESCE(M.FormName,  '') <> ''
+      AND COALESCE(M.URLPara, '') <> ''   -- Dùng URLPara thay FormName
 
     UNION ALL
 
-    -- VẾ 2: Các THƯ MỤC CHA (không có FormName) để dựng cây
+    -- VẾ 2: Thư mục cha (URLPara rỗng, có menu con)
     SELECT
         M.MenuID    AS [id],
         M.Parent    AS [parent],
         M.VN        AS [label],
         M.IconClass AS [icon],
         M.FormName  AS [formName],
+        M.URLPara   AS [urlPara],
         1 AS IsRun, 0 AS IsAdd, 0 AS IsUpdate, 0 AS IsDelete,
         0 AS isManager, 0 AS isAdmin, 0 AS isAutoLock, 0 AS isHideAmount,
         0 AS isLockDoc, 0 AS isUnLockDoc, 0 AS isExportExcel
     FROM WA_Menu M
     WHERE COALESCE(M.isDisable, 0) = 0
-      AND COALESCE(M.FormName, '') = ''
+      AND COALESCE(M.URLPara, '') = ''
       AND M.MenuID IN (
           SELECT DISTINCT Parent FROM WA_Menu
           WHERE COALESCE(isDisable, 0) = 0
-            AND COALESCE(FormName, '') <> ''
+            AND COALESCE(URLPara, '') <> ''
             AND Parent IS NOT NULL AND Parent <> ''
       )
 
