@@ -177,10 +177,12 @@ var Navbar = (function () {
           <span class="material-symbols-outlined">menu</span>
         </button>
 
-        <!-- Brand / Logo -->
-        <div class="navbar-brand" onclick="window.location.hash='#/'" style="display:flex; align-items:center;">
+        <!-- Brand / Logo (Hidden as requested) -->
+        <div class="navbar-brand" onclick="window.location.hash='#/'" style="display:none; align-items:center;">
+          <!-- 
           <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 150px; height: auto; margin-left: 16px;">
           <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 150px; height: auto; margin-left: 16px;">
+          -->
         </div>
 
         <!-- Desktop Menu -->
@@ -534,6 +536,17 @@ var Navbar = (function () {
     if ($btnOpen) $btnOpen.addEventListener('click', openSidebar);
     if ($btnClose) $btnClose.addEventListener('click', closeSidebar);
     if ($overlay) $overlay.addEventListener('click', closeSidebar);
+
+    // Auto-close sidebar on mobile when a nav item is clicked
+    if ($sidebar) {
+      $sidebar.querySelectorAll('.nav-item').forEach(function (item) {
+        item.addEventListener('click', function () {
+          if (window.innerWidth <= 768) {
+            setTimeout(closeSidebar, 150);
+          }
+        });
+      });
+    }
 
     // User dropdown in vertical header
     var $uProf = document.getElementById('vertical-user-profile');
