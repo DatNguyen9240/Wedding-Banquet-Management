@@ -230,6 +230,51 @@ window.CustomersPage = (function () {
         columns: dynamicColumns
       });
 
+      // Bắt sự kiện Click Chuột Phải (Context Menu) để Copy
+      if (typeof UIContextMenu !== 'undefined') {
+        tableEl.addEventListener('contextmenu', function(e) {
+          e.preventDefault(); // Ngăn menu mặc định của trình duyệt
+          
+          var td = e.target.closest('td');
+          var tr = e.target.closest('tr');
+          if (!td && !tr) return;
+
+          // Hàm lấy nội dung của hàng (nối các ô bằng dấu cách hoặc tab)
+          var getRowText = function(rowEl) {
+            if (!rowEl) return '';
+            var cells = rowEl.querySelectorAll('td');
+            var textArr = [];
+            for (var i = 0; i < cells.length; i++) {
+              textArr.push(cells[i].innerText.trim());
+            }
+            return textArr.join(' | ');
+          };
+
+          UIContextMenu.show(e, [
+            { 
+              icon: 'content_copy', 
+              label: 'Sao chép Ô này (Cell)', 
+              onClick: function () { 
+                if (td) {
+                  navigator.clipboard.writeText(td.innerText.trim());
+                  if (typeof UIToast !== 'undefined') UIToast.show('Đã sao chép ô!', 'success');
+                }
+              } 
+            },
+            { 
+              icon: 'file_copy', 
+              label: 'Sao chép Hàng này (Row)', 
+              onClick: function () { 
+                if (tr) {
+                  navigator.clipboard.writeText(getRowText(tr));
+                  if (typeof UIToast !== 'undefined') UIToast.show('Đã sao chép cả hàng!', 'success');
+                }
+              } 
+            }
+          ]);
+        });
+      }
+
       gridContainer.appendChild(tableEl);
 
       // Thêm Pagination xuống dưới Table

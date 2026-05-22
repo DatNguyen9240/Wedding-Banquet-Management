@@ -4907,15 +4907,22 @@ var UIContextMenu = (function () {
       var rect = menu.getBoundingClientRect();
       var left, top;
 
-      // Nếu menu mở từ một nút bấm (trigger), thì định vị thẳng xuống dưới nút đó
-      if (activeTrigger) {
+      // Nếu là click chuột phải (contextmenu), luôn mở tại vị trí chuột
+      // Nếu là click chuột trái vào nút (click), mở dưới nút đó
+      if (e && e.type === 'contextmenu') {
+        left = e.pageX;
+        top = e.pageY;
+      } else if (activeTrigger) {
         var triggerRect = activeTrigger.getBoundingClientRect();
         top = triggerRect.bottom + window.scrollY + 8; // Cách nút 8px
         left = triggerRect.right + window.scrollX - rect.width; // Căn phải với nút
-      } else {
+      } else if (e) {
         // Fallback: Mở theo vị trí con trỏ chuột
         left = e.pageX;
         top = e.pageY + 12;
+      } else {
+        left = 10;
+        top = 10;
       }
 
       // Tràn lề phải
@@ -4927,10 +4934,12 @@ var UIContextMenu = (function () {
 
       // Tràn lề dưới (trừ khi trang rất dài, thì tính theo scroll)
       if (top - window.scrollY + rect.height > window.innerHeight) {
-        if (activeTrigger) {
+        if (e && e.type === 'contextmenu') {
+           top = e.pageY - rect.height; // Lật lên trên con trỏ chuột
+        } else if (activeTrigger) {
            var triggerRect = activeTrigger.getBoundingClientRect();
            top = triggerRect.top + window.scrollY - rect.height - 8; // Lật lên trên nút
-        } else {
+        } else if (e) {
            top = e.pageY - rect.height - 8; // Lật lên trên con trỏ chuột
         }
       }
