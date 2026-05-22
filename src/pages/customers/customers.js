@@ -122,9 +122,7 @@ window.CustomersPage = (function () {
             Email: item.Mail || '',
             DiaChi: item.Diachi || '',
             DateCreate: item.DateCreate || '',
-            UserCreate: item.UserCreate || '',
-            SoLanThamQuan: item.SoLanThamQuan || 0,
-            SoHopDong: item.SoHopDong || 0
+            UserCreate: item.UserCreate || ''
           };
         });
         _renderTable();
@@ -156,26 +154,26 @@ window.CustomersPage = (function () {
         },
         headers: [
           { label: 'Mã KH', width: '120px', sortable: true, field: 'MaKH' },
-          { label: 'Tên Khách Hàng', width: '250px', sortable: true, field: 'TenKhach' },
-          { label: 'Điện thoại', width: '130px' },
-          { label: 'Email', width: '200px' },
+          { label: 'Chú rể', width: '180px', sortable: true, field: 'Tenchure' },
+          { label: 'Cô dâu', width: '180px', sortable: true, field: 'Tencodau' },
+          { label: 'Khách hàng', width: '180px', sortable: true, field: 'TenKhach' },
+          { label: 'SĐT', width: '120px' },
+          { label: 'Email', width: '160px' },
           { label: 'Địa chỉ' },
           { label: 'Ngày tạo', width: '120px', sortable: true, field: 'DateCreate', align: 'center' },
-          { label: 'Người tạo', width: '120px', sortable: true, field: 'UserCreate', align: 'center' },
-          { label: 'Tham quan', width: '100px', align: 'center', sortable: true, field: 'SoLanThamQuan' },
-          { label: 'Hợp đồng', width: '100px', align: 'center', sortable: true, field: 'SoHopDong' }
+          { label: 'Người tạo', width: '120px', sortable: true, field: 'UserCreate', align: 'center' }
         ],
         data: customersData,
         columns: [
           { field: 'MaKH' },
-          { field: 'TenKhach', render: function (v) { return '<span style="color:var(--color-primary);font-weight:600;">' + v + '</span>'; } },
+          { field: 'Tenchure', render: function (v) { return '<span style="color:var(--color-primary);font-weight:600;">' + v + '</span>'; } },
+          { field: 'Tencodau', render: function (v) { return '<span style="color:var(--color-danger);font-weight:600;">' + v + '</span>'; } },
+          { field: 'TenKhach' },
           { field: 'DienThoai' },
           { field: 'Email' },
           { field: 'DiaChi' },
           { field: 'DateCreate', align: 'center', render: function(v) { return FormatUtils.date(v); } },
-          { field: 'UserCreate', align: 'center' },
-          { field: 'SoLanThamQuan', align: 'center' },
-          { field: 'SoHopDong', align: 'center' }
+          { field: 'UserCreate', align: 'center' }
         ]
       });
 
