@@ -121,7 +121,8 @@ window.CustomersPage = (function () {
             DTcodau: item.DTcodau || '',
             Email: item.Mail || '',
             DiaChi: item.Diachi || '',
-            Ghichu: item.Ghichu || '',
+            DateCreate: item.DateCreate || '',
+            UserCreate: item.UserCreate || '',
             SoLanThamQuan: item.SoLanThamQuan || 0,
             SoHopDong: item.SoHopDong || 0
           };
@@ -159,6 +160,8 @@ window.CustomersPage = (function () {
           { label: 'Điện thoại', width: '130px' },
           { label: 'Email', width: '200px' },
           { label: 'Địa chỉ' },
+          { label: 'Ngày tạo', width: '120px', sortable: true, field: 'DateCreate', align: 'center' },
+          { label: 'Người tạo', width: '120px', sortable: true, field: 'UserCreate', align: 'center' },
           { label: 'Tham quan', width: '100px', align: 'center', sortable: true, field: 'SoLanThamQuan' },
           { label: 'Hợp đồng', width: '100px', align: 'center', sortable: true, field: 'SoHopDong' }
         ],
@@ -169,6 +172,8 @@ window.CustomersPage = (function () {
           { field: 'DienThoai' },
           { field: 'Email' },
           { field: 'DiaChi' },
+          { field: 'DateCreate', align: 'center', render: function(v) { return FormatUtils.date(v); } },
+          { field: 'UserCreate', align: 'center' },
           { field: 'SoLanThamQuan', align: 'center' },
           { field: 'SoHopDong', align: 'center' }
         ]
@@ -258,13 +263,6 @@ window.CustomersPage = (function () {
     }));
 
     // Ghi chú
-    var ghichuWrapper = document.createElement('div');
-    ghichuWrapper.className = 'form-group';
-    ghichuWrapper.innerHTML = `
-      <label>Ghi chú</label>
-      <textarea id="cust-ghichu" class="ui-input" rows="2" placeholder="Ghi chú thêm..." style="height:auto;resize:vertical;">${row ? (row.Ghichu || '') : ''}</textarea>
-    `;
-    body.appendChild(ghichuWrapper);
 
     // Footer buttons
     var footer = document.createElement('div');
@@ -309,7 +307,6 @@ window.CustomersPage = (function () {
     var dtcodau = body.querySelector('#cust-dtcodau').value.trim();
     var mail = body.querySelector('#cust-mail').value.trim();
     var diachi = body.querySelector('#cust-diachi').value.trim();
-    var ghichu = body.querySelector('#cust-ghichu').value.trim();
 
     if (!tenchure) return Alert.warning('Thiếu thông tin', 'Vui lòng nhập tên Chú Rể');
     if (!dtchure && !dtcodau) return Alert.warning('Thiếu thông tin', 'Vui lòng nhập ít nhất 1 số điện thoại');
@@ -336,7 +333,6 @@ window.CustomersPage = (function () {
       Dienthoai: dtchure || dtcodau,
       Mail: mail,
       Diachi: diachi,
-      Ghichu: ghichu,
       UserCreate: _currentUser(),
       IsEdit: isEdit ? 1 : 0
     };

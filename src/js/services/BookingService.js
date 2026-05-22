@@ -63,16 +63,27 @@ var BookingService = (function () {
         return resolve({ list: [], total: 0 });
       }
       var payloadObj = { Keyword: keyword || '' };
-      if (sortCol) payloadObj.SortColumn = sortCol;
-      if (sortDir) payloadObj.SortDirection = sortDir.toUpperCase();
-      if (page) payloadObj.Page = page;
-      if (limit) payloadObj.Limit = limit;
-
       var payload = JSON.stringify(payloadObj);
-      ApiClient.get(API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH + '?q=' + encodeURIComponent(payload))
+      
+      var queryParams = [
+        'q=' + encodeURIComponent(payload),
+        'limit=' + (limit || 20),
+        'page=' + (page || 1)
+      ];
+
+      if (sortCol) {
+        var sortValue = sortCol + (sortDir && sortDir.toUpperCase() === 'DESC' ? ' desc' : '');
+        queryParams.push('sort=' + encodeURIComponent(sortValue));
+      } else {
+        queryParams.push('sort=DateCreate desc'); // Mặc định sắp xếp theo ngày tạo
+      }
+
+      var url = API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH + '?' + queryParams.join('&');
+
+      ApiClient.get(url)
         .then(function (res) {
           var list = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
-          var total = res ? (res._recordtotal || res.total || (list.length > 0 ? (list[0].TotalRecords || list.length) : 0)) : 0;
+          var total = res ? (res._recordtotal || res.total || list.length) : 0;
           resolve({ list: list, total: total });
         })
         .catch(function (err) {
