@@ -9,7 +9,8 @@ BEGIN
         ISNULL(IsRequired, 0) AS [required], 
         ISNULL(FormPosition, 'grid') AS [position],
         ISNULL(ShowInForm, 1) AS [showInForm],
-        '' AS [renderRule]
+        ISNULL(FormatID, '') AS [renderRule],
+        ISNULL(CaptionEN, '') AS [dataSource]
     FROM SY_FormatFields ff
     WHERE (@FormName IS NULL OR ff.FormName = @FormName);
 END
