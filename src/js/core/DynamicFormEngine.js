@@ -242,14 +242,16 @@ window.DynamicFormEngine = (function () {
     if (gridContainer) gridContainer.innerHTML = '<div class="p-4 text-center" style="color:var(--color-text-secondary);">' + MODULE_CONFIG.TextLoading + '</div>';
 
     if (MODULE_CONFIG.ApiSearch) {
-      ApiClient.post(MODULE_CONFIG.ApiSearch, {
+      var query = {
         FormName: MODULE_CONFIG.FormName === 'frmFormBuilder' ? '' : MODULE_CONFIG.FormName,
+        UserName: _currentUser(),
         Keyword: currentKeyword,
         SortColumn: currentSortCol,
         SortDir: currentSortDir,
         Page: currentPage,
         Limit: currentLimit
-      }).then(function (result) {
+      };
+      ApiClient.post(MODULE_CONFIG.ApiSearch, query).then(function (result) {
         totalRecords = result.total || result._recordtotal || 0;
         var dataList = result.list || result.records || [];
         gridData = dataList.map(function (item) {
@@ -939,8 +941,8 @@ window.DynamicFormEngine = (function () {
                     fetchPayload[key] = value;
                 });
             }
-            // Thêm các tham số mặc định của hệ thống
-            if (!fetchPayload.NhomNguoiDangThaoTac) fetchPayload.NhomNguoiDangThaoTac = _currentGroup();
+            // Thêm tham số user mặc định của hệ thống
+            if (!fetchPayload.UserName) fetchPayload.UserName = _currentUser();
 
             ApiClient.post(finalUrl, fetchPayload).then(function (res) {
               var comboData = [];
@@ -955,8 +957,10 @@ window.DynamicFormEngine = (function () {
                 // Nếu có nhiều hơn 1 cột, dùng các key đó làm tiêu đề cột
                 if (keys.length > 0) {
                   headers = keys; 
-                  // Ưu tiên cột Tên (cột thứ 2) để hiển thị, nếu chỉ có 1 cột thì dùng cột 1
-                  colFilterIndex = keys.length > 1 ? 1 : 0; 
+                  // Tự động tìm cột hiển thị (Label): Ưu tiên các cột có tên chứa chữ "name, ten, label, desc"
+                  var labelRegex = /name|tên|ten|label|desc|title/i;
+                  var displayKey = keys.find(function(k) { return labelRegex.test(k); });
+                  colFilterIndex = displayKey ? keys.indexOf(displayKey) : (keys.length > 1 ? 1 : 0); 
 
                   dataList.forEach(function (d) {
                     var rowData = [];
@@ -1056,7 +1060,7 @@ window.DynamicFormEngine = (function () {
   function _saveData(isEdit, row, modal, body, btnSave) {
     // 1. Khởi tạo Payload mặc định (Thuộc về Hệ thống chung)
     var payload = {
-      NhomNguoiDangThaoTac: _currentGroup(),
+      UserName: _currentUser(),
       OrderNo: row && row.OrderNo ? row.OrderNo : 0
     };
 

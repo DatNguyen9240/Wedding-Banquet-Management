@@ -141,7 +141,7 @@ UIControls.createDataComboBox = function (options) {
       tableWrapper.innerHTML = UIControls.utils.createDropdownTableHTML(
         options.headers || [], displayData, options.colHighlightIndex || 0, options.colGroupIndex
       );
-      var rows = tableWrapper.querySelectorAll('tbody tr.data-row');
+      var rows = tableWrapper.querySelectorAll('tbody tr');
       var currentInputVal = input.value.trim().toLowerCase();
 
       rows.forEach(function (row) {
