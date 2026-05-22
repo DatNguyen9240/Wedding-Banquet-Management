@@ -36,6 +36,7 @@ window.API_CONFIG = {
         },
         CUSTOMER: {
             SEARCH: '/api/API_TimKiemKhachHang',
+            SAVE:   '/api/API_LuuKhachHang',
         },
         SYSTEM: {
             HALLS: '/api/API_DanhSachSanh',
