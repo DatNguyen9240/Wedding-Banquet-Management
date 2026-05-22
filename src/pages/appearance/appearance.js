@@ -41,11 +41,11 @@ var AppearancePage = (function () {
 
   function _buildLayoutCard(mode, icon, title, desc, currentMode) {
     var isActive = currentMode === mode;
-    return '<div class="layout-option" onclick="AppearancePage.changeLayout(\'' + mode + '\', this)" style="flex:1; min-width:260px; max-width:320px; border:2px solid ' + (isActive ? 'var(--color-primary)' : 'var(--color-border)') + '; border-radius:12px; padding:20px; cursor:pointer; text-align:center; transition:all 0.2s; background:' + (isActive ? 'var(--color-primary-light)' : 'var(--color-surface)') + '; position:relative; overflow:hidden;">'
+    return '<div class="layout-option" onclick="AppearancePage.changeLayout(\'' + mode + '\', this)" style="border:2px solid ' + (isActive ? 'var(--color-primary)' : 'var(--color-border)') + '; border-radius:12px; padding:20px; cursor:pointer; text-align:center; transition:all 0.2s; background:' + (isActive ? 'var(--color-primary-light)' : 'var(--color-surface)') + '; position:relative; overflow:hidden; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 210px;">'
       + (isActive ? '<div class="layout-check-wrapper" style="position:absolute; top:10px; right:10px; color:var(--color-primary);">' + UIIcon.createHTML('check_circle', 'font-size:20px;') + '</div>' : '')
-      + UIIcon.createHTML(icon, 'font-size:40px; color:' + (isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)') + '; margin-bottom:12px;')
-      + '<h3 style="margin-bottom:6px; font-size:15px; font-weight:600;">' + title + '</h3>'
-      + '<p style="font-size:13px; color:var(--color-text-secondary); margin:0; line-height:1.5;">' + desc + '</p></div>';
+      + UIIcon.createHTML(icon, 'font-size:40px; color:' + (isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)') + '; margin-bottom:12px; display: block;')
+      + '<h3 style="margin:0 0 6px 0; font-size:15px; font-weight:600; width: 100%;">' + title + '</h3>'
+      + '<p style="font-size:13px; color:var(--color-text-secondary); margin:0; line-height:1.5; width: 100%;">' + desc + '</p></div>';
   }
 
   function _renderFontOptions() {
@@ -61,7 +61,7 @@ var AppearancePage = (function () {
 
   function _buildFontCard(fontName, desc, currentFont, isDefault) {
     var isActive = currentFont === fontName;
-    return '<div class="font-option" onclick="AppearancePage.changeFont(\'' + fontName + '\', this)" style="flex:1; min-width:200px; border:2px solid ' + (isActive ? 'var(--color-primary)' : 'var(--color-border)') + '; border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; background:' + (isActive ? 'var(--color-primary-light)' : 'var(--color-surface)') + '; position:relative;">'
+    return '<div class="font-option" onclick="AppearancePage.changeFont(\'' + fontName + '\', this)" style="border:2px solid ' + (isActive ? 'var(--color-primary)' : 'var(--color-border)') + '; border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; background:' + (isActive ? 'var(--color-primary-light)' : 'var(--color-surface)') + '; position:relative; height: 100%; box-sizing: border-box;">'
       + (isActive ? '<div class="font-check-wrapper" style="position:absolute; top:10px; right:10px; color:var(--color-primary);">' + UIIcon.createHTML('check_circle', 'font-size:18px;') + '</div>' : '')
       + '<h3 style="margin:0 0 4px 0; font-size:16px; font-weight:600; font-family:\'' + fontName + '\', sans-serif;">Aa Bb Cc</h3>'
       + '<div style="font-size:14px; font-weight:600; margin-bottom:4px;">' + fontName + (isDefault ? ' (Mặc định)' : '') + '</div>'
@@ -76,7 +76,7 @@ var AppearancePage = (function () {
     var html = '';
     THEMES.forEach(function(themeDef) {
       var isActive = currentTheme === themeDef.id;
-      html += '<div class="theme-option" onclick="AppearancePage.changeTheme(\'' + themeDef.id + '\', this)" style="flex:1; min-width:200px; border:2px solid ' + (isActive ? 'var(--color-primary)' : 'var(--color-border)') + '; border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; background:' + (isActive ? 'var(--color-primary-light)' : 'var(--color-surface)') + '; position:relative;">'
+      html += '<div class="theme-option" onclick="AppearancePage.changeTheme(\'' + themeDef.id + '\', this)" style="border:2px solid ' + (isActive ? 'var(--color-primary)' : 'var(--color-border)') + '; border-radius:12px; padding:16px; cursor:pointer; transition:all 0.2s; background:' + (isActive ? 'var(--color-primary-light)' : 'var(--color-surface)') + '; position:relative; height: 100%; box-sizing: border-box;">'
         + (isActive ? '<div class="theme-check-wrapper" style="position:absolute; top:10px; right:10px; color:var(--color-primary);">' + UIIcon.createHTML('check_circle', 'font-size:18px;') + '</div>' : '')
         + UIIcon.createHTML(themeDef.icon, 'font-size:32px; color:' + (isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)') + '; margin-bottom:12px;')
         + '<h3 style="margin:0 0 4px 0; font-size:16px; font-weight:600;">' + themeDef.name + '</h3>'

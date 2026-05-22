@@ -338,8 +338,8 @@ var BookingPage = (function () {
         onSearch: function (keyword, renderResults, hideDropdown) {
           if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.CUSTOMER && API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH) {
             BookingService.searchCustomer(keyword)
-              .then(function (list) {
-                renderResults(list);
+              .then(function (result) {
+                renderResults(result.list);
               })
               .catch(function () {
                 renderResults([]);

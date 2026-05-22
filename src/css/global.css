@@ -176,13 +176,14 @@ img {
     gap: 14px;
   }
 
-  .btn-hamburger {
+  .btn-hamburger, .navbar-hamburger {
     width: 36px;
     height: 36px;
     border-radius: var(--radius-sm);
   }
 
-  .btn-hamburger .material-symbols-outlined {
+  .btn-hamburger .material-symbols-outlined,
+  .navbar-hamburger .material-symbols-outlined {
     font-size: 20px;
   }
 
@@ -259,7 +260,7 @@ img {
     --spacing-xl: 16px;
   }
 
-  .btn-hamburger {
+  .btn-hamburger, .navbar-hamburger {
     width: 34px;
     height: 34px;
     border-radius: 6px;

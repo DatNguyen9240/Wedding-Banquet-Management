@@ -8,6 +8,13 @@ window.CustomersPage = (function () {
   var selectedRow = null;
   var $inputSearch = null;
 
+  var currentKeyword = '';
+  var currentSortCol = '';
+  var currentSortDir = '';
+  var currentPage = 1;
+  var currentLimit = 15;
+  var totalRecords = 0;
+
   // ── Helpers ──────────────────────────────────────────────
   function _currentGroup() {
     var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
@@ -49,6 +56,18 @@ window.CustomersPage = (function () {
                 );
               }
             },
+            onFilter: function () {
+              var filterContainer = $container.querySelector('#customers-filter-container');
+              if (filterContainer) {
+                if (filterContainer.style.display === 'none') {
+                  filterContainer.style.display = 'flex';
+                  var inputKeyword = filterContainer.querySelector('#keyword');
+                  if (inputKeyword) inputKeyword.focus();
+                } else {
+                  filterContainer.style.display = 'none';
+                }
+              }
+            },
             onPrint: false,
             onClose: false
           });
@@ -57,35 +76,21 @@ window.CustomersPage = (function () {
           btnContainer.appendChild(toolbar);
         }
 
-        // Search bar
+        // Search bar (FilterComponent)
         var filterContainer = $container.querySelector('#customers-filter-container');
-        if (filterContainer && typeof UIInput !== 'undefined') {
-          var inputWrapper = UIInput.createText({
-            id: 'input-search-customers',
-            placeholder: 'Tìm kiếm theo mã, tên, số điện thoại...',
-            className: ''
+        if (filterContainer && typeof FilterComponent !== 'undefined') {
+          filterContainer.innerHTML = ''; // Xóa placeholder nếu có
+          var filters = [
+            { id: 'keyword', label: 'Từ khóa', placeholder: 'Nhập mã KH, tên, số điện thoại...' }
+          ];
+          var filterNode = FilterComponent.create(filters, function(values) {
+            $inputSearch = { value: values.keyword || '' }; // Fake inputSearch object for reuse in save callback
+            currentKeyword = values.keyword || '';
+            currentPage = 1; // Reset về trang 1 khi lọc mới
+            _loadData();
           });
-          inputWrapper.style.flexDirection = 'row';
-          inputWrapper.style.alignItems = 'center';
-          $inputSearch = inputWrapper.querySelector('#input-search-customers');
-          if ($inputSearch) {
-            $inputSearch.style.width = '300px';
-            $inputSearch.style.minWidth = '220px';
-            $inputSearch.addEventListener('keydown', function (e) {
-              if (e.key === 'Enter') _loadData($inputSearch.value);
-            });
-          }
-
-          var btnSearch = document.createElement('button');
-          btnSearch.className = 'btn btn-outline';
-          btnSearch.id = 'btn-search-customers';
-          btnSearch.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">search</span><span>Tìm kiếm</span>';
-          btnSearch.addEventListener('click', function () {
-            _loadData($inputSearch ? $inputSearch.value : '');
-          });
-
-          filterContainer.appendChild(inputWrapper);
-          filterContainer.appendChild(btnSearch);
+          filterContainer.appendChild(filterNode);
+          filterContainer.style.display = 'none'; // Ẩn mặc định, ấn Lọc mới hiện
         }
 
         _loadData();
@@ -96,14 +101,14 @@ window.CustomersPage = (function () {
   }
 
   // ── Load Data ─────────────────────────────────────────────
-  function _loadData(keyword) {
-    var searchKey = keyword || '';
+  function _loadData() {
     var gridContainer = $container ? $container.querySelector('#customers-grid-container') : null;
     if (gridContainer) gridContainer.innerHTML = '<div class="p-4 text-center" style="color:var(--color-text-secondary);">Đang tải dữ liệu...</div>';
 
     if (typeof BookingService !== 'undefined') {
-      BookingService.searchCustomer(searchKey).then(function (data) {
-        customersData = data.map(function (item) {
+      BookingService.searchCustomer(currentKeyword, currentSortCol, currentSortDir, currentPage, currentLimit).then(function (result) {
+        totalRecords = result.total || 0;
+        customersData = (result.list || []).map(function (item) {
           return {
             id: item.Id || item.Makh,
             Makh: item.Makh,
@@ -126,6 +131,7 @@ window.CustomersPage = (function () {
         console.error('Lỗi tải danh sách khách hàng:', err);
         if (typeof Alert !== 'undefined') Alert.error('Lỗi', 'Lỗi kết nối khi lấy danh sách khách hàng!');
         customersData = [];
+        totalRecords = 0;
         _renderTable();
       });
     }
@@ -140,14 +146,20 @@ window.CustomersPage = (function () {
 
     if (typeof UITable !== 'undefined') {
       var tableEl = UITable.create({
+        onSort: function(field, dir) {
+          currentSortCol = field;
+          currentSortDir = dir;
+          currentPage = 1; // Khi sort thì reset lại về trang 1
+          _loadData();
+        },
         headers: [
-          { label: 'Mã KH', width: '120px' },
-          { label: 'Tên Khách Hàng', width: '250px' },
+          { label: 'Mã KH', width: '120px', sortable: true, field: 'MaKH' },
+          { label: 'Tên Khách Hàng', width: '250px', sortable: true, field: 'TenKhach' },
           { label: 'Điện thoại', width: '130px' },
           { label: 'Email', width: '200px' },
           { label: 'Địa chỉ' },
-          { label: 'Tham quan', width: '100px', align: 'center' },
-          { label: 'Hợp đồng', width: '100px', align: 'center' }
+          { label: 'Tham quan', width: '100px', align: 'center', sortable: true, field: 'SoLanThamQuan' },
+          { label: 'Hợp đồng', width: '100px', align: 'center', sortable: true, field: 'SoHopDong' }
         ],
         data: customersData,
         columns: [
@@ -162,6 +174,20 @@ window.CustomersPage = (function () {
       });
 
       gridContainer.appendChild(tableEl);
+
+      // Thêm Pagination xuống dưới Table
+      if (typeof Pagination !== 'undefined') {
+        var paginationEl = Pagination.create({
+          totalItems: totalRecords,
+          itemsPerPage: currentLimit,
+          currentPage: currentPage,
+          onPageChange: function(page) {
+            currentPage = page;
+            _loadData();
+          }
+        });
+        gridContainer.appendChild(paginationEl);
+      }
 
       var tbody = tableEl.querySelector('tbody');
       if (tbody) {

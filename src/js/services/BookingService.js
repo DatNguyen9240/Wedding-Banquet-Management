@@ -57,15 +57,23 @@ var BookingService = (function () {
    * @param {string} keyword
    * @returns {Promise<Array>}
    */
-  function searchCustomer(keyword) {
+  function searchCustomer(keyword, sortCol, sortDir, page, limit) {
     return new Promise(function (resolve, reject) {
       if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CUSTOMER || !API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH) {
-        return resolve([]);
+        return resolve({ list: [], total: 0 });
       }
-      ApiClient.get(API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH + '?Keyword=' + encodeURIComponent(keyword))
+      var payloadObj = { Keyword: keyword || '' };
+      if (sortCol) payloadObj.SortColumn = sortCol;
+      if (sortDir) payloadObj.SortDirection = sortDir.toUpperCase();
+      if (page) payloadObj.Page = page;
+      if (limit) payloadObj.Limit = limit;
+
+      var payload = JSON.stringify(payloadObj);
+      ApiClient.get(API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH + '?q=' + encodeURIComponent(payload))
         .then(function (res) {
           var list = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
-          resolve(list);
+          var total = res ? (res._recordtotal || res.total || (list.length > 0 ? (list[0].TotalRecords || list.length) : 0)) : 0;
+          resolve({ list: list, total: total });
         })
         .catch(function (err) {
           console.error('[BookingService] Lỗi searchCustomer:', err);
