@@ -68,3 +68,33 @@ BEGIN
     FETCH NEXT @Limit ROWS ONLY;
 END
 GO
+
+/* =============================================
+   TEST SCRIPTS (Bôi đen dòng EXEC để chạy thử)
+================================================
+-- 1. Test mặc định (Không sort, Page 1, 20 record)
+EXEC [dbo].[API_TimKiemKhachHang] 
+    @Keyword = N'', 
+    @SortColumn = '', 
+    @SortDirection = '';
+
+-- 2. Test tìm kiếm từ khóa và sắp xếp theo Mã KH tăng dần
+EXEC [dbo].[API_TimKiemKhachHang] 
+    @Keyword = N'', 
+    @SortColumn = 'MaKH', 
+    @SortDirection = 'ASC';
+
+-- 3. Test sắp xếp Tên Khách Hàng giảm dần
+EXEC [dbo].[API_TimKiemKhachHang] 
+    @Keyword = N'', 
+    @SortColumn = 'TenKhach', 
+    @SortDirection = 'DESC';
+
+-- 4. Test phân trang (Page 2, lấy 5 record)
+EXEC [dbo].[API_TimKiemKhachHang] 
+    @Keyword = N'', 
+    @SortColumn = 'MaKH', 
+    @SortDirection = 'DESC', 
+    @Page = 2, 
+    @Limit = 5;
+*/

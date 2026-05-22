@@ -20,7 +20,7 @@ var UITable = (function () {
     table.appendChild(tbody);
 
     var currentData = config.data ? config.data.slice() : [];
-    var currentSort = { field: null, dir: 'asc' };
+    var currentSort = config.currentSort ? { field: config.currentSort.field, dir: config.currentSort.dir } : { field: null, dir: 'asc' };
 
     function renderBody() {
       tbody.innerHTML = '';
@@ -92,11 +92,18 @@ var UITable = (function () {
           
           var icon = document.createElement('span');
           icon.className = 'material-symbols-outlined sort-icon';
-          icon.innerText = 'unfold_more';
+          
+          if (currentSort.field === h.field) {
+            icon.innerText = currentSort.dir === 'asc' ? 'expand_less' : 'expand_more';
+            icon.style.color = 'var(--color-primary)';
+          } else {
+            icon.innerText = 'unfold_more';
+            icon.style.color = 'var(--color-text-secondary)';
+          }
+          
           icon.style.fontSize = '14px';
           icon.style.verticalAlign = 'middle';
           icon.style.marginLeft = '4px';
-          icon.style.color = 'var(--color-text-secondary)';
           th.appendChild(icon);
 
           th.addEventListener('click', function() {

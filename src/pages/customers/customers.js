@@ -83,7 +83,7 @@ window.CustomersPage = (function () {
           var filters = [
             { id: 'keyword', label: 'Từ khóa', placeholder: 'Nhập mã KH, tên, số điện thoại...' }
           ];
-          var filterNode = FilterComponent.create(filters, function(values) {
+          var filterNode = FilterComponent.create(filters, function (values) {
             $inputSearch = { value: values.keyword || '' }; // Fake inputSearch object for reuse in save callback
             currentKeyword = values.keyword || '';
             currentPage = 1; // Reset về trang 1 khi lọc mới
@@ -146,7 +146,8 @@ window.CustomersPage = (function () {
 
     if (typeof UITable !== 'undefined') {
       var tableEl = UITable.create({
-        onSort: function(field, dir) {
+        currentSort: { field: currentSortCol, dir: currentSortDir },
+        onSort: function (field, dir) {
           currentSortCol = field;
           currentSortDir = dir;
           currentPage = 1; // Khi sort thì reset lại về trang 1
@@ -181,7 +182,7 @@ window.CustomersPage = (function () {
           totalItems: totalRecords,
           itemsPerPage: currentLimit,
           currentPage: currentPage,
-          onPageChange: function(page) {
+          onPageChange: function (page) {
             currentPage = page;
             _loadData();
           }

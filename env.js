@@ -36,7 +36,7 @@ window.API_CONFIG = {
         },
         CUSTOMER: {
             SEARCH: '/api/API_TimKiemKhachHang',
-            SAVE:   '/api/API_LuuKhachHang',
+            SAVE: '/api/API_LuuKhachHang',
         },
         SYSTEM: {
             HALLS: '/api/API_DanhSachSanh',
@@ -75,6 +75,6 @@ window.API_CONFIG = {
 // Đảm bảo biến có thể truy cập trực tiếp bằng tên trong tất cả các scope
 var API_CONFIG = window.API_CONFIG;
 
-// Đóng băng config đ\u1ec3 tr\u00e1nh b\u1ecb thay \u0111\u1ed5i trong runtime
+// Đóng băng config trong runtime
 Object.freeze(window.API_CONFIG);
 Object.freeze(window.API_CONFIG.ENDPOINTS);
