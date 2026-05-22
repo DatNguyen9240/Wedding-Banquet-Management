@@ -122,7 +122,9 @@ window.CustomersPage = (function () {
             Email: item.Mail || '',
             DiaChi: item.Diachi || '',
             DateCreate: item.DateCreate || '',
-            UserCreate: item.UserCreate || ''
+            UserCreate: item.UserCreate || '',
+            SoLanThamQuan: item.SoLanThamQuan || 0,
+            SoHopDong: item.SoHopDong || 0
           };
         });
         _renderTable();
@@ -161,7 +163,9 @@ window.CustomersPage = (function () {
           { label: 'Email', width: '160px' },
           { label: 'Địa chỉ' },
           { label: 'Ngày tạo', width: '120px', sortable: true, field: 'DateCreate', align: 'center' },
-          { label: 'Người tạo', width: '120px', sortable: true, field: 'UserCreate', align: 'center' }
+          { label: 'Người tạo', width: '120px', sortable: true, field: 'UserCreate', align: 'center' },
+          { label: 'Tham quan', width: '100px', sortable: true, field: 'SoLanThamQuan', align: 'center' },
+          { label: 'Hợp đồng', width: '100px', sortable: true, field: 'SoHopDong', align: 'center' }
         ],
         data: customersData,
         columns: [
@@ -173,7 +177,9 @@ window.CustomersPage = (function () {
           { field: 'Email' },
           { field: 'DiaChi' },
           { field: 'DateCreate', align: 'center', render: function(v) { return FormatUtils.date(v); } },
-          { field: 'UserCreate', align: 'center' }
+          { field: 'UserCreate', align: 'center' },
+          { field: 'SoLanThamQuan', align: 'center', render: function(v) { return v > 0 ? '<span class="status-badge primary">' + v + '</span>' : '-'; } },
+          { field: 'SoHopDong', align: 'center', render: function(v) { return v > 0 ? '<span class="status-badge success">' + v + '</span>' : '-'; } }
         ]
       });
 

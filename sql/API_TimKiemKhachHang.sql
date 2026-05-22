@@ -15,7 +15,9 @@ BEGIN
         Mail,
         Diachi,
         DateCreate,
-        UserCreate
+        UserCreate,
+        (SELECT COUNT(1) FROM tbmk_Khachthamquan WHERE Makh = dmkhachhang.Makh) AS SoLanThamQuan,
+        (SELECT COUNT(1) FROM tbmk_Hopdong WHERE Makh = dmkhachhang.Makh) AS SoHopDong
     FROM dmkhachhang
     WHERE 
         (@Keyword IS NULL OR @Keyword = '')
