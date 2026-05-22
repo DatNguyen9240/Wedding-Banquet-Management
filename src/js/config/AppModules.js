@@ -65,8 +65,8 @@ window.APP_MODULES = {
         
         // --- API Mappings ---
         ApiDictionary: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.GET_UI_DICTIONARY : null,
-        ApiSearch: null, // Bổ sung API Danh sách nhân viên sau
-        ApiSave: null,   // Bổ sung API Lưu nhân viên sau
+        ApiSearch: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.STAFF ? window.API_CONFIG.ENDPOINTS.STAFF.LIST : null,
+        ApiSave: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.STAFF ? window.API_CONFIG.ENDPOINTS.STAFF.SAVE : null,
         
         // --- i18n & Labels ---
         PageTitle: 'Nhân viên Phục vụ Tiệc',

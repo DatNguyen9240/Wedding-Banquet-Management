@@ -60,6 +60,10 @@ window.API_CONFIG = {
             LIST: '/api/API_DanhSachKhachDen',
             SAVE: '/api/API_LuuKhachDen',
         },
+        STAFF: {
+            LIST: '/api/API_DanhSachNhanVien',
+            SAVE: '/api/API_LuuNhanVien',
+        },
         REPORTS: {
             REVENUE: '/api/API_Report_Revenue',
             COST: '/api/API_Report_Cost',
