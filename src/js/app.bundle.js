@@ -287,6 +287,89 @@ var FormatUtils = (function () {
 })();
 
 
+/* --- UITooltip.js --- */
+/**
+ * UITooltip — JS-driven tooltip dùng position: fixed
+ * Không bị clip bởi overflow:hidden/auto của bất kỳ container nào.
+ * Tự động gắn vào mọi [data-tooltip] khi DOM thay đổi.
+ */
+var UITooltip = (function () {
+  var _el = null;
+  var _hideTimer = null;
+
+  function _getEl() {
+    if (!_el) {
+      _el = document.createElement('div');
+      _el.id = 'ui-tooltip';
+      document.body.appendChild(_el);
+    }
+    return _el;
+  }
+
+  function show(text, anchorEl) {
+    clearTimeout(_hideTimer);
+    var tip = _getEl();
+    tip.textContent = text;
+    tip.classList.remove('visible');
+
+    // Tính vị trí: bên dưới anchor
+    var rect = anchorEl.getBoundingClientRect();
+    var tipLeft = rect.left + rect.width / 2;
+    var tipTop = rect.bottom + 8;
+
+    tip.style.left = tipLeft + 'px';
+    tip.style.top = tipTop + 'px';
+    tip.style.transform = 'translateX(-50%)';
+
+    // Kiểm tra có tràn ra phải màn hình không
+    requestAnimationFrame(function () {
+      var tipRect = tip.getBoundingClientRect();
+      if (tipRect.right > window.innerWidth - 8) {
+        tip.style.left = (window.innerWidth - tipRect.width - 8) + 'px';
+        tip.style.transform = 'none';
+      }
+      tip.classList.add('visible');
+    });
+  }
+
+  function hide() {
+    _hideTimer = setTimeout(function () {
+      var tip = _getEl();
+      tip.classList.remove('visible');
+    }, 100);
+  }
+
+  function init() {
+    // Dùng event delegation trên document để bắt tất cả [data-tooltip]
+    document.addEventListener('mouseover', function (e) {
+      var target = e.target.closest('[data-tooltip]');
+      if (target) {
+        show(target.getAttribute('data-tooltip'), target);
+      }
+    });
+
+    document.addEventListener('mouseout', function (e) {
+      var target = e.target.closest('[data-tooltip]');
+      if (target) {
+        hide();
+      }
+    });
+
+    document.addEventListener('scroll', hide, true);
+    document.addEventListener('click', hide, true);
+  }
+
+  // Tự khởi động khi DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  return { show: show, hide: hide };
+})();
+
+
 /* --- PrintUtils.js --- */
 /**
  * Print Utility
@@ -606,17 +689,23 @@ var SystemDataService = (function() {
       if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.SYSTEM || !API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE) {
         return reject('Missing API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE');
       }
-
-      // Append CodeID as a query parameter (though we hardcoded it in SQL, it's good practice in JS)
-      var url = API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE + (codeId ? '?CodeID=' + codeId : '');
-      ApiClient.get(url)
+      ApiClient.get(API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE)
         .then(function(res) {
           var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
-          var value = records.length > 0 ? records[0].CodeValue : null;
-          resolve(value);
+          // Tìm đúng CodeID được yêu cầu
+          var found = records.find(function(r) { return r.CodeID === codeId; });
+          resolve(found ? found.CodeValue : null);
         })
         .catch(reject);
     });
+  }
+
+  /**
+   * Lấy version đồng bộ menu từ SY_Setup (key: menu_sync_ver)
+   * Dùng cho Navbar để detect cache cũ trên các máy khác
+   */
+  function getMenuSyncVersion() {
+    return getSetupValue('menu_sync_ver');
   }
 
   function invalidateCache() {
@@ -629,6 +718,7 @@ var SystemDataService = (function() {
     getShifts: getShifts,
     getBanquetTypes: getBanquetTypes,
     getSetupValue: getSetupValue,
+    getMenuSyncVersion: getMenuSyncVersion,
     invalidateCache: invalidateCache
   };
 })();
@@ -1626,16 +1716,43 @@ var Navbar = (function () {
     var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
     var groupId = u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
 
-    // Nếu đã có cache → render ngay, không chờ API
-    try {
-      var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
-      if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
-        NAV_CONFIG = cached.config;
-        _doRender(container);
-        return; // Dùng cache, không gọi API lại
-      }
-    } catch (e) { }
+    // Check version server trước — nếu khác cache thì tự clear (bắt được thay đổi từ máy Admin)
+    if (window.SystemDataService && SystemDataService.getMenuSyncVersion) {
+      SystemDataService.getMenuSyncVersion().then(function(serverVer) {
+        try {
+          var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+          var cacheVer = cached && cached.syncVer ? cached.syncVer : null;
+          // Nếu server version khác với cache version → xóa cache, fetch lại
+          if (serverVer && cacheVer && serverVer !== cacheVer) {
+            sessionStorage.removeItem(CACHE_KEY);
+            cached = null;
+          }
+          if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
+            NAV_CONFIG = cached.config;
+            _doRender(container);
+            return;
+          }
+        } catch (e) { }
+        _fetchAndRender(container, groupId, serverVer);
+      }).catch(function() {
+        // Lỗi API → dùng cache nếu có, không thì fetch nav
+        _fetchAndRender(container, groupId, null);
+      });
+    } else {
+      // Fallback: không có SystemDataService → dùng cache như cũ
+      try {
+        var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+        if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
+          NAV_CONFIG = cached.config;
+          _doRender(container);
+          return;
+        }
+      } catch (e) { }
+      _fetchAndRender(container, groupId, null);
+    }
+  }
 
+  function _fetchAndRender(container, groupId, syncVer) {
     var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.PERMISSIONS)
       ? window.API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MENU_BY_GROUP : null;
 
@@ -1647,9 +1764,13 @@ var Navbar = (function () {
         var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
         if (records && records.length > 0) {
           NAV_CONFIG = _buildConfigFromDB(records);
-          // Lưu cache
+          // Lưu cache kèm syncVer để lần sau so sánh
           try {
-            sessionStorage.setItem(CACHE_KEY, JSON.stringify({ groupId: groupId, config: NAV_CONFIG }));
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+              groupId: groupId,
+              config: NAV_CONFIG,
+              syncVer: syncVer || ''
+            }));
           } catch (e) { }
         }
         _doRender(container);
@@ -3230,12 +3351,12 @@ var UIActionToolbar = (function () {
     actions = actions || {};
     
     return UIButton.createBar([
-      { text: 'Thêm', icon: 'add', type: 'tool', onClick: actions.onAdd, attrs: 'data-tooltip="Thêm bản ghi mới (Ins)"' },
-      { text: 'Sửa', icon: 'edit', type: 'tool', onClick: actions.onEdit, attrs: 'data-tooltip="Sửa bản ghi đã chọn (F2)"' },
-      { text: 'Xóa', icon: 'delete', type: 'tool', onClick: actions.onDelete, attrs: 'data-tooltip="Xóa bản ghi đã chọn (Del)"' },
-      { text: 'Lọc', icon: 'filter_alt', type: 'tool', onClick: actions.onFilter, attrs: 'data-tooltip="Lọc / Tìm kiếm dữ liệu"' },
-      { text: 'In', icon: 'print', type: 'tool', onClick: actions.onPrint, attrs: 'data-tooltip="In danh sách (Ctrl+P)"' },
-      { text: 'Đóng', icon: 'close', type: 'tool', onClick: actions.onClose, attrs: 'data-tooltip="Đóng trang hiện tại"' }
+      { text: 'Thêm',  icon: 'add',        type: 'tool', onClick: actions.onAdd,    attrs: 'data-tooltip="Thêm bản ghi mới (Ins)"' },
+      { text: 'Sửa',   icon: 'edit',       type: 'tool', onClick: actions.onEdit,   attrs: 'data-tooltip="Sửa bản ghi đã chọn (F2)"' },
+      { text: 'Xóa',   icon: 'delete',     type: 'tool', onClick: actions.onDelete, attrs: 'data-tooltip="Xóa bản ghi đã chọn (Del)"' },
+      { text: 'Lọc',   icon: 'filter_alt', type: 'tool', onClick: actions.onFilter, attrs: 'data-tooltip="Lọc / Tìm kiếm dữ liệu"' },
+      { text: 'In',    icon: 'print',      type: 'tool', onClick: actions.onPrint,  attrs: 'data-tooltip="In danh sách (Ctrl+P)"' },
+      { text: 'Đóng',  icon: 'close',      type: 'tool', onClick: actions.onClose,  attrs: 'data-tooltip="Đóng trang hiện tại"' }
     ]);
   }
 

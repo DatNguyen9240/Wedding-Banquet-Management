@@ -3,102 +3,174 @@
  */
 window.CustomersPage = (function () {
 
-  var grid = null;
-  var btnBar = null;
+  var $container = null;
+  var customersData = [];
+  var selectedRow = null;
+  var $inputSearch = null; // tham chiếu tới UIInput element
 
   function render(container) {
     if (!container) return;
+    $container = container;
 
-    // 1. Khởi tạo ActionToolbar
-    if (typeof ActionToolbar !== 'undefined') {
-      btnBar = new ActionToolbar({
-        container: container.querySelector('#customers-btn-container'),
-        module: 'HopDong',
-        buttons: ['add', 'edit', 'delete', 'filter', 'print'],
-        onAdd: _openAddForm,
-        onEdit: function () {
-          if (!grid) return;
-          var selected = grid.getSelectedRow();
-          if (!selected) return Alert.warn('Vui lòng chọn khách hàng cần sửa');
-          _openEditForm(selected);
-        },
-        onDelete: function () {
-          if (!grid) return;
-          var selected = grid.getSelectedRow();
-          if (!selected) return Alert.warn('Vui lòng chọn khách hàng cần xóa');
-          if (typeof ConfirmModal !== 'undefined') {
-            ConfirmModal.show('Xác nhận xóa', 'Bạn có chắc muốn xóa khách hàng <b>' + selected.TenKhach + '</b>?', function () {
-              Alert.success('Đã xóa thành công');
-              _loadData(); // reload
-            });
+    fetch('./src/pages/customers/customers.html')
+      .then(function(res) { return res.text(); })
+      .then(function(html) {
+        $container.innerHTML = html;
+
+        // 1. Action Toolbar (chỉ mount thanh nút, width = fit-content)
+        var btnContainer = $container.querySelector('#customers-btn-container');
+        if (btnContainer && typeof UIActionToolbar !== 'undefined') {
+          var toolbar = UIActionToolbar.create({
+            onAdd: _openAddForm,
+            onEdit: function () {
+              if (!selectedRow) return Alert.warning('Vui lòng chọn khách hàng cần sửa');
+              _openEditForm(selectedRow);
+            },
+            onDelete: function () {
+              if (!selectedRow) return Alert.warning('Vui lòng chọn khách hàng cần xóa');
+              if (typeof ConfirmModal !== 'undefined') {
+                ConfirmModal.show('Xác nhận xóa', 'Bạn có chắc muốn xóa khách hàng <b>' + selectedRow.TenKhach + '</b>?', function () {
+                  Alert.success('Đã xóa thành công');
+                  _loadData();
+                });
+              }
+            },
+            onPrint: function () { window.print(); }
+          });
+          // Co toolbar vừa nội dung (không chiếm toàn width)
+          toolbar.style.display = 'inline-flex';
+          toolbar.style.width = 'auto';
+          btnContainer.appendChild(toolbar);
+        }
+
+        // 2. Search bar — dùng UIInput.createText() + nút tìm kiếm
+        var filterContainer = $container.querySelector('#customers-filter-container');
+        if (filterContainer && typeof UIInput !== 'undefined') {
+          // Wrapper input không có label => dùng _createBaseWrapper thông qua createText với config không label
+          var inputWrapper = UIInput.createText({
+            id: 'input-search-customers',
+            placeholder: 'Tìm kiếm theo mã, tên, số điện thoại...',
+            className: '' // không cần form-group column, dùng inline
+          });
+          // UIInput trả về .form-group (flex-column) — cần override để inline
+          inputWrapper.style.flexDirection = 'row';
+          inputWrapper.style.alignItems = 'center';
+          $inputSearch = inputWrapper.querySelector('#input-search-customers');
+          if ($inputSearch) {
+            $inputSearch.style.width = '300px';
+            $inputSearch.style.minWidth = '220px';
           }
-        },
-        onPrint: function () {
-          window.print();
+
+          var btnSearch = document.createElement('button');
+          btnSearch.className = 'btn btn-outline';
+          btnSearch.id = 'btn-search-customers';
+          btnSearch.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">search</span><span>Tìm kiếm</span>';
+          btnSearch.addEventListener('click', function () {
+            _loadData($inputSearch ? $inputSearch.value : '');
+          });
+
+          filterContainer.appendChild(inputWrapper);
+          filterContainer.appendChild(btnSearch);
         }
-      });
-    }
 
-    // 2. Khởi tạo DataGrid (Table)
-    if (typeof Table !== 'undefined') {
-      grid = new Table({
-        container: container.querySelector('#customers-grid-container'),
-        columns: [
-          { key: 'MaKH', label: 'Mã KH', width: '100px' },
-          { key: 'TenKhach', label: 'Tên Khách Hàng', width: '250px' },
-          { key: 'DienThoai', label: 'Điện thoại', width: '120px' },
-          { key: 'Email', label: 'Email', width: '200px' },
-          { key: 'DiaChi', label: 'Địa chỉ' },
-          { key: 'SoLanThamQuan', label: 'Tham quan', width: '100px', align: 'center' },
-          { key: 'SoHopDong', label: 'Hợp đồng', width: '100px', align: 'center' }
-        ],
-        onRowClick: function (row) {
-          // Xử lý khi click dòng (highlight do component tự làm)
-        },
-        onRowDblClick: function (row) {
-          _openEditForm(row);
-        }
+        _loadData();
+      })
+      .catch(function(err) {
+        $container.innerHTML = '<div class="p-4 text-danger">Lỗi tải giao diện: ' + err.message + '</div>';
       });
-    }
-
-    // 3. Search action
-    var btnSearch = container.querySelector('#btn-search-customers');
-    if (btnSearch) {
-      btnSearch.addEventListener('click', function() {
-        var keyword = container.querySelector('#input-search-customers').value;
-        Alert.info('Đang tìm kiếm: ' + keyword);
-      });
-    }
-
-    _loadData();
   }
 
-  function _loadData() {
-    if (!grid) return;
-    
-    // Đọc từ mockData
-    if (typeof MockData !== 'undefined' && MockData.khachHang) {
-      grid.load(MockData.khachHang);
+  function _loadData(keyword) {
+    var searchKey = keyword || '';
+
+    var gridContainer = $container ? $container.querySelector('#customers-grid-container') : null;
+    if (gridContainer) gridContainer.innerHTML = '<div class="p-4 text-center" style="color:var(--color-text-secondary);">Đang tải dữ liệu...</div>';
+
+    if (typeof BookingService !== 'undefined') {
+      BookingService.searchCustomer(searchKey).then(function(data) {
+        customersData = data.map(function(item) {
+          return {
+            id: item.Id || item.Makh,
+            MaKH: item.Makh || '---',
+            TenKhach: [item.Tenchure, item.Tencodau].filter(Boolean).join(' & ') || item.Tenkh || 'Chưa có tên',
+            DienThoai: item.Dienthoai || item.DTchure || item.DTcodau || '---',
+            Email: item.Mail || '---',
+            DiaChi: item.Diachi || '---',
+            SoLanThamQuan: item.SoLanThamQuan || 0,
+            SoHopDong: item.SoHopDong || 0
+          };
+        });
+        _renderTable();
+      }).catch(function(err) {
+        console.error('Lỗi tải danh sách khách hàng:', err);
+        if (typeof Alert !== 'undefined') Alert.error('Lỗi kết nối khi lấy danh sách khách hàng!');
+        customersData = [];
+        _renderTable();
+      });
     } else {
-      // Fallback nếu mockData chưa có mảng khachHang
-      grid.load([
-        { id: 1, MaKH: 'KH0001', TenKhach: 'Trương Vô Kỵ - Triệu Mẫn', DienThoai: '0901234567', Email: 'ky.man@gmail.com', DiaChi: 'Quận 1, TP.HCM', SoLanThamQuan: 2, SoHopDong: 1 },
-        { id: 2, MaKH: 'KH0002', TenKhach: 'Quách Tĩnh - Hoàng Dung', DienThoai: '0912345678', Email: 'tinh.dung@gmail.com', DiaChi: 'Quận 3, TP.HCM', SoLanThamQuan: 1, SoHopDong: 1 },
-        { id: 3, MaKH: 'KH0003', TenKhach: 'Dương Quá - Tiểu Long Nữ', DienThoai: '0923456789', Email: 'qua.nu@gmail.com', DiaChi: 'Quận 5, TP.HCM', SoLanThamQuan: 3, SoHopDong: 0 }
-      ]);
+      if (typeof Alert !== 'undefined') Alert.warning('Không tìm thấy BookingService để gọi API');
+    }
+  }
+
+  function _renderTable() {
+    var gridContainer = $container.querySelector('#customers-grid-container');
+    if (!gridContainer) return;
+    gridContainer.innerHTML = '';
+    selectedRow = null;
+
+    if (typeof UITable !== 'undefined') {
+      var tableEl = UITable.create({
+        headers: [
+          { label: 'Mã KH', width: '100px' },
+          { label: 'Tên Khách Hàng', width: '250px' },
+          { label: 'Điện thoại', width: '130px' },
+          { label: 'Email', width: '200px' },
+          { label: 'Địa chỉ' },
+          { label: 'Tham quan', width: '100px', align: 'center' },
+          { label: 'Hợp đồng', width: '100px', align: 'center' }
+        ],
+        data: customersData,
+        columns: [
+          { field: 'MaKH' },
+          { field: 'TenKhach', render: function(v) { return '<span style="color:var(--color-primary);font-weight:600;">' + v + '</span>'; } },
+          { field: 'DienThoai' },
+          { field: 'Email' },
+          { field: 'DiaChi' },
+          { field: 'SoLanThamQuan', align: 'center' },
+          { field: 'SoHopDong', align: 'center' }
+        ]
+      });
+
+      gridContainer.appendChild(tableEl);
+
+      // Chọn dòng
+      var tbody = tableEl.querySelector('tbody');
+      if (tbody) {
+        tbody.addEventListener('click', function(e) {
+          var tr = e.target.closest('tr');
+          if (!tr || tr.children.length === 1) return;
+          Array.from(tbody.querySelectorAll('tr')).forEach(function(r) { r.classList.remove('active'); });
+          tr.classList.add('active');
+          var idx = Array.from(tbody.children).indexOf(tr);
+          selectedRow = customersData[idx] || null;
+        });
+        tbody.addEventListener('dblclick', function(e) {
+          var tr = e.target.closest('tr');
+          if (!tr || !selectedRow) return;
+          _openEditForm(selectedRow);
+        });
+      }
+    } else {
+      gridContainer.innerHTML = '<div class="text-danger p-4">Không tìm thấy component UITable</div>';
     }
   }
 
   function _openAddForm() {
-    if (typeof Alert !== 'undefined') {
-      Alert.info('Chức năng Thêm Khách hàng đang phát triển');
-    }
+    Alert.info('Chức năng Thêm Khách hàng đang phát triển');
   }
 
   function _openEditForm(row) {
-    if (typeof Alert !== 'undefined') {
-      Alert.info('Chức năng Sửa Khách hàng [' + row.TenKhach + '] đang phát triển');
-    }
+    Alert.info('Chức năng Sửa Khách hàng [' + row.TenKhach + '] đang phát triển');
   }
 
   return {

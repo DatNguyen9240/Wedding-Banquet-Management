@@ -489,6 +489,8 @@ var PermissionsPage = (function () {
       .then(function (res) {
         if (res && res.code === 0) {
           if (typeof Alert !== 'undefined') Alert.success('Thành công', 'Đã đồng bộ quyền hệ thống');
+          // Xóa cache nav để menu mới hiện ngay trên thanh điều hướng
+          if (window.Navbar) Navbar.clearMenuCache();
           if (currentSelectedGroup) {
             _renderTreeTableForGroup(currentSelectedGroup);
           }

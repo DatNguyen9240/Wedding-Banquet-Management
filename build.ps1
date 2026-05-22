@@ -55,6 +55,7 @@ $jsFiles = @(
   "js\core\EventBus.js",
   "js\core\KeyboardManager.js",
   "js\utils\FormatUtils.js",
+  "js\utils\UITooltip.js",
   "js\utils\PrintUtils.js",
   "js\services\CalendarService.js",
   "js\services\SystemDataService.js",

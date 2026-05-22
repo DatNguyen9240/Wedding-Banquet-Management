@@ -15,7 +15,7 @@ BEGIN
         RETURN;
     END
 
-    -- VẾ 1: Menu lá (có URLPara) + quyền hiện tại
+    -- VẾ 1: Chỉ lấy menu lá ĐÃ ĐƯỢC ĐỒNG BỘ vào bảng Permission (INNER JOIN)
     SELECT
         M.MenuID        AS [id],
         M.Parent        AS [parent],
@@ -35,14 +35,14 @@ BEGIN
         ISNULL(P.isUnLockDoc,  0) AS isUnLockDoc,
         ISNULL(P.isExportExcel,0) AS isExportExcel
     FROM WA_Menu M
-    LEFT JOIN WA_UserGroupPermisstion P
+    INNER JOIN WA_UserGroupPermisstion P        -- Đổi LEFT JOIN → INNER JOIN
         ON M.MenuID = P.MenuID AND P.UserGroupID = @UserGroupID
     WHERE COALESCE(M.isDisable, 0) = 0
-      AND COALESCE(M.URLPara, '') <> ''   -- Dùng URLPara thay FormName
+      AND COALESCE(M.URLPara, '') <> ''
 
     UNION ALL
 
-    -- VẾ 2: Thư mục cha (URLPara rỗng, có menu con)
+    -- VẾ 2: Chỉ lấy thư mục cha của những menu ĐÃ CÓ TRONG PERMISSION
     SELECT
         M.MenuID    AS [id],
         M.Parent    AS [parent],
@@ -57,10 +57,15 @@ BEGIN
     WHERE COALESCE(M.isDisable, 0) = 0
       AND COALESCE(M.URLPara, '') = ''
       AND M.MenuID IN (
+          -- Chỉ lấy folder cha của menu con ĐÃ CÓ TRONG bảng Permission
           SELECT DISTINCT Parent FROM WA_Menu
           WHERE COALESCE(isDisable, 0) = 0
             AND COALESCE(URLPara, '') <> ''
             AND Parent IS NOT NULL AND Parent <> ''
+            AND MenuID IN (
+                SELECT MenuID FROM WA_UserGroupPermisstion
+                WHERE UserGroupID = @UserGroupID
+            )
       )
 
     ORDER BY [id];

@@ -3,23 +3,18 @@
     <h1 class="page-title-heading">Hồ Sơ Khách Hàng</h1>
     <span class="page-title-sub">Quản lý danh bạ và lịch sử giao dịch của khách đặt tiệc</span>
   </div>
-  <div class="page-title-actions" id="customers-btn-container"></div>
+  <div class="page-title-actions"></div>
 </div>
 
-<div class="page-body">
-  <div class="card mb-4">
-    <div class="card-body">
-      <!-- Bộ lọc (Search bar) -->
-      <div id="customers-filter-container" class="mb-3 d-flex gap-2">
-        <input type="text" id="input-search-customers" class="form-control" placeholder="Tìm kiếm theo mã, tên, số điện thoại..." style="max-width: 350px;">
-        <button class="btn btn-outline" id="btn-search-customers">
-          <span class="material-symbols-outlined icon">search</span>
-          Tìm kiếm
-        </button>
-      </div>
-      
-      <!-- Bảng dữ liệu -->
-      <div id="customers-grid-container" style="min-height: 400px;"></div>
-    </div>
+<!-- Action Toolbar: nằm ngoài card, không bị overflow clip -->
+<div id="customers-btn-container" style="margin-bottom: 16px; padding-top: 2px;"></div>
+
+<div class="card">
+  <div class="card-body">
+    <!-- Bộ lọc (mount bởi JS) -->
+    <div id="customers-filter-container" class="mb-3" style="display:flex; align-items:center; gap:8px;"></div>
+
+    <!-- Bảng dữ liệu -->
+    <div id="customers-grid-container"></div>
   </div>
 </div>

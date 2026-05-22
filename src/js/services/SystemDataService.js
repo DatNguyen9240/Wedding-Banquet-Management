@@ -81,17 +81,23 @@ var SystemDataService = (function() {
       if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.SYSTEM || !API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE) {
         return reject('Missing API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE');
       }
-
-      // Append CodeID as a query parameter (though we hardcoded it in SQL, it's good practice in JS)
-      var url = API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE + (codeId ? '?CodeID=' + codeId : '');
-      ApiClient.get(url)
+      ApiClient.get(API_CONFIG.ENDPOINTS.SYSTEM.SETUP_VALUE)
         .then(function(res) {
           var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
-          var value = records.length > 0 ? records[0].CodeValue : null;
-          resolve(value);
+          // Tìm đúng CodeID được yêu cầu
+          var found = records.find(function(r) { return r.CodeID === codeId; });
+          resolve(found ? found.CodeValue : null);
         })
         .catch(reject);
     });
+  }
+
+  /**
+   * Lấy version đồng bộ menu từ SY_Setup (key: menu_sync_ver)
+   * Dùng cho Navbar để detect cache cũ trên các máy khác
+   */
+  function getMenuSyncVersion() {
+    return getSetupValue('menu_sync_ver');
   }
 
   function invalidateCache() {
@@ -104,6 +110,7 @@ var SystemDataService = (function() {
     getShifts: getShifts,
     getBanquetTypes: getBanquetTypes,
     getSetupValue: getSetupValue,
+    getMenuSyncVersion: getMenuSyncVersion,
     invalidateCache: invalidateCache
   };
 })();

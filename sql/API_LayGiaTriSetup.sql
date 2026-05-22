@@ -7,7 +7,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- =============================================
--- Mô tả: API Lấy giá trị cài đặt (CodeValue) dựa trên CodeID từ bảng SY_Setup
+-- Mô tả: API Lấy giá trị cài đặt từ bảng SY_Setup
+-- Trả về: Com1 (tên công ty) + menu_sync_ver (version đồng bộ menu)
 -- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[API_LayGiaTriSetup]
 AS
@@ -18,6 +19,6 @@ BEGIN
         [CodeID],
         [CodeValue]
     FROM [dbo].[SY_Setup]
-    WHERE [CodeID] = 'Com1';
+    WHERE [CodeID] IN ('Com1', 'menu_sync_ver');
 END
 GO

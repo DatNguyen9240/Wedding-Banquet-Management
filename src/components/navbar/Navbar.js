@@ -352,16 +352,43 @@ var Navbar = (function () {
     var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
     var groupId = u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
 
-    // Nếu đã có cache → render ngay, không chờ API
-    try {
-      var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
-      if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
-        NAV_CONFIG = cached.config;
-        _doRender(container);
-        return; // Dùng cache, không gọi API lại
-      }
-    } catch (e) { }
+    // Check version server trước — nếu khác cache thì tự clear (bắt được thay đổi từ máy Admin)
+    if (window.SystemDataService && SystemDataService.getMenuSyncVersion) {
+      SystemDataService.getMenuSyncVersion().then(function(serverVer) {
+        try {
+          var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+          var cacheVer = cached && cached.syncVer ? cached.syncVer : null;
+          // Nếu server version khác với cache version → xóa cache, fetch lại
+          if (serverVer && cacheVer && serverVer !== cacheVer) {
+            sessionStorage.removeItem(CACHE_KEY);
+            cached = null;
+          }
+          if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
+            NAV_CONFIG = cached.config;
+            _doRender(container);
+            return;
+          }
+        } catch (e) { }
+        _fetchAndRender(container, groupId, serverVer);
+      }).catch(function() {
+        // Lỗi API → dùng cache nếu có, không thì fetch nav
+        _fetchAndRender(container, groupId, null);
+      });
+    } else {
+      // Fallback: không có SystemDataService → dùng cache như cũ
+      try {
+        var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+        if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
+          NAV_CONFIG = cached.config;
+          _doRender(container);
+          return;
+        }
+      } catch (e) { }
+      _fetchAndRender(container, groupId, null);
+    }
+  }
 
+  function _fetchAndRender(container, groupId, syncVer) {
     var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.PERMISSIONS)
       ? window.API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MENU_BY_GROUP : null;
 
@@ -373,9 +400,13 @@ var Navbar = (function () {
         var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
         if (records && records.length > 0) {
           NAV_CONFIG = _buildConfigFromDB(records);
-          // Lưu cache
+          // Lưu cache kèm syncVer để lần sau so sánh
           try {
-            sessionStorage.setItem(CACHE_KEY, JSON.stringify({ groupId: groupId, config: NAV_CONFIG }));
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+              groupId: groupId,
+              config: NAV_CONFIG,
+              syncVer: syncVer || ''
+            }));
           } catch (e) { }
         }
         _doRender(container);

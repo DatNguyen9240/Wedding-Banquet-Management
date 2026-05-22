@@ -55,6 +55,15 @@ BEGIN
               AND P.MenuID = M.MenuID
         );
 
+        -- Ghi version đồng bộ vào SY_Setup để các client tự biết cache cũ
+        IF EXISTS (SELECT 1 FROM SY_Setup WHERE CodeID = 'menu_sync_ver')
+            UPDATE SY_Setup
+            SET CodeValue = CONVERT(NVARCHAR(50), GETDATE(), 126)
+            WHERE CodeID = 'menu_sync_ver';
+        ELSE
+            INSERT INTO SY_Setup (CodeID, CodeName, CodeValue, GroupID)
+            VALUES ('menu_sync_ver', N'Phiên bản đồng bộ Menu', CONVERT(NVARCHAR(50), GETDATE(), 126), 'SY');
+
         SELECT 0 AS [code], N'Đồng bộ quyền thành công' AS [msg];
 
     END TRY

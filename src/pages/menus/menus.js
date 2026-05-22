@@ -404,6 +404,7 @@ var MenusPage = (function () {
           MenusService.save(payload).then(function (res) {
             if (res && res.code === 0) {
               UIToast.show('Thêm mới thành công!', 'success');
+              if (window.Navbar) Navbar.clearMenuCache();
               _loadMenus();
             } else {
               UIToast.show(res.msg || 'Lỗi', 'error');
@@ -815,6 +816,7 @@ var MenusPage = (function () {
       .then(function (res) {
         if (res && res.code === 0) {
           UIToast.show('Đã cập nhật Menu thành công!', 'success');
+          if (window.Navbar) Navbar.clearMenuCache();
           _loadMenus(); // Tải lại để cập nhật label trên cây menu bên trái
         } else {
           Alert.error('Lỗi', res && res.msg ? res.msg : 'Lưu thất bại');
@@ -952,6 +954,7 @@ var MenusPage = (function () {
         if (res && res.code === 0) {
           Alert.success('Thành công', 'Đã lưu Menu thành công!');
           _closeModal();
+          if (window.Navbar) Navbar.clearMenuCache();
           _loadMenus();
         } else {
           Alert.error('Lỗi', res && res.msg ? res.msg : 'Lưu thất bại');
@@ -974,6 +977,7 @@ var MenusPage = (function () {
       .then(function (res) {
         if (res && res.code === 0) {
           Alert.success('Thành công', 'Đã xóa Menu!');
+          if (window.Navbar) Navbar.clearMenuCache();
           _loadMenus();
         } else {
           Alert.error('Lỗi', res && res.msg ? res.msg : 'Xóa thất bại');

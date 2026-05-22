@@ -556,16 +556,16 @@ Bao gồm các báo cáo quản trị tổng hợp:
 | Route | Tên Màn hình | Module | Trạng thái |
 |---|---|---|---|
 | `#/dashboard` | Tổng quan | QuanTriHeThong | ✅ Có giao diện mẫu |
-| `#/users` | Người dùng | QuanTriHeThong | ⏳ Placeholder |
-| `#/customers` | Hồ sơ Khách hàng | HopDong | ❌ Chưa code |
-| `#/calendar` | Lịch tiệc | HopDong | ⏳ Placeholder |
-| `#/hall-status` | Trạng thái Sảnh | HopDong | ❌ Chưa code |
+| `#/users` | Người dùng | QuanTriHeThong | ✅ Có giao diện mẫu |
+| `#/customers` | Hồ sơ Khách hàng | HopDong | ✅ Có giao diện mẫu |
+| `#/calendar` | Lịch tiệc | HopDong | ✅ Có giao diện mẫu |
+| `#/hall-status` | Trạng thái Sảnh | HopDong | ✅ Có giao diện mẫu |
 | `#/visitor` | Khách tham quan | HopDong | ✅ Đã có Form đầy đủ |
 | `#/booking` | Biên nhận cọc | HopDong | ✅ Đã có Form đầy đủ |
-| `#/contract` | Hợp đồng tiệc | HopDong | ⏳ Placeholder |
-| `#/checkout` | Quyết toán | QuyetToan | ⏳ Placeholder |
-| `#/staff` | Nhân viên phục vụ | NhanSu | ❌ Chưa code |
-| `#/menu-items` | Hàng hóa / Món ăn | DanhMuc | ⏳ Placeholder |
-| `#/report-revenue` | Doanh thu Tiệc | BaoCao | ❌ Chưa code |
-| `#/report-cost` | Chi phí Tiệc | BaoCao | ❌ Chưa code |
-| `#/report-other` | Báo cáo Khác | BaoCao | ❌ Chưa code |
+| `#/contract` | Hợp đồng tiệc | HopDong | ✅ Có giao diện mẫu |
+| `#/checkout` | Quyết toán | QuyetToan | ✅ Có giao diện mẫu |
+| `#/staff` | Nhân viên phục vụ | NhanSu | ✅ Có giao diện mẫu |
+| `#/menu-items` | Hàng hóa / Món ăn | DanhMuc | ✅ Có giao diện mẫu |
+| `#/report-revenue` | Doanh thu Tiệc | BaoCao | ✅ Có giao diện mẫu |
+| `#/report-cost` | Chi phí Tiệc | BaoCao | ✅ Có giao diện mẫu |
+| `#/report-other` | Báo cáo Khác | BaoCao | ✅ Có giao diện mẫu |
