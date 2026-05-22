@@ -260,14 +260,35 @@ var Router = (function () {
   function init() {
     window.addEventListener('hashchange', _handleRoute);
 
-    if (!window.location.hash) {
-      window.location.hash = '#/dashboard';
+    // BẢO MẬT: Kiểm tra Version Quyền 1 lần duy nhất lúc F5 tải lại màn hình
+    if (typeof ApiClient !== 'undefined') {
+        ApiClient.post('/api/System/GetPermissionVersion', {}, { silent: true }).then(function(res) {
+            var localVer = localStorage.getItem('pmql_permission_ver');
+            if (res && res.version && res.version !== localVer) {
+                // Vân tay bị lệch -> Tải quyền mới rồi mới cho phép chạy tiếp
+                ApiClient.post('/api/System/GetMyPermissions', {}, { silent: true }).then(function(permRes) {
+                    localStorage.setItem('pmql_permissions', JSON.stringify(permRes.data || {}));
+                    localStorage.setItem('pmql_permission_ver', res.version);
+                    _finishInit();
+                }).catch(_finishInit);
+            } else {
+                _finishInit(); // Vân tay giống -> Trùng khớp -> Chạy tốc độ cao
+            }
+        }).catch(_finishInit);
     } else {
-      _handleRoute();
+        _finishInit();
     }
 
-    // Preload templates phổ biến sau 500ms
-    setTimeout(_preloadTemplates, 500);
+    function _finishInit() {
+      if (!window.location.hash) {
+        window.location.hash = '#/dashboard';
+      } else {
+        _handleRoute();
+      }
+
+      // Preload templates phổ biến sau 500ms
+      setTimeout(_preloadTemplates, 500);
+    }
   }
 
   // ── Public API ─────────────────────────────────────────────────────────
