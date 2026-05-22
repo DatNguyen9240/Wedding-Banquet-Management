@@ -10,12 +10,12 @@ window.APP_MODULES = {
     // ----------------------------------------------------------------------
     CUSTOMERS: {
         FormName: 'frmCustomer',
-        
+
         // --- API Mappings ---
         ApiDictionary: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.GET_UI_DICTIONARY : null,
         ApiSearch: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.CUSTOMER ? window.API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH : null,
         ApiSave: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.CUSTOMER ? window.API_CONFIG.ENDPOINTS.CUSTOMER.SAVE : null,
-        
+
         // --- i18n & Labels ---
         PageTitle: 'Hồ Sơ Khách Hàng',
         PageSubtitle: 'Quản lý danh bạ và lịch sử giao dịch của khách đặt tiệc',
@@ -29,7 +29,7 @@ window.APP_MODULES = {
         WarnSelectDelete: 'Vui lòng chọn dữ liệu cần xóa',
         ConfirmDelete: 'Bạn có chắc muốn xóa <b>{0}</b>?',
         InfoDeleteDev: 'Chức năng xóa đang phát triển',
-        
+
         // --- Table Keys ---
         PrimaryKey: 'Makh',
         RowNameField: 'TenKhach',
@@ -62,12 +62,12 @@ window.APP_MODULES = {
     // ----------------------------------------------------------------------
     STAFF: {
         FormName: 'frmStaff',
-        
+
         // --- API Mappings ---
         ApiDictionary: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.GET_UI_DICTIONARY : null,
         ApiSearch: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.STAFF ? window.API_CONFIG.ENDPOINTS.STAFF.LIST : null,
         ApiSave: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.STAFF ? window.API_CONFIG.ENDPOINTS.STAFF.SAVE : null,
-        
+
         // --- i18n & Labels ---
         PageTitle: 'Nhân viên Phục vụ Tiệc',
         PageSubtitle: 'Quản lý hồ sơ nhân viên thời vụ và fulltime',
@@ -81,10 +81,10 @@ window.APP_MODULES = {
         WarnSelectDelete: 'Vui lòng chọn nhân viên cần xóa',
         ConfirmDelete: 'Bạn có chắc muốn xóa hồ sơ nhân viên <b>{0}</b>?',
         InfoDeleteDev: 'Chức năng xóa đang phát triển',
-        
+
         // --- Table Keys ---
-        PrimaryKey: 'NHANVIENID', 
-        RowNameField: 'TENNHANVIEN', 
+        PrimaryKey: 'NHANVIENID',
+        RowNameField: 'TENNHANVIEN',
 
         SearchPlaceholder: 'Nhập mã NV, tên, số điện thoại...',
         FilterKeywordLabel: 'Tìm kiếm',
@@ -107,10 +107,62 @@ window.APP_MODULES = {
         ToastCopyCell: 'Đã sao chép ô!',
         ToastCopyRow: 'Đã sao chép cả hàng!',
         ModalWidth: '600px'
-    }
+    },
 
     // ----------------------------------------------------------------------
-    // 3. MODULE: HỢP ĐỒNG (CONTRACTS) - Ví dụ cho tương lai
+    // 3. MODULE: CẤU HÌNH TRƯỜNG GIAO DIỆN (FORM BUILDER)
+    // ----------------------------------------------------------------------
+    FORM_BUILDER: {
+        FormName: 'frmFormBuilder',
+
+        // --- API Mappings ---
+        ApiDictionary: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.GET_UI_DICTIONARY : null,
+        ApiSearch: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.GET_FIELDS_LIST : null,
+        ApiSave: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.SAVE_FIELD : null,
+
+        // --- i18n & Labels ---
+        PageTitle: 'Cấu hình Trường Giao diện (Form Builder)',
+        PageSubtitle: 'Định nghĩa và quản lý các trường dữ liệu động cho các form',
+        TitleAdd: '➕ Thêm Trường Mới',
+        TitleEdit: '✏️ Sửa Trường',
+        ToastAdd: 'Đã thêm trường thành công!',
+        ToastEdit: 'Đã cập nhật trường thành công!',
+        BtnSaveAdd: 'Thêm mới',
+        BtnSaveEdit: 'Lưu thay đổi',
+        WarnSelectEdit: 'Vui lòng chọn trường cần sửa',
+        WarnSelectDelete: 'Vui lòng chọn trường cần xóa',
+        ConfirmDelete: 'Bạn có chắc muốn xóa trường <b>{0}</b>?',
+        InfoDeleteDev: 'Chức năng xóa đang phát triển',
+
+        // --- Table Keys ---
+        PrimaryKey: 'AutoID',
+        RowNameField: 'FieldName',
+
+        SearchPlaceholder: 'Nhập tên form, mã trường...',
+        FilterKeywordLabel: 'Tìm kiếm',
+        TextLoading: 'Đang tải danh sách cấu hình...',
+        TextLoadingError: 'Lỗi tải giao diện: ',
+        BtnCancel: 'Hủy bỏ',
+        BtnSaveSaving: 'Đang lưu...',
+        AlertTitleWarning: 'Cảnh báo',
+        AlertTitleConfirm: 'Xác nhận xóa',
+        AlertTitleInfo: 'Thông báo',
+        AlertTitleError: 'Lỗi',
+        AlertApiMissing: 'Chức năng đang được phát triển (Chưa gắn API)!',
+        AlertSaveFailed: 'Lưu thất bại',
+        AlertNetworkError: 'Lỗi kết nối máy chủ',
+        WarnMissingInfo: 'Thiếu thông tin',
+        WarnMissingInput: 'Vui lòng nhập đầy đủ: {0}',
+        TextDeleteFallback: 'trường này',
+        MenuCopyCell: 'Sao chép Ô này (Cell)',
+        MenuCopyRow: 'Sao chép Hàng này (Row)',
+        ToastCopyCell: 'Đã sao chép ô!',
+        ToastCopyRow: 'Đã sao chép cả hàng!',
+        ModalWidth: '800px'
+    },
+
+    // ----------------------------------------------------------------------
+    // 4. MODULE: HỢP ĐỒNG (CONTRACTS) - Ví dụ cho tương lai
     // ----------------------------------------------------------------------
     /*
     CONTRACTS: {

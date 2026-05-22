@@ -33,175 +33,176 @@ window.DynamicFormEngine = (function () {
   }
 
   function _hasPermission(action) {
-     var perms = JSON.parse(localStorage.getItem('pmql_permissions') || 'null');
-     if (!perms) return true; // Chưa ráp hệ thống phân quyền thì thả cửa
-     
-     // Ví dụ: perms = { 'frmStaff': { CanAdd: 1, CanEdit: 0, CanDelete: 0 } }
-     var modulePerm = perms[MODULE_CONFIG.FormName];
-     if (!modulePerm) return true; 
+    var perms = JSON.parse(localStorage.getItem('pmql_permissions') || 'null');
+    if (!perms) return true; // Chưa ráp hệ thống phân quyền thì thả cửa
 
-     if (action === 'ADD') return !!modulePerm.CanAdd;
-     if (action === 'EDIT') return !!modulePerm.CanEdit;
-     if (action === 'DELETE') return !!modulePerm.CanDelete;
-     return true;
+    // Ví dụ: perms = { 'frmStaff': { CanAdd: 1, CanEdit: 0, CanDelete: 0 } }
+    var modulePerm = perms[MODULE_CONFIG.FormName];
+    if (!modulePerm) return true;
+
+    if (action === 'ADD') return !!modulePerm.CanAdd;
+    if (action === 'EDIT') return !!modulePerm.CanEdit;
+    if (action === 'DELETE') return !!modulePerm.CanDelete;
+    return true;
   }
 
   // ── Render ────────────────────────────────────────────────
   function render(container, config) {
     if (!container || !config) {
-        console.error('DynamicFormEngine: Missing container or config');
-        return;
+      console.error('DynamicFormEngine: Missing container or config');
+      return;
     }
     $container = container;
     MODULE_CONFIG = config;
 
     // 1. Lấy Từ điển UI từ Database trước
     var configEndpoint = MODULE_CONFIG.ApiDictionary;
-      
+
     var pConfig = configEndpoint ? ApiClient.post(configEndpoint, { FormName: MODULE_CONFIG.FormName }) : Promise.resolve(null);
 
     pConfig.then(function (resConfig) {
 
-        // 2. Lưu Từ điển vào biến toàn cục
-        if (resConfig && resConfig.code === 0 && resConfig.list) {
-          globalDictionary = {};
-          globalFormSchema = [];
-          
-          resConfig.list.forEach(function(item) {
-            // Xây Dictionary cho Table
-            globalDictionary[item.name] = item.label;
-            
-            // Xây dựng Custom Renderers Động từ cấu hình DB
-            if (item.renderRule) {
-               globalRenderers[item.name] = function(v) {
-                  var rule = item.renderRule.toLowerCase();
-                  
-                  // Các rule là boolean/switch
-                  if (rule === 'sw' || rule === 'boolean') {
-                      var isChecked = (String(v) === '1' || String(v).toLowerCase() === 'true');
-                      return isChecked 
-                             ? '<span style="color:var(--color-success);"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;">check_circle</span></span>' 
-                             : '<span style="color:var(--color-text-tertiary);">-</span>';
-                  }
-                  
-                  if (!v || v === '0' || v === 0) return (rule.indexOf('badge:') === 0 || rule === 'bg' || rule === 'br' || rule === 'bw') ? '-' : v;
-                  
-                  // Phím tắt 2 ký tự cho FormatID (varchar 2)
-                  if (rule === 'bg') return '<span class="status-badge success">' + v + '</span>';
-                  if (rule === 'br') return '<span class="status-badge danger">' + v + '</span>';
-                  if (rule === 'bw') return '<span class="status-badge warning">' + v + '</span>';
-                  if (rule === 'cr') return '<span style="color:var(--color-danger);font-weight:600;">' + v + '</span>';
-                  if (rule === 'cg') return '<span style="color:var(--color-success);font-weight:600;">' + v + '</span>';
-                  if (rule === 'cb') return '<span style="color:var(--color-primary);font-weight:600;">' + v + '</span>';
-                  
-                  // Logic cũ (nếu xài text dài)
-                  if (item.renderRule.indexOf('Badge:') === 0) {
-                      var color = item.renderRule.split(':')[1];
-                      return '<span class="status-badge ' + color + '">' + v + '</span>';
-                  } else if (item.renderRule.indexOf('Color:') === 0) {
-                      var color = item.renderRule.split(':')[1];
-                      var safeVal = String(v).replace(/"/g, '&quot;');
-                      return '<span title="' + safeVal + '" style="color:var(--color-' + color + ');font-weight:600;">' + safeVal + '</span>';
-                  }
-                  return v;
-               };
-            }
+      // 2. Lưu Từ điển vào biến toàn cục
+      var dataList = resConfig ? (resConfig.list || resConfig.records) : null;
+      if (resConfig && resConfig.code === 0 && dataList) {
+        globalDictionary = {};
+        globalFormSchema = [];
 
-            // Xây Schema cho Form (Lưu toàn bộ để lấy Khóa chính, nhưng đánh dấu showInForm)
-            globalFormSchema.push({
-              name: item.name,
-              label: item.label,
-              required: !!item.required,
-              position: item.position || 'grid', // Mặc định là grid nếu db null
-              showInForm: !!item.showInForm,
-              renderRule: (item.renderRule || '').toLowerCase().trim(),
-              dataSource: (item.dataSource || '').trim()
-            });
-          });
-          
-          if (Object.keys(globalDictionary).length === 0) {
-              console.warn('API returned no fields for FormName:', MODULE_CONFIG.FormName);
+        dataList.forEach(function (item) {
+          // Xây Dictionary cho Table
+          globalDictionary[item.name] = item.label;
+
+          // Xây dựng Custom Renderers Động từ cấu hình DB
+          if (item.renderRule) {
+            globalRenderers[item.name] = function (v) {
+              var rule = item.renderRule.toLowerCase();
+
+              // Các rule là boolean/switch
+              if (rule === 'sw' || rule === 'boolean') {
+                var isChecked = (String(v) === '1' || String(v).toLowerCase() === 'true');
+                return isChecked
+                  ? '<span style="color:var(--color-success);"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;">check_circle</span></span>'
+                  : '<span style="color:var(--color-text-tertiary);">-</span>';
+              }
+
+              if (!v || v === '0' || v === 0) return (rule.indexOf('badge:') === 0 || rule === 'bg' || rule === 'br' || rule === 'bw') ? '-' : v;
+
+              // Phím tắt 2 ký tự cho FormatID (varchar 2)
+              if (rule === 'bg') return '<span class="status-badge success">' + v + '</span>';
+              if (rule === 'br') return '<span class="status-badge danger">' + v + '</span>';
+              if (rule === 'bw') return '<span class="status-badge warning">' + v + '</span>';
+              if (rule === 'cr') return '<span style="color:var(--color-danger);font-weight:600;">' + v + '</span>';
+              if (rule === 'cg') return '<span style="color:var(--color-success);font-weight:600;">' + v + '</span>';
+              if (rule === 'cb') return '<span style="color:var(--color-primary);font-weight:600;">' + v + '</span>';
+
+              // Logic cũ (nếu xài text dài)
+              if (item.renderRule.indexOf('Badge:') === 0) {
+                var color = item.renderRule.split(':')[1];
+                return '<span class="status-badge ' + color + '">' + v + '</span>';
+              } else if (item.renderRule.indexOf('Color:') === 0) {
+                var color = item.renderRule.split(':')[1];
+                var safeVal = String(v).replace(/"/g, '&quot;');
+                return '<span title="' + safeVal + '" style="color:var(--color-' + color + ');font-weight:600;">' + safeVal + '</span>';
+              }
+              return v;
+            };
           }
-        } else {
-            console.warn('API Dictionary fetch failed or empty', resConfig);
+
+          // Xây Schema cho Form (Lưu toàn bộ để lấy Khóa chính, nhưng đánh dấu showInForm)
+          globalFormSchema.push({
+            name: item.name,
+            label: item.label,
+            required: !!item.required,
+            position: item.position || 'grid', // Mặc định là grid nếu db null
+            showInForm: !!item.showInForm,
+            renderRule: (item.renderRule || '').toLowerCase().trim(),
+            dataSource: (item.dataSource || '').trim()
+          });
+        });
+
+        if (Object.keys(globalDictionary).length === 0) {
+          console.warn('API returned no fields for FormName:', MODULE_CONFIG.FormName);
         }
-        // Tự động sinh mã HTML (Không cần file .html rời nữa)
-        var html = 
-          '<div class="page-title-bar">' +
-            '<div class="page-title-info">' +
-              '<h1 class="page-title-heading">' + (MODULE_CONFIG.PageTitle || 'Quản lý Dữ liệu') + '</h1>' +
-              '<span class="page-title-sub">' + (MODULE_CONFIG.PageSubtitle || '') + '</span>' +
-            '</div>' +
-          '</div>' +
-          '<div id="dynamic-btn-container" style="margin-bottom: 16px;"></div>' +
-          '<div class="card">' +
-            '<div class="card-body">' +
-              '<div id="dynamic-filter-container" style="margin-bottom: 16px;"></div>' +
-              '<div id="dynamic-grid-container"></div>' +
-            '</div>' +
-          '</div>';
+      } else {
+        console.warn('API Dictionary fetch failed or empty', resConfig);
+      }
+      // Tự động sinh mã HTML (Không cần file .html rời nữa)
+      var html =
+        '<div class="page-title-bar">' +
+        '<div class="page-title-info">' +
+        '<h1 class="page-title-heading">' + (MODULE_CONFIG.PageTitle || 'Quản lý Dữ liệu') + '</h1>' +
+        '<span class="page-title-sub">' + (MODULE_CONFIG.PageSubtitle || '') + '</span>' +
+        '</div>' +
+        '</div>' +
+        '<div id="dynamic-btn-container" style="margin-bottom: 16px;"></div>' +
+        '<div class="card">' +
+        '<div class="card-body">' +
+        '<div id="dynamic-filter-container" style="margin-bottom: 16px;"></div>' +
+        '<div id="dynamic-grid-container"></div>' +
+        '</div>' +
+        '</div>';
 
-        $container.innerHTML = html;
+      $container.innerHTML = html;
 
-        // Action Toolbar
-        var btnContainer = $container.querySelector('#dynamic-btn-container');
-        if (btnContainer && typeof UIActionToolbar !== 'undefined') {
-          var toolbar = UIActionToolbar.create({
-            onAdd: _hasPermission('ADD') ? _openAddForm : false,
-            onEdit: _hasPermission('EDIT') ? function () {
-              if (!selectedRow) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectEdit);
-              _openEditForm(selectedRow);
-            } : false,
-            onDelete: _hasPermission('DELETE') ? function () {
-              if (!selectedRow) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectDelete);
-              if (typeof ConfirmModal !== 'undefined') {
-                var deleteName = selectedRow[MODULE_CONFIG.RowNameField] || MODULE_CONFIG.TextDeleteFallback;
-                ConfirmModal.show(MODULE_CONFIG.AlertTitleConfirm,
-                  MODULE_CONFIG.ConfirmDelete.replace('{0}', deleteName),
-                  function () {
-                    Alert.info(MODULE_CONFIG.AlertTitleInfo, MODULE_CONFIG.InfoDeleteDev);
-                  }
-                );
-              }
-            } : false,
-            onFilter: function () {
-              var filterContainer = $container.querySelector('#dynamic-filter-container');
-              if (filterContainer) {
-                if (filterContainer.style.display === 'none') {
-                  filterContainer.style.display = 'flex';
-                  var inputKeyword = filterContainer.querySelector('#keyword');
-                  if (inputKeyword) inputKeyword.focus();
-                } else {
-                  filterContainer.style.display = 'none';
+      // Action Toolbar
+      var btnContainer = $container.querySelector('#dynamic-btn-container');
+      if (btnContainer && typeof UIActionToolbar !== 'undefined') {
+        var toolbar = UIActionToolbar.create({
+          onAdd: _hasPermission('ADD') ? _openAddForm : false,
+          onEdit: _hasPermission('EDIT') ? function () {
+            if (!selectedRow) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectEdit);
+            _openEditForm(selectedRow);
+          } : false,
+          onDelete: _hasPermission('DELETE') ? function () {
+            if (!selectedRow) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectDelete);
+            if (typeof ConfirmModal !== 'undefined') {
+              var deleteName = selectedRow[MODULE_CONFIG.RowNameField] || MODULE_CONFIG.TextDeleteFallback;
+              ConfirmModal.show(MODULE_CONFIG.AlertTitleConfirm,
+                MODULE_CONFIG.ConfirmDelete.replace('{0}', deleteName),
+                function () {
+                  Alert.info(MODULE_CONFIG.AlertTitleInfo, MODULE_CONFIG.InfoDeleteDev);
                 }
+              );
+            }
+          } : false,
+          onFilter: function () {
+            var filterContainer = $container.querySelector('#dynamic-filter-container');
+            if (filterContainer) {
+              if (filterContainer.style.display === 'none') {
+                filterContainer.style.display = 'flex';
+                var inputKeyword = filterContainer.querySelector('#keyword');
+                if (inputKeyword) inputKeyword.focus();
+              } else {
+                filterContainer.style.display = 'none';
               }
-            },
-            onPrint: false,
-            onClose: false
-          });
-          toolbar.style.display = 'inline-flex';
-          toolbar.style.width = 'auto';
-          btnContainer.appendChild(toolbar);
-        }
+            }
+          },
+          onPrint: false,
+          onClose: false
+        });
+        toolbar.style.display = 'inline-flex';
+        toolbar.style.width = 'auto';
+        btnContainer.appendChild(toolbar);
+      }
 
-        // Search bar (FilterComponent)
-        var filterContainer = $container.querySelector('#dynamic-filter-container');
-        if (filterContainer && typeof FilterComponent !== 'undefined') {
-          filterContainer.innerHTML = ''; // Xóa placeholder nếu có
-          var filters = [
-            { id: 'keyword', label: MODULE_CONFIG.FilterKeywordLabel, placeholder: MODULE_CONFIG.SearchPlaceholder }
-          ];
-          var filterNode = FilterComponent.create(filters, function (values) {
-            currentKeyword = values.keyword || '';
-            currentPage = 1; // Reset về trang 1 khi lọc mới
-            _loadData();
-          });
-          filterContainer.appendChild(filterNode);
-          filterContainer.style.display = 'none'; // Ẩn mặc định, ấn Lọc mới hiện
-        }
+      // Search bar (FilterComponent)
+      var filterContainer = $container.querySelector('#dynamic-filter-container');
+      if (filterContainer && typeof FilterComponent !== 'undefined') {
+        filterContainer.innerHTML = ''; // Xóa placeholder nếu có
+        var filters = [
+          { id: 'keyword', label: MODULE_CONFIG.FilterKeywordLabel, placeholder: MODULE_CONFIG.SearchPlaceholder }
+        ];
+        var filterNode = FilterComponent.create(filters, function (values) {
+          currentKeyword = values.keyword || '';
+          currentPage = 1; // Reset về trang 1 khi lọc mới
+          _loadData();
+        });
+        filterContainer.appendChild(filterNode);
+        filterContainer.style.display = 'none'; // Ẩn mặc định, ấn Lọc mới hiện
+      }
 
-        _loadData();
-      })
+      _loadData();
+    })
       .catch(function (err) {
         $container.innerHTML = '<div class="p-4 text-danger">' + MODULE_CONFIG.TextLoadingError + err.message + '</div>';
       });
@@ -214,16 +215,18 @@ window.DynamicFormEngine = (function () {
 
     if (MODULE_CONFIG.ApiSearch) {
       ApiClient.post(MODULE_CONFIG.ApiSearch, {
+        FormName: MODULE_CONFIG.FormName === 'frmFormBuilder' ? '' : MODULE_CONFIG.FormName,
         Keyword: currentKeyword,
         SortColumn: currentSortCol,
         SortDir: currentSortDir,
         Page: currentPage,
         Limit: currentLimit
       }).then(function (result) {
-        totalRecords = result.total || 0;
-        gridData = (result.list || []).map(function (item) {
+        totalRecords = result.total || result._recordtotal || 0;
+        var dataList = result.list || result.records || [];
+        gridData = dataList.map(function (item) {
           // Gắn ID tạm để Table hoạt động
-          item.id = item[MODULE_CONFIG.PrimaryKey] || item.Id || item.AutoID || Math.random(); 
+          item.id = item[MODULE_CONFIG.PrimaryKey] || item.Id || item.AutoID || Math.random();
           return item;
         });
         _renderTable();
@@ -265,15 +268,15 @@ window.DynamicFormEngine = (function () {
 
       // Bắt sự kiện Click Chuột Phải (Context Menu) để Copy
       if (typeof UIContextMenu !== 'undefined') {
-        tableEl.addEventListener('contextmenu', function(e) {
+        tableEl.addEventListener('contextmenu', function (e) {
           e.preventDefault(); // Ngăn menu mặc định của trình duyệt
-          
+
           var td = e.target.closest('td');
           var tr = e.target.closest('tr');
           if (!td && !tr) return;
 
           // Hàm lấy nội dung của hàng (nối các ô bằng dấu cách hoặc tab)
-          var getRowText = function(rowEl) {
+          var getRowText = function (rowEl) {
             if (!rowEl) return '';
             var cells = rowEl.querySelectorAll('td');
             var textArr = [];
@@ -284,25 +287,25 @@ window.DynamicFormEngine = (function () {
           };
 
           UIContextMenu.show(e, [
-            { 
-              icon: 'content_copy', 
-              label: MODULE_CONFIG.MenuCopyCell, 
-              onClick: function () { 
+            {
+              icon: 'content_copy',
+              label: MODULE_CONFIG.MenuCopyCell,
+              onClick: function () {
                 if (td) {
                   navigator.clipboard.writeText(td.innerText.trim());
                   if (typeof UIToast !== 'undefined') UIToast.show(MODULE_CONFIG.ToastCopyCell, 'success');
                 }
-              } 
+              }
             },
-            { 
-              icon: 'file_copy', 
-              label: MODULE_CONFIG.MenuCopyRow, 
-              onClick: function () { 
+            {
+              icon: 'file_copy',
+              label: MODULE_CONFIG.MenuCopyRow,
+              onClick: function () {
                 if (tr) {
                   navigator.clipboard.writeText(getRowText(tr));
                   if (typeof UIToast !== 'undefined') UIToast.show(MODULE_CONFIG.ToastCopyRow, 'success');
                 }
-              } 
+              }
             }
           ]);
         });
@@ -368,7 +371,7 @@ window.DynamicFormEngine = (function () {
     var formSchema = globalFormSchema;
 
     // ENGINE VẼ FORM TỰ ĐỘNG
-    formSchema.forEach(function(field) {
+    formSchema.forEach(function (field) {
       if (!field.showInForm) {
         // Vẽ input ẩn cho các Khóa chính (Ví dụ Makh) để Auto-Serializer thu thập được
         var hiddenEl = document.createElement('input');
@@ -381,46 +384,46 @@ window.DynamicFormEngine = (function () {
 
       // Tự động gán giá trị cũ (nếu đang Sửa)
       field.value = row ? (row[field.name] || '') : '';
-      
+
       // Khởi tạo Ô nhập liệu tuỳ thuộc vào quy tắc renderRule
       var inputEl;
       if (field.renderRule === 'sw' || field.renderRule === 'boolean') {
-          inputEl = UIInput.createSwitch(field);
+        inputEl = UIInput.createSwitch(field);
       } else if (field.renderRule === 'dt' || field.renderRule === 'date') {
-          inputEl = UIInput.createDate(field);
+        inputEl = UIInput.createDate(field);
       } else if (field.renderRule === 'sl' || field.renderRule === 'select') {
-          if (field.dataSource) {
-              inputEl = UIInput.createSelect(field, [{ value: '', label: 'Đang tải...' }]);
-              var selectDom = inputEl.querySelector('select');
-              
-              var endpoint = field.dataSource.startsWith('http') ? field.dataSource : ((typeof API_CONFIG !== 'undefined' ? API_CONFIG.BASE_URL : '') + field.dataSource);
-              ApiClient.post(endpoint, {}).then(function(res) {
-                  var opts = [];
-                  if (res && res.list) {
-                      opts = res.list.map(function(o) {
-                          var keys = Object.keys(o);
-                          return { value: o[keys[0]], label: o[keys[1] || keys[0]] };
-                      });
-                  }
-                  // Xoá options cũ, bơm options mới
-                  selectDom.innerHTML = '<option value="">-- Vui lòng chọn --</option>';
-                  opts.forEach(function(opt) {
-                      var o = document.createElement('option');
-                      o.value = opt.value;
-                      o.innerText = opt.label;
-                      if (field.value == opt.value) o.selected = true;
-                      selectDom.appendChild(o);
-                  });
-              }).catch(function() {
-                  selectDom.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+        if (field.dataSource) {
+          inputEl = UIInput.createSelect(field, [{ value: '', label: 'Đang tải...' }]);
+          var selectDom = inputEl.querySelector('select');
+
+          var endpoint = field.dataSource.startsWith('http') ? field.dataSource : ((typeof API_CONFIG !== 'undefined' ? API_CONFIG.BASE_URL : '') + field.dataSource);
+          ApiClient.post(endpoint, {}).then(function (res) {
+            var opts = [];
+            if (res && res.list) {
+              opts = res.list.map(function (o) {
+                var keys = Object.keys(o);
+                return { value: o[keys[0]], label: o[keys[1] || keys[0]] };
               });
-          } else {
-              inputEl = UIInput.createSelect(field, []);
-          }
+            }
+            // Xoá options cũ, bơm options mới
+            selectDom.innerHTML = '<option value="">-- Vui lòng chọn --</option>';
+            opts.forEach(function (opt) {
+              var o = document.createElement('option');
+              o.value = opt.value;
+              o.innerText = opt.label;
+              if (field.value == opt.value) o.selected = true;
+              selectDom.appendChild(o);
+            });
+          }).catch(function () {
+            selectDom.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+          });
+        } else {
+          inputEl = UIInput.createSelect(field, []);
+        }
       } else if (field.renderRule === 'nm' || field.renderRule === 'number') {
-          inputEl = UIInput.createNumber(field);
+        inputEl = UIInput.createNumber(field);
       } else {
-          inputEl = UIInput.createText(field);
+        inputEl = UIInput.createText(field);
       }
 
       // Phân bổ vị trí (nửa dòng vào grid, nguyên dòng vào body)
@@ -475,7 +478,7 @@ window.DynamicFormEngine = (function () {
 
     // 2. Tự động Quét toàn bộ Form (Auto Serialization)
     var inputs = body.querySelectorAll('input, select, textarea');
-    inputs.forEach(function(el) {
+    inputs.forEach(function (el) {
       if (el.name) {
         payload[el.name] = el.value.trim();
       }
@@ -492,7 +495,7 @@ window.DynamicFormEngine = (function () {
         break;
       }
     }
-    
+
     if (isInvalid) return;
 
     btnSave.disabled = true;

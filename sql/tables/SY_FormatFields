@@ -1,0 +1,18 @@
+702	B	Quydoi	NULL	Quy đổi	Quydoi	NULL	NULL	NULL
+703		Diengiai	NULL	Diễn giải	Diengiai	NULL	NULL	NULL
+704	B	Sotienkh	NULL	Số tiền	Sotien	NULL	NULL	NULL
+705	B	SotienNCC	NULL	Số tiền	Sotien	NULL	NULL	NULL
+706	B	Sotien	NULL	Số tiền	Sotien	NULL	NULL	NULL
+707	B	Dongia	NULL	Đơn giá	Dongia	NULL	NULL	NULL
+
+
+
+AutoID	numeric	no	9
+FormatID	varchar	no	2
+FieldName	varchar	no	50
+FormName	varchar	no	100
+CaptionVN	nvarchar	no	400
+CaptionEN	nvarchar	no	400
+IsRequired	bit	no	1
+FormPosition	varchar	no	20
+ShowInForm	bit	no	1

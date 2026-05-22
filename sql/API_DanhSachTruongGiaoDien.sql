@@ -9,7 +9,7 @@ BEGIN
     SET NOCOUNT ON;
     
     SELECT 
-        FormName, FieldName, CaptionVN, FormatID, CaptionEN, IsRequired, FormPosition, ShowInForm
+        AutoID, FormName, FieldName, CaptionVN, FormatID, CaptionEN, IsRequired, FormPosition, ShowInForm
     FROM SY_FormatFields
     WHERE (@Keyword IS NULL OR @Keyword = '' 
            OR FormName LIKE '%' + @Keyword + '%' 
