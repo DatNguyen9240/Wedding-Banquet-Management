@@ -59,3 +59,23 @@
 .page-btn .material-symbols-outlined {
   font-size: 18px;
 }
+
+/* --- RESPONSIVE PAGINATION --- */
+@media (max-width: 768px) {
+  .pagination-wrapper {
+    flex-direction: column;
+    gap: 12px;
+    justify-content: center;
+    padding: 16px;
+  }
+  
+  .pagination-info {
+    text-align: center;
+    white-space: normal; /* Đảm bảo chữ dàn đều, không bị ép thành 1 cục dọc */
+  }
+  
+  .pagination-controls {
+    flex-wrap: wrap; /* Tránh tràn nút nếu có quá nhiều số trang */
+    justify-content: center;
+  }
+}

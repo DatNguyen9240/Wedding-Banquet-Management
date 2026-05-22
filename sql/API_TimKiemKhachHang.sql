@@ -6,16 +6,18 @@ BEGIN
 
     SELECT 
         Makh,
-        Tenkh,
-        Tencodau,
         Tenchure,
-        DTcodau,
         DTchure,
-        Dienthoai,
+        Tencodau,
+        DTcodau,
+        Tenkh,
+        ISNULL(NULLIF(Dienthoai, ''), ISNULL(DTchure, DTcodau)) AS DienthoaiChung,
         Mail,
         Diachi,
         DateCreate,
         UserCreate,
+        DateUpdate,
+        UserUpdate,
         (SELECT COUNT(1) FROM tbmk_Khachthamquan WHERE Makh = dmkhachhang.Makh) AS SoLanThamQuan,
         (SELECT COUNT(1) FROM tbmk_Hopdong WHERE Makh = dmkhachhang.Makh) AS SoHopDong
     FROM dmkhachhang

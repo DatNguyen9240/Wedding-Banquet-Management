@@ -29,9 +29,13 @@ var UITable = (function () {
           var tr = document.createElement('tr');
           
           if (config.columns) {
-            config.columns.forEach(function(col) {
+            config.columns.forEach(function(col, idx) {
               var td = document.createElement('td');
               if (col.align) td.style.textAlign = col.align;
+              
+              if (config.headers && config.headers[idx] && config.headers[idx].label) {
+                td.setAttribute('data-label', config.headers[idx].label);
+              }
               
               var val = row[col.field];
               if (col.render) {

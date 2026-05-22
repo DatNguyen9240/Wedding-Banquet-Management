@@ -109,23 +109,9 @@ window.CustomersPage = (function () {
       BookingService.searchCustomer(currentKeyword, currentSortCol, currentSortDir, currentPage, currentLimit).then(function (result) {
         totalRecords = result.total || 0;
         customersData = (result.list || []).map(function (item) {
-          return {
-            id: item.Id || item.Makh,
-            Makh: item.Makh,
-            MaKH: item.Makh || '---',
-            TenKhach: [item.Tenchure, item.Tencodau].filter(Boolean).join(' & ') || item.Tenkh || 'Chưa có tên',
-            Tenchure: item.Tenchure || '',
-            Tencodau: item.Tencodau || '',
-            DienThoai: item.Dienthoai || item.DTchure || item.DTcodau || '---',
-            DTchure: item.DTchure || '',
-            DTcodau: item.DTcodau || '',
-            Email: item.Mail || '',
-            DiaChi: item.Diachi || '',
-            DateCreate: item.DateCreate || '',
-            UserCreate: item.UserCreate || '',
-            SoLanThamQuan: item.SoLanThamQuan || 0,
-            SoHopDong: item.SoHopDong || 0
-          };
+          // Giữ nguyên toàn bộ field từ SQL để tự động build cột
+          item.id = item.Id || item.Makh; 
+          return item;
         });
         _renderTable();
       }).catch(function (err) {
@@ -146,6 +132,91 @@ window.CustomersPage = (function () {
     selectedRow = null;
 
     if (typeof UITable !== 'undefined') {
+      var dynamicHeaders = [];
+      var dynamicColumns = [];
+
+      if (customersData.length > 0) {
+        var sample = customersData[0];
+        Object.keys(sample).forEach(function (key) {
+          if (key === 'id' || key === 'Id') return; // Ẩn cột id dùng cho nội bộ
+
+          var labels = {
+            Makh: 'Mã KH',
+            Tenchure: 'Chú rể',
+            DTchure: 'SĐT Chú rể',
+            Tencodau: 'Cô dâu',
+            DTcodau: 'SĐT Cô dâu',
+            Tenkh: 'Khách hàng',
+            DienthoaiChung: 'SĐT Chung',
+            Mail: 'Email',
+            Diachi: 'Địa chỉ',
+            DateCreate: 'Ngày tạo',
+            UserCreate: 'Người tạo',
+            DateUpdate: 'Ngày cập nhật',
+            UserUpdate: 'Người cập nhật',
+            SoLanThamQuan: 'Tham quan',
+            SoHopDong: 'Hợp đồng'
+          };
+          var headerLabel = labels[key] || key;
+
+          var header = { label: headerLabel, sortable: true, field: key };
+          var col = { field: key };
+
+          // Default render để có tooltip (title) khi bị cắt chữ (ellipsis)
+          col.render = function(v) { 
+            if (v == null || v === '') return '';
+            var safeVal = String(v).replace(/"/g, '&quot;');
+            return '<span title="' + safeVal + '">' + safeVal + '</span>'; 
+          };
+
+          // Heuristic width (dự đoán chiều rộng dựa trên tên cột)
+          var keyLower = key.toLowerCase();
+          if (keyLower.indexOf('dt') >= 0 || keyLower.indexOf('dienthoai') >= 0 || keyLower.indexOf('date') >= 0 || keyLower.indexOf('user') >= 0 || keyLower === 'makh') {
+            header.width = '120px';
+          } else if (keyLower === 'solanthamquan' || keyLower === 'sohopdong') {
+            header.width = '90px';
+          } else if (keyLower === 'mail') {
+            header.width = '160px';
+          } else if (keyLower === 'diachi') {
+            header.width = '200px';
+          } else {
+            header.width = '150px'; // Tenchure, Tencodau, Tenkh...
+          }
+
+          // Tự động căn giữa và format nếu tên cột có chữ Date
+          if (keyLower.indexOf('date') >= 0) {
+            header.align = 'center';
+            col.align = 'center';
+            col.render = function(v) { return FormatUtils.date(v); };
+          }
+          
+          // Giữ lại custom style cho vài cột đặc biệt nếu SQL trả ra
+          if (key === 'Tenchure') {
+            col.render = function (v) { 
+              if (!v) return '';
+              var safeVal = String(v).replace(/"/g, '&quot;');
+              return '<span title="' + safeVal + '" style="color:var(--color-primary);font-weight:600;">' + safeVal + '</span>'; 
+            };
+          }
+          if (key === 'Tencodau') {
+            col.render = function (v) { 
+              if (!v) return '';
+              var safeVal = String(v).replace(/"/g, '&quot;');
+              return '<span title="' + safeVal + '" style="color:var(--color-danger);font-weight:600;">' + safeVal + '</span>'; 
+            };
+          }
+          if (key === 'SoLanThamQuan' || key === 'SoHopDong') {
+            header.align = 'center';
+            col.align = 'center';
+            var badgeClass = key === 'SoHopDong' ? 'success' : 'primary';
+            col.render = function(v) { return v > 0 ? '<span class="status-badge ' + badgeClass + '">' + v + '</span>' : '-'; };
+          }
+
+          dynamicHeaders.push(header);
+          dynamicColumns.push(col);
+        });
+      }
+
       var tableEl = UITable.create({
         currentSort: { field: currentSortCol, dir: currentSortDir },
         onSort: function (field, dir) {
@@ -154,33 +225,9 @@ window.CustomersPage = (function () {
           currentPage = 1; // Khi sort thì reset lại về trang 1
           _loadData();
         },
-        headers: [
-          { label: 'Mã KH', width: '120px', sortable: true, field: 'MaKH' },
-          { label: 'Chú rể', width: '180px', sortable: true, field: 'Tenchure' },
-          { label: 'Cô dâu', width: '180px', sortable: true, field: 'Tencodau' },
-          { label: 'Khách hàng', width: '180px', sortable: true, field: 'TenKhach' },
-          { label: 'SĐT', width: '120px' },
-          { label: 'Email', width: '160px' },
-          { label: 'Địa chỉ' },
-          { label: 'Ngày tạo', width: '120px', sortable: true, field: 'DateCreate', align: 'center' },
-          { label: 'Người tạo', width: '120px', sortable: true, field: 'UserCreate', align: 'center' },
-          { label: 'Tham quan', width: '100px', sortable: true, field: 'SoLanThamQuan', align: 'center' },
-          { label: 'Hợp đồng', width: '100px', sortable: true, field: 'SoHopDong', align: 'center' }
-        ],
+        headers: dynamicHeaders,
         data: customersData,
-        columns: [
-          { field: 'MaKH' },
-          { field: 'Tenchure', render: function (v) { return '<span style="color:var(--color-primary);font-weight:600;">' + v + '</span>'; } },
-          { field: 'Tencodau', render: function (v) { return '<span style="color:var(--color-danger);font-weight:600;">' + v + '</span>'; } },
-          { field: 'TenKhach' },
-          { field: 'DienThoai' },
-          { field: 'Email' },
-          { field: 'DiaChi' },
-          { field: 'DateCreate', align: 'center', render: function(v) { return FormatUtils.date(v); } },
-          { field: 'UserCreate', align: 'center' },
-          { field: 'SoLanThamQuan', align: 'center', render: function(v) { return v > 0 ? '<span class="status-badge primary">' + v + '</span>' : '-'; } },
-          { field: 'SoHopDong', align: 'center', render: function(v) { return v > 0 ? '<span class="status-badge success">' + v + '</span>' : '-'; } }
-        ]
+        columns: dynamicColumns
       });
 
       gridContainer.appendChild(tableEl);
