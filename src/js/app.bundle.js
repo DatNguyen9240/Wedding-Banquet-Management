@@ -2776,7 +2776,7 @@ var UIModal = (function () {
           </button>
         </div>
         <div class="card-body ui-modal-body" style="overflow-y: auto; padding: 16px;"></div>
-        <div class="modal-footer" style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--color-background); border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
+        <div class="modal-footer" style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--color-surface); border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
       </div>
     `;
     overlay.innerHTML = html;
@@ -3070,6 +3070,82 @@ var UIInput = (function () {
   }
 
   /**
+   * Ô Switch (Công tắc bật/tắt cho boolean)
+   */
+  function createSwitch(config) {
+    var obj = _createBaseWrapper(config, 'checkbox');
+    obj.wrapper.classList.remove('form-group');
+    obj.wrapper.classList.add('modern-checkbox-wrapper');
+    obj.input.className = 'modern-checkbox';
+    obj.input.style.cursor = 'pointer';
+    
+    // Checkbox uses checked instead of value
+    if (config.value === '1' || config.value === 1 || config.value === true || String(config.value).toLowerCase() === 'true') {
+        obj.input.checked = true;
+    }
+    
+    // Thêm giá trị thực vào dataset để tự động serialize thành 1/0
+    obj.input.value = obj.input.checked ? 1 : 0;
+    obj.input.onchange = function() {
+        this.value = this.checked ? 1 : 0;
+    };
+    
+    // Đảo ngược thứ tự input và label cho đẹp
+    var label = obj.wrapper.querySelector('label');
+    if (label) {
+        // Xóa class cũ
+        label.className = '';
+        label.style.cursor = 'pointer';
+        // Đảo ngược thứ tự: input trước, label sau
+        obj.wrapper.insertBefore(obj.input, label);
+    }
+    
+    return obj.wrapper;
+  }
+
+  /**
+   * Ô Select (Combobox thả xuống)
+   */
+  function createSelect(config, options) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'form-group ' + (config.className || '');
+
+    if (config.label) {
+      var lbl = document.createElement('label');
+      lbl.innerText = config.label;
+      if (config.required) {
+        var req = document.createElement('span');
+        req.innerText = ' *';
+        req.style.color = 'var(--color-danger)';
+        lbl.appendChild(req);
+      }
+      wrapper.appendChild(lbl);
+    }
+
+    var select = document.createElement('select');
+    select.className = 'ui-input'; // Xài chung style với thẻ input
+    if (config.id) select.id = config.id;
+    if (config.name) select.name = config.name;
+    if (config.disabled) select.disabled = true;
+
+    var defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.innerText = '-- Vui lòng chọn --';
+    select.appendChild(defaultOpt);
+
+    (options || []).forEach(function(opt) {
+        var o = document.createElement('option');
+        o.value = opt.value;
+        o.innerText = opt.label;
+        if (config.value == opt.value) o.selected = true;
+        select.appendChild(o);
+    });
+
+    wrapper.appendChild(select);
+    return wrapper;
+  }
+
+  /**
    * Sinh HTML chuỗi cho Bộ chọn số lượng (Quantity Selector)
    * Dùng cho các Grid/Table sử dụng innerHTML thay vì DOM Nodes.
    */
@@ -3172,6 +3248,8 @@ var UIInput = (function () {
     createText: createText,
     createNumber: createNumber,
     createDate: createDate,
+    createSwitch: createSwitch,
+    createSelect: createSelect,
     createQuantityHTML: createQuantityHTML,
     docSoTienVN: docSoTienVN,
     setupMoneyInput: setupMoneyInput

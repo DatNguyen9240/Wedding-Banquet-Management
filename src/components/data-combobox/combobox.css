@@ -102,7 +102,10 @@
   background: var(--surface, #fff);
 }
 
-.dd-table-wrapper::-webkit-scrollbar { width: 5px; }
+.dd-table-wrapper::-webkit-scrollbar { 
+  width: 6px; 
+  height: 6px; 
+}
 .dd-table-wrapper::-webkit-scrollbar-thumb {
   background: var(--border, #e2e8f0);
   border-radius: 4px;

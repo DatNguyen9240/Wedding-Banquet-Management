@@ -70,8 +70,8 @@ var UIInput = (function () {
   function createSwitch(config) {
     var obj = _createBaseWrapper(config, 'checkbox');
     obj.wrapper.classList.remove('form-group');
-    obj.wrapper.classList.add('form-check', 'form-switch');
-    obj.input.className = 'form-check-input';
+    obj.wrapper.classList.add('modern-checkbox-wrapper');
+    obj.input.className = 'modern-checkbox';
     obj.input.style.cursor = 'pointer';
     
     // Checkbox uses checked instead of value
@@ -88,9 +88,10 @@ var UIInput = (function () {
     // Đảo ngược thứ tự input và label cho đẹp
     var label = obj.wrapper.querySelector('label');
     if (label) {
-        label.className = 'form-check-label';
+        // Xóa class cũ
+        label.className = '';
         label.style.cursor = 'pointer';
-        label.style.marginLeft = '8px';
+        // Đảo ngược thứ tự: input trước, label sau
         obj.wrapper.insertBefore(obj.input, label);
     }
     

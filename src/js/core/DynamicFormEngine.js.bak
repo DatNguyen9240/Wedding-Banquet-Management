@@ -870,130 +870,48 @@ window.DynamicFormEngine = (function () {
       } else if (field.renderRule === 'dt' || field.renderRule === 'date') {
         inputEl = UIInput.createDate(field);
       } else if (field.renderRule === 'sl' || field.renderRule === 'select') {
-        var formGroupWrapper = document.createElement('div');
-        formGroupWrapper.className = 'form-group';
-        
-        if (field.label) {
-          var lbl = document.createElement('label');
-          lbl.innerText = field.label;
-          if (field.required) {
-            var req = document.createElement('span');
-            req.innerText = ' *';
-            req.style.color = 'var(--color-danger)';
-            lbl.appendChild(req);
-          }
-          formGroupWrapper.appendChild(lbl);
-        }
-
-        // Hidden input lưu giá trị thực (ID) để hàm Auto Serialize nhặt được
-        var hiddenInput = document.createElement('input');
-        hiddenInput.type = 'hidden';
-        hiddenInput.name = field.name;
-        hiddenInput.value = field.value || '';
-        formGroupWrapper.appendChild(hiddenInput);
-
         if (field.dataSource) {
           if (String(field.dataSource).toUpperCase().startsWith('STATIC:')) {
             var staticStr = field.dataSource.substring(7);
-            var staticData = staticStr.split(',').map(function(s) { 
+            var staticOpts = staticStr.split(',').map(function(s) { 
                var parts = s.split('|'); 
-               return [parts[0], parts[1] || parts[0]]; 
+               return { value: parts[0], label: parts[1] || parts[0] }; 
             });
-            
-            var combo = UIControls.createDataComboBox({
-               placeholder: '-- Vui lòng chọn --',
-               headers: ['Mã', 'Tên'],
-               data: staticData,
-               colFilterIndex: 1, // Dùng cột Tên để hiển thị lên input
-               onSelect: function(row) {
-                  hiddenInput.value = row[0]; // Cập nhật ID
-               }
-            });
-            
-            var displayInput = combo.querySelector('input.ui-input');
-            var matched = staticData.find(function(r) { return r[0] == field.value; });
-            if (matched && displayInput) displayInput.value = matched[1];
-            
-            formGroupWrapper.appendChild(combo);
-            inputEl = formGroupWrapper;
+            inputEl = UIInput.createSelect(field, staticOpts);
           } else {
-            // Hiển thị tạm lúc đang tải
-            var comboLoading = UIControls.createDataComboBox({
-               placeholder: 'Đang tải...',
-               headers: ['Mã', 'Tên'],
-               data: [],
-               colFilterIndex: 1
-            });
-            formGroupWrapper.appendChild(comboLoading);
-            inputEl = formGroupWrapper;
+            inputEl = UIInput.createSelect(field, [{ value: '', label: 'Đang tải...' }]);
+            var selectDom = inputEl.querySelector('select');
 
             var endpoint = field.dataSource.startsWith('http') ? field.dataSource : ((typeof API_CONFIG !== 'undefined' ? API_CONFIG.BASE_URL : '') + field.dataSource);
-            
-            var finalUrl = endpoint;
-            var fetchPayload = {};
-            if (endpoint.indexOf('?') > -1) {
-                var parts = endpoint.split('?');
-                finalUrl = parts[0];
-                var searchParams = new URLSearchParams(parts[1]);
-                searchParams.forEach(function(value, key) {
-                    fetchPayload[key] = value;
-                });
-            }
-            // Thêm các tham số mặc định của hệ thống
-            if (!fetchPayload.NhomNguoiDangThaoTac) fetchPayload.NhomNguoiDangThaoTac = _currentGroup();
+            ApiClient.post(endpoint, {}).then(function (res) {
+            var opts = [];
+            var dataList = res.list || res.records;
+            if (dataList && dataList.length > 0) {
+              var fName = MODULE_CONFIG.DropdownValueField || 'id';
+              var fLabel = MODULE_CONFIG.DropdownLabelField || 'name';
+              // Fallback thử đoán key nếu ko cấu hình
+              if (dataList[0].ID && dataList[0].Name) { fName = 'ID'; fLabel = 'Name'; }
+              else if (dataList[0].Id && dataList[0].Ten) { fName = 'Id'; fLabel = 'Ten'; }
 
-            ApiClient.post(finalUrl, fetchPayload).then(function (res) {
-              var comboData = [];
-              var dataList = res.list || res.records;
-              var headers = ['Mã', 'Tên']; // Fallback
-              var colFilterIndex = 1;
-
-              if (dataList && dataList.length > 0) {
-                // Tự động trích xuất toàn bộ cấu trúc cột từ record đầu tiên
-                var keys = Object.keys(dataList[0]);
-                
-                // Nếu có nhiều hơn 1 cột, dùng các key đó làm tiêu đề cột
-                if (keys.length > 0) {
-                  headers = keys; 
-                  // Ưu tiên cột Tên (cột thứ 2) để hiển thị, nếu chỉ có 1 cột thì dùng cột 1
-                  colFilterIndex = keys.length > 1 ? 1 : 0; 
-
-                  dataList.forEach(function (d) {
-                    var rowData = [];
-                    keys.forEach(function(k) { rowData.push(d[k] !== null && d[k] !== undefined ? d[k] : ''); });
-                    comboData.push(rowData);
-                  });
-                } else {
-                  // Dự phòng trường hợp object rỗng
-                  dataList.forEach(function (d) { comboData.push(['', '']); });
-                }
-              }
-              
-              var newCombo = UIControls.createDataComboBox({
-                 placeholder: '-- Vui lòng chọn --',
-                 headers: headers,
-                 data: comboData,
-                 colFilterIndex: colFilterIndex,
-                 onSelect: function(row) {
-                    hiddenInput.value = row[0];
-                 }
+              dataList.forEach(function (d) {
+                opts.push({ value: d[fName] || d[Object.keys(d)[0]], label: d[fLabel] || d[Object.keys(d)[1]] });
               });
-              
-              var newDisplayInput = newCombo.querySelector('input.ui-input');
-              var matched = comboData.find(function(r) { return r[0] == field.value; });
-              if (matched && newDisplayInput) newDisplayInput.value = matched[1];
-              
-              formGroupWrapper.replaceChild(newCombo, comboLoading);
-            }).catch(function (err) {
-              console.error('[DynamicFormEngine] DataComboBox error:', err);
-              var displayInput = comboLoading.querySelector('input.ui-input');
-              if (displayInput) displayInput.placeholder = 'Lỗi tải dữ liệu';
+            }
+            // Xoá options cũ, bơm options mới
+            selectDom.innerHTML = '<option value="">-- Vui lòng chọn --</option>';
+            opts.forEach(function (opt) {
+              var o = document.createElement('option');
+              o.value = opt.value;
+              o.innerText = opt.label;
+              if (field.value == opt.value) o.selected = true;
+              selectDom.appendChild(o);
             });
+          }).catch(function () {
+            selectDom.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+          });
           }
         } else {
-          var comboEmpty = UIControls.createDataComboBox({ placeholder: 'Chưa có dữ liệu' });
-          formGroupWrapper.appendChild(comboEmpty);
-          inputEl = formGroupWrapper;
+          inputEl = UIInput.createSelect(field, []);
         }
       } else if (field.renderRule === 'nm' || field.renderRule === 'number') {
         inputEl = UIInput.createNumber(field);
@@ -1056,8 +974,7 @@ window.DynamicFormEngine = (function () {
   function _saveData(isEdit, row, modal, body, btnSave) {
     // 1. Khởi tạo Payload mặc định (Thuộc về Hệ thống chung)
     var payload = {
-      NhomNguoiDangThaoTac: _currentGroup(),
-      OrderNo: row && row.OrderNo ? row.OrderNo : 0
+      NhomNguoiDangThaoTac: _currentGroup()
     };
 
     // 2. Tự động Quét toàn bộ Form (Auto Serialization)

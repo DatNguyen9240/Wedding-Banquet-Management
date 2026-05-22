@@ -8,9 +8,11 @@ CREATE PROCEDURE API_LuuTruongGiaoDien
     @CaptionVN nvarchar(255) = NULL,
     @FormatID varchar(2) = NULL,
     @CaptionEN nvarchar(200) = NULL,
+    @DataSource nvarchar(500) = NULL,
     @IsRequired bit = 0,
     @FormPosition varchar(50) = NULL,
-    @ShowInForm bit = 0
+    @ShowInAdd bit = 1,
+    @ShowInEdit bit = 1
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -23,19 +25,21 @@ BEGIN
             CaptionVN = @CaptionVN,
             FormatID = @FormatID,
             CaptionEN = @CaptionEN,
+            DataSource = @DataSource,
             IsRequired = @IsRequired,
             FormPosition = @FormPosition,
-            ShowInForm = @ShowInForm
+            ShowInAdd = @ShowInAdd,
+            ShowInEdit = @ShowInEdit
         WHERE FieldName = @FieldName;
     END
     ELSE
     BEGIN
-        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, CaptionEN, IsRequired, FormPosition, ShowInForm)
-        VALUES (@FormName, @FieldName, @CaptionVN, @FormatID, @CaptionEN, @IsRequired, @FormPosition, @ShowInForm);
+        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition, ShowInAdd, ShowInEdit)
+        VALUES (@FormName, @FieldName, @CaptionVN, @FormatID, @CaptionEN, @DataSource, @IsRequired, @FormPosition, @ShowInAdd, @ShowInEdit);
     END
 
     -- Trả về dữ liệu vừa lưu
-    SELECT FormName, FieldName, CaptionVN, FormatID, CaptionEN, IsRequired, FormPosition, ShowInForm
+    SELECT FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition, ShowInAdd, ShowInEdit
     FROM SY_FormatFields 
     WHERE FieldName = @FieldName;
 END

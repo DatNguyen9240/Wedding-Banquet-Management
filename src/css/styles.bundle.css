@@ -610,7 +610,7 @@ body.dark-theme .nav-item:hover span.icon { opacity: 1; }
   align-items: center;
   justify-content: space-between;
   height: var(--header-height);
-  padding: 0 var(--spacing-xl);
+  padding: 0 var(--spacing-md);
   gap: 0;
   font-family: var(--font-family);
   -webkit-user-select: none;
@@ -621,13 +621,13 @@ body.dark-theme .nav-item:hover span.icon { opacity: 1; }
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--color-text);
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.02em;
   white-space: nowrap;
-  margin-right: 32px;
+  margin-right: 16px;
   cursor: pointer;
   flex-shrink: 0;
   text-decoration: none;
@@ -658,11 +658,11 @@ body.dark-theme .nav-item:hover span.icon { opacity: 1; }
 .nav-group-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 4px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
   border: none;
@@ -699,11 +699,11 @@ body.dark-theme .nav-item:hover span.icon { opacity: 1; }
 .navbar-menu .nav-link {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 4px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
@@ -3268,7 +3268,10 @@ body.dark-theme .calendar-dropdown-month-btn {
   background: var(--surface, #fff);
 }
 
-.dd-table-wrapper::-webkit-scrollbar { width: 5px; }
+.dd-table-wrapper::-webkit-scrollbar { 
+  width: 6px; 
+  height: 6px; 
+}
 .dd-table-wrapper::-webkit-scrollbar-thumb {
   background: var(--border, #e2e8f0);
   border-radius: 4px;

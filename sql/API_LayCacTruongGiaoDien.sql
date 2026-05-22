@@ -8,11 +8,14 @@ BEGIN
         CaptionVN AS [label],
         ISNULL(IsRequired, 0) AS [required], 
         ISNULL(FormPosition, 'grid') AS [position],
-        ISNULL(ShowInForm, 1) AS [showInForm],
+        ISNULL(ShowInAdd, 1) AS [showInAdd],
+        ISNULL(ShowInEdit, 1) AS [showInEdit],
         ISNULL(FormatID, '') AS [renderRule],
-        ISNULL(CaptionEN, '') AS [dataSource]
+        ISNULL(DataSource, '') AS [dataSource],
+        ISNULL(OrderNo, 0) AS [orderNo]
     FROM SY_FormatFields ff
-    WHERE (@FormName IS NULL OR ff.FormName = @FormName);
+    WHERE (@FormName IS NULL OR ff.FormName = @FormName)
+    ORDER BY ISNULL(OrderNo, 0) ASC, FieldName ASC;
 END
 GO
 
