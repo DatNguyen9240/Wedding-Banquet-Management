@@ -12,7 +12,7 @@ var MenusPage = (function () {
   function render(containerElement) {
     $container = containerElement;
 
-    fetch('./src/pages/menus/menus.html')
+    fetch('./src/pages/menus/menus.html?v=' + new Date().getTime())
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
@@ -379,8 +379,9 @@ var MenusPage = (function () {
           var btnSave = this;
           var id = tr.querySelector('.inline-new-id').value.trim();
           var label = tr.querySelector('.inline-new-label').value.trim();
-          if (!id || !label) {
-            UIToast.show('Vui lòng nhập ID và Tên Menu', 'error'); return;
+          var formName = tr.querySelector('.inline-new-formname').value.trim();
+          if (!id || !label || !formName) {
+            UIToast.show('Vui lòng nhập ID, Tên Menu và Tên Form', 'error'); return;
           }
 
           var payload = {
@@ -425,7 +426,7 @@ var MenusPage = (function () {
         if (!menu) return;
         ConfirmModal.show({
           title: 'Xóa Menu',
-          message: 'Bạn có chắc muốn xóa <b>' + menu.label + '</b>?',
+          message: 'Bạn có chắc muốn xóa menu "' + menu.label + '" không?',
           onConfirm: function () { _deleteMenu(menu.id); }
         });
       });
@@ -609,7 +610,7 @@ var MenusPage = (function () {
             FormKey: field === 'formKey' ? newVal : (menu.formKey || ''),
             URLPara: field === 'urlPara' ? newVal : (menu.urlPara || ''),
             Icon: field === 'icon' ? newVal : menu.icon,
-            IsDisable: menu.isDisable ? 1 : 0,
+            IsDisable: (menu.isDisable == 1 || menu.isDisable === '1' || menu.isDisable === true) ? 1 : 0,
             IsEdit: 1
           };
 
@@ -746,7 +747,8 @@ var MenusPage = (function () {
     switchInput.className = 'form-check form-switch';
     switchInput.style.padding = '0';
     switchInput.style.margin = '0';
-    switchInput.innerHTML = '<input class="form-check-input" type="checkbox" style="width: 40px; height: 20px; background-size: 16px;" ' + (item.isDisable ? 'checked' : '') + '>';
+    var isHidden = (item.isDisable == 1 || item.isDisable === '1' || item.isDisable === true);
+    switchInput.innerHTML = '<input class="form-check-input" type="checkbox" style="width: 40px; height: 20px; background-size: 16px;" ' + (isHidden ? 'checked' : '') + '>';
 
     switchWrapper.appendChild(switchInfo);
     switchWrapper.appendChild(switchInput);
@@ -762,6 +764,11 @@ var MenusPage = (function () {
     btnSave.innerHTML = UIIcon.renderHtml('save', 'font-size: 20px;') + ' Cập nhật ngay';
 
     btnSave.addEventListener('click', function () {
+      var formNameVal = inputForm.querySelector('input').value.trim();
+      if (!formNameVal) {
+        UIToast.show('Vui lòng nhập Tên Form hệ thống', 'error');
+        return;
+      }
       var updatedData = {
         id: inputId.querySelector('input').value,
         label: inputLabel.querySelector('input').value,
@@ -884,7 +891,7 @@ var MenusPage = (function () {
       $container.querySelector('#menu-urlpara').value = menu.urlPara || '';
       $container.querySelector('#menu-icon').value = menu.icon || '';
       $container.querySelector('#menu-icon-preview').textContent = menu.icon || 'label';
-      $container.querySelector('#menu-is-disable').checked = (menu.isDisable === 1 || menu.isDisable === true);
+      $container.querySelector('#menu-is-disable').checked = (menu.isDisable == 1 || menu.isDisable === '1' || menu.isDisable === true);
     } else {
       title.textContent = 'Thêm mới Menu';
       isEditInp.value = '0';
@@ -925,8 +932,8 @@ var MenusPage = (function () {
     var isEdit = $container.querySelector('#menu-is-edit').value === '1';
     var oldId = $container.querySelector('#menu-old-id').value;
 
-    if (!id || !label) {
-      Alert.error('Thiếu thông tin', 'Vui lòng nhập Menu ID và Tên Menu (VN)');
+    if (!id || !label || !formName) {
+      Alert.error('Thiếu thông tin', 'Vui lòng nhập Menu ID, Tên Menu (VN) và Tên Form hệ thống');
       return;
     }
 
