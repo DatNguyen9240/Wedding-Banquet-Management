@@ -9,7 +9,7 @@ window.APP_MODULES = {
     // 1. MODULE: KHÁCH HÀNG (CUSTOMERS)
     // ----------------------------------------------------------------------
     CUSTOMERS: {
-        FormName: 'frmTest',
+        FormName: 'frmCustomer',
 
         // --- API Mappings ---
         ApiDictionary: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.GET_UI_DICTIONARY : null,

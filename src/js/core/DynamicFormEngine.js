@@ -5,7 +5,8 @@ window.DynamicFormEngine = (function () {
 
   var $container = null;
   var gridData = [];
-  var selectedRow = null;
+  var selectedRows = [];
+  var lastSelectedIdx = -1;
 
   var currentKeyword = '';
   var currentSortCol = '';
@@ -152,19 +153,36 @@ window.DynamicFormEngine = (function () {
         var toolbar = UIActionToolbar.create({
           onAdd: _hasPermission('ADD') ? _openAddForm : false,
           onEdit: _hasPermission('EDIT') ? function () {
-            if (!selectedRow) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectEdit);
-            _openEditForm(selectedRow);
+            if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectEdit);
+            if (selectedRows.length > 1) {
+              _openBulkEditForm();
+            } else {
+              _openEditForm(selectedRows[0]);
+            }
           } : false,
           onDelete: _hasPermission('DELETE') ? function () {
-            if (!selectedRow) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectDelete);
-            if (typeof ConfirmModal !== 'undefined') {
-              var deleteName = selectedRow[MODULE_CONFIG.RowNameField] || MODULE_CONFIG.TextDeleteFallback;
-              ConfirmModal.show(MODULE_CONFIG.AlertTitleConfirm,
-                MODULE_CONFIG.ConfirmDelete.replace('{0}', deleteName),
-                function () {
-                  Alert.info(MODULE_CONFIG.AlertTitleInfo, MODULE_CONFIG.InfoDeleteDev);
+            if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectDelete);
+            
+            // Xóa hàng loạt
+            if (selectedRows.length > 1) {
+                if (typeof ConfirmModal !== 'undefined') {
+                  ConfirmModal.show(MODULE_CONFIG.AlertTitleConfirm,
+                    `Bạn có chắc muốn xóa ${selectedRows.length} dòng đã chọn?`,
+                    function () {
+                      Alert.info(MODULE_CONFIG.AlertTitleInfo, MODULE_CONFIG.InfoDeleteDev);
+                    }
+                  );
                 }
-              );
+            } else {
+                var deleteName = selectedRows[0][MODULE_CONFIG.RowNameField] || MODULE_CONFIG.TextDeleteFallback;
+                if (typeof ConfirmModal !== 'undefined') {
+                  ConfirmModal.show(MODULE_CONFIG.AlertTitleConfirm,
+                    MODULE_CONFIG.ConfirmDelete.replace('{0}', deleteName),
+                    function () {
+                      Alert.info(MODULE_CONFIG.AlertTitleInfo, MODULE_CONFIG.InfoDeleteDev);
+                    }
+                  );
+                }
             }
           } : false,
           onFilter: function () {
@@ -265,6 +283,8 @@ window.DynamicFormEngine = (function () {
         if (typeof Alert !== 'undefined') Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertNetworkError);
         gridData = [];
         totalRecords = 0;
+        selectedRows = [];
+        _updateSelectionCounter();
         _renderTable();
       });
     }
@@ -275,7 +295,7 @@ window.DynamicFormEngine = (function () {
     var gridContainer = $container.querySelector('#dynamic-grid-container');
     if (!gridContainer) return;
     gridContainer.innerHTML = '';
-    selectedRow = null;
+    lastSelectedIdx = -1;
 
     if (typeof UITable !== 'undefined') {
       // Dùng bộ từ điển từ DB để dịch các cột sang Tiếng Việt
@@ -359,20 +379,84 @@ window.DynamicFormEngine = (function () {
 
       var tbody = tableEl.querySelector('tbody');
       if (tbody) {
+        // Phục hồi trạng thái Active cho các dòng đã chọn trước đó (Cross-page Selection)
+        var allTrs = Array.from(tbody.querySelectorAll('tr'));
+        allTrs.forEach(function (tr, idx) {
+          var rData = gridData[idx];
+          if (rData && selectedRows.find(function(sr) { return sr.id === rData.id; })) {
+            tr.classList.add('active');
+          }
+        });
+
         tbody.addEventListener('click', function (e) {
           var tr = e.target.closest('tr');
           if (!tr || tr.children.length === 1) return;
-          Array.from(tbody.querySelectorAll('tr')).forEach(function (r) { r.classList.remove('active'); });
-          tr.classList.add('active');
           var idx = Array.from(tbody.children).indexOf(tr);
-          selectedRow = gridData[idx] || null;
+          var allTrsList = Array.from(tbody.querySelectorAll('tr'));
+          var rData = gridData[idx];
+          
+          if (e.shiftKey && lastSelectedIdx !== -1) {
+            // Shift + Click: Chọn một dải
+            document.getSelection().removeAllRanges(); // Tránh bôi đen text
+            var start = Math.min(idx, lastSelectedIdx);
+            var end = Math.max(idx, lastSelectedIdx);
+            for (var i = start; i <= end; i++) {
+              allTrsList[i].classList.add('active');
+              if (!selectedRows.find(function(sr) { return sr.id === gridData[i].id; })) {
+                selectedRows.push(gridData[i]);
+              }
+            }
+          } else if (e.ctrlKey || e.metaKey) {
+            // Ctrl + Click: Chọn thêm hoặc Bỏ chọn
+            tr.classList.toggle('active');
+            if (tr.classList.contains('active')) {
+              if (!selectedRows.find(function(sr) { return sr.id === rData.id; })) selectedRows.push(rData);
+            } else {
+              selectedRows = selectedRows.filter(function(sr) { return sr.id !== rData.id; });
+            }
+            lastSelectedIdx = idx;
+          } else {
+            // Click bình thường: Xoá hết, chỉ chọn 1
+            allTrsList.forEach(function (r) { r.classList.remove('active'); });
+            tr.classList.add('active');
+            selectedRows = [rData];
+            lastSelectedIdx = idx;
+          }
+          _updateSelectionCounter();
         });
         tbody.addEventListener('dblclick', function (e) {
           var tr = e.target.closest('tr');
-          if (!tr || !selectedRow) return;
-          _openEditForm(selectedRow);
+          if (!tr || selectedRows.length === 0) return;
+          if (selectedRows.length > 1) {
+            _openBulkEditForm();
+          } else {
+            _openEditForm(selectedRows[0]);
+          }
         });
       }
+      
+      _updateSelectionCounter();
+    }
+  }
+
+  function _updateSelectionCounter() {
+    var btnContainer = $container.querySelector('#dynamic-btn-container');
+    if (!btnContainer) return;
+    var actualToolbar = btnContainer.firstElementChild;
+    if (!actualToolbar) return;
+
+    var counter = actualToolbar.querySelector('#selection-counter');
+    if (!counter) {
+      counter = document.createElement('span');
+      counter.id = 'selection-counter';
+      counter.style.cssText = 'margin-left: 12px; align-self: center; font-size: 13px; font-weight: 500; color: var(--color-primary); background: var(--color-primary-light); padding: 4px 12px; border-radius: 20px;';
+      actualToolbar.appendChild(counter);
+    }
+    if (selectedRows.length > 0) {
+      counter.style.display = 'inline-block';
+      counter.innerText = 'Đã chọn ' + selectedRows.length + ' dòng';
+    } else {
+      counter.style.display = 'none';
     }
   }
 
@@ -831,7 +915,241 @@ window.DynamicFormEngine = (function () {
     _openModal(true, row);
   }
 
+  function _openBulkEditForm() {
+    _openBulkGridEditForm(selectedRows);
+  }
+
+  function _openBulkGridEditForm(rows) {
+    var body = document.createElement('div');
+    body.style.display = 'flex';
+    body.style.flexDirection = 'column';
+    body.style.gap = '14px';
+    
+    var alertBox = document.createElement('div');
+    alertBox.className = 'alert alert-info py-2 mb-0 d-flex align-items-center gap-2';
+    alertBox.style.fontSize = '13px';
+    alertBox.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px">grid_on</span>' + 
+                         '<strong>Chế độ Sửa Từng Dòng:</strong> Chỉnh sửa dữ liệu trực tiếp trên bảng.';
+    body.appendChild(alertBox);
+
+    var tableContainer = document.createElement('div');
+    tableContainer.style.overflowX = 'auto';
+    tableContainer.style.maxHeight = '65vh';
+
+    var table = document.createElement('table');
+    table.className = 'table table-bordered table-hover';
+    table.style.width = 'max-content';
+    table.style.minWidth = '100%';
+
+    var formSchema = globalFormSchema;
+    formSchema.sort(function(a, b) { return (a.orderNo || 0) - (b.orderNo || 0); });
+
+    var editableFields = [];
+    var thead = document.createElement('thead');
+    thead.style.position = 'sticky';
+    thead.style.top = '0';
+    thead.style.zIndex = '1';
+    thead.style.background = 'var(--color-surface)';
+    var trHead = document.createElement('tr');
+    
+    var thStt = document.createElement('th');
+    thStt.innerText = '#';
+    thStt.style.width = '50px';
+    thStt.style.textAlign = 'center';
+    trHead.appendChild(thStt);
+
+    formSchema.forEach(function (field) {
+       if (field.showInEdit) {
+         editableFields.push(field);
+         var th = document.createElement('th');
+         th.innerText = field.label || field.name;
+         if (field.required) {
+            var req = document.createElement('span');
+            req.innerText = ' *';
+            req.style.color = 'var(--color-danger)';
+            th.appendChild(req);
+         }
+         th.style.whiteSpace = 'nowrap';
+         th.style.padding = '10px';
+         trHead.appendChild(th);
+       }
+    });
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    rows.forEach(function(row, rowIdx) {
+       var tr = document.createElement('tr');
+       
+       var tdStt = document.createElement('td');
+       tdStt.innerText = rowIdx + 1;
+       tdStt.style.textAlign = 'center';
+       tdStt.style.verticalAlign = 'middle';
+       tr.appendChild(tdStt);
+
+       // Hidden PK
+       var hiddenPK = document.createElement('input');
+       hiddenPK.type = 'hidden';
+       hiddenPK.name = MODULE_CONFIG.PrimaryKey + '_' + rowIdx;
+       hiddenPK.value = row[MODULE_CONFIG.PrimaryKey] || '';
+       hiddenPK.setAttribute('data-row-index', rowIdx);
+       hiddenPK.setAttribute('data-field-name', MODULE_CONFIG.PrimaryKey);
+       tr.appendChild(hiddenPK);
+
+       // Hidden OrderNo
+       var hiddenOrder = document.createElement('input');
+       hiddenOrder.type = 'hidden';
+       hiddenOrder.name = 'OrderNo_' + rowIdx;
+       hiddenOrder.value = row.OrderNo || 0;
+       hiddenOrder.setAttribute('data-row-index', rowIdx);
+       hiddenOrder.setAttribute('data-field-name', 'OrderNo');
+       tr.appendChild(hiddenOrder);
+
+       editableFields.forEach(function(fieldTemplate) {
+          var td = document.createElement('td');
+          td.style.verticalAlign = 'middle';
+          td.style.minWidth = '200px';
+          td.style.padding = '5px';
+
+          var field = Object.assign({}, fieldTemplate);
+          field.value = row[field.name] !== undefined && row[field.name] !== null ? row[field.name] : '';
+          var originalName = field.name;
+          field.name = originalName + '_' + rowIdx; 
+          
+          var inputEl;
+          if (field.renderRule === 'sw' || field.renderRule === 'boolean') {
+             inputEl = UIInput.createSwitch(field);
+          } else if (field.renderRule === 'dt' || field.renderRule === 'date') {
+             inputEl = UIInput.createDate(field);
+          } else if (field.renderRule === 'sl' || field.renderRule === 'select') {
+             inputEl = document.createElement('div');
+             inputEl.className = 'form-group';
+             inputEl.style.marginBottom = '0';
+             
+             var hiddenInput = document.createElement('input');
+             hiddenInput.type = 'hidden';
+             hiddenInput.name = field.name;
+             hiddenInput.value = field.value || '';
+             hiddenInput.setAttribute('data-row-index', rowIdx);
+             hiddenInput.setAttribute('data-field-name', originalName);
+             inputEl.appendChild(hiddenInput);
+
+             var comboLoading = UIControls.createDataComboBox({ placeholder: 'Đang tải...' });
+             inputEl.appendChild(comboLoading);
+             
+             if (field.dataSource) {
+               if (String(field.dataSource).toUpperCase().startsWith('STATIC:')) {
+                 var staticStr = field.dataSource.substring(7);
+                 var staticData = staticStr.split(',').map(function(s) { 
+                    var parts = s.split('|'); 
+                    return [parts[0], parts[1] || parts[0]]; 
+                 });
+                 var newCombo = UIControls.createDataComboBox({
+                    placeholder: '-- Chọn --',
+                    headers: ['ID', 'Tên'],
+                    data: staticData,
+                    colFilterIndex: 1,
+                    onSelect: function(r) { hiddenInput.value = r[0]; }
+                 });
+                 var newDisplayInput = newCombo.querySelector('input.ui-input');
+                 var matched = staticData.find(function(r) { return r[0] == field.value; });
+                 if (matched && newDisplayInput) newDisplayInput.value = matched[1];
+                 inputEl.replaceChild(newCombo, comboLoading);
+               } else {
+                 ApiClient.post(MODULE_CONFIG.ApiSearch, { FormName: field.dataSource, Limit: 1000 }).then(function (res) {
+                   var comboData = [];
+                   var headers = ['Mã', 'Tên'];
+                   var colFilterIndex = 1;
+                   var dataList = res.list || res.records || [];
+                   if (dataList && dataList.length > 0) {
+                     var keys = Object.keys(dataList[0]);
+                     if (keys.length > 0) {
+                       headers = keys; 
+                       var labelRegex = /name|tên|ten|label|desc|title/i;
+                       var displayKey = keys.find(function(k) { return labelRegex.test(k); });
+                       colFilterIndex = displayKey ? keys.indexOf(displayKey) : (keys.length > 1 ? 1 : 0); 
+                       dataList.forEach(function (d) {
+                         var rd = [];
+                         keys.forEach(function(k) { rd.push(d[k] !== null && d[k] !== undefined ? d[k] : ''); });
+                         comboData.push(rd);
+                       });
+                     }
+                   }
+                   var newCombo = UIControls.createDataComboBox({
+                      placeholder: '-- Chọn --', headers: headers, data: comboData, colFilterIndex: colFilterIndex,
+                      onSelect: function(r) { hiddenInput.value = r[0]; }
+                   });
+                   var newDisplayInput = newCombo.querySelector('input.ui-input');
+                   var matched = comboData.find(function(r) { return r[0] == field.value; });
+                   if (matched && newDisplayInput) newDisplayInput.value = matched[colFilterIndex];
+                   inputEl.replaceChild(newCombo, comboLoading);
+                 }).catch(function (err) {
+                   var displayInput = comboLoading.querySelector('input.ui-input');
+                   if (displayInput) displayInput.placeholder = 'Lỗi tải dữ liệu';
+                 });
+               }
+             } else {
+               var comboEmpty = UIControls.createDataComboBox({ placeholder: 'Chưa có dữ liệu' });
+               inputEl.replaceChild(comboEmpty, comboLoading);
+             }
+          } else if (field.renderRule === 'nm' || field.renderRule === 'number') {
+             inputEl = UIInput.createNumber(field);
+          } else {
+             inputEl = UIInput.createText(field);
+          }
+
+          if (inputEl) {
+             var lbl = inputEl.querySelector('label');
+             if (lbl && !inputEl.classList.contains('switch')) {
+               lbl.style.display = 'none';
+             }
+             if (inputEl.classList && inputEl.classList.contains('form-group')) {
+                inputEl.style.marginBottom = '0';
+             }
+             var allInputs = inputEl.querySelectorAll('input, select, textarea');
+             allInputs.forEach(function(i) {
+                i.setAttribute('data-row-index', rowIdx);
+                i.setAttribute('data-field-name', originalName);
+             });
+             td.appendChild(inputEl);
+          }
+          tr.appendChild(td);
+       });
+       tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    body.appendChild(tableContainer);
+
+    var footer = document.createElement('div');
+    footer.style.display = 'flex';
+    footer.style.gap = '10px';
+
+    var btnCancel = document.createElement('button');
+    btnCancel.className = 'btn btn-outline';
+    btnCancel.textContent = MODULE_CONFIG.BtnCancel;
+
+    var btnSave = document.createElement('button');
+    btnSave.className = 'btn btn-primary';
+    btnSave.textContent = 'Lưu Tất Cả';
+
+    footer.appendChild(btnCancel);
+    footer.appendChild(btnSave);
+
+    var modal = UIModal.show({
+      title: 'Sửa hàng loạt (' + rows.length + ' dòng)',
+      width: '90%',
+      content: body,
+      footer: footer
+    });
+
+    btnCancel.onclick = function () { modal.close(); };
+    btnSave.onclick = function () { _saveGridData(rows, modal, body, btnSave); };
+  }
+
   function _openModal(isEdit, row) {
+    if (isEdit && !row) return;
+
     var body = document.createElement('div');
     body.style.display = 'flex';
     body.style.flexDirection = 'column';
@@ -862,8 +1180,8 @@ window.DynamicFormEngine = (function () {
         return;
       }
 
-      // Tự động gán giá trị cũ (nếu đang Sửa)
-      field.value = row ? (row[field.name] || '') : '';
+      // Tự động gán giá trị cũ (nếu đang Sửa 1 dòng).
+      field.value = (isEdit && row) ? (row[field.name] || '') : '';
 
       // Khởi tạo Ô nhập liệu tuỳ thuộc vào quy tắc renderRule
       var inputEl;
@@ -1056,66 +1374,128 @@ window.DynamicFormEngine = (function () {
     }, 100);
   }
 
-  // ── Save ──────────────────────────────────────────────────
-  function _saveData(isEdit, row, modal, body, btnSave) {
-    // 1. Khởi tạo Payload mặc định (Thuộc về Hệ thống chung)
-    var payload = {
-      UserName: _currentUser(),
-      OrderNo: row && row.OrderNo ? row.OrderNo : 0
-    };
+  function _saveGridData(rows, modal, body, btnSave) {
+    var endpoint = MODULE_CONFIG.ApiSave;
+    if (!endpoint) {
+      Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertApiMissing);
+      return;
+    }
 
-    // 2. Tự động Quét toàn bộ Form (Auto Serialization)
+    btnSave.disabled = true;
+    btnSave.textContent = MODULE_CONFIG.BtnSaveSaving;
+
+    var payloads = [];
+    rows.forEach(function(targetRow, rowIdx) {
+       var payload = Object.assign({}, targetRow); // Kế thừa dữ liệu gốc
+       payload.UserName = _currentUser();
+       payload.UserCreate = _currentUser();
+       payload.IsEdit = 1; 
+
+       // Thu thập dữ liệu từ các input có cùng data-row-index
+       var inputs = body.querySelectorAll('input[data-row-index="'+rowIdx+'"], select[data-row-index="'+rowIdx+'"], textarea[data-row-index="'+rowIdx+'"]');
+       inputs.forEach(function(el) {
+          var fieldName = el.getAttribute('data-field-name');
+          if (fieldName) {
+             payload[fieldName] = el.value.trim();
+          }
+       });
+       payloads.push(payload);
+    });
+
+    // Gọi API đệ quy
+    var successCount = 0;
+    function sendNext(idx) {
+      if (idx >= payloads.length) {
+        modal.closeNow();
+        Alert.success('Thành công', 'Đã lưu xong ' + successCount + ' dòng!');
+        selectedRows = []; 
+        _updateSelectionCounter();
+        _loadData();
+        return;
+      }
+      ApiClient.post(endpoint, payloads[idx])
+        .then(function(res) {
+          if (res && res.code === 0) successCount++;
+          sendNext(idx + 1);
+        })
+        .catch(function(err) {
+          console.error('Grid Edit Error', err);
+          sendNext(idx + 1);
+        });
+    }
+    sendNext(0);
+  }
+
+  // ── Save ──────────────────────────────────────────────────
+  function _saveData(isEdit, rowData, modal, body, btnSave) {
+    var endpoint = MODULE_CONFIG.ApiSave;
+    if (!endpoint) {
+      Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertApiMissing);
+      return;
+    }
+
+    // 1. Quét Form: Thu thập các giá trị người dùng vừa gõ vào
+    var formInputData = {};
     var inputs = body.querySelectorAll('input, select, textarea');
     inputs.forEach(function (el) {
       if (el.name) {
-        payload[el.name] = el.value.trim();
+        formInputData[el.name] = el.value.trim();
       }
     });
 
-    // KHÔNG CÒN BẤT KỲ LOGIC NGHIỆP VỤ NÀO Ở FRONTEND
-    // 3. Validate tự động dựa trên cấu hình Database (Required)
+    // 2. Validate Required 
     var isInvalid = false;
     for (var i = 0; i < globalFormSchema.length; i++) {
       var field = globalFormSchema[i];
-      if (field.required && !payload[field.name]) {
+      if (field.required && !formInputData[field.name]) {
         Alert.warning(MODULE_CONFIG.WarnMissingInfo, MODULE_CONFIG.WarnMissingInput.replace('{0}', field.label));
         isInvalid = true;
         break;
       }
     }
-
     if (isInvalid) return;
 
     btnSave.disabled = true;
     btnSave.textContent = MODULE_CONFIG.BtnSaveSaving;
 
-    var endpoint = MODULE_CONFIG.ApiSave;
-
-    if (!endpoint) {
-      Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertApiMissing);
-      btnSave.disabled = false;
-      return;
+    // 3. Xây dựng danh sách Payload
+    var payloads = [];
+    var singlePayload = Object.assign({}, formInputData);
+    singlePayload.UserName = _currentUser();
+    singlePayload.UserCreate = _currentUser();
+    singlePayload.OrderNo = rowData && rowData.OrderNo ? rowData.OrderNo : 0;
+    singlePayload.IsEdit = isEdit ? 1 : 0;
+    
+    if (isEdit && rowData && MODULE_CONFIG.PrimaryKey && !singlePayload[MODULE_CONFIG.PrimaryKey]) {
+       singlePayload[MODULE_CONFIG.PrimaryKey] = rowData[MODULE_CONFIG.PrimaryKey];
     }
-    payload.UserCreate = _currentUser();
-    payload.IsEdit = isEdit ? 1 : 0;
+    payloads.push(singlePayload);
 
-    ApiClient.post(endpoint, payload)
-      .then(function (res) {
-        if (res && res.code === 0) {
-          UIToast.show(isEdit ? MODULE_CONFIG.ToastEdit : MODULE_CONFIG.ToastAdd, 'success');
-          modal.closeNow();
-          _loadData();
-        } else {
-          Alert.error(MODULE_CONFIG.AlertTitleError, res && res.msg ? res.msg : MODULE_CONFIG.AlertSaveFailed);
+    if (payloads.length === 0) {
+       modal.closeNow();
+       return;
+    }
+
+    // 4. Gọi API Lưu
+    ApiClient.post(endpoint, payloads[0])
+        .then(function (res) {
+          if (res && res.code === 0) {
+            UIToast.show(isEdit ? MODULE_CONFIG.ToastEdit : MODULE_CONFIG.ToastAdd, 'success');
+            modal.closeNow();
+            selectedRows = [];
+            _updateSelectionCounter();
+            _loadData();
+          } else {
+            Alert.error(MODULE_CONFIG.AlertTitleError, res && res.msg ? res.msg : MODULE_CONFIG.AlertSaveFailed);
+            btnSave.disabled = false;
+            btnSave.textContent = isEdit ? MODULE_CONFIG.BtnSaveEdit : MODULE_CONFIG.BtnSaveAdd;
+          }
+        })
+        .catch(function () {
+          Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertNetworkError);
           btnSave.disabled = false;
           btnSave.textContent = isEdit ? MODULE_CONFIG.BtnSaveEdit : MODULE_CONFIG.BtnSaveAdd;
-        }
-      })
-      .catch(function () {
-        Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertNetworkError);
-        btnSave.disabled = false;
-        btnSave.textContent = isEdit ? MODULE_CONFIG.BtnSaveEdit : MODULE_CONFIG.BtnSaveAdd;
-      });
+        });
   }
 
   return { render: render };
