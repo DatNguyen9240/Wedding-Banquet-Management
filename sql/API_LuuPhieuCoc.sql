@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -57,22 +57,54 @@ BEGIN
         -- ==========================================================
         IF (@Makh IS NULL OR @Makh = '')
         BEGIN
-            -- Phát sinh mã khách hàng tự động (Đơn giản hóa: KH + yymmdd + hhmmss)
-            SET @Makh = 'KH' + FORMAT(@Now, 'yyMMddHHmmss');
-            
-            INSERT INTO dmkhachhang (
-                Makh, Tenkh, Tenchure, Tencodau, DTchure, DTcodau, Dienthoai, Diachi, Nguoigd, DienThoaiDaiDien, Mail, 
-                IsKhachhang, DateCreate, UserCreate
-            )
-            VALUES (
-                @Makh, 
-                CASE 
-                    WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '')
-                    ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') 
-                END,
-                @Tenchure, @Tencodau, @DTchure, @DTcodau, ISNULL(@DTchure, @DTcodau), @Diachi, @Nguoigd, @DienThoaiDaiDien, @Mail, 
-                1, @Now, @UserCreate
-            );
+            -- Tìm khách hàng cũ theo SĐT chú rể hoặc cô dâu (tránh tạo duplicate)
+            DECLARE @SdtTimkiem NVARCHAR(50) = ISNULL(NULLIF(@DTchure, ''), @DTcodau);
+            IF (@SdtTimkiem IS NOT NULL AND @SdtTimkiem <> '')
+            BEGIN
+                SELECT TOP 1 @Makh = Makh
+                FROM dmkhachhang
+                WHERE Dienthoai = @SdtTimkiem
+                   OR DTchure   = @SdtTimkiem
+                   OR DTcodau   = @SdtTimkiem
+                ORDER BY DateCreate ASC;  -- Lấy record gốc cũ nhất
+            END
+
+            -- Không tìm thấy → tạo mới
+            IF (@Makh IS NULL OR @Makh = '')
+            BEGIN
+                SET @Makh = 'KH' + FORMAT(@Now, 'yyMMddHHmmss');
+
+                INSERT INTO dmkhachhang (
+                    Makh, Tenkh, Tenchure, Tencodau, DTchure, DTcodau, Dienthoai, Diachi, Nguoigd, DienThoaiDaiDien, Mail,
+                    IsKhachhang, DateCreate, UserCreate
+                )
+                VALUES (
+                    @Makh,
+                    CASE
+                        WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '')
+                        ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '')
+                    END,
+                    @Tenchure, @Tencodau, @DTchure, @DTcodau, ISNULL(@DTchure, @DTcodau), @Diachi, @Nguoigd, @DienThoaiDaiDien, @Mail,
+                    1, @Now, @UserCreate
+                );
+            END
+            ELSE
+            BEGIN
+                -- Tìm thấy khách cũ → cập nhật thông tin còn thiếu (không ghi đè dữ liệu cũ)
+                UPDATE dmkhachhang
+                SET
+                    Tenchure          = ISNULL(NULLIF(@Tenchure, ''),          Tenchure),
+                    Tencodau          = ISNULL(NULLIF(@Tencodau, ''),          Tencodau),
+                    DTchure           = ISNULL(NULLIF(@DTchure,  ''),          DTchure),
+                    DTcodau           = ISNULL(NULLIF(@DTcodau,  ''),          DTcodau),
+                    Diachi            = ISNULL(NULLIF(@Diachi,   ''),          Diachi),
+                    Mail              = ISNULL(NULLIF(@Mail,     ''),          Mail),
+                    Nguoigd           = ISNULL(NULLIF(@Nguoigd,  ''),          Nguoigd),
+                    DienThoaiDaiDien  = ISNULL(NULLIF(@DienThoaiDaiDien, ''), DienThoaiDaiDien),
+                    DateUpdate        = @Now,
+                    UserUpdate        = @UserCreate
+                WHERE Makh = @Makh;
+            END
         END
         ELSE
         BEGIN

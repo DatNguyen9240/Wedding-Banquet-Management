@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -37,12 +37,32 @@ BEGIN
         SET @IsNew = 1;
     END
 
-    -- 2. Xử lý khách hàng (Nếu truyền Tenkh/Dienthoai mà không có Makh -> Tạo khách hàng mới)
+    -- 2. Xử lý khách hàng — tìm theo SĐT trước, không có mới tạo mới
     IF (@Makh IS NULL OR @Makh = '') AND (@Tenkh IS NOT NULL)
     BEGIN
-        SET @Makh = 'KH' + FORMAT(GETDATE(), 'yyMM') + RIGHT('0000' + CAST((ABS(CHECKSUM(NEWID())) % 10000) AS VARCHAR), 4);
-        INSERT INTO dmkhachhang (Makh, Tenkh, Dienthoai) 
-        VALUES (@Makh, @Tenkh, @Dienthoai);
+        -- Tìm khách hàng cũ theo SĐT
+        IF (@Dienthoai IS NOT NULL AND @Dienthoai <> '')
+        BEGIN
+            SELECT TOP 1 @Makh = Makh
+            FROM dmkhachhang
+            WHERE Dienthoai = @Dienthoai
+            ORDER BY DateCreate ASC;   -- Lấy record gốc cũ nhất
+        END
+
+        -- Không tìm thấy → tạo mới
+        IF (@Makh IS NULL OR @Makh = '')
+        BEGIN
+            SET @Makh = 'KH' + FORMAT(GETDATE(), 'yyMM') + RIGHT('0000' + CAST((ABS(CHECKSUM(NEWID())) % 10000) AS VARCHAR), 4);
+            INSERT INTO dmkhachhang (Makh, Tenkh, Dienthoai, IsKhachhang, DateCreate)
+            VALUES (@Makh, @Tenkh, @Dienthoai, 1, GETDATE());
+        END
+        ELSE
+        BEGIN
+            -- Tìm thấy → cập nhật tên nếu trống
+            UPDATE dmkhachhang
+            SET Tenkh = ISNULL(NULLIF(@Tenkh, ''), Tenkh)
+            WHERE Makh = @Makh;
+        END
     END
     ELSE IF (@Makh IS NOT NULL AND @Makh <> '')
     BEGIN
