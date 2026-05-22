@@ -93,9 +93,9 @@ window.DynamicFormEngine = (function () {
         // Tự động sinh mã HTML (Không cần file .html rời nữa)
         var html = 
           '<div class="page-title-bar">' +
-            '<div class="page-title">' +
-              '<h1>' + (MODULE_CONFIG.PageTitle || 'Quản lý Dữ liệu') + '</h1>' +
-              '<p>' + (MODULE_CONFIG.PageSubtitle || '') + '</p>' +
+            '<div class="page-title-info">' +
+              '<h1 class="page-title-heading">' + (MODULE_CONFIG.PageTitle || 'Quản lý Dữ liệu') + '</h1>' +
+              '<span class="page-title-sub">' + (MODULE_CONFIG.PageSubtitle || '') + '</span>' +
             '</div>' +
           '</div>' +
           '<div id="dynamic-btn-container" style="margin-bottom: 16px;"></div>' +

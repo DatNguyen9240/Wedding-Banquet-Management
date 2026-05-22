@@ -30,7 +30,7 @@ var Router = (function () {
     { path: '/menus', template: 'src/pages/menus/menus.html', script: 'src/pages/menus/menus.js', module: 'QuanTriHeThong', title: 'Quản lý Menu', pageFn: 'MenusPage' },
     { path: '/appearance', template: 'src/pages/appearance/appearance.html', script: 'src/pages/appearance/appearance.js', module: 'QuanTriHeThong', title: 'Cài đặt Giao diện', pageFn: 'AppearancePage' },
     { path: '/categories', template: 'src/pages/categories/categories.html', script: 'src/pages/categories/categories.js', module: 'DanhMuc', title: 'Quản lý Danh mục', pageFn: 'CategoriesPage' },
-    { path: '/staff', template: 'src/pages/staff/staff.html', script: 'src/pages/staff/staff.js', module: 'NhanSu', title: 'Nhân viên Phục vụ Tiệc', pageFn: 'StaffPage' },
+    { path: '/staff', script: 'src/js/core/DynamicFormEngine.js', module: 'NhanSu', title: 'Nhân viên Phục vụ Tiệc', pageFn: 'DynamicFormEngine', config: window.APP_MODULES ? window.APP_MODULES.STAFF : null },
     { path: '/survey', template: 'src/pages/survey/survey.html', script: 'src/pages/survey/survey.js', module: 'HopDong', title: 'Khảo sát Thông tin Khách hàng', pageFn: 'SurveyPage' },
     { path: '/promotions', template: 'src/pages/promotions/promotions.html', script: 'src/pages/promotions/promotions.js', module: 'DanhMuc', title: 'Chương trình Ưu đãi & Combo', pageFn: 'PromotionsPage' },
     { path: '/report-revenue', template: 'src/pages/report-revenue/report-revenue.html', script: 'src/pages/report-revenue/report-revenue.js', module: 'BaoCao', title: 'Báo cáo Doanh thu Tiệc', pageFn: 'ReportRevenuePage' },
