@@ -42,7 +42,8 @@ window.API_CONFIG = {
             HALLS: '/api/API_DanhSachSanh',
             SHIFTS: '/api/API_DanhSachCaLam',
             BANQUET_TYPES: '/api/API_DanhSachLoaiHinhTiec',
-            SETUP_VALUE: '/api/API_LayGiaTriSetup'
+            SETUP_VALUE: '/api/API_LayGiaTriSetup',
+            GET_UI_DICTIONARY: '/api/API_LayCacTruongGiaoDien'
         },
         CONTRACT: {
             LIST: '/api/API_DanhSachHopDong',

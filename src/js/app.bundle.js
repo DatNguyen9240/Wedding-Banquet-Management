@@ -3505,8 +3505,8 @@ var UITable = (function () {
           }
 
           tbody.appendChild(tr);
-        });
-      } else {
+      });
+    } else {
          var trEmpty = document.createElement('tr');
          var tdEmpty = document.createElement('td');
          tdEmpty.colSpan = config.headers ? config.headers.length : 1;
@@ -3608,8 +3608,93 @@ var UITable = (function () {
     return wrapper;
   }
 
+  /**
+   * Tạo Datagrid Table động từ dữ liệu SQL
+   * @param {Array} data - Dữ liệu thô từ API
+   * @param {Object} dictionary - Map tên cột { 'Makh': 'Mã KH' }
+   * @param {Object} options - { onSort, currentSort, actionRenderers }
+   */
+  function createDynamic(data, dictionary, options) {
+    dictionary = dictionary || {};
+    options = options || {};
+
+    var dynamicHeaders = [];
+    var dynamicColumns = [];
+
+    // Lấy keys từ data, nếu data rỗng thì lấy từ dictionary
+    var keys = [];
+    if (data && data.length > 0) {
+      keys = Object.keys(data[0]);
+    } else if (dictionary && Object.keys(dictionary).length > 0) {
+      keys = Object.keys(dictionary);
+    }
+
+    if (keys.length > 0) {
+      keys.forEach(function(key) {
+        if (key === 'id' || key === 'Id') return;
+        
+        var headerLabel = dictionary[key] || key;
+        var header = { label: headerLabel, sortable: true, field: key };
+        var col = { field: key };
+
+        // Default render: Tooltip
+        col.render = function(v) { 
+          if (v == null || v === '') return '';
+          var safeVal = String(v).replace(/"/g, '&quot;');
+          return '<span title="' + safeVal + '">' + safeVal + '</span>'; 
+        };
+
+        // Heuristic Width
+        var keyLower = key.toLowerCase();
+        if (keyLower.indexOf('dt') >= 0 || keyLower.indexOf('dienthoai') >= 0 || keyLower.indexOf('date') >= 0 || keyLower.indexOf('user') >= 0 || keyLower.indexOf('ma') === 0) {
+          header.width = '120px';
+        } else if (keyLower.indexOf('so') === 0 || keyLower.indexOf('sl') === 0 || keyLower.indexOf('số') === 0) {
+          header.width = '90px';
+        } else if (keyLower.indexOf('mail') >= 0) {
+          header.width = '160px';
+        } else if (keyLower.indexOf('diachi') >= 0 || keyLower.indexOf('địa chỉ') >= 0) {
+          header.width = '200px';
+        } else {
+          header.width = '150px';
+        }
+
+        // Heuristic Format
+        if (keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0) {
+          header.align = 'center';
+          col.align = 'center';
+          col.render = function(v) { return typeof FormatUtils !== 'undefined' ? FormatUtils.date(v) : v; };
+        }
+
+        // Custom renderer (nếu truyền vào)
+        if (options.actionRenderers && options.actionRenderers[key]) {
+          var customRender = options.actionRenderers[key];
+          col.render = function(v) { return customRender(v, key); };
+        } else if (options.actionRenderers && options.actionRenderers[headerLabel]) {
+          // Hoặc kiểm tra theo label tiếng Việt nếu dev truyền key là label
+          var customRenderLabel = options.actionRenderers[headerLabel];
+          col.render = function(v) { return customRenderLabel(v, key); };
+        }
+
+        dynamicHeaders.push(header);
+        dynamicColumns.push(col);
+      });
+    }
+
+    var tableConfig = {
+      headers: dynamicHeaders,
+      columns: dynamicColumns,
+      data: data,
+      currentSort: options.currentSort,
+      onSort: options.onSort,
+      className: options.className
+    };
+
+    return create(tableConfig);
+  }
+
   return {
-    create: create
+    create: create,
+    createDynamic: createDynamic
   };
 })();
 

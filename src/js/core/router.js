@@ -15,7 +15,14 @@ var Router = (function () {
     { path: '/contract', template: 'src/pages/contract/contract.html', script: 'src/pages/contract/contract.js', module: 'HopDong', title: 'Hợp đồng tiệc', pageFn: 'ContractPage' },
     { path: '/checkout', template: 'src/pages/checkout/checkout.html', script: 'src/pages/checkout/checkout.js', module: 'QuyetToan', title: 'Quyết toán', pageFn: 'CheckoutPage' },
     { path: '/calendar', template: 'src/pages/calendar/calendar.html', script: 'src/pages/calendar/calendar.js', module: 'HopDong', title: 'Lịch tiệc trong tháng', pageFn: 'CalendarPage' },
-    { path: '/customers', template: 'src/pages/customers/customers.html', script: 'src/pages/customers/customers.js', module: 'HopDong', title: 'Hồ sơ Khách hàng', pageFn: 'CustomersPage' },
+    { 
+      path: '/customers', 
+      script: 'src/js/core/DynamicFormEngine.js', 
+      module: 'HopDong', 
+      title: 'Hồ sơ Khách hàng', 
+      pageFn: 'DynamicFormEngine', 
+      config: window.APP_MODULES ? window.APP_MODULES.CUSTOMERS : null
+    },
     { path: '/hall-status', template: 'src/pages/hall-status/hall-status.html', script: 'src/pages/hall-status/hall-status.js', module: 'HopDong', title: 'Trạng thái Sảnh Tiệc', pageFn: 'HallStatusPage' },
     { path: '/users', template: 'src/pages/users/users.html', script: 'src/pages/users/users.js', module: 'QuanTriHeThong', title: 'Danh sách người dùng', pageFn: 'UsersPage' },
     { path: '/permissions', template: 'src/pages/permissions/permissions.html', script: 'src/pages/permissions/permissions.js', module: 'QuanTriHeThong', title: 'Phân quyền Cán bộ', pageFn: 'PermissionsPage' },
@@ -188,11 +195,14 @@ var Router = (function () {
 
     // ── Trường hợp 1: Có script → load script → pageFn.render() ──
     // (Page module tự fetch template bên trong render nếu cần)
-    if (route.script && route.pageFn) {
+    if (route.pageFn) {
       _fadeOut($content)
         .then(function () { 
           if (currentNav !== _navId) throw new Error('ABORTED');
-          return _loadScript(route.script); 
+          if (route.script) {
+            return _loadScript(route.script); 
+          }
+          return Promise.resolve();
         })
         .then(function () {
           if (currentNav !== _navId) throw new Error('ABORTED');
@@ -203,7 +213,7 @@ var Router = (function () {
             var wrapper = document.createElement('div');
             wrapper.className = 'page-wrapper';
             $content.appendChild(wrapper);
-            mod.render(wrapper);
+            mod.render(wrapper, route.config || null);
           } else {
             _renderError($content, 'Không tìm thấy module: ' + route.pageFn);
           }
