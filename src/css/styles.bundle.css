@@ -1,4 +1,4 @@
-/* --- design-tokens.css --- */
+﻿/* --- design-tokens.css --- */
 /* ═══════════════════════════════════════════
    Design Tokens — TailAdmin Style
    Dành cho Quản lý Tiệc Cưới
@@ -297,6 +297,17 @@ img {
     padding: 16px;
   }
 
+  /* Tràn lề 2 bên (Full-bleed) cho các thanh công cụ trên Mobile */
+  .page-title-bar, .button-bar {
+    margin-left: -16px;
+    margin-right: -16px;
+    width: calc(100% + 32px) !important;
+    max-width: none !important;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
   .header-left {
     gap: 12px;
   }
@@ -589,6 +600,26 @@ body.dark-theme .nav-item:hover span.icon { opacity: 1; }
 @media (max-width: 768px) {
   .app-navbar .navbar-brand { display: none !important; }
 }
+
+/* ════ DYNAMIC FORM GRID SYSTEM ════ */
+.df-col-12 { width: 100% !important; }
+.df-col-6 { width: calc(50% - 5px) !important; }
+.df-col-4 { width: calc(33.333% - 7px) !important; }
+.df-col-3 { width: calc(25% - 8px) !important; }
+
+@media (max-width: 768px) {
+  /* Trên Mobile: 
+     - Mặc định 100% (df-col-12) vẫn giữ 100%.
+     - Các ô 50% (df-col-6) vẫn giữ nguyên 50% để cho phép xếp 2 ô 1 hàng.
+     - Các ô quá nhỏ như 33% và 25% sẽ được tự động giãn ra thành 50% (xếp 2 ô 1 hàng) 
+       thay vì bị bóp nghẹt quá nhỏ hoặc bị giãn quá to 100%. */
+  .df-col-6,
+  .df-col-4,
+  .df-col-3 {
+    width: calc(50% - 5px) !important;
+  }
+}
+
 
 
 /* --- navbar.css --- */
@@ -3175,19 +3206,19 @@ body.dark-theme .calendar-dropdown-month-btn {
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
-  border: 1px solid var(--border, #e2e8f0);
+  border: 1px solid var(--color-border, #e2e8f0);
   border-radius: var(--radius, 8px) 0 0 var(--radius, 8px);
   outline: none;
   font-size: 14.5px;
   transition: border-color 0.15s, box-shadow 0.15s;
   font-family: inherit;
-  color: var(--text, #1e293b);
-  background: var(--surface, #fff);
+  color: var(--color-text, #1e293b);
+  background: var(--color-surface, #fff);
 }
 
 .combo-box-container .ui-input:focus {
-  border-color: var(--primary, #6366f1);
-  box-shadow: inset 0 0 0 1px var(--primary, #6366f1);
+  border-color: var(--color-primary, #6366f1);
+  box-shadow: inset 0 0 0 1px var(--color-primary, #6366f1);
 }
 
 .combo-box-container.ui-input-disabled .ui-input,
@@ -3205,8 +3236,8 @@ body.dark-theme .calendar-dropdown-month-btn {
 
 .combo-box-actions {
   display: flex;
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #e2e8f0);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
   border-left: none;
   border-radius: 0 var(--radius, 8px) var(--radius, 8px) 0;
   overflow: hidden;
@@ -3215,9 +3246,9 @@ body.dark-theme .calendar-dropdown-month-btn {
 .combo-action-btn {
   background: transparent;
   border: none;
-  border-left: 1px solid var(--border, #e2e8f0);
+  border-left: 1px solid var(--color-border, #e2e8f0);
   padding: 0 8px;
-  color: var(--muted, #94a3b8);
+  color: var(--color-text-secondary, #94a3b8);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -3229,7 +3260,7 @@ body.dark-theme .calendar-dropdown-month-btn {
 
 .combo-action-btn:hover {
   background: rgba(99, 102, 241, 0.1);
-  color: var(--primary, #6366f1);
+  color: var(--color-primary, #6366f1);
 }
 
 .combo-action-btn .material-symbols-outlined { font-size: 22px; }
@@ -3240,8 +3271,8 @@ body.dark-theme .calendar-dropdown-month-btn {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--border, #e2e8f0);
-  background: var(--surface, #fff);
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #fff);
   position: sticky;
   top: 0;
   z-index: 3;
@@ -3249,7 +3280,7 @@ body.dark-theme .calendar-dropdown-month-btn {
 
 .dd-search-icon {
   font-size: 18px;
-  color: var(--primary, #6366f1);
+  color: var(--color-primary, #6366f1);
   flex-shrink: 0;
   pointer-events: none;
   opacity: 0.7;
@@ -3261,14 +3292,14 @@ body.dark-theme .calendar-dropdown-month-btn {
   outline: none;
   font-size: 14.5px;
   font-family: inherit;
-  color: var(--text, #1e293b);
+  color: var(--color-text, #1e293b);
   background: transparent;
-  padding: 0;
+  padding: 0 0 0 6px;
   line-height: 1.5;
 }
 
 .dd-search-input::placeholder {
-  color: var(--muted, #94a3b8);
+  color: var(--color-text-secondary, #94a3b8);
   opacity: 0.8;
 }
 
@@ -3278,7 +3309,7 @@ body.dark-theme .calendar-dropdown-month-btn {
   overflow-x: auto;
   max-height: 220px;
   flex: 1;
-  background: var(--surface, #fff);
+  background: var(--color-surface, #fff);
 }
 
 .dd-table-wrapper::-webkit-scrollbar { 
@@ -3286,14 +3317,14 @@ body.dark-theme .calendar-dropdown-month-btn {
   height: 6px; 
 }
 .dd-table-wrapper::-webkit-scrollbar-thumb {
-  background: var(--border, #e2e8f0);
+  background: var(--color-border, #e2e8f0);
   border-radius: 4px;
 }
 
 /* ── Dropdown: Footer "+ Thêm mới" ───────────────────────────── */
 .dd-footer {
-  border-top: 2px solid var(--border, #e2e8f0);
-  background: var(--surface, #fff);
+  border-top: 2px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #fff);
   position: sticky;
   bottom: 0;
   z-index: 3;
@@ -3308,7 +3339,7 @@ body.dark-theme .calendar-dropdown-month-btn {
   width: 100%;
   border: none;
   background: transparent;
-  color: var(--primary, #6366f1);
+  color: var(--color-primary, #6366f1);
   font-size: 13px;
   font-family: inherit;
   font-weight: 600;

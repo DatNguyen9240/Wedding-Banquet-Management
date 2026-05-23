@@ -13,7 +13,11 @@ CREATE PROCEDURE API_LuuTruongGiaoDien
     @FormPosition varchar(50) = NULL,
     @ShowInAdd bit = 1,
     @ShowInEdit bit = 1,
-    @IsReadOnlyEdit bit = 0
+    @IsReadOnlyEdit bit = 0,
+    @IsReadOnlyAdd bit = 0,
+    @ValidateRule nvarchar(500) = NULL,
+    @DependsOn varchar(50) = NULL,
+    @VisibleRule nvarchar(255) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -27,27 +31,31 @@ BEGIN
             CaptionEN = ISNULL(@CaptionEN, CaptionEN),
             DataSource = ISNULL(@DataSource, DataSource),
             IsRequired = ISNULL(@IsRequired, IsRequired),
-            FormPosition = ISNULL(@FormPosition, FormPosition)
+            FormPosition = ISNULL(@FormPosition, FormPosition),
+            ValidateRule = ISNULL(@ValidateRule, ValidateRule),
+            DependsOn = ISNULL(@DependsOn, DependsOn),
+            VisibleRule = ISNULL(@VisibleRule, VisibleRule)
         WHERE FieldName = @FieldName AND FormName = @FormName;
     END
     ELSE
     BEGIN
-        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition)
-        VALUES (@FormName, @FieldName, @CaptionVN, @FormatID, @CaptionEN, @DataSource, @IsRequired, @FormPosition);
+        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition, ValidateRule, DependsOn, VisibleRule)
+        VALUES (@FormName, @FieldName, @CaptionVN, @FormatID, @CaptionEN, @DataSource, @IsRequired, @FormPosition, @ValidateRule, @DependsOn, @VisibleRule);
     END
 
     -- 2. Xử lý Mảng (Array) bên bảng SY_FrmLstTbl
     -- Đảm bảo FormID tồn tại trong SY_FrmLstTbl
     IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = @FormName)
     BEGIN
-        INSERT INTO SY_FrmLstTbl (FormID, AddNewColumnArr, HideColumnArr, LockColumnArr)
-        VALUES (@FormName, '', '', '');
+        INSERT INTO SY_FrmLstTbl (FormID, AddNewColumnArr, HideColumnArr, LockColumnArr, LockAddColumnArr)
+        VALUES (@FormName, '', '', '', '');
     END
 
-    DECLARE @AddArr varchar(max), @HideArr varchar(max), @LockArr varchar(max);
+    DECLARE @AddArr varchar(max), @HideArr varchar(max), @LockArr varchar(max), @LockAddArr varchar(max);
     SELECT @AddArr = ISNULL(AddNewColumnArr, ''), 
            @HideArr = ISNULL(HideColumnArr, ''), 
-           @LockArr = ISNULL(LockColumnArr, '')
+           @LockArr = ISNULL(LockColumnArr, ''),
+           @LockAddArr = ISNULL(LockAddColumnArr, '')
     FROM SY_FrmLstTbl WHERE FormID = @FormName;
 
     -- ShowInAdd = 1 (Hiện lúc thêm) -> Có mặt trong AddNewColumnArr
@@ -89,16 +97,30 @@ BEGIN
         IF RIGHT(@LockArr, 1) = ',' SET @LockArr = LEFT(@LockArr, LEN(@LockArr) - 1);
     END
 
+    -- IsReadOnlyAdd = 1 (Khóa lúc thêm) -> Có mặt trong LockAddColumnArr
+    IF @IsReadOnlyAdd = 1
+    BEGIN
+        IF CHARINDEX(',' + @FieldName + ',', ',' + @LockAddArr + ',') = 0
+            SET @LockAddArr = @LockAddArr + CASE WHEN LEN(@LockAddArr) > 0 THEN ',' ELSE '' END + @FieldName;
+    END
+    ELSE
+    BEGIN
+        SET @LockAddArr = REPLACE(',' + @LockAddArr + ',', ',' + @FieldName + ',', ',');
+        IF LEFT(@LockAddArr, 1) = ',' SET @LockAddArr = SUBSTRING(@LockAddArr, 2, LEN(@LockAddArr));
+        IF RIGHT(@LockAddArr, 1) = ',' SET @LockAddArr = LEFT(@LockAddArr, LEN(@LockAddArr) - 1);
+    END
+
     -- Cập nhật lại vào DB
     UPDATE SY_FrmLstTbl
     SET AddNewColumnArr = @AddArr,
         HideColumnArr = @HideArr,
-        LockColumnArr = @LockArr
+        LockColumnArr = @LockArr,
+        LockAddColumnArr = @LockAddArr
     WHERE FormID = @FormName;
 
     -- Trả về dữ liệu vừa lưu
-    SELECT FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition,
-           @ShowInAdd AS ShowInAdd, @ShowInEdit AS ShowInEdit, @IsReadOnlyEdit AS IsReadOnlyEdit
+    SELECT FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition, ValidateRule, DependsOn,
+           @ShowInAdd AS ShowInAdd, @ShowInEdit AS ShowInEdit, @IsReadOnlyEdit AS IsReadOnlyEdit, @IsReadOnlyAdd AS IsReadOnlyAdd
     FROM SY_FormatFields 
     WHERE FieldName = @FieldName;
 END

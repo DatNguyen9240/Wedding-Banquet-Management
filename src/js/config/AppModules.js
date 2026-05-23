@@ -119,6 +119,7 @@ window.APP_MODULES = {
         ApiDictionary: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.GET_UI_DICTIONARY : null,
         ApiSearch: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.GET_FIELDS_LIST : null,
         ApiSave: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.SAVE_FIELD : null,
+        ApiDelete: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.DELETE_FIELD : null,
 
         // --- i18n & Labels ---
         PageTitle: 'Cấu hình Trường Giao diện (Form Builder)',
@@ -159,52 +160,42 @@ window.APP_MODULES = {
         ToastCopyCell: 'Đã sao chép ô!',
         ToastCopyRow: 'Đã sao chép cả hàng!',
         ModalWidth: '800px'
-    },
 
-    // ----------------------------------------------------------------------
-    // 4. MODULE: TEST (Thử nghiệm Form Builder)
-    // ----------------------------------------------------------------------
+    },
     TEST: {
         FormName: 'frmTest',
         ApiDictionary: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.GET_UI_DICTIONARY : null,
-        ApiSearch: null, // Không load data thật để tránh báo lỗi
-        ApiSave: null,
+        ApiSearch: '/api/API_DanhSachfrmTest',
+        ApiSave: '/api/API_LuufrmTest',
+        ApiDelete: '/api/API_XoafrmTest',
 
-        PageTitle: 'Trang Thử Nghiệm (frmTest)',
-        PageSubtitle: 'Dành riêng để test giao diện và Form Builder, không sửa dữ liệu thật',
-        TitleAdd: '➕ Thêm Test',
-        TitleEdit: '✏️ Sửa Test',
-        ToastAdd: 'Test Add',
-        ToastEdit: 'Test Edit',
+        PageTitle: 'Trang Test (Cấu hình cứng)',
+        PageSubtitle: 'Trang demo Dynamic Form Engine',
+        TitleAdd: '➕ Thêm mới dữ liệu',
+        TitleEdit: '✏️ Cập nhật thông tin',
+        ToastAdd: 'Thêm mới thành công!',
+        ToastEdit: 'Cập nhật thành công!',
         BtnSaveAdd: 'Thêm',
-        BtnSaveEdit: 'Lưu',
-        WarnSelectEdit: 'Vui lòng chọn để sửa',
-        WarnSelectDelete: 'Vui lòng chọn để xóa',
-        ConfirmDelete: 'Xóa {0}?',
-        InfoDeleteDev: 'Đang phát triển',
+        BtnSaveEdit: 'Lưu thay đổi',
+        WarnSelectEdit: 'Vui lòng chọn dòng cần sửa',
+        WarnSelectDelete: 'Vui lòng chọn dòng cần xóa',
+        ConfirmDelete: 'Bạn có chắc muốn xóa dữ liệu này?',
         PrimaryKey: 'Id',
         RowNameField: 'Name',
-        SearchPlaceholder: 'Tìm kiếm...',
+        SearchPlaceholder: 'Nhập từ khóa tìm kiếm...',
         FilterKeywordLabel: 'Từ khóa',
-        TextLoading: 'Đang tải...',
-        TextLoadingError: 'Lỗi: ',
-        BtnCancel: 'Hủy',
+        TextLoading: 'Đang tải dữ liệu...',
+        BtnCancel: 'Đóng',
         BtnSaveSaving: 'Đang lưu...',
         AlertTitleWarning: 'Cảnh báo',
         AlertTitleConfirm: 'Xác nhận',
         AlertTitleInfo: 'Thông báo',
         AlertTitleError: 'Lỗi',
-        AlertApiMissing: 'Chưa gắn API',
+        AlertApiMissing: 'Trang này chưa được gắn API xử lý dữ liệu. Vui lòng liên hệ lập trình viên.',
         AlertSaveFailed: 'Lưu thất bại',
-        AlertNetworkError: 'Lỗi kết nối',
-        WarnMissingInfo: 'Thiếu',
+        AlertNetworkError: 'Lỗi kết nối mạng',
         WarnMissingInput: 'Vui lòng nhập: {0}',
-        TextDeleteFallback: 'dòng này',
-        MenuCopyCell: 'Copy Cell',
-        MenuCopyRow: 'Copy Row',
-        ToastCopyCell: 'Đã copy',
-        ToastCopyRow: 'Đã copy',
-        ModalWidth: '600px'
+        ModalWidth: '700px'
     }
 };
 

@@ -47,7 +47,8 @@ window.API_CONFIG = {
             SETUP_VALUE: '/api/API_LayGiaTriSetup',
             GET_UI_DICTIONARY: '/api/API_LayCacTruongGiaoDien',
             GET_FIELDS_LIST: '/api/API_DanhSachTruongGiaoDien',
-            SAVE_FIELD: '/api/API_LuuTruongGiaoDien'
+            SAVE_FIELD: '/api/API_LuuTruongGiaoDien',
+            DELETE_FIELD: '/api/API_XoaTruongGiaoDien'
         },
         CONTRACT: {
             LIST: '/api/API_DanhSachHopDong',

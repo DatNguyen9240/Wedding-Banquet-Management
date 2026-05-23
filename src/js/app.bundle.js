@@ -2236,7 +2236,7 @@ UIControls.createDataComboBox = function (options) {
   function renderTable(displayData) {
     if (UIControls.utils) {
       tableWrapper.innerHTML = UIControls.utils.createDropdownTableHTML(
-        options.headers || [], displayData, options.colHighlightIndex || 0, options.colGroupIndex
+        options.headers || [], displayData, options.colHighlightIndex !== undefined ? options.colHighlightIndex : (options.colFilterIndex || 0), options.colGroupIndex
       );
       var rows = tableWrapper.querySelectorAll('tbody tr');
       var currentInputVal = input.value.trim().toLowerCase();
@@ -3571,8 +3571,10 @@ var UITable = (function () {
     var table = document.createElement('table');
     table.className = 'data-table';
 
-    // Tbody
+    // Tbody & Thead
+    var thead = document.createElement('thead');
     var tbody = document.createElement('tbody');
+    table.appendChild(thead);
     table.appendChild(tbody);
 
     var currentData = config.data ? config.data.slice() : [];
@@ -3631,15 +3633,59 @@ var UITable = (function () {
     }
 
     // Thead
-    if (config.headers && config.headers.length > 0) {
-      var thead = document.createElement('thead');
-      var trHead = document.createElement('tr');
-      
-      config.headers.forEach(function(h, idx) {
-        var th = document.createElement('th');
+    function renderHead() {
+      thead.innerHTML = '';
+      if (config.headers && config.headers.length > 0) {
+        var trHead = document.createElement('tr');
+        
+        config.headers.forEach(function(h, idx) {
+          var th = document.createElement('th');
+          th.draggable = true; // Enable drag
+          th.style.cursor = 'grab'; // Add grab cursor to indicate draggable
+          th.style.userSelect = 'none'; // Prevent text selection during drag
+
+          // Drag and Drop Logic
+          th.addEventListener('dragstart', function(e) {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(idx));
+            setTimeout(function() { th.style.opacity = '0.5'; }, 0);
+          });
+          th.addEventListener('dragend', function(e) {
+            th.style.opacity = '1';
+            th.style.cursor = 'grab';
+          });
+          th.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+          });
+          th.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            th.style.borderLeft = '2px solid var(--color-primary)';
+          });
+          th.addEventListener('dragleave', function(e) {
+            th.style.borderLeft = '';
+          });
+          th.addEventListener('drop', function(e) {
+            e.preventDefault();
+            th.style.borderLeft = '';
+            var fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+            var toIdx = idx;
+            if (!isNaN(fromIdx) && fromIdx !== toIdx) {
+              // Swap headers
+              var movedHeader = config.headers.splice(fromIdx, 1)[0];
+              config.headers.splice(toIdx, 0, movedHeader);
+              // Swap columns
+              if (config.columns) {
+                var movedCol = config.columns.splice(fromIdx, 1)[0];
+                config.columns.splice(toIdx, 0, movedCol);
+              }
+              renderAll(); // Re-render head and body
+            }
+          });
         
         var spanTxt = document.createElement('span');
         spanTxt.innerText = h.label || h;
+        spanTxt.style.pointerEvents = 'none'; // Prevent child interference
         th.appendChild(spanTxt);
 
         if (h.width) th.style.width = h.width;
@@ -3647,11 +3693,10 @@ var UITable = (function () {
 
         // Nếu header có sortable
         if (h.sortable && h.field) {
-          th.style.cursor = 'pointer';
-          th.style.userSelect = 'none';
           
           var icon = document.createElement('span');
           icon.className = 'material-symbols-outlined sort-icon';
+          icon.style.pointerEvents = 'none'; // Prevent child interference
           
           if (currentSort.field === h.field) {
             icon.innerText = currentSort.dir === 'asc' ? 'expand_less' : 'expand_more';
@@ -3710,11 +3755,40 @@ var UITable = (function () {
         trHead.appendChild(th);
       });
       thead.appendChild(trHead);
-      table.appendChild(thead);
+    }
     }
 
-    renderBody();
+    function renderAll() {
+      renderHead();
+      renderBody();
+    }
+
+    renderAll();
     wrapper.appendChild(table);
+
+    wrapper.updateData = function(newData) {
+      currentData = newData ? newData.slice() : [];
+      renderBody();
+      wrapper.hideLoading();
+    };
+
+    wrapper.showLoading = function(text) {
+      wrapper.style.position = 'relative';
+      var loader = wrapper.querySelector('.table-loader');
+      if (!loader) {
+        loader = document.createElement('div');
+        loader.className = 'table-loader';
+        loader.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;z-index:10;font-weight:600;color:var(--color-primary);border-radius:8px;backdrop-filter:blur(2px);';
+        wrapper.appendChild(loader);
+      }
+      loader.innerText = text || 'Đang tải dữ liệu...';
+      loader.style.display = 'flex';
+    };
+
+    wrapper.hideLoading = function() {
+      var loader = wrapper.querySelector('.table-loader');
+      if (loader) loader.style.display = 'none';
+    };
 
     return wrapper;
   }
@@ -3802,6 +3876,233 @@ var UITable = (function () {
 
     return create(tableConfig);
   }
+
+  // =========================================================================
+  // GLOBAL ADVANCED FEATURES (Drag Select & Context Menu)
+  // Tự động áp dụng cho TẤT CẢ các thẻ table trong toàn hệ thống
+  // =========================================================================
+  (function setupGlobalTableFeatures() {
+    if (typeof window === 'undefined') return;
+
+    // 1. GLOBAL CONTEXT MENU
+    document.addEventListener('contextmenu', function(e) {
+      var table = e.target.closest('table');
+      if (!table || table.classList.contains('no-advanced-features')) return;
+
+      var td = e.target.closest('td');
+      var tr = e.target.closest('tr');
+      if (!td && !tr) return;
+      if (td && (td.querySelector('.btn') || td.querySelector('button'))) return;
+
+      e.preventDefault();
+      
+      var getRowText = function(rowEl) {
+        if (!rowEl) return '';
+        var cells = rowEl.querySelectorAll('td');
+        var textArr = [];
+        for (var i = 0; i < cells.length; i++) {
+          var clone = cells[i].cloneNode(true);
+          var btns = clone.querySelectorAll('button, .btn, .material-symbols-outlined, .material-icons');
+          btns.forEach(function(b){ b.remove(); });
+          var text = clone.innerText.trim();
+          if(text) textArr.push(text);
+        }
+        return textArr.join(' | ');
+      };
+
+      if (typeof UIContextMenu !== 'undefined') {
+        var tbody = tr ? tr.closest('tbody') : null;
+        var activeRows = tbody ? Array.from(tbody.querySelectorAll('tr.active')) : [];
+        var isMultiple = activeRows.length > 1;
+        
+        var menuItems = [
+          {
+            icon: 'content_copy',
+            label: 'Copy ô (Cell)',
+            onClick: function() {
+              if (td) {
+                navigator.clipboard.writeText(td.innerText.trim());
+                if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ô', 'success');
+              }
+            }
+          }
+        ];
+
+        if (isMultiple && activeRows.includes(tr)) {
+            menuItems.push({
+              icon: 'library_books',
+              label: 'Copy ' + activeRows.length + ' dòng đã chọn',
+              onClick: function() {
+                var allText = activeRows.map(function(r) { return getRowText(r); }).join('\n');
+                navigator.clipboard.writeText(allText);
+                if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ' + activeRows.length + ' dòng', 'success');
+              }
+            });
+        } else {
+            menuItems.push({
+              icon: 'file_copy',
+              label: 'Copy dòng (Row)',
+              onClick: function() {
+                if (tr) {
+                  navigator.clipboard.writeText(getRowText(tr));
+                  if (typeof UIToast !== 'undefined') UIToast.show('Đã copy dữ liệu dòng', 'success');
+                }
+              }
+            });
+        }
+
+        UIContextMenu.show(e, menuItems);
+      }
+    });
+
+    // 2. GLOBAL DRAG SELECT
+    var isDragSelecting = false;
+    var dragAction = null;
+    var dragTimer = null;
+    var lastDragRowIdx = -1;
+    var lastPointerX = -1;
+    var lastPointerY = -1;
+    var autoScrollFrame = null;
+    var activeTbody = null;
+
+    document.addEventListener('touchmove', function(e) {
+      if (isDragSelecting) e.preventDefault();
+    }, { passive: false });
+
+    function toggleGlobalRow(tr, tbody, forceAction) {
+      var isActive = tr.classList.contains('active');
+      var changed = false;
+      if (forceAction === 'add' && !isActive) {
+         tr.classList.add('active');
+         changed = true;
+      } else if (forceAction === 'remove' && isActive) {
+         tr.classList.remove('active');
+         changed = true;
+      }
+      
+      if (changed) {
+         var idx = Array.from(tbody.children).indexOf(tr);
+         // Dispatch custom event for frameworks (like DynamicFormEngine) to catch
+         tbody.dispatchEvent(new CustomEvent('rowSelectionToggled', { 
+            bubbles: true, 
+            detail: { tr: tr, rowIndex: idx, action: forceAction } 
+         }));
+      }
+    }
+
+    function updateGlobalSelectionAtPoint(x, y) {
+       var el = document.elementFromPoint(x, y);
+       if (el && activeTbody) {
+          var moveTr = el.closest('tr');
+          if (moveTr && moveTr.parentNode === activeTbody) {
+             var moveIdx = Array.from(activeTbody.children).indexOf(moveTr);
+             if (moveIdx !== lastDragRowIdx) {
+                toggleGlobalRow(moveTr, activeTbody, dragAction);
+                lastDragRowIdx = moveIdx;
+             }
+          }
+       }
+    }
+
+    function handleGlobalAutoScroll() {
+       if (!isDragSelecting) return;
+       var scrollArea = document.querySelector('.app-content') || document.documentElement;
+       var rect = scrollArea.getBoundingClientRect ? scrollArea.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+       var edgeSize = 80;
+       var scrollAmount = 0;
+
+       if (lastPointerY > 0 && lastPointerY < rect.top + edgeSize) {
+           scrollAmount = -15;
+       } else if (lastPointerY > 0 && lastPointerY > rect.bottom - edgeSize) {
+           scrollAmount = 15;
+       }
+
+       if (scrollAmount !== 0) {
+           scrollArea.scrollTop += scrollAmount;
+           updateGlobalSelectionAtPoint(lastPointerX, lastPointerY);
+       }
+       autoScrollFrame = requestAnimationFrame(handleGlobalAutoScroll);
+    }
+
+    document.addEventListener('pointerdown', function(e) {
+       var tr = e.target.closest('tr');
+       var table = e.target.closest('table');
+       
+       if (!table || table.classList.contains('no-advanced-features') || table.classList.contains('no-drag-select')) return;
+       if (!tr || tr.closest('thead') || tr.children.length <= 1 || e.button !== 0 || e.target.closest('.btn') || e.target.closest('button')) return;
+
+       var tbody = tr.closest('tbody');
+       if (!tbody) return;
+
+       var startX = e.clientX, startY = e.clientY;
+       var idx = Array.from(tbody.children).indexOf(tr);
+       
+       lastDragRowIdx = idx;
+       activeTbody = tbody;
+       isDragSelecting = false;
+
+       dragTimer = setTimeout(function() {
+         isDragSelecting = true;
+         activeTbody.isDragSelectingFlag = true;
+         var isActive = tr.classList.contains('active');
+         dragAction = isActive ? 'remove' : 'add';
+         
+         document.body.style.userSelect = 'none';
+         activeTbody.style.touchAction = 'none';
+         
+         if (navigator.vibrate) navigator.vibrate(50);
+         
+         lastPointerX = startX;
+         lastPointerY = startY;
+         autoScrollFrame = requestAnimationFrame(handleGlobalAutoScroll);
+         
+         toggleGlobalRow(tr, activeTbody, dragAction);
+       }, 350);
+
+       function onPointerMove(ev) {
+         if (!isDragSelecting) {
+            if (Math.abs(ev.clientX - startX) > 10 || Math.abs(ev.clientY - startY) > 10) {
+               clearTimeout(dragTimer);
+            }
+         } else {
+            ev.preventDefault(); 
+            lastPointerX = ev.clientX;
+            lastPointerY = ev.clientY;
+            updateGlobalSelectionAtPoint(lastPointerX, lastPointerY);
+         }
+       }
+
+       function onPointerUp(ev) {
+         clearTimeout(dragTimer);
+         if (autoScrollFrame) cancelAnimationFrame(autoScrollFrame);
+         document.body.style.userSelect = '';
+         if (activeTbody) activeTbody.style.touchAction = '';
+         
+         document.removeEventListener('pointermove', onPointerMove);
+         document.removeEventListener('pointerup', onPointerUp);
+         document.removeEventListener('pointercancel', onPointerUp);
+         
+         if (isDragSelecting) {
+            var cachedTbody = activeTbody;
+            var preventClick = function(evt) {
+               evt.stopPropagation();
+               evt.preventDefault();
+               document.removeEventListener('click', preventClick, true);
+            };
+            document.addEventListener('click', preventClick, true);
+            setTimeout(function() { 
+               document.removeEventListener('click', preventClick, true);
+               if (cachedTbody) cachedTbody.isDragSelectingFlag = false;
+            }, 50);
+            isDragSelecting = false;
+         }
+       }
+
+       document.addEventListener('pointermove', onPointerMove);
+       document.addEventListener('pointerup', onPointerUp);
+       document.addEventListener('pointercancel', onPointerUp);
+    });
+  })();
 
   return {
     create: create,
