@@ -246,8 +246,8 @@ var MenusPage = (function () {
     var COL_P = '<colgroup><col style="width:4%"><col style="width:8%"><col style="width:8%"><col style="width:4%"><col style="width:24%"><col style="width:10%"><col style="width:16%"><col style="width:9%"><col style="width:7%"><col style="width:10%"></colgroup>';
     var parentTableHTML = '<div style="margin-bottom:20px;">'
       + '<div style="font-weight:700; color:var(--color-text-primary); margin-bottom:8px; font-size:13px; text-transform:uppercase;">' + UIIcon.renderHtml('folder_open', 'vertical-align:bottom;font-size:16px;') + ' Thông tin Thư mục hiện tại (Nhấp đúp để sửa)</div>'
-      + '<div class="table-wrapper" style="border-radius:10px;border:1px solid var(--color-primary); overflow-x: auto;">'
-      + '<table class="data-table" style="margin:0; table-layout:fixed; width:100%; min-width:950px; font-size:11px;">'
+      + '<div class="table-wrapper" style="border-radius:10px;border:1px solid var(--color-primary); overflow-x: auto; -webkit-overflow-scrolling: touch;">'
+      + '<table class="data-table no-mobile-stack" style="margin:0; table-layout:fixed; min-width:950px; font-size:11px;">'
       + COL_P
       + '<thead style="background:rgba(var(--color-primary-rgb), 0.1);">'
       + '<tr>'
@@ -306,8 +306,8 @@ var MenusPage = (function () {
       }).join('');
 
       var COL_C = '<colgroup><col style="width:6%"><col style="width:8%"><col style="width:8%"><col style="width:4%"><col style="width:22%"><col style="width:10%"><col style="width:16%"><col style="width:9%"><col style="width:7%"><col style="width:10%"></colgroup>';
-      var table = '<div class="table-wrapper" style="border-radius:10px;border:1px solid var(--color-border); overflow-x: auto;">'
-        + '<table class="data-table child-drag-table" style="margin:0; table-layout:fixed; width:100%; min-width:950px; font-size:11px;">'
+      var table = '<div class="table-wrapper" style="border-radius:10px;border:1px solid var(--color-border); overflow-x: auto; -webkit-overflow-scrolling: touch;">'
+        + '<table class="data-table child-drag-table no-mobile-stack" style="margin:0; table-layout:fixed; min-width:950px; font-size:11px;">'
         + COL_C
         + '<thead><tr>'
         + '<th style="text-align:center;padding:5px 3px;white-space:nowrap;overflow:hidden;">Kéo/STT</th>'

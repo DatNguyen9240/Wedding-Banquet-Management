@@ -90,6 +90,7 @@ var PermissionsPage = (function () {
                 font-size: 16px !important;
               }
               .tree-toggle {
+              .tree-toggle {
                 width: 16px;
               }
             }

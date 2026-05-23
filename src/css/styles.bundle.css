@@ -1,4 +1,4 @@
-﻿/* --- design-tokens.css --- */
+/* --- design-tokens.css --- */
 /* ═══════════════════════════════════════════
    Design Tokens — TailAdmin Style
    Dành cho Quản lý Tiệc Cưới
@@ -4243,11 +4243,11 @@ body.dark-theme .data-table tbody tr:hover {
 
 /* --- RESPONSIVE TABLE (Card View on Mobile) --- */
 @media (max-width: 768px) {
-  .data-table thead {
+  .data-table:not(.no-mobile-stack) thead {
     display: none; /* Ẩn tiêu đề ngang trên mobile */
   }
 
-  .data-table tbody tr {
+  .data-table:not(.no-mobile-stack) tbody tr {
     display: block;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -4256,7 +4256,7 @@ body.dark-theme .data-table tbody tr:hover {
     background: var(--color-surface);
   }
 
-  .data-table tbody td {
+  .data-table:not(.no-mobile-stack) tbody td {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -4267,12 +4267,12 @@ body.dark-theme .data-table tbody tr:hover {
     max-width: 100%;
   }
 
-  .data-table tbody td:last-child {
+  .data-table:not(.no-mobile-stack) tbody td:last-child {
     border-bottom: none;
   }
 
   /* Tạo tiêu đề ảo từ thuộc tính data-label */
-  .data-table tbody td::before {
+  .data-table:not(.no-mobile-stack) tbody td::before {
     content: attr(data-label);
     font-weight: 600;
     color: var(--color-text-secondary);
