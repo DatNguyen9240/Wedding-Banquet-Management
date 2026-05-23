@@ -1087,7 +1087,7 @@ window.DynamicFormEngine = (function () {
              hiddenInput.setAttribute('data-field-name', originalName);
              inputEl.appendChild(hiddenInput);
 
-             var comboLoading = UIControls.createDataComboBox({ placeholder: 'Đang tải...', disabled: ((typeof isEdit !== 'undefined' && isEdit && field.isReadOnlyEdit) || (typeof isEdit !== 'undefined' && !isEdit && field.isReadOnlyAdd)) });
+             var comboLoading = UIControls.createDataComboBox({ placeholder: 'Đang tải...', disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)) });
              inputEl.appendChild(comboLoading);
              
              if (field.dataSource) {
@@ -1163,9 +1163,9 @@ window.DynamicFormEngine = (function () {
              allInputs.forEach(function(i) {
                 i.setAttribute('data-row-index', rowIdx);
                 i.setAttribute('data-field-name', originalName);
-                if (((typeof isEdit !== 'undefined' && isEdit && field.isReadOnlyEdit) || (typeof isEdit !== 'undefined' && !isEdit && field.isReadOnlyAdd))) i.disabled = true;
+                if (((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd))) i.disabled = true;
              });
-             if (((typeof isEdit !== 'undefined' && isEdit && field.isReadOnlyEdit) || (typeof isEdit !== 'undefined' && !isEdit && field.isReadOnlyAdd))) inputEl.classList.add('ui-input-disabled');
+             if (((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd))) inputEl.classList.add('ui-input-disabled');
              td.appendChild(inputEl);
           }
           tr.appendChild(td);
@@ -1299,7 +1299,7 @@ window.DynamicFormEngine = (function () {
                headers: ['Mã', 'Tên'],
                data: staticData,
                colFilterIndex: 1, // Dùng cột Tên để hiển thị lên input
-               disabled: ((typeof isEdit !== 'undefined' && isEdit && field.isReadOnlyEdit) || (typeof isEdit !== 'undefined' && !isEdit && field.isReadOnlyAdd)),
+               disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
                onSelect: function(row) {
                   hiddenInput.value = row[0]; // Cập nhật ID
                }
@@ -1364,7 +1364,7 @@ window.DynamicFormEngine = (function () {
             var lazyCombo = UIControls.createDataComboBox({
                placeholder: '-- Vui lòng chọn --',
                headers: ['Mã', 'Tên'],
-               disabled: ((typeof isEdit !== 'undefined' && isEdit && field.isReadOnlyEdit) || (typeof isEdit !== 'undefined' && !isEdit && field.isReadOnlyAdd)),
+               disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
                onSearch: searchApiCall,
                onSelect: function(row) { hiddenInput.value = row[0]; }
             });
@@ -1395,7 +1395,7 @@ window.DynamicFormEngine = (function () {
       }
 
       // Áp dụng kích thước FlexBox từ field.position
-      if (((typeof isEdit !== 'undefined' && isEdit && field.isReadOnlyEdit) || (typeof isEdit !== 'undefined' && !isEdit && field.isReadOnlyAdd))) {
+      if (((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd))) {
         var innerFields = inputEl.querySelectorAll('input, select, textarea, button');
         if (innerFields.length > 0) {
           innerFields.forEach(function(el) { el.disabled = true; });
