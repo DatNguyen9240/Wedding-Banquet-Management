@@ -113,11 +113,11 @@ window.DynamicFormEngine = (function () {
           globalFormSchema.push({
             name: item.name || item.FieldName,
             label: item.label || item.CaptionVN,
-            required: !!(item.required || item.IsRequired),
+            required: String(item.required) === '1' || item.required === true || String(item.IsRequired) === '1' || item.IsRequired === true,
             position: item.FormPosition || item.formPosition || item.position || 'grid', // Đọc đúng FormPosition (Hoa thường)
             orderNo: item.OrderNo || item.orderNo || 0, // Đọc OrderNo (Hoa thường)
-            showInAdd: !!(item.showInAdd || item.ShowInAdd),
-            showInEdit: !!(item.showInEdit || item.ShowInEdit),
+            showInAdd: String(item.showInAdd) === '1' || item.showInAdd === true || String(item.ShowInAdd) === '1' || item.ShowInAdd === true,
+            showInEdit: String(item.showInEdit) === '1' || item.showInEdit === true || String(item.ShowInEdit) === '1' || item.ShowInEdit === true,
             renderRule: (item.renderRule || '').toLowerCase().trim(),
             dataSource: (item.dataSource || '').trim()
           });
@@ -954,8 +954,34 @@ window.DynamicFormEngine = (function () {
     tableContainer.style.overflowX = 'auto';
     tableContainer.style.maxHeight = '65vh';
 
+    var styleNode = document.createElement('style');
+    styleNode.innerHTML = `
+        .table-bulk-edit { margin-bottom: 0; border-collapse: separate; border-spacing: 0; }
+        .table-bulk-edit thead th { position: sticky; top: 0; z-index: 2; background: var(--color-surface); border-bottom: 2px solid var(--color-border); }
+        .table-bulk-edit tbody td { padding: 0 !important; vertical-align: middle; border-bottom: 1px solid var(--color-border); border-right: 1px solid var(--color-border); position: relative; }
+        .table-bulk-edit tbody td:first-child { padding: 0 8px !important; }
+        .table-bulk-edit tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
+        .table-bulk-edit .form-group { margin-bottom: 0 !important; height: 100%; display: flex; align-items: center; width: 100%; }
+        .table-bulk-edit input.ui-input, .table-bulk-edit .dropdown-wrapper, .table-bulk-edit .dropdown-wrapper input {
+            border: none !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important;
+            width: 100%; height: 100%; min-height: 40px; padding: 0 12px !important; outline: none !important;
+        }
+        .table-bulk-edit input.ui-input:focus { background: rgba(255,255,255,0.05) !important; }
+        .table-bulk-edit .switch { justify-content: center; padding: 0; margin: 0; width: 100%; height: 100%; display: flex; align-items: center; min-height: 40px; }
+        .table-bulk-edit .dropdown-wrapper .material-symbols-outlined { right: 8px; }
+        
+        /* Custom Scrollbar cho bảng */
+        .table-bulk-edit-container::-webkit-scrollbar { width: 8px; height: 8px; }
+        .table-bulk-edit-container::-webkit-scrollbar-track { background: transparent; }
+        .table-bulk-edit-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
+        .table-bulk-edit-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+        .table-bulk-edit-container::-webkit-scrollbar-corner { background: transparent; }
+    `;
+    tableContainer.appendChild(styleNode);
+    tableContainer.classList.add('table-bulk-edit-container');
+
     var table = document.createElement('table');
-    table.className = 'table table-bordered table-hover';
+    table.className = 'table table-bordered table-hover table-bulk-edit';
     table.style.width = 'max-content';
     table.style.minWidth = '100%';
 
@@ -1029,7 +1055,7 @@ window.DynamicFormEngine = (function () {
           var td = document.createElement('td');
           td.style.verticalAlign = 'middle';
           td.style.minWidth = '200px';
-          td.style.padding = '5px';
+          td.style.padding = '0'; // Đã CSS trong class
 
           var field = Object.assign({}, fieldTemplate);
           field.value = row[field.name] !== undefined && row[field.name] !== null ? row[field.name] : '';
