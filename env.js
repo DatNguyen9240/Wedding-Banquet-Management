@@ -27,6 +27,8 @@ window.API_CONFIG = {
             GET_ALL_MENUS_FOR_GROUP: '/api/API_LayQuyenNhomDayDu',
             SAVE_GROUP_PERMISSIONS: '/api/API_LuuQuyenCuaNhom',
             GET_GROUP_LIST: '/api/API_LayDanhSachNhom',
+            GET_VERSION: '/api/API_LayPhienBanQuyen',
+            GET_MY_PERMISSIONS: '/api/API_LayQuyenCuaToi',
         },
 
         BOOKING: {
@@ -42,7 +44,10 @@ window.API_CONFIG = {
             HALLS: '/api/API_DanhSachSanh',
             SHIFTS: '/api/API_DanhSachCaLam',
             BANQUET_TYPES: '/api/API_DanhSachLoaiHinhTiec',
-            SETUP_VALUE: '/api/API_LayGiaTriSetup'
+            SETUP_VALUE: '/api/API_LayGiaTriSetup',
+            GET_UI_DICTIONARY: '/api/API_LayCacTruongGiaoDien',
+            GET_FIELDS_LIST: '/api/API_DanhSachTruongGiaoDien',
+            SAVE_FIELD: '/api/API_LuuTruongGiaoDien'
         },
         CONTRACT: {
             LIST: '/api/API_DanhSachHopDong',
@@ -58,6 +63,10 @@ window.API_CONFIG = {
         VISITOR: {
             LIST: '/api/API_DanhSachKhachDen',
             SAVE: '/api/API_LuuKhachDen',
+        },
+        STAFF: {
+            LIST: '/api/API_DanhSachNhanVien',
+            SAVE: '/api/API_LuuNhanVien',
         },
         REPORTS: {
             REVENUE: '/api/API_Report_Revenue',

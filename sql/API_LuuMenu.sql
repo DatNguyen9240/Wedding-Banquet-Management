@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 /****** Object:  StoredProcedure [dbo].[API_LuuMenu] ******/
@@ -23,6 +23,42 @@ ALTER PROCEDURE [dbo].[API_LuuMenu]
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    -- Kiểm tra Nhóm Cha (ParentID) có hợp lệ không
+    IF (@ParentID <> '')
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM WA_Menu WHERE MenuID = @ParentID)
+        BEGIN
+            -- Tự động tạo một Menu Cha (Root) mới thay vì báo lỗi
+            INSERT INTO WA_Menu (MenuID, Parent, VN, EN, FormName, FormKey, URLPara, IconClass, isDisable)
+            VALUES (@ParentID, '', N'Nhóm Menu ' + @ParentID, '', '', '', '', 'folder', 0);
+        END
+
+        IF (@IsEdit = 1 AND @ParentID = @OldMenuID)
+        BEGIN
+            RAISERROR (N'Lỗi: Một Menu không thể tự chọn chính nó làm Nhóm Cha!', 16, 1);
+            RETURN;
+        END
+    END
+
+    -- Tự động bóc tách và gán tiền tố ID Nhóm Cha vào Menu ID
+    IF (@IsEdit = 1)
+    BEGIN
+        DECLARE @OldParentID NVARCHAR(50);
+        SELECT @OldParentID = ISNULL(Parent, '') FROM WA_Menu WHERE MenuID = @OldMenuID;
+        
+        -- Nếu ID hiện tại đang dính Parent cũ, cắt bỏ Parent cũ ra khỏi ID
+        IF (@OldParentID <> '' AND @MenuID LIKE @OldParentID + '%')
+        BEGIN
+            SET @MenuID = RIGHT(@MenuID, LEN(@MenuID) - LEN(@OldParentID));
+        END
+    END
+
+    -- Gắn Parent mới vào ID nếu có chọn Nhóm Cha và ID chưa chứa Nhóm Cha
+    IF (@ParentID <> '' AND @MenuID NOT LIKE @ParentID + '%')
+    BEGIN
+        SET @MenuID = @ParentID + @MenuID;
+    END
 
     IF (@IsEdit = 1)
     BEGIN

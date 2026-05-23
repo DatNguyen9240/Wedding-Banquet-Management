@@ -28,6 +28,7 @@ BEGIN
         M.IconClass AS [icon],
         M.FormName AS [formName],
         M.URLPara AS [URLPara],
+        M.FormKey AS [formKey],
         P.IsRun, P.IsAdd, P.IsUpdate, P.IsDelete,
         P.isManager, P.isAdmin, P.isAutoLock, P.isHideAmount, P.isLockDoc, P.isUnLockDoc, P.isExportExcel
     FROM WA_Menu M
@@ -46,6 +47,7 @@ BEGIN
         M.IconClass AS [icon],
         M.FormName AS [formName],
         M.URLPara AS [URLPara],
+        M.FormKey AS [formKey],
         1 AS IsRun, 0 AS IsAdd, 0 AS IsUpdate, 0 AS IsDelete,
         0 AS isManager, 0 AS isAdmin, 0 AS isAutoLock, 0 AS isHideAmount, 0 AS isLockDoc, 0 AS isUnLockDoc, 0 AS isExportExcel
     FROM WA_Menu M

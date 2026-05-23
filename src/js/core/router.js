@@ -9,34 +9,72 @@ var Router = (function () {
 
   // ── Route definitions ──────────────────────────────────────────────────
   var ROUTES = [
-    { path: '/dashboard', template: 'src/pages/dashboard/dashboard.html', script: null, module: 'QuanTriHeThong', title: 'Tổng quan', pageFn: null },
-    { path: '/visitor', template: 'src/pages/visitor/visitor.html', script: 'src/pages/visitor/visitor.js', module: 'HopDong', title: 'Khách tham quan', pageFn: 'VisitorPage' },
-    { path: '/booking', template: 'src/pages/booking/booking.html', script: 'src/pages/booking/booking.js', module: 'HopDong', title: 'Biên nhận cọc chỗ', pageFn: 'BookingPage' },
-    { path: '/contract', template: 'src/pages/contract/contract.html', script: 'src/pages/contract/contract.js', module: 'HopDong', title: 'Hợp đồng tiệc', pageFn: 'ContractPage' },
-    { path: '/checkout', template: 'src/pages/checkout/checkout.html', script: 'src/pages/checkout/checkout.js', module: 'QuyetToan', title: 'Quyết toán', pageFn: 'CheckoutPage' },
-    { path: '/calendar', template: 'src/pages/calendar/calendar.html', script: 'src/pages/calendar/calendar.js', module: 'HopDong', title: 'Lịch tiệc trong tháng', pageFn: 'CalendarPage' },
-    { path: '/customers', template: 'src/pages/customers/customers.html', script: 'src/pages/customers/customers.js', module: 'HopDong', title: 'Hồ sơ Khách hàng', pageFn: 'CustomersPage' },
-    { path: '/hall-status', template: 'src/pages/hall-status/hall-status.html', script: 'src/pages/hall-status/hall-status.js', module: 'HopDong', title: 'Trạng thái Sảnh Tiệc', pageFn: 'HallStatusPage' },
-    { path: '/users', template: 'src/pages/users/users.html', script: 'src/pages/users/users.js', module: 'QuanTriHeThong', title: 'Danh sách người dùng', pageFn: 'UsersPage' },
-    { path: '/permissions', template: 'src/pages/permissions/permissions.html', script: 'src/pages/permissions/permissions.js', module: 'QuanTriHeThong', title: 'Phân quyền Cán bộ', pageFn: 'PermissionsPage' },
-    { path: '/settings', template: 'src/pages/settings/settings.html', script: 'src/pages/settings/settings.js', module: 'QuanTriHeThong', title: 'Thiết lập chung', pageFn: 'SettingsPage' },
-    { path: '/menus', template: 'src/pages/menus/menus.html', script: 'src/pages/menus/menus.js', module: 'QuanTriHeThong', title: 'Quản lý Menu', pageFn: 'MenusPage' },
-    { path: '/appearance', template: 'src/pages/appearance/appearance.html', script: 'src/pages/appearance/appearance.js', module: 'QuanTriHeThong', title: 'Cài đặt Giao diện', pageFn: 'AppearancePage' },
-    { path: '/categories', template: 'src/pages/categories/categories.html', script: 'src/pages/categories/categories.js', module: 'DanhMuc', title: 'Quản lý Danh mục', pageFn: 'CategoriesPage' },
-    { path: '/staff', template: 'src/pages/staff/staff.html', script: 'src/pages/staff/staff.js', module: 'NhanSu', title: 'Nhân viên Phục vụ Tiệc', pageFn: 'StaffPage' },
-    { path: '/survey', template: 'src/pages/survey/survey.html', script: 'src/pages/survey/survey.js', module: 'HopDong', title: 'Khảo sát Thông tin Khách hàng', pageFn: 'SurveyPage' },
-    { path: '/promotions', template: 'src/pages/promotions/promotions.html', script: 'src/pages/promotions/promotions.js', module: 'DanhMuc', title: 'Chương trình Ưu đãi & Combo', pageFn: 'PromotionsPage' },
-    { path: '/report-revenue', template: 'src/pages/report-revenue/report-revenue.html', script: 'src/pages/report-revenue/report-revenue.js', module: 'BaoCao', title: 'Báo cáo Doanh thu Tiệc', pageFn: 'ReportRevenuePage' },
-    { path: '/report-cost', template: 'src/pages/report-cost/report-cost.html', script: 'src/pages/report-cost/report-cost.js', module: 'BaoCao', title: 'Báo cáo Chi phí Tiệc', pageFn: 'ReportCostPage' },
-    { path: '/report-other', template: 'src/pages/report-other/report-other.html', script: 'src/pages/report-other/report-other.js', module: 'BaoCao', title: 'Báo cáo Quản lý Khác', pageFn: 'ReportOtherPage' },
-    { path: '/components-demo', template: 'src/pages/components-demo/components-demo.html', script: 'src/pages/components-demo/components-demo.js', module: 'QuanTriHeThong', title: 'Bản test Component', pageFn: 'ComponentsDemoPage' }
+    { path: '/dashboard', template: 'src/pages/dashboard/dashboard.html', script: null, perm: 'tongquan', title: 'Tổng quan', pageFn: null },
+    { path: '/components-demo', template: 'src/pages/components-demo/components-demo.html', script: 'src/pages/components-demo/components-demo.js', perm: 'uidemo', title: 'Bản test Component', pageFn: 'ComponentsDemoPage' },
+    { path: '/appearance', template: 'src/pages/appearance/appearance.html', script: 'src/pages/appearance/appearance.js', perm: '', title: 'Cấu hình Giao diện', pageFn: 'AppearancePage' }
   ];
+
+  function addDynamicRoutes(menus) {
+    if (!menus || !Array.isArray(menus)) return;
+    
+    menus.forEach(function (m) {
+      // url có thể nằm ở URLPara hoặc urlPara
+      var rawUrl = m.URLPara || m.urlPara || '';
+      if (!rawUrl || rawUrl.trim() === '') return;
+      
+      // Chỉnh sửa: Loại bỏ dấu '#' và '/' thừa nếu người dùng lỡ nhập vào DB (vd: '#/customers' -> 'customers')
+      var url = rawUrl.trim().replace(/^#\/?/, '').replace(/^\//, '');
+      if (url === '') return;
+
+      var path = '/' + url;
+      
+      // Bỏ qua nếu đã tồn tại
+      if (ROUTES.find(function (r) { return r.path === path; })) return;
+
+      var route = {
+        path: path,
+        perm: m.FormName || m.formName,
+        title: m.MenuName || m.VN || m.label || ''
+      };
+
+      var formKey = m.FormKey || m.formKey;
+      
+      // Fallback: Nếu Backend chưa kịp update FormKey, tự suy luận từ urlPara (vd: form-builder -> FORM_BUILDER)
+      if ((!formKey || formKey.trim() === '') && window.APP_MODULES) {
+         var deducedKey = url.trim().replace(/-/g, '_').toUpperCase();
+         if (window.APP_MODULES[deducedKey]) {
+             formKey = deducedKey;
+         }
+      }
+
+      if (formKey && formKey.trim() !== '') {
+        // Dùng DynamicFormEngine
+        route.script = 'src/js/core/DynamicFormEngine.js';
+        route.pageFn = 'DynamicFormEngine';
+        route.config = window.APP_MODULES ? window.APP_MODULES[formKey.trim()] : null;
+      } else {
+        // Convention: template và script nằm trong thư mục trùng tên URLPara
+        var folder = url.trim();
+        route.template = 'src/pages/' + folder + '/' + folder + '.html';
+        route.script = 'src/pages/' + folder + '/' + folder + '.js';
+        
+        // Convert urlPara to PascalCase (vd: hall-status -> HallStatusPage)
+        var camel = folder.split('-').map(function (s) {
+          return s.charAt(0).toUpperCase() + s.slice(1);
+        }).join('');
+        route.pageFn = camel + 'Page';
+      }
+      
+      ROUTES.push(route);
+      _routeMap[path] = route; // Update Map
+    });
+  }
 
   // ── State ──────────────────────────────────────────────────────────────
   var _currentRoute = null;
   var _loadedScripts = {};
   var _templateCache = {};
-  var _appVersion = '2.7'; // Bump để làm mới cache html/script động
+  var _appVersion = '2.12'; // Bump để làm mới cache html/script động
   var _navId = 0; // Token chặn race-condition
 
   // ── Template cache (dùng chung cho cả Router lẫn Page modules) ─────────
@@ -109,9 +147,9 @@ var Router = (function () {
 
   function _renderAccessDenied($el) {
     $el.innerHTML =
-      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;text-align:center;padding:48px;">' +
-      '<span class="material-symbols-outlined" style="font-size:64px;color:var(--color-danger);opacity:0.4;margin-bottom:16px;">lock</span>' +
-      '<p style="color:var(--color-danger);font-weight:600;">Bạn không có quyền xem trang này</p>' +
+      '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center;padding:48px 24px;">' +
+      '<span class="material-symbols-outlined" style="font-size:72px;color:var(--color-danger);margin-bottom:16px;">lock</span>' +
+      '<p style="color:var(--color-danger);font-size:1.1rem;font-weight:500;">Bạn không có quyền xem trang này</p>' +
       '</div>';
   }
 
@@ -151,31 +189,34 @@ var Router = (function () {
     var currentNav = _navId;
 
     var rawHash = window.location.hash.replace('#', '') || '/dashboard';
-
-    var $content = document.getElementById('app-content');
-    var $pageTitle = document.getElementById('page-title');
-    
-    // Tách phần path và query (vd: /contract?date=...)
     var hashParts = rawHash.split('?');
     var pathOnly = hashParts[0];
     var route = _findRoute(pathOnly);
 
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    // Kéo quyền động nếu máy khác vừa cập nhật (Đảm bảo Realtime)
+    _syncPermissionsIfNeeded().then(function() {
+      if (currentNav !== _navId) return;
 
-    // Cập nhật nav UI
-    _updateNavActive(pathOnly);
+      var $content = document.getElementById('app-content');
+      var $pageTitle = document.getElementById('page-title');
 
-    // 404
-    if (!route) {
-      if ($pageTitle) $pageTitle.innerText = '404 — Không tìm thấy';
-      document.title = '404 | Quản lý Tiệc Cưới';
-      _render404($content, rawHash);
-      return;
-    }
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'instant' });
 
-    // Kiểm tra quyền
-    if (!Permission.canView(route.module)) {
+      // Cập nhật nav UI
+      _updateNavActive(pathOnly);
+
+      // 404
+      if (!route) {
+        if ($pageTitle) $pageTitle.innerText = '404 — Không tìm thấy';
+        document.title = '404 | Quản lý Tiệc Cưới';
+        _render404($content, rawHash);
+        return;
+      }
+
+      // Kiểm tra quyền
+      var targetPerm = route.perm || route.module;
+    if (targetPerm && !Permission.canView(targetPerm)) {
       if ($pageTitle) $pageTitle.innerText = 'Từ chối truy cập';
       _renderAccessDenied($content);
       return;
@@ -188,11 +229,14 @@ var Router = (function () {
 
     // ── Trường hợp 1: Có script → load script → pageFn.render() ──
     // (Page module tự fetch template bên trong render nếu cần)
-    if (route.script && route.pageFn) {
+    if (route.pageFn) {
       _fadeOut($content)
-        .then(function () { 
+        .then(function () {
           if (currentNav !== _navId) throw new Error('ABORTED');
-          return _loadScript(route.script); 
+          if (route.script) {
+            return _loadScript(route.script);
+          }
+          return Promise.resolve();
         })
         .then(function () {
           if (currentNav !== _navId) throw new Error('ABORTED');
@@ -203,7 +247,7 @@ var Router = (function () {
             var wrapper = document.createElement('div');
             wrapper.className = 'page-wrapper';
             $content.appendChild(wrapper);
-            mod.render(wrapper);
+            mod.render(wrapper, route.config || null);
           } else {
             _renderError($content, 'Không tìm thấy module: ' + route.pageFn);
           }
@@ -222,9 +266,9 @@ var Router = (function () {
     // ── Trường hợp 2: Chỉ có template (dashboard, trang tĩnh) ──
     if (route.template) {
       _fadeOut($content)
-        .then(function () { 
+        .then(function () {
           if (currentNav !== _navId) throw new Error('ABORTED');
-          return fetchTemplate(route.template); 
+          return fetchTemplate(route.template);
         })
         .then(function (html) {
           if (currentNav !== _navId) throw new Error('ABORTED');
@@ -243,19 +287,98 @@ var Router = (function () {
 
     // ── Trường hợp 3: Trang chưa code ──
     _renderPlaceholder($content, route.title);
+    }); // End of _syncPermissionsIfNeeded
+  }
+
+  function _syncPermissionsIfNeeded() {
+    if (typeof ApiClient === 'undefined' || typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.PERMISSIONS.GET_VERSION) {
+      return Promise.resolve();
+    }
+    return ApiClient.get(API_CONFIG.ENDPOINTS.PERMISSIONS.GET_VERSION, { silent: true }).then(function (res) {
+      var localVer = localStorage.getItem('pmql_permission_ver');
+      var records = res.list || res.records || [];
+      var svVersion = records.length > 0 ? records[0].version : (res.version || '');
+
+      if (svVersion && svVersion !== localVer) {
+        var userJson = localStorage.getItem('pmql_user');
+        var userObj = userJson ? JSON.parse(userJson) : {};
+        return ApiClient.post(API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MY_PERMISSIONS, { Username: userObj.UserName }, { silent: true }).then(function (permRes) {
+          var permMap = {};
+          var permList = permRes.list || permRes.records || [];
+          function _isTrue(v) { return v === 1 || v === '1' || v === true || v === 'true' || String(v).toLowerCase() === 'true'; }
+          permList.forEach(function (p) {
+            var fname = p.FormName || p.formName || p.formname || p.FORMNAME;
+            if (fname) {
+              permMap[fname] = {
+                CanView: _isTrue(p.CanView) || _isTrue(p.canView) || _isTrue(p.canview) || _isTrue(p.CANVIEW),
+                CanAdd: _isTrue(p.CanAdd) || _isTrue(p.canAdd) || _isTrue(p.canadd) || _isTrue(p.CANADD),
+                CanEdit: _isTrue(p.CanEdit) || _isTrue(p.canEdit) || _isTrue(p.canedit) || _isTrue(p.CANEDIT),
+                CanDelete: _isTrue(p.CanDelete) || _isTrue(p.canDelete) || _isTrue(p.candelete) || _isTrue(p.CANDELETE)
+              };
+            }
+          });
+          localStorage.setItem('pmql_permissions', JSON.stringify(permMap));
+          localStorage.setItem('pmql_permission_ver', svVersion);
+        }).catch(function(e) {
+          console.error('[Router] Lỗi tải quyền mới:', e);
+        });
+      }
+    }).catch(function(e) {
+       console.error('[Router] Lỗi kiểm tra version quyền:', e);
+       return Promise.resolve();
+    });
   }
 
   // ── Init ───────────────────────────────────────────────────────────────
   function init() {
     window.addEventListener('hashchange', _handleRoute);
+    
+    // BẢO MẬT: Kiểm tra Version Quyền 1 lần duy nhất lúc F5 tải lại màn hình
+    if (typeof ApiClient !== 'undefined' && typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS.PERMISSIONS.GET_VERSION) {
+      ApiClient.get(API_CONFIG.ENDPOINTS.PERMISSIONS.GET_VERSION, { silent: true }).then(function (res) {
+        var localVer = localStorage.getItem('pmql_permission_ver');
+        var records = res.list || res.records || [];
+        var svVersion = records.length > 0 ? records[0].version : (res.version || '');
 
+        if (svVersion && svVersion !== localVer) {
+          // Vân tay bị lệch -> Tải quyền mới
+          var userJson = localStorage.getItem('pmql_user');
+          var userObj = userJson ? JSON.parse(userJson) : {};
+          ApiClient.post(API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MY_PERMISSIONS, { Username: userObj.UserName }, { silent: true }).then(function (permRes) {
+            var permMap = {};
+            var permList = permRes.list || permRes.records || [];
+            if (permList.length > 0) { localStorage.setItem('debug_perm_row', JSON.stringify(permList[0])); }
+            function _isTrue(v) { return v === 1 || v === '1' || v === true || v === 'true' || String(v).toLowerCase() === 'true'; }
+            permList.forEach(function (p) { 
+                var fname = p.FormName || p.formName || p.formname || p.FORMNAME;
+                if (fname) {
+                    permMap[fname] = {
+                        CanView: _isTrue(p.CanView) || _isTrue(p.canView) || _isTrue(p.canview) || _isTrue(p.CANVIEW),
+                        CanAdd: _isTrue(p.CanAdd) || _isTrue(p.canAdd) || _isTrue(p.canadd) || _isTrue(p.CANADD),
+                        CanEdit: _isTrue(p.CanEdit) || _isTrue(p.canEdit) || _isTrue(p.canedit) || _isTrue(p.CANEDIT),
+                        CanDelete: _isTrue(p.CanDelete) || _isTrue(p.canDelete) || _isTrue(p.candelete) || _isTrue(p.CANDELETE)
+                    };
+                }
+            });
+            localStorage.setItem('pmql_permissions', JSON.stringify(permMap));
+            localStorage.setItem('pmql_permission_ver', svVersion);
+            _finishInit();
+          }).catch(_finishInit);
+        } else {
+          _finishInit();
+        }
+      }).catch(_finishInit);
+    } else {
+      _finishInit();
+    }
+  }
+
+  function _finishInit() {
     if (!window.location.hash) {
       window.location.hash = '#/dashboard';
     } else {
       _handleRoute();
     }
-
-    // Preload templates phổ biến sau 500ms
     setTimeout(_preloadTemplates, 500);
   }
 
@@ -263,6 +386,7 @@ var Router = (function () {
   return {
     init: init,
     ROUTES: ROUTES,
+    addDynamicRoutes: addDynamicRoutes,
     fetchTemplate: fetchTemplate   // Cho page modules dùng chung cache layer
   };
 })();

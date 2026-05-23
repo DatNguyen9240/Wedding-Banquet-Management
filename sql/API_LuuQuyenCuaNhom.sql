@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 /****** Object:  StoredProcedure [dbo].[API_LuuQuyenCuaNhom] ******/
@@ -54,6 +54,14 @@ BEGIN
         isExportExcel = @isExportExcel
     WHERE UserGroupID = @UserGroupID 
       AND MenuID = @MenuID;
+
+    -- =======================================================
+    -- BƯỚC 3: KÍCH HOẠT CÒI BÁO ĐỘNG CHO CÁC TRANG WEB KHÁC TỰ F5 QUYỀN
+    -- =======================================================
+    IF EXISTS (SELECT 1 FROM SY_Setup WHERE CodeID = 'menu_sync_ver')
+        UPDATE SY_Setup SET CodeValue = CONVERT(NVARCHAR(50), GETDATE(), 126) WHERE CodeID = 'menu_sync_ver';
+    ELSE
+        INSERT INTO SY_Setup (CodeID, CodeName, CodeValue, GroupID) VALUES ('menu_sync_ver', N'Phiên bản đồng bộ Menu', CONVERT(NVARCHAR(50), GETDATE(), 126), 'SY');
 
 END
 GO

@@ -1,4 +1,4 @@
-﻿/* --- mockData.js --- */
+/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -132,12 +132,22 @@ var MockData = {
  */
 var Permission = (function () {
   function _get(module) {
-    var perms = JSON.parse(localStorage.getItem('app_permissions') || '{}');
+    var legacyPerms = JSON.parse(localStorage.getItem('app_permissions') || '{}');
+    var newPerms = JSON.parse(localStorage.getItem('pmql_permissions') || '{}');
+    var perms = Object.keys(newPerms).length > 0 ? newPerms : legacyPerms;
+    
     // Mặc định cho phép tất cả ở môi trường phát triển ban đầu
     if (Object.keys(perms).length === 0) {
       return { xem: true, them: true, sua: true, xoa: true };
     }
-    return perms[module] || { xem: false, them: false, sua: false, xoa: false };
+    
+    var p = perms[module] || {};
+    return {
+        xem: p.CanView === 1 || p.CanView === true || p.xem === true || p.xem === 1,
+        them: p.CanAdd === 1 || p.CanAdd === true || p.them === true || p.them === 1,
+        sua: p.CanEdit === 1 || p.CanEdit === true || p.sua === true || p.sua === 1,
+        xoa: p.CanDelete === 1 || p.CanDelete === true || p.xoa === true || p.xoa === 1
+    };
   }
 
   return {
@@ -1426,6 +1436,33 @@ var Navbar = (function () {
   var NAV_CONFIG = [];
 
   function _buildConfigFromDB(dbMenus) {
+    if (window.Router && typeof window.Router.addDynamicRoutes === 'function') {
+      var before = window.Router.ROUTES.length;
+      window.Router.addDynamicRoutes(dbMenus);
+      if (window.Router.ROUTES.length > before && location.hash) {
+        setTimeout(function() { window.dispatchEvent(new HashChangeEvent('hashchange')); }, 50);
+      }
+    }
+    
+    // Lưu quyền cục bộ từ kết quả menu trả về
+    var permMap = {};
+    if (Array.isArray(dbMenus)) {
+      if (dbMenus.length > 0) { localStorage.setItem('debug_menu_row', JSON.stringify(dbMenus[0])); }
+      function _isTrue(v) { return v === 1 || v === '1' || v === true || v === 'true' || String(v).toLowerCase() === 'true'; }
+      dbMenus.forEach(function (p) {
+          var formName = p.FormName || p.formName || p.formname || p.FORMNAME;
+          if (formName) {
+              permMap[formName] = {
+                  CanView: _isTrue(p.IsRun) || _isTrue(p.isRun) || _isTrue(p.isrun) || _isTrue(p.ISRUN),
+                  CanAdd: _isTrue(p.IsAdd) || _isTrue(p.isAdd) || _isTrue(p.isadd) || _isTrue(p.ISADD),
+                  CanEdit: _isTrue(p.IsUpdate) || _isTrue(p.isUpdate) || _isTrue(p.isupdate) || _isTrue(p.ISUPDATE),
+                  CanDelete: _isTrue(p.IsDelete) || _isTrue(p.isDelete) || _isTrue(p.isdelete) || _isTrue(p.ISDELETE)
+              };
+          }
+      });
+      localStorage.setItem('pmql_permissions', JSON.stringify(permMap));
+    }
+    
     var config = [];
     // API trả về: id, parent, label, icon, URLPara
     var parents = dbMenus.filter(function (m) { return !m.parent || String(m.parent).trim() === ''; });
@@ -1747,9 +1784,18 @@ var Navbar = (function () {
             cached = null;
           }
           if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
-            NAV_CONFIG = cached.config;
-            _doRender(container);
-            return;
+            if (!cached.records) {
+                // Cache cũ không có records -> Xóa cache để fetch lại
+                sessionStorage.removeItem(CACHE_KEY);
+                cached = null;
+            } else {
+                if (window.Router && typeof window.Router.addDynamicRoutes === 'function') {
+                  window.Router.addDynamicRoutes(cached.records);
+                }
+                NAV_CONFIG = cached.config;
+                _doRender(container);
+                return;
+            }
           }
         } catch (e) { }
         _fetchAndRender(container, groupId, serverVer);
@@ -1762,9 +1808,17 @@ var Navbar = (function () {
       try {
         var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
         if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
-          NAV_CONFIG = cached.config;
-          _doRender(container);
-          return;
+          if (!cached.records) {
+              sessionStorage.removeItem(CACHE_KEY);
+              cached = null;
+          } else {
+              if (window.Router && typeof window.Router.addDynamicRoutes === 'function') {
+                window.Router.addDynamicRoutes(cached.records);
+              }
+              NAV_CONFIG = cached.config;
+              _doRender(container);
+              return;
+          }
         }
       } catch (e) { }
       _fetchAndRender(container, groupId, null);
@@ -1788,6 +1842,7 @@ var Navbar = (function () {
             sessionStorage.setItem(CACHE_KEY, JSON.stringify({
               groupId: groupId,
               config: NAV_CONFIG,
+              records: records,
               syncVer: syncVer || ''
             }));
           } catch (e) { }
@@ -2093,6 +2148,13 @@ UIControls.createDataComboBox = function (options) {
   btnArrow.title = 'Mở danh sách (F4)';
   btnArrow.type = 'button';
 
+  if (options.disabled) {
+    input.disabled = true;
+    btnArrow.disabled = true;
+    container.classList.add('ui-input-disabled');
+    btnArrow.innerHTML = '<span class="material-symbols-outlined">lock</span>';
+  }
+
   actions.appendChild(btnArrow);
 
   // ── Dropdown Panel ──────────────────────────────────────────────
@@ -2210,7 +2272,7 @@ UIControls.createDataComboBox = function (options) {
       tableWrapper.innerHTML = UIControls.utils.createDropdownTableHTML(
         options.headers || [], displayData, options.colHighlightIndex || 0, options.colGroupIndex
       );
-      var rows = tableWrapper.querySelectorAll('tbody tr.data-row');
+      var rows = tableWrapper.querySelectorAll('tbody tr');
       var currentInputVal = input.value.trim().toLowerCase();
 
       rows.forEach(function (row) {
@@ -2268,6 +2330,11 @@ UIControls.createDataComboBox = function (options) {
     if (typeof options.onSearch === 'function') {
       tableWrapper.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted,#94a3b8);font-size:13px">Đang tải...</div>';
       Promise.resolve(options.onSearch(q, page)).then(function (result) {
+        if (result && !Array.isArray(result) && result.data) {
+          if (result.headers) options.headers = result.headers;
+          if (result.colFilterIndex !== undefined) options.colFilterIndex = result.colFilterIndex;
+          result = result.data;
+        }
         if (Array.isArray(result)) {
           fullData = result;
           renderTable(fullData);
@@ -2776,7 +2843,7 @@ var UIModal = (function () {
           </button>
         </div>
         <div class="card-body ui-modal-body" style="overflow-y: auto; padding: 16px;"></div>
-        <div class="modal-footer" style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--color-background); border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
+        <div class="modal-footer" style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--color-surface); border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
       </div>
     `;
     overlay.innerHTML = html;
@@ -3070,6 +3137,82 @@ var UIInput = (function () {
   }
 
   /**
+   * Ô Switch (Công tắc bật/tắt cho boolean)
+   */
+  function createSwitch(config) {
+    var obj = _createBaseWrapper(config, 'checkbox');
+    obj.wrapper.classList.remove('form-group');
+    obj.wrapper.classList.add('modern-checkbox-wrapper');
+    obj.input.className = 'modern-checkbox';
+    obj.input.style.cursor = 'pointer';
+    
+    // Checkbox uses checked instead of value
+    if (config.value === '1' || config.value === 1 || config.value === true || String(config.value).toLowerCase() === 'true') {
+        obj.input.checked = true;
+    }
+    
+    // Thêm giá trị thực vào dataset để tự động serialize thành 1/0
+    obj.input.value = obj.input.checked ? 1 : 0;
+    obj.input.onchange = function() {
+        this.value = this.checked ? 1 : 0;
+    };
+    
+    // Đảo ngược thứ tự input và label cho đẹp
+    var label = obj.wrapper.querySelector('label');
+    if (label) {
+        // Xóa class cũ
+        label.className = '';
+        label.style.cursor = 'pointer';
+        // Đảo ngược thứ tự: input trước, label sau
+        obj.wrapper.insertBefore(obj.input, label);
+    }
+    
+    return obj.wrapper;
+  }
+
+  /**
+   * Ô Select (Combobox thả xuống)
+   */
+  function createSelect(config, options) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'form-group ' + (config.className || '');
+
+    if (config.label) {
+      var lbl = document.createElement('label');
+      lbl.innerText = config.label;
+      if (config.required) {
+        var req = document.createElement('span');
+        req.innerText = ' *';
+        req.style.color = 'var(--color-danger)';
+        lbl.appendChild(req);
+      }
+      wrapper.appendChild(lbl);
+    }
+
+    var select = document.createElement('select');
+    select.className = 'ui-input'; // Xài chung style với thẻ input
+    if (config.id) select.id = config.id;
+    if (config.name) select.name = config.name;
+    if (config.disabled) select.disabled = true;
+
+    var defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.innerText = '-- Vui lòng chọn --';
+    select.appendChild(defaultOpt);
+
+    (options || []).forEach(function(opt) {
+        var o = document.createElement('option');
+        o.value = opt.value;
+        o.innerText = opt.label;
+        if (config.value == opt.value) o.selected = true;
+        select.appendChild(o);
+    });
+
+    wrapper.appendChild(select);
+    return wrapper;
+  }
+
+  /**
    * Sinh HTML chuỗi cho Bộ chọn số lượng (Quantity Selector)
    * Dùng cho các Grid/Table sử dụng innerHTML thay vì DOM Nodes.
    */
@@ -3172,6 +3315,8 @@ var UIInput = (function () {
     createText: createText,
     createNumber: createNumber,
     createDate: createDate,
+    createSwitch: createSwitch,
+    createSelect: createSelect,
     createQuantityHTML: createQuantityHTML,
     docSoTienVN: docSoTienVN,
     setupMoneyInput: setupMoneyInput
@@ -3505,8 +3650,8 @@ var UITable = (function () {
           }
 
           tbody.appendChild(tr);
-        });
-      } else {
+      });
+    } else {
          var trEmpty = document.createElement('tr');
          var tdEmpty = document.createElement('td');
          tdEmpty.colSpan = config.headers ? config.headers.length : 1;
@@ -3608,8 +3753,93 @@ var UITable = (function () {
     return wrapper;
   }
 
+  /**
+   * Tạo Datagrid Table động từ dữ liệu SQL
+   * @param {Array} data - Dữ liệu thô từ API
+   * @param {Object} dictionary - Map tên cột { 'Makh': 'Mã KH' }
+   * @param {Object} options - { onSort, currentSort, actionRenderers }
+   */
+  function createDynamic(data, dictionary, options) {
+    dictionary = dictionary || {};
+    options = options || {};
+
+    var dynamicHeaders = [];
+    var dynamicColumns = [];
+
+    // Lấy keys từ data, nếu data rỗng thì lấy từ dictionary
+    var keys = [];
+    if (data && data.length > 0) {
+      keys = Object.keys(data[0]);
+    } else if (dictionary && Object.keys(dictionary).length > 0) {
+      keys = Object.keys(dictionary);
+    }
+
+    if (keys.length > 0) {
+      keys.forEach(function(key) {
+        if (key === 'id' || key === 'Id') return;
+        
+        var headerLabel = dictionary[key] || key;
+        var header = { label: headerLabel, sortable: true, field: key };
+        var col = { field: key };
+
+        // Default render: Tooltip
+        col.render = function(v) { 
+          if (v == null || v === '') return '';
+          var safeVal = String(v).replace(/"/g, '&quot;');
+          return '<span title="' + safeVal + '">' + safeVal + '</span>'; 
+        };
+
+        // Heuristic Width
+        var keyLower = key.toLowerCase();
+        if (keyLower.indexOf('dt') >= 0 || keyLower.indexOf('dienthoai') >= 0 || keyLower.indexOf('date') >= 0 || keyLower.indexOf('user') >= 0 || keyLower.indexOf('ma') === 0) {
+          header.width = '120px';
+        } else if (keyLower.indexOf('so') === 0 || keyLower.indexOf('sl') === 0 || keyLower.indexOf('số') === 0) {
+          header.width = '90px';
+        } else if (keyLower.indexOf('mail') >= 0) {
+          header.width = '160px';
+        } else if (keyLower.indexOf('diachi') >= 0 || keyLower.indexOf('địa chỉ') >= 0) {
+          header.width = '200px';
+        } else {
+          header.width = '150px';
+        }
+
+        // Heuristic Format
+        if (keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0) {
+          header.align = 'center';
+          col.align = 'center';
+          col.render = function(v) { return typeof FormatUtils !== 'undefined' ? FormatUtils.date(v) : v; };
+        }
+
+        // Custom renderer (nếu truyền vào)
+        if (options.actionRenderers && options.actionRenderers[key]) {
+          var customRender = options.actionRenderers[key];
+          col.render = function(v) { return customRender(v, key); };
+        } else if (options.actionRenderers && options.actionRenderers[headerLabel]) {
+          // Hoặc kiểm tra theo label tiếng Việt nếu dev truyền key là label
+          var customRenderLabel = options.actionRenderers[headerLabel];
+          col.render = function(v) { return customRenderLabel(v, key); };
+        }
+
+        dynamicHeaders.push(header);
+        dynamicColumns.push(col);
+      });
+    }
+
+    var tableConfig = {
+      headers: dynamicHeaders,
+      columns: dynamicColumns,
+      data: data,
+      currentSort: options.currentSort,
+      onSort: options.onSort,
+      className: options.className
+    };
+
+    return create(tableConfig);
+  }
+
   return {
-    create: create
+    create: create,
+    createDynamic: createDynamic
   };
 })();
 
