@@ -360,6 +360,11 @@ window.DynamicFormEngine = (function () {
         actionRenderers: customRenderers
       });
 
+      if (MODULE_CONFIG.FormName === 'frmFormBuilder') {
+        var actualTable = tableEl.querySelector('table');
+        if (actualTable) actualTable.classList.add('no-mobile-stack');
+      }
+
       // Bắt sự kiện Click Chuột Phải (Context Menu) để Copy
       if (typeof UIContextMenu !== 'undefined') {
         tableEl.addEventListener('contextmenu', function (e) {
@@ -436,8 +441,151 @@ window.DynamicFormEngine = (function () {
             tr.classList.add('active');
           }
         });
+        // Drag Select Variables
+        var isDragSelecting = false;
+        var dragAction = null;
+        var dragTimer = null;
+        var lastDragRowIdx = -1;
+        var lastPointerX = -1;
+        var lastPointerY = -1;
+        var autoScrollFrame = null;
+
+        function updateSelectionAtPoint(x, y) {
+           var el = document.elementFromPoint(x, y);
+           if (el) {
+              var moveTr = el.closest('tr');
+              if (moveTr && moveTr.parentNode === tbody) {
+                 var moveIdx = Array.from(tbody.children).indexOf(moveTr);
+                 if (moveIdx !== lastDragRowIdx) {
+                    toggleRow(moveTr, moveIdx, dragAction);
+                    _updateSelectionCounter();
+                    lastDragRowIdx = moveIdx;
+                 }
+              }
+           }
+        }
+
+        function handleAutoScroll() {
+           if (!isDragSelecting) return;
+           var scrollArea = document.querySelector('.app-content') || document.documentElement;
+           var rect = scrollArea.getBoundingClientRect ? scrollArea.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+           var edgeSize = 80; // Margin to trigger scroll
+           var scrollAmount = 0;
+
+           if (lastPointerY > 0 && lastPointerY < rect.top + edgeSize) {
+               scrollAmount = -15; // Scroll up
+           } else if (lastPointerY > 0 && lastPointerY > rect.bottom - edgeSize) {
+               scrollAmount = 15; // Scroll down
+           }
+
+           if (scrollAmount !== 0) {
+               scrollArea.scrollTop += scrollAmount;
+               updateSelectionAtPoint(lastPointerX, lastPointerY);
+           }
+           autoScrollFrame = requestAnimationFrame(handleAutoScroll);
+        }
+
+        function toggleRow(tr, idx, forceAction) {
+          var rData = gridData[idx];
+          if (!rData) return;
+          var isActive = tr.classList.contains('active');
+          if (forceAction === 'add' && !isActive) {
+             tr.classList.add('active');
+             if (!selectedRows.find(function(sr) { return sr.id === rData.id; })) selectedRows.push(rData);
+             lastSelectedIdx = idx;
+          } else if (forceAction === 'remove' && isActive) {
+             tr.classList.remove('active');
+             selectedRows = selectedRows.filter(function(sr) { return sr.id !== rData.id; });
+             lastSelectedIdx = idx;
+          }
+        }
+
+        // Global touchmove handler to prevent scrolling during drag select
+        var preventTouchScroll = function(e) {
+          if (isDragSelecting) {
+            e.preventDefault();
+          }
+        };
+        // Add globally once
+        if (!window.__dragSelectTouchAttached) {
+           document.addEventListener('touchmove', preventTouchScroll, { passive: false });
+           window.__dragSelectTouchAttached = true;
+        }
+
+        tbody.addEventListener('pointerdown', function(e) {
+           var tr = e.target.closest('tr');
+           if (!tr || tr.children.length === 1 || e.button !== 0) return;
+
+           var startX = e.clientX, startY = e.clientY;
+           var idx = Array.from(tbody.children).indexOf(tr);
+           lastDragRowIdx = idx;
+           isDragSelecting = false;
+
+           dragTimer = setTimeout(function() {
+             isDragSelecting = true;
+             var isActive = tr.classList.contains('active');
+             dragAction = isActive ? 'remove' : 'add';
+             
+             // Tắt cuộn trang và bôi đen chữ khi đang drag select
+             document.body.style.userSelect = 'none';
+             tbody.style.touchAction = 'none';
+             
+             // Haptic feedback (Mobile)
+             if (navigator.vibrate) navigator.vibrate(50);
+             
+             // Bắt đầu vòng lặp auto scroll
+             lastPointerX = startX;
+             lastPointerY = startY;
+             autoScrollFrame = requestAnimationFrame(handleAutoScroll);
+             
+             toggleRow(tr, idx, dragAction);
+             _updateSelectionCounter();
+           }, 350); // Giữ 350ms để kích hoạt chế độ vuốt chọn
+
+           function onPointerMove(ev) {
+             if (!isDragSelecting) {
+                if (Math.abs(ev.clientX - startX) > 10 || Math.abs(ev.clientY - startY) > 10) {
+                   clearTimeout(dragTimer);
+                }
+             } else {
+                ev.preventDefault(); // Cố gắng chặn cuộn trên Desktop/chuột
+                lastPointerX = ev.clientX;
+                lastPointerY = ev.clientY;
+                updateSelectionAtPoint(lastPointerX, lastPointerY);
+             }
+           }
+
+           function onPointerUp(ev) {
+             clearTimeout(dragTimer);
+             if (autoScrollFrame) cancelAnimationFrame(autoScrollFrame);
+             document.body.style.userSelect = '';
+             tbody.style.touchAction = '';
+             document.removeEventListener('pointermove', onPointerMove);
+             document.removeEventListener('pointerup', onPointerUp);
+             document.removeEventListener('pointercancel', onPointerUp);
+             
+             if (isDragSelecting) {
+                // Ngăn chặn sự kiện click bình thường phát sinh ngay sau khi thả tay
+                var preventClick = function(evt) {
+                   evt.stopPropagation();
+                   evt.preventDefault();
+                   document.removeEventListener('click', preventClick, true);
+                };
+                document.addEventListener('click', preventClick, true);
+                setTimeout(function() { 
+                   document.removeEventListener('click', preventClick, true);
+                   isDragSelecting = false; 
+                }, 50);
+             }
+           }
+
+           document.addEventListener('pointermove', onPointerMove);
+           document.addEventListener('pointerup', onPointerUp);
+           document.addEventListener('pointercancel', onPointerUp);
+        });
 
         tbody.addEventListener('click', function (e) {
+          if (isDragSelecting) return;
           var tr = e.target.closest('tr');
           if (!tr || tr.children.length === 1) return;
           var idx = Array.from(tbody.children).indexOf(tr);
@@ -500,7 +648,7 @@ window.DynamicFormEngine = (function () {
     if (!counter) {
       counter = document.createElement('span');
       counter.id = 'selection-counter';
-      counter.style.cssText = 'margin-left: 12px; align-self: center; font-size: 13px; font-weight: 500; color: var(--color-primary); background: var(--color-primary-light); padding: 4px 12px; border-radius: 20px;';
+      counter.style.cssText = 'margin-left: 12px; align-self: center; font-size: 13px; font-weight: 500; color: var(--color-primary); background: var(--color-primary-light); padding: 4px 12px; border-radius: 20px; white-space: nowrap; flex-shrink: 0;';
       actualToolbar.appendChild(counter);
     }
     if (selectedRows.length > 0) {
@@ -826,10 +974,7 @@ window.DynamicFormEngine = (function () {
            // Logic Gắn Kích Thước
            function applyWidth(sp) {
              card.dataset.span = sp;
-             if (sp === '12') card.style.width = '100%';
-             else if (sp === '6') card.style.width = 'calc(50% - 5px)';
-             else if (sp === '4') card.style.width = 'calc(33.333% - 7px)';
-             else if (sp === '3') card.style.width = 'calc(25% - 8px)';
+             card.className = card.className.replace(/df-col-\d+/g, '').trim() + ' df-col-' + sp;
              
              // Update Highlights
              var btns = card.querySelectorAll('.btn-span');
@@ -1453,10 +1598,7 @@ window.DynamicFormEngine = (function () {
       if (!['12','6','4','3'].includes(span)) span = '12';
 
       var wrapper = document.createElement('div');
-      if (span === '12') wrapper.style.width = '100%';
-      else if (span === '6') wrapper.style.width = 'calc(50% - 5px)';
-      else if (span === '4') wrapper.style.width = 'calc(33.333% - 7px)';
-      if (span === '3') wrapper.style.width = 'calc(25% - 8px)';
+      wrapper.className = 'df-col-' + span;
       
       if (field.visibleRule) {
           wrapper.setAttribute('data-visible-rule', field.visibleRule);
