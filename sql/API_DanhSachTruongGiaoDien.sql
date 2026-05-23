@@ -39,7 +39,14 @@ BEGIN
             WHEN l.FormID IS NULL THEN 0
             WHEN CHARINDEX(',' + ff.FieldName + ',', ',' + ISNULL(l.LockColumnArr, '') + ',') > 0 THEN 1 
             ELSE 0 
-        END AS IsReadOnlyEdit
+        END AS IsReadOnlyEdit,
+
+        -- Tính toán động isReadOnlyAdd từ LockAddColumnArr
+        CASE 
+            WHEN l.FormID IS NULL THEN 0
+            WHEN CHARINDEX(',' + ff.FieldName + ',', ',' + ISNULL(l.LockAddColumnArr, '') + ',') > 0 THEN 1 
+            ELSE 0 
+        END AS IsReadOnlyAdd
 
     FROM SY_FormatFields ff
     LEFT JOIN SY_FrmLstTbl l ON ff.FormName = l.FormID

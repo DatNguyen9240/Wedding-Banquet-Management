@@ -30,6 +30,13 @@ BEGIN
             ELSE 0 
         END AS [isReadOnlyEdit],
 
+        -- Tính toán động isReadOnlyAdd từ LockAddColumnArr
+        CASE 
+            WHEN l.FormID IS NULL THEN 0
+            WHEN CHARINDEX(',' + ff.FieldName + ',', ',' + ISNULL(l.LockAddColumnArr, '') + ',') > 0 THEN 1 
+            ELSE 0 
+        END AS [isReadOnlyAdd],
+
         ISNULL(ff.FormatID, '') AS [renderRule],
         ISNULL(ff.DataSource, '') AS [dataSource],
         ISNULL(ff.OrderNo, 0) AS [orderNo]
