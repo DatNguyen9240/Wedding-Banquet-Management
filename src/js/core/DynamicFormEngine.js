@@ -59,10 +59,27 @@ window.DynamicFormEngine = (function () {
     try { var cached = sessionStorage.getItem('selectedRows_' + MODULE_CONFIG.FormName); selectedRows = cached ? JSON.parse(cached) : []; } catch(e) { selectedRows = []; }
 
 
-    // 1. Lấy Từ điển UI từ Database trước
+    // 1. Lấy Từ điển UI từ Database trước (Cơ chế Caching siêu tốc)
     var configEndpoint = MODULE_CONFIG.ApiDictionary;
+    var cacheKey = 'FormConfigCache_' + MODULE_CONFIG.FormName;
+    var cachedData = null;
+    
+    // Nếu không phải đang mở Form Builder, ta ưu tiên đọc từ Cache để tăng tốc
+    if (MODULE_CONFIG.FormName !== 'frmFormBuilder') {
+      try { cachedData = sessionStorage.getItem(cacheKey); } catch(e) {}
+    }
 
-    var pConfig = configEndpoint ? ApiClient.post(configEndpoint, { FormName: MODULE_CONFIG.FormName }) : Promise.resolve(null);
+    var pConfig;
+    if (cachedData) {
+      pConfig = Promise.resolve(JSON.parse(cachedData));
+    } else {
+      pConfig = configEndpoint ? ApiClient.post(configEndpoint, { FormName: MODULE_CONFIG.FormName }).then(function(res) {
+        if (res && res.code === 0 && MODULE_CONFIG.FormName !== 'frmFormBuilder') {
+           try { sessionStorage.setItem(cacheKey, JSON.stringify(res)); } catch(e) {}
+        }
+        return res;
+      }) : Promise.resolve(null);
+    }
 
     pConfig.then(function (resConfig) {
 
@@ -1439,7 +1456,11 @@ window.DynamicFormEngine = (function () {
       if (span === '12') wrapper.style.width = '100%';
       else if (span === '6') wrapper.style.width = 'calc(50% - 5px)';
       else if (span === '4') wrapper.style.width = 'calc(33.333% - 7px)';
-      else if (span === '3') wrapper.style.width = 'calc(25% - 8px)';
+      if (span === '3') wrapper.style.width = 'calc(25% - 8px)';
+      
+      if (field.visibleRule) {
+          wrapper.setAttribute('data-visible-rule', field.visibleRule);
+      }
       
       wrapper.appendChild(inputEl);
       grid.appendChild(wrapper);
@@ -1448,7 +1469,47 @@ window.DynamicFormEngine = (function () {
       currentModalFormState[field.name] = field.value || '';
     });
 
-    // Lắng nghe sự kiện thay đổi để xử lý Phụ thuộc (Dependencies)
+    function _evaluateVisibility() {
+        var elements = grid.querySelectorAll('[data-visible-rule]');
+        if (elements.length === 0) return;
+        
+        var state = Object.assign({}, currentModalFormState);
+        elements.forEach(function(el) {
+            var rule = el.getAttribute('data-visible-rule');
+            try {
+                // Sử dụng new Function kết hợp with(state) để evaluate an toàn logic
+                var func = new Function('state', 'with(state) { return (' + rule + '); }');
+                var isVisible = func(state);
+                
+                if (isVisible) {
+                    el.style.display = '';
+                } else {
+                    el.style.display = 'none';
+                    // Xóa giá trị rác của trường đang ẩn để tránh lưu sai
+                    var innerInputs = el.querySelectorAll('input:not([type="hidden"]), select, textarea');
+                    innerInputs.forEach(function(inp) {
+                        if (inp.value !== '') {
+                            inp.value = '';
+                            inp.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                    // Xóa value ẩn nếu là data-combo
+                    var hiddenInput = el.querySelector('input[type="hidden"]');
+                    if (hiddenInput && hiddenInput.value !== '') {
+                        hiddenInput.value = '';
+                        hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            } catch(e) {
+                console.error("Lỗi biên dịch VisibleRule:", rule, e);
+            }
+        });
+    }
+
+    // Chạy kiểm tra hiển thị lần đầu tiên
+    setTimeout(_evaluateVisibility, 200);
+
+    // Lắng nghe sự kiện thay đổi để xử lý Phụ thuộc (Dependencies) và Hiển thị động
     body.addEventListener('change', function(e) {
         var changedName = e.target.name;
         if (changedName) {
@@ -1469,6 +1530,7 @@ window.DynamicFormEngine = (function () {
                     }
                 }
             });
+            _evaluateVisibility();
         }
     });
 
@@ -1562,6 +1624,7 @@ window.DynamicFormEngine = (function () {
         modal.closeNow();
         Alert.success('Thành công', 'Đã lưu xong ' + successCount + ' dòng!');
         if (!isAdd) selectedRows = []; 
+        if (MODULE_CONFIG.FormName === 'frmFormBuilder') sessionStorage.clear(); // Xóa sạch cache nếu vừa thiết kế Form
         _updateSelectionCounter();
         _loadData();
         return;
@@ -1655,6 +1718,7 @@ window.DynamicFormEngine = (function () {
           if (res && res.code === 0) {
             UIToast.show(isEdit ? MODULE_CONFIG.ToastEdit : MODULE_CONFIG.ToastAdd, 'success');
             modal.closeNow();
+            if (MODULE_CONFIG.FormName === 'frmFormBuilder') sessionStorage.clear(); // Xóa sạch cache nếu vừa thiết kế Form
             selectedRows = [];
             _updateSelectionCounter();
             _loadData();

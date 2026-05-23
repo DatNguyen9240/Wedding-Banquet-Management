@@ -28,6 +28,7 @@ BEGIN
         ff.ShowInForm,
         ff.ValidateRule,
         ff.DependsOn,
+        ff.VisibleRule,
         
         -- Tính toán động showInAdd từ AddNewColumnArr
         CASE 

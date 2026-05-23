@@ -16,7 +16,8 @@ CREATE PROCEDURE API_LuuTruongGiaoDien
     @IsReadOnlyEdit bit = 0,
     @IsReadOnlyAdd bit = 0,
     @ValidateRule nvarchar(500) = NULL,
-    @DependsOn varchar(50) = NULL
+    @DependsOn varchar(50) = NULL,
+    @VisibleRule nvarchar(255) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -32,13 +33,14 @@ BEGIN
             IsRequired = ISNULL(@IsRequired, IsRequired),
             FormPosition = ISNULL(@FormPosition, FormPosition),
             ValidateRule = ISNULL(@ValidateRule, ValidateRule),
-            DependsOn = ISNULL(@DependsOn, DependsOn)
+            DependsOn = ISNULL(@DependsOn, DependsOn),
+            VisibleRule = ISNULL(@VisibleRule, VisibleRule)
         WHERE FieldName = @FieldName AND FormName = @FormName;
     END
     ELSE
     BEGIN
-        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition, ValidateRule, DependsOn)
-        VALUES (@FormName, @FieldName, @CaptionVN, @FormatID, @CaptionEN, @DataSource, @IsRequired, @FormPosition, @ValidateRule, @DependsOn);
+        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition, ValidateRule, DependsOn, VisibleRule)
+        VALUES (@FormName, @FieldName, @CaptionVN, @FormatID, @CaptionEN, @DataSource, @IsRequired, @FormPosition, @ValidateRule, @DependsOn, @VisibleRule);
     END
 
     -- 2. Xử lý Mảng (Array) bên bảng SY_FrmLstTbl

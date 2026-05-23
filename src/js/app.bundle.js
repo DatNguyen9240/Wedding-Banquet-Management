@@ -2236,7 +2236,7 @@ UIControls.createDataComboBox = function (options) {
   function renderTable(displayData) {
     if (UIControls.utils) {
       tableWrapper.innerHTML = UIControls.utils.createDropdownTableHTML(
-        options.headers || [], displayData, options.colHighlightIndex || 0, options.colGroupIndex
+        options.headers || [], displayData, options.colHighlightIndex !== undefined ? options.colHighlightIndex : (options.colFilterIndex || 0), options.colGroupIndex
       );
       var rows = tableWrapper.querySelectorAll('tbody tr');
       var currentInputVal = input.value.trim().toLowerCase();
