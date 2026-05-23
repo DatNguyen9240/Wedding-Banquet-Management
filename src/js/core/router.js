@@ -16,18 +16,18 @@ var Router = (function () {
 
   function addDynamicRoutes(menus) {
     if (!menus || !Array.isArray(menus)) return;
-    
+
     menus.forEach(function (m) {
       // url có thể nằm ở URLPara hoặc urlPara
       var rawUrl = m.URLPara || m.urlPara || '';
       if (!rawUrl || rawUrl.trim() === '') return;
-      
+
       // Chỉnh sửa: Loại bỏ dấu '#' và '/' thừa nếu người dùng lỡ nhập vào DB (vd: '#/customers' -> 'customers')
       var url = rawUrl.trim().replace(/^#\/?/, '').replace(/^\//, '');
       if (url === '') return;
 
       var path = '/' + url;
-      
+
       // Bỏ qua nếu đã tồn tại
       if (ROUTES.find(function (r) { return r.path === path; })) return;
 
@@ -38,33 +38,35 @@ var Router = (function () {
       };
 
       var formKey = m.FormKey || m.formKey;
-      
+
       // Fallback: Nếu Backend chưa kịp update FormKey, tự suy luận từ urlPara (vd: form-builder -> FORM_BUILDER)
       if ((!formKey || formKey.trim() === '') && window.APP_MODULES) {
-         var deducedKey = url.trim().replace(/-/g, '_').toUpperCase();
-         if (window.APP_MODULES[deducedKey]) {
-             formKey = deducedKey;
-         }
+        var deducedKey = url.trim().replace(/-/g, '_').toUpperCase();
+        if (window.APP_MODULES[deducedKey]) {
+          formKey = deducedKey;
+        }
       }
 
-      if (formKey && formKey.trim() !== '') {
+      var existingConfig = (formKey && formKey.trim() !== '' && window.APP_MODULES) ? window.APP_MODULES[formKey.trim()] : null;
+
+      if (existingConfig) {
         // Dùng DynamicFormEngine
         route.script = 'src/js/core/DynamicFormEngine.js';
         route.pageFn = 'DynamicFormEngine';
-        route.config = window.APP_MODULES ? window.APP_MODULES[formKey.trim()] : null;
+        route.config = existingConfig;
       } else {
         // Convention: template và script nằm trong thư mục trùng tên URLPara
         var folder = url.trim();
         route.template = 'src/pages/' + folder + '/' + folder + '.html';
         route.script = 'src/pages/' + folder + '/' + folder + '.js';
-        
+
         // Convert urlPara to PascalCase (vd: hall-status -> HallStatusPage)
         var camel = folder.split('-').map(function (s) {
           return s.charAt(0).toUpperCase() + s.slice(1);
         }).join('');
         route.pageFn = camel + 'Page';
       }
-      
+
       ROUTES.push(route);
       _routeMap[path] = route; // Update Map
     });
@@ -194,7 +196,7 @@ var Router = (function () {
     var route = _findRoute(pathOnly);
 
     // Kéo quyền động nếu máy khác vừa cập nhật (Đảm bảo Realtime)
-    _syncPermissionsIfNeeded().then(function() {
+    _syncPermissionsIfNeeded().then(function () {
       if (currentNav !== _navId) return;
 
       var $content = document.getElementById('app-content');
@@ -216,77 +218,77 @@ var Router = (function () {
 
       // Kiểm tra quyền
       var targetPerm = route.perm || route.module;
-    if (targetPerm && !Permission.canView(targetPerm)) {
-      if ($pageTitle) $pageTitle.innerText = 'Từ chối truy cập';
-      _renderAccessDenied($content);
-      return;
-    }
+      if (targetPerm && !Permission.canView(targetPerm)) {
+        if ($pageTitle) $pageTitle.innerText = 'Từ chối truy cập';
+        _renderAccessDenied($content);
+        return;
+      }
 
-    // Cập nhật title
-    if ($pageTitle) $pageTitle.innerText = route.title;
-    document.title = route.title + ' | Quản lý Tiệc Cưới';
-    document.body.setAttribute('data-page', pathOnly.replace('/', ''));
+      // Cập nhật title
+      if ($pageTitle) $pageTitle.innerText = route.title;
+      document.title = route.title + ' | Quản lý Tiệc Cưới';
+      document.body.setAttribute('data-page', pathOnly.replace('/', ''));
 
-    // ── Trường hợp 1: Có script → load script → pageFn.render() ──
-    // (Page module tự fetch template bên trong render nếu cần)
-    if (route.pageFn) {
-      _fadeOut($content)
-        .then(function () {
-          if (currentNav !== _navId) throw new Error('ABORTED');
-          if (route.script) {
-            return _loadScript(route.script);
-          }
-          return Promise.resolve();
-        })
-        .then(function () {
-          if (currentNav !== _navId) throw new Error('ABORTED');
-          var mod = window[route.pageFn];
-          if (mod && typeof mod.render === 'function') {
-            // Xóa sạch nội dung cũ, cấp wrapper mới để các hàm fetch async không ghi đè lên trang khác
-            $content.innerHTML = '';
-            var wrapper = document.createElement('div');
-            wrapper.className = 'page-wrapper';
-            $content.appendChild(wrapper);
-            mod.render(wrapper, route.config || null);
-          } else {
-            _renderError($content, 'Không tìm thấy module: ' + route.pageFn);
-          }
-          _fadeIn($content);
-          _currentRoute = route;
-        })
-        .catch(function (err) {
-          if (err.message === 'ABORTED') return; // Bỏ qua nếu là thao tác hủy do click liên tục
-          console.error('[Router]', err);
-          _renderError($content, 'Lỗi tải module: ' + err.message);
-          _fadeIn($content);
-        });
-      return;
-    }
+      // ── Trường hợp 1: Có script → load script → pageFn.render() ──
+      // (Page module tự fetch template bên trong render nếu cần)
+      if (route.pageFn) {
+        _fadeOut($content)
+          .then(function () {
+            if (currentNav !== _navId) throw new Error('ABORTED');
+            if (route.script) {
+              return _loadScript(route.script);
+            }
+            return Promise.resolve();
+          })
+          .then(function () {
+            if (currentNav !== _navId) throw new Error('ABORTED');
+            var mod = window[route.pageFn];
+            if (mod && typeof mod.render === 'function') {
+              // Xóa sạch nội dung cũ, cấp wrapper mới để các hàm fetch async không ghi đè lên trang khác
+              $content.innerHTML = '';
+              var wrapper = document.createElement('div');
+              wrapper.className = 'page-wrapper';
+              $content.appendChild(wrapper);
+              mod.render(wrapper, route.config || null);
+            } else {
+              _renderError($content, 'Không tìm thấy module: ' + route.pageFn);
+            }
+            _fadeIn($content);
+            _currentRoute = route;
+          })
+          .catch(function (err) {
+            if (err.message === 'ABORTED') return; // Bỏ qua nếu là thao tác hủy do click liên tục
+            console.error('[Router]', err);
+            _renderError($content, 'Lỗi tải module: ' + err.message);
+            _fadeIn($content);
+          });
+        return;
+      }
 
-    // ── Trường hợp 2: Chỉ có template (dashboard, trang tĩnh) ──
-    if (route.template) {
-      _fadeOut($content)
-        .then(function () {
-          if (currentNav !== _navId) throw new Error('ABORTED');
-          return fetchTemplate(route.template);
-        })
-        .then(function (html) {
-          if (currentNav !== _navId) throw new Error('ABORTED');
-          $content.innerHTML = html;
-          _fadeIn($content);
-          _currentRoute = route;
-        })
-        .catch(function (err) {
-          if (err.message === 'ABORTED') return;
-          console.error('[Router]', err);
-          _renderError($content, 'Lỗi tải template: ' + err.message);
-          _fadeIn($content);
-        });
-      return;
-    }
+      // ── Trường hợp 2: Chỉ có template (dashboard, trang tĩnh) ──
+      if (route.template) {
+        _fadeOut($content)
+          .then(function () {
+            if (currentNav !== _navId) throw new Error('ABORTED');
+            return fetchTemplate(route.template);
+          })
+          .then(function (html) {
+            if (currentNav !== _navId) throw new Error('ABORTED');
+            $content.innerHTML = html;
+            _fadeIn($content);
+            _currentRoute = route;
+          })
+          .catch(function (err) {
+            if (err.message === 'ABORTED') return;
+            console.error('[Router]', err);
+            _renderError($content, 'Lỗi tải template: ' + err.message);
+            _fadeIn($content);
+          });
+        return;
+      }
 
-    // ── Trường hợp 3: Trang chưa code ──
-    _renderPlaceholder($content, route.title);
+      // ── Trường hợp 3: Trang chưa code ──
+      _renderPlaceholder($content, route.title);
     }); // End of _syncPermissionsIfNeeded
   }
 
@@ -319,20 +321,20 @@ var Router = (function () {
           });
           localStorage.setItem('pmql_permissions', JSON.stringify(permMap));
           localStorage.setItem('pmql_permission_ver', svVersion);
-        }).catch(function(e) {
+        }).catch(function (e) {
           console.error('[Router] Lỗi tải quyền mới:', e);
         });
       }
-    }).catch(function(e) {
-       console.error('[Router] Lỗi kiểm tra version quyền:', e);
-       return Promise.resolve();
+    }).catch(function (e) {
+      console.error('[Router] Lỗi kiểm tra version quyền:', e);
+      return Promise.resolve();
     });
   }
 
   // ── Init ───────────────────────────────────────────────────────────────
   function init() {
     window.addEventListener('hashchange', _handleRoute);
-    
+
     // BẢO MẬT: Kiểm tra Version Quyền 1 lần duy nhất lúc F5 tải lại màn hình
     if (typeof ApiClient !== 'undefined' && typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS.PERMISSIONS.GET_VERSION) {
       ApiClient.get(API_CONFIG.ENDPOINTS.PERMISSIONS.GET_VERSION, { silent: true }).then(function (res) {
@@ -349,16 +351,16 @@ var Router = (function () {
             var permList = permRes.list || permRes.records || [];
             if (permList.length > 0) { localStorage.setItem('debug_perm_row', JSON.stringify(permList[0])); }
             function _isTrue(v) { return v === 1 || v === '1' || v === true || v === 'true' || String(v).toLowerCase() === 'true'; }
-            permList.forEach(function (p) { 
-                var fname = p.FormName || p.formName || p.formname || p.FORMNAME;
-                if (fname) {
-                    permMap[fname] = {
-                        CanView: _isTrue(p.CanView) || _isTrue(p.canView) || _isTrue(p.canview) || _isTrue(p.CANVIEW),
-                        CanAdd: _isTrue(p.CanAdd) || _isTrue(p.canAdd) || _isTrue(p.canadd) || _isTrue(p.CANADD),
-                        CanEdit: _isTrue(p.CanEdit) || _isTrue(p.canEdit) || _isTrue(p.canedit) || _isTrue(p.CANEDIT),
-                        CanDelete: _isTrue(p.CanDelete) || _isTrue(p.canDelete) || _isTrue(p.candelete) || _isTrue(p.CANDELETE)
-                    };
-                }
+            permList.forEach(function (p) {
+              var fname = p.FormName || p.formName || p.formname || p.FORMNAME;
+              if (fname) {
+                permMap[fname] = {
+                  CanView: _isTrue(p.CanView) || _isTrue(p.canView) || _isTrue(p.canview) || _isTrue(p.CANVIEW),
+                  CanAdd: _isTrue(p.CanAdd) || _isTrue(p.canAdd) || _isTrue(p.canadd) || _isTrue(p.CANADD),
+                  CanEdit: _isTrue(p.CanEdit) || _isTrue(p.canEdit) || _isTrue(p.canedit) || _isTrue(p.CANEDIT),
+                  CanDelete: _isTrue(p.CanDelete) || _isTrue(p.canDelete) || _isTrue(p.candelete) || _isTrue(p.CANDELETE)
+                };
+              }
             });
             localStorage.setItem('pmql_permissions', JSON.stringify(permMap));
             localStorage.setItem('pmql_permission_ver', svVersion);
