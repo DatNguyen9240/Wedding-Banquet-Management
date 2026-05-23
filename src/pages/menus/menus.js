@@ -5,6 +5,20 @@
 var MenusPage = (function () {
   var $container;
   var allMenus = [];   // flat list từ API
+  var _scrollState = { windowTop: 0, sidebarTop: 0, contentTop: 0, tableLeft: 0 };
+
+  function _getPermKey() {
+    var hash = window.location.hash.replace('#', '').split('?')[0] || '/menus';
+    if (window.Router && window.Router.ROUTES) {
+      var r = window.Router.ROUTES.find(function (rt) { return rt.path === hash; });
+      if (r && r.perm) return r.perm;
+      if (r && r.module) return r.module;
+    }
+    // Nếu không tìm thấy route tĩnh, thử lấy module từ permissions
+    var perms = JSON.parse(localStorage.getItem('pmql_permissions') || '{}');
+    if (perms['menus'] || perms['quanlymenu']) return 'menus';
+    return 'QuanTriHeThong';
+  }
 
   // ════════════════════════════════════════════════════════
   //  RENDER
@@ -27,9 +41,15 @@ var MenusPage = (function () {
   function _bindStaticEvents() {
     $container.querySelector('#btn-refresh-menus').addEventListener('click', _loadMenus);
 
-    $container.querySelector('#btn-add-menu').addEventListener('click', function () {
-      _openModal(false);
-    });
+    var btnAdd = $container.querySelector('#btn-add-menu');
+    var permKey = _getPermKey();
+    if (!Permission.canAdd(permKey)) {
+      btnAdd.style.display = 'none';
+    } else {
+      btnAdd.addEventListener('click', function () {
+        _openModal(false);
+      });
+    }
 
     $container.querySelector('#btn-close-modal').addEventListener('click', _closeModal);
     $container.querySelector('#btn-cancel-modal').addEventListener('click', _closeModal);
@@ -42,6 +62,18 @@ var MenusPage = (function () {
   // ════════════════════════════════════════════════════════
   function _loadMenus() {
     var container = $container.querySelector('#menus-nested-tabs-container');
+
+    // Lưu lại vị trí scroll trước khi render lại
+    var sidebar = container.querySelector('.ui-nested-tabs__sidebar');
+    var content = container.querySelector('.ui-nested-tabs__vertical-content');
+    var tableWrapper = container.querySelector('.table-wrapper');
+    var appContent = document.getElementById('app-content');
+
+    _scrollState.windowTop = appContent ? appContent.scrollTop : (window.scrollY || document.documentElement.scrollTop);
+    _scrollState.sidebarTop = sidebar ? sidebar.scrollTop : 0;
+    _scrollState.contentTop = content ? content.scrollTop : 0;
+    _scrollState.tableLeft = tableWrapper ? tableWrapper.scrollLeft : 0;
+
     container.innerHTML = '<div id="menus-tabs-loading" style="text-align:center;padding:60px 0;color:var(--color-text-secondary);">'
       + UIIcon.renderHtml('menu_book', 'font-size:40px;opacity:0.2;display:block;margin-bottom:12px;')
       + 'Đang tải danh sách...</div>';
@@ -111,10 +143,30 @@ var MenusPage = (function () {
     });
 
     container.innerHTML = '';
+
+    var savedTabId = sessionStorage.getItem('menus_active_tab');
+    var defParentId = null;
+    var defChildId = null;
+    if (savedTabId) {
+      var savedRecord = folderRecords.find(function (r) { return r.id === savedTabId; });
+      if (savedRecord) {
+        if (savedRecord.parent && savedRecord.parent.trim() !== '') {
+          defParentId = savedRecord.parent;
+          defChildId = savedRecord.id;
+        } else {
+          defParentId = savedRecord.id;
+        }
+      }
+    }
+
     var nestedEl = UINestedTabs.create(folderRecords, {
       vertical: true,
       draggable: true, // Cho phép kéo thả bình thường vì cấu trúc giờ đã chuẩn cây 2 cấp
-      onTabChange: function (parentId, childId) {
+      defaultParentId: defParentId,
+      defaultChildId: defChildId,
+      onTabChange: function (nodeId, childId) {
+        // nodeId is the clicked node in vertical mode (could be parent or child)
+        if (nodeId) sessionStorage.setItem('menus_active_tab', nodeId);
       },
       onReorder: function (type, orderedIds, parentId) {
         MenusService.updateOrder({ type: type, orderedIds: orderedIds, parentId: parentId })
@@ -139,6 +191,23 @@ var MenusPage = (function () {
     });
 
     container.appendChild(nestedEl);
+
+    // Phục hồi lại vị trí scroll
+    setTimeout(function () {
+      var sidebar = container.querySelector('.ui-nested-tabs__sidebar');
+      var content = container.querySelector('.ui-nested-tabs__vertical-content');
+      var tableWrapper = container.querySelector('.table-wrapper');
+      var appContent = document.getElementById('app-content');
+
+      if (sidebar && _scrollState.sidebarTop > 0) sidebar.scrollTop = _scrollState.sidebarTop;
+      if (content && _scrollState.contentTop > 0) content.scrollTop = _scrollState.contentTop;
+      if (tableWrapper && _scrollState.tableLeft > 0) tableWrapper.scrollLeft = _scrollState.tableLeft;
+
+      if (_scrollState.windowTop > 0) {
+        if (appContent) appContent.scrollTop = _scrollState.windowTop;
+        else window.scrollTo(0, _scrollState.windowTop);
+      }
+    }, 10);
   }
 
   // ── Nội dung panel tab CHA: bảng danh sách con ──────────
@@ -148,6 +217,14 @@ var MenusPage = (function () {
 
     // Lấy raw item từ DB gốc để hiển thị đúng những thông tin gõ nhầm (ví dụ ID cha bị mồ côi)
     var rawParentItem = allMenus.find(function (m) { return m.id === parentItem.id; }) || parentItem;
+
+    var permKey = _getPermKey();
+    var canEdit = Permission.canEdit(permKey);
+    var canDelete = Permission.canDelete(permKey);
+    var canAdd = Permission.canAdd(permKey);
+
+    var btnEditParentHTML = canEdit ? ('  ' + UIButton.createHTML({ icon: 'edit', type: 'tool', className: 'btn-edit-menu-inline', data: { id: rawParentItem.id }, style: 'padding:2px 5px;', tooltip: 'Sửa', iconStyle: 'font-size:13px;' })) : '';
+    var btnDelParentHTML = canDelete ? ('  ' + UIButton.createHTML({ icon: 'delete', type: 'tool', className: 'btn-delete-menu-inline', data: { id: rawParentItem.id }, style: 'padding:2px 5px;color:var(--color-danger);', tooltip: 'Xóa', iconStyle: 'font-size:13px;' })) : '';
 
     // ── BẢNG THÔNG TIN CỦA CHÍNH THƯ MỤC CHA (TRÊN CÙNG) ĐỂ EDIT INLINE ──
     var parentRowHTML = '<tr data-id="' + rawParentItem.id + '" style="background:rgba(var(--color-primary-rgb), 0.05);">'
@@ -161,8 +238,8 @@ var MenusPage = (function () {
       + '<td class="editable-cell" data-field="formKey" data-val="' + (rawParentItem.formKey || '') + '" style="color:var(--color-text-secondary);cursor:text;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Nhấp đúp để sửa">' + (rawParentItem.formKey || '') + '</td>'
       + '<td class="editable-cell" data-field="urlPara" data-val="' + (rawParentItem.urlPara || '') + '" style="color:var(--color-text-secondary);cursor:text;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Nhấp đúp để sửa">' + (rawParentItem.urlPara || '') + '</td>'
       + '<td style="white-space:nowrap; user-select:none; -webkit-user-select:none; text-align:center;padding:5px 2px;">'
-      + '  ' + UIButton.createHTML({ icon: 'edit', type: 'tool', className: 'btn-edit-menu-inline', data: { id: rawParentItem.id }, style: 'padding:2px 5px;', tooltip: 'Sửa', iconStyle: 'font-size:13px;' })
-      + '  ' + UIButton.createHTML({ icon: 'delete', type: 'tool', className: 'btn-delete-menu-inline', data: { id: rawParentItem.id }, style: 'padding:2px 5px;color:var(--color-danger);', tooltip: 'Xóa', iconStyle: 'font-size:13px;' })
+      + btnEditParentHTML
+      + btnDelParentHTML
       + '</td>'
       + '</tr>';
 
@@ -205,6 +282,9 @@ var MenusPage = (function () {
       });
     } else {
       var rows = children.map(function (c, i) {
+        var btnEditChildHTML = canEdit ? ('  ' + UIButton.createHTML({ icon: 'edit', type: 'tool', className: 'btn-edit-menu-inline', data: { id: c.id }, style: 'padding:2px 5px;', tooltip: 'Sửa', iconStyle: 'font-size:13px;' })) : '';
+        var btnDelChildHTML = canDelete ? ('  ' + UIButton.createHTML({ icon: 'delete', type: 'tool', className: 'btn-delete-menu-inline', data: { id: c.id }, style: 'padding:2px 5px;color:var(--color-danger);', tooltip: 'Xóa', iconStyle: 'font-size:13px;' })) : '';
+
         return '<tr class="draggable-child-row" data-id="' + c.id + '">'
           + '<td style="color:var(--color-text-secondary);text-align:center;padding:5px 2px;">'
           + '  <span class="drag-handle" style="font-size:14px; opacity:0.3; cursor:grab; user-select:none; -webkit-user-select:none;" title="Kéo để di chuyển">' + UIIcon.renderHtml('drag_indicator', 'vertical-align:middle;') + '</span>'
@@ -219,8 +299,8 @@ var MenusPage = (function () {
           + '<td class="editable-cell" data-field="formKey" data-val="' + (c.formKey || '') + '" style="color:var(--color-text-secondary);cursor:text;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Nhấp đúp để sửa">' + (c.formKey || '') + '</td>'
           + '<td class="editable-cell" data-field="urlPara" data-val="' + (c.urlPara || '') + '" style="color:var(--color-text-secondary);cursor:text;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Nhấp đúp để sửa">' + (c.urlPara || '') + '</td>'
           + '<td style="white-space:nowrap; user-select:none; -webkit-user-select:none; text-align:center;padding:5px 2px;">'
-          + '  ' + UIButton.createHTML({ icon: 'edit', type: 'tool', className: 'btn-edit-menu-inline', data: { id: c.id }, style: 'padding:2px 5px;', tooltip: 'Sửa', iconStyle: 'font-size:13px;' })
-          + '  ' + UIButton.createHTML({ icon: 'delete', type: 'tool', className: 'btn-delete-menu-inline', data: { id: c.id }, style: 'padding:2px 5px;color:var(--color-danger);', tooltip: 'Xóa', iconStyle: 'font-size:13px;' })
+          + btnEditChildHTML
+          + btnDelChildHTML
           + '</td>'
           + '</tr>';
       }).join('');
@@ -243,8 +323,8 @@ var MenusPage = (function () {
         + '</tr></thead>'
         + '<tbody>' + rows + '</tbody>'
         + '</table></div>'
-        + '<div style="margin-top:12px; text-align:center;">'
-        + UIButton.createHTML({
+        + (canAdd ? ('<div style="margin-top:12px; text-align:center;">'
+          + UIButton.createHTML({
             text: 'Thêm Menu Con Mới',
             icon: 'add',
             type: 'outline-primary',
@@ -252,7 +332,7 @@ var MenusPage = (function () {
             style: 'padding:8px 20px; font-weight:600; border-style:dashed; width:100%; border-radius:8px;',
             data: { parent: parentItem.id }
           })
-        + '</div>';
+          + '</div>') : '');
 
       contentHTML = '<div style="margin-top:24px; font-weight:700; color:var(--color-text-primary); margin-bottom:8px; font-size:14px; text-transform:uppercase;">'
         + UIIcon.renderHtml('list', 'vertical-align:bottom;font-size:18px;') + ' Danh sách Menu con</div>'
@@ -316,15 +396,15 @@ var MenusPage = (function () {
 
         // Hiệu ứng focus cho icon
         var iconInput = tr.querySelector('.inline-new-icon');
-        iconInput.addEventListener('focus', function () { 
-          this.style.borderColor = 'var(--color-primary)'; 
+        iconInput.addEventListener('focus', function () {
+          this.style.borderColor = 'var(--color-primary)';
           if (document.querySelector('.inline-icon-picker')) return;
 
           var picker = document.createElement('div');
           picker.className = 'inline-icon-picker';
           picker.style.cssText = 'position:fixed; transform:translateX(-50%); width:220px; background:#fff; border:1px solid var(--color-border); box-shadow:0 10px 25px rgba(0,0,0,0.15); border-radius:8px; padding:8px; z-index:9999; display:flex; flex-wrap:wrap; gap:4px; justify-content:center; cursor:default;';
 
-          var updatePickerPos = function() {
+          var updatePickerPos = function () {
             if (!document.body.contains(picker)) {
               window.removeEventListener('scroll', updatePickerPos, true);
               window.removeEventListener('resize', updatePickerPos);
@@ -360,12 +440,12 @@ var MenusPage = (function () {
           window.addEventListener('resize', updatePickerPos);
         });
 
-        iconInput.addEventListener('blur', function () { 
-          this.style.borderColor = 'var(--color-border)'; 
+        iconInput.addEventListener('blur', function () {
+          this.style.borderColor = 'var(--color-border)';
           if (document.querySelector('.inline-icon-picker')) document.querySelector('.inline-icon-picker').remove();
         });
 
-        iconInput.addEventListener('keydown', function(e) {
+        iconInput.addEventListener('keydown', function (e) {
           if (e.key === 'Escape' && document.querySelector('.inline-icon-picker')) {
             document.querySelector('.inline-icon-picker').remove();
           }
@@ -479,16 +559,16 @@ var MenusPage = (function () {
 
           MenusService.updateOrder({ type: 'child', orderedIds: orderedIds, parentId: parentItem.id })
             .then(function (res) {
-            if (res && res.code === 0) {
-              UIToast.show('Đã cập nhật tự động mã Menu thành công', 'success');
-              _loadMenus(); // Tải lại vì ID vừa bị hoán đổi (swap) trên database!
-            } else {
-              UIToast.show('Lỗi cập nhật: ' + (res.msg || ''), 'error');
-              _loadMenus();
-            }
-          }).catch(function () {
-            UIToast.show('Lỗi kết nối máy chủ', 'error');
-          });
+              if (res && res.code === 0) {
+                UIToast.show('Đã cập nhật tự động mã Menu thành công', 'success');
+                _loadMenus(); // Tải lại vì ID vừa bị hoán đổi (swap) trên database!
+              } else {
+                UIToast.show('Lỗi cập nhật: ' + (res.msg || ''), 'error');
+                _loadMenus();
+              }
+            }).catch(function () {
+              UIToast.show('Lỗi kết nối máy chủ', 'error');
+            });
         }
         return false;
       });
@@ -515,6 +595,10 @@ var MenusPage = (function () {
       });
 
       td.addEventListener('dblclick', function () {
+        if (!Permission.canEdit(_getPermKey())) {
+          UIToast.show('Bạn không có quyền sửa Menu.', 'warning');
+          return;
+        }
         if (this.querySelector('input')) return; // Đang sửa rồi
         var originalHtml = this.innerHTML;
         var val = this.dataset.val;
@@ -543,7 +627,7 @@ var MenusPage = (function () {
           picker.style.cssText = 'position:fixed; transform:translateX(-50%); width:220px; background:#fff; border:1px solid var(--color-border); box-shadow:0 10px 25px rgba(0,0,0,0.15); border-radius:8px; padding:8px; z-index:9999; display:flex; flex-wrap:wrap; gap:4px; justify-content:center; cursor:default;';
 
           var cell = this;
-          var updatePickerPos = function() {
+          var updatePickerPos = function () {
             if (!document.body.contains(picker)) {
               window.removeEventListener('scroll', updatePickerPos, true);
               window.removeEventListener('resize', updatePickerPos);

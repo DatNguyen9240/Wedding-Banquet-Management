@@ -24,6 +24,19 @@
   box-shadow: inset 0 0 0 1px var(--primary, #6366f1);
 }
 
+.combo-box-container.ui-input-disabled .ui-input,
+.combo-box-container.ui-input-disabled .combo-box-actions {
+  background: var(--color-background, #f1f5f9);
+  color: var(--color-text-secondary, #64748b);
+  cursor: not-allowed;
+}
+
+.combo-box-container.ui-input-disabled .combo-action-btn {
+  cursor: not-allowed;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .combo-box-actions {
   display: flex;
   background: var(--surface, #fff);

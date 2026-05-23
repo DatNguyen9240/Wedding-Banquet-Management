@@ -23,6 +23,8 @@ BEGIN
     SELECT 
         M.FormName AS [FormName],
         M.VN AS [MenuName],
+        M.URLPara AS [URLPara],
+        M.FormKey AS [FormKey],
         ISNULL(P.IsRun, 0) AS CanView,
         ISNULL(P.IsAdd, 0) AS CanAdd,
         ISNULL(P.IsUpdate, 0) AS CanEdit,

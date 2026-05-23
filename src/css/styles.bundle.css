@@ -1,4 +1,4 @@
-﻿/* --- design-tokens.css --- */
+/* --- design-tokens.css --- */
 /* ═══════════════════════════════════════════
    Design Tokens — TailAdmin Style
    Dành cho Quản lý Tiệc Cưới
@@ -3175,25 +3175,38 @@ body.dark-theme .calendar-dropdown-month-btn {
   flex: 1;
   min-width: 0;
   padding: 8px 10px;
-  border: 1px solid var(--border, #e2e8f0);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius, 8px) 0 0 var(--radius, 8px);
   outline: none;
   font-size: 14.5px;
   transition: border-color 0.15s, box-shadow 0.15s;
   font-family: inherit;
-  color: var(--text, #1e293b);
-  background: var(--surface, #fff);
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .combo-box-container .ui-input:focus {
-  border-color: var(--primary, #6366f1);
-  box-shadow: inset 0 0 0 1px var(--primary, #6366f1);
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+.combo-box-container.ui-input-disabled .ui-input,
+.combo-box-container.ui-input-disabled .combo-box-actions {
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+}
+
+.combo-box-container.ui-input-disabled .combo-action-btn {
+  cursor: not-allowed;
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .combo-box-actions {
   display: flex;
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #e2e8f0);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-left: none;
   border-radius: 0 var(--radius, 8px) var(--radius, 8px) 0;
   overflow: hidden;
@@ -3202,9 +3215,9 @@ body.dark-theme .calendar-dropdown-month-btn {
 .combo-action-btn {
   background: transparent;
   border: none;
-  border-left: 1px solid var(--border, #e2e8f0);
+  border-left: 1px solid var(--color-border);
   padding: 0 8px;
-  color: var(--muted, #94a3b8);
+  color: var(--color-text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -3216,7 +3229,7 @@ body.dark-theme .calendar-dropdown-month-btn {
 
 .combo-action-btn:hover {
   background: rgba(99, 102, 241, 0.1);
-  color: var(--primary, #6366f1);
+  color: var(--color-primary);
 }
 
 .combo-action-btn .material-symbols-outlined { font-size: 22px; }
@@ -3227,8 +3240,8 @@ body.dark-theme .calendar-dropdown-month-btn {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--border, #e2e8f0);
-  background: var(--surface, #fff);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
   position: sticky;
   top: 0;
   z-index: 3;
@@ -3236,7 +3249,7 @@ body.dark-theme .calendar-dropdown-month-btn {
 
 .dd-search-icon {
   font-size: 18px;
-  color: var(--primary, #6366f1);
+  color: var(--color-primary);
   flex-shrink: 0;
   pointer-events: none;
   opacity: 0.7;
@@ -3248,14 +3261,14 @@ body.dark-theme .calendar-dropdown-month-btn {
   outline: none;
   font-size: 14.5px;
   font-family: inherit;
-  color: var(--text, #1e293b);
+  color: var(--color-text);
   background: transparent;
   padding: 0;
   line-height: 1.5;
 }
 
 .dd-search-input::placeholder {
-  color: var(--muted, #94a3b8);
+  color: var(--color-text-secondary);
   opacity: 0.8;
 }
 
@@ -3265,7 +3278,7 @@ body.dark-theme .calendar-dropdown-month-btn {
   overflow-x: auto;
   max-height: 220px;
   flex: 1;
-  background: var(--surface, #fff);
+  background: var(--color-surface);
 }
 
 .dd-table-wrapper::-webkit-scrollbar { 
@@ -3273,14 +3286,14 @@ body.dark-theme .calendar-dropdown-month-btn {
   height: 6px; 
 }
 .dd-table-wrapper::-webkit-scrollbar-thumb {
-  background: var(--border, #e2e8f0);
+  background: var(--color-border);
   border-radius: 4px;
 }
 
 /* ── Dropdown: Footer "+ Thêm mới" ───────────────────────────── */
 .dd-footer {
-  border-top: 2px solid var(--border, #e2e8f0);
-  background: var(--surface, #fff);
+  border-top: 2px solid var(--color-border);
+  background: var(--color-surface);
   position: sticky;
   bottom: 0;
   z-index: 3;
@@ -3295,7 +3308,7 @@ body.dark-theme .calendar-dropdown-month-btn {
   width: 100%;
   border: none;
   background: transparent;
-  color: var(--primary, #6366f1);
+  color: var(--color-primary);
   font-size: 13px;
   font-family: inherit;
   font-weight: 600;
@@ -5252,5 +5265,6 @@ body.dark-theme .data-table tbody tr:hover {
   right: 0 !important;
   opacity: 1 !important;
 }
+
 
 

@@ -162,16 +162,50 @@ window.APP_MODULES = {
     },
 
     // ----------------------------------------------------------------------
-    // 4. MODULE: HỢP ĐỒNG (CONTRACTS) - Ví dụ cho tương lai
+    // 4. MODULE: TEST (Thử nghiệm Form Builder)
     // ----------------------------------------------------------------------
-    /*
-    CONTRACTS: {
-        FormName: 'frmContract',
-        ApiDictionary: window.API_CONFIG.ENDPOINTS.SYSTEM.GET_UI_DICTIONARY,
-        ApiSearch: window.API_CONFIG.ENDPOINTS.CONTRACT.LIST,
-        // ...
+    TEST: {
+        FormName: 'frmTest',
+        ApiDictionary: window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.GET_UI_DICTIONARY : null,
+        ApiSearch: null, // Không load data thật để tránh báo lỗi
+        ApiSave: null,
+
+        PageTitle: 'Trang Thử Nghiệm (frmTest)',
+        PageSubtitle: 'Dành riêng để test giao diện và Form Builder, không sửa dữ liệu thật',
+        TitleAdd: '➕ Thêm Test',
+        TitleEdit: '✏️ Sửa Test',
+        ToastAdd: 'Test Add',
+        ToastEdit: 'Test Edit',
+        BtnSaveAdd: 'Thêm',
+        BtnSaveEdit: 'Lưu',
+        WarnSelectEdit: 'Vui lòng chọn để sửa',
+        WarnSelectDelete: 'Vui lòng chọn để xóa',
+        ConfirmDelete: 'Xóa {0}?',
+        InfoDeleteDev: 'Đang phát triển',
+        PrimaryKey: 'Id',
+        RowNameField: 'Name',
+        SearchPlaceholder: 'Tìm kiếm...',
+        FilterKeywordLabel: 'Từ khóa',
+        TextLoading: 'Đang tải...',
+        TextLoadingError: 'Lỗi: ',
+        BtnCancel: 'Hủy',
+        BtnSaveSaving: 'Đang lưu...',
+        AlertTitleWarning: 'Cảnh báo',
+        AlertTitleConfirm: 'Xác nhận',
+        AlertTitleInfo: 'Thông báo',
+        AlertTitleError: 'Lỗi',
+        AlertApiMissing: 'Chưa gắn API',
+        AlertSaveFailed: 'Lưu thất bại',
+        AlertNetworkError: 'Lỗi kết nối',
+        WarnMissingInfo: 'Thiếu',
+        WarnMissingInput: 'Vui lòng nhập: {0}',
+        TextDeleteFallback: 'dòng này',
+        MenuCopyCell: 'Copy Cell',
+        MenuCopyRow: 'Copy Row',
+        ToastCopyCell: 'Đã copy',
+        ToastCopyRow: 'Đã copy',
+        ModalWidth: '600px'
     }
-    */
 };
 
 // Đóng băng config

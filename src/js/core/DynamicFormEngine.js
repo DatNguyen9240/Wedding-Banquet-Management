@@ -939,6 +939,7 @@ window.DynamicFormEngine = (function () {
     var alertBox = document.createElement('div');
     alertBox.className = 'alert alert-info py-2 mb-0 d-flex align-items-center gap-2';
     alertBox.style.fontSize = '13px';
+    var isEdit = !isAdd;
     
     if (isAdd) {
        alertBox.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px">playlist_add</span>' + 
@@ -976,7 +977,7 @@ window.DynamicFormEngine = (function () {
     trHead.appendChild(thStt);
 
     formSchema.forEach(function (field) {
-       if (field.showInEdit) {
+       if (String(field.showInEdit) === '1' || field.showInEdit === true) {
          editableFields.push(field);
          var th = document.createElement('th');
          th.innerText = field.label || field.name;
@@ -1053,7 +1054,7 @@ window.DynamicFormEngine = (function () {
              hiddenInput.setAttribute('data-field-name', originalName);
              inputEl.appendChild(hiddenInput);
 
-             var comboLoading = UIControls.createDataComboBox({ placeholder: 'Đang tải...' });
+             var comboLoading = UIControls.createDataComboBox({ placeholder: 'Đang tải...', disabled: isEdit && (String(field.isReadOnlyEdit) === '1' || field.isReadOnlyEdit === true) });
              inputEl.appendChild(comboLoading);
              
              if (field.dataSource) {
@@ -1129,7 +1130,9 @@ window.DynamicFormEngine = (function () {
              allInputs.forEach(function(i) {
                 i.setAttribute('data-row-index', rowIdx);
                 i.setAttribute('data-field-name', originalName);
+                if (isEdit && (String(field.isReadOnlyEdit) === '1' || field.isReadOnlyEdit === true)) i.disabled = true;
              });
+             if (isEdit && (String(field.isReadOnlyEdit) === '1' || field.isReadOnlyEdit === true)) inputEl.classList.add('ui-input-disabled');
              td.appendChild(inputEl);
           }
           tr.appendChild(td);
@@ -1208,7 +1211,7 @@ window.DynamicFormEngine = (function () {
     // ENGINE VẼ FORM TỰ ĐỘNG
     formSchema.forEach(function (field) {
       var isVisible = isEdit ? field.showInEdit : field.showInAdd;
-      if (!isVisible) {
+      if (!(String(isVisible) === '1' || isVisible === true)) {
         // Vẽ input ẩn cho các Khóa chính (Ví dụ Makh) để Auto-Serializer thu thập được
         var hiddenEl = document.createElement('input');
         hiddenEl.type = 'hidden';
@@ -1263,6 +1266,7 @@ window.DynamicFormEngine = (function () {
                headers: ['Mã', 'Tên'],
                data: staticData,
                colFilterIndex: 1, // Dùng cột Tên để hiển thị lên input
+               disabled: isEdit && (String(field.isReadOnlyEdit) === '1' || field.isReadOnlyEdit === true),
                onSelect: function(row) {
                   hiddenInput.value = row[0]; // Cập nhật ID
                }
@@ -1286,69 +1290,65 @@ window.DynamicFormEngine = (function () {
             inputEl = formGroupWrapper;
 
             var endpoint = field.dataSource.startsWith('http') ? field.dataSource : ((typeof API_CONFIG !== 'undefined' ? API_CONFIG.BASE_URL : '') + field.dataSource);
-            
             var finalUrl = endpoint;
             var fetchPayload = {};
             if (endpoint.indexOf('?') > -1) {
                 var parts = endpoint.split('?');
                 finalUrl = parts[0];
                 var searchParams = new URLSearchParams(parts[1]);
-                searchParams.forEach(function(value, key) {
-                    fetchPayload[key] = value;
-                });
+                searchParams.forEach(function(value, key) { fetchPayload[key] = value; });
             }
-            // Thêm tham số user mặc định của hệ thống
             if (!fetchPayload.UserName) fetchPayload.UserName = _currentUser();
 
-            ApiClient.post(finalUrl, fetchPayload).then(function (res) {
-              var comboData = [];
-              var dataList = res.list || res.records;
-              var headers = ['Mã', 'Tên']; // Fallback
-              var colFilterIndex = 1;
-
-              if (dataList && dataList.length > 0) {
-                // Tự động trích xuất toàn bộ cấu trúc cột từ record đầu tiên
-                var keys = Object.keys(dataList[0]);
-                
-                // Nếu có nhiều hơn 1 cột, dùng các key đó làm tiêu đề cột
-                if (keys.length > 0) {
-                  headers = keys; 
-                  // Tự động tìm cột hiển thị (Label): Ưu tiên các cột có tên chứa chữ "name, ten, label, desc"
-                  var labelRegex = /name|tên|ten|label|desc|title/i;
-                  var displayKey = keys.find(function(k) { return labelRegex.test(k); });
-                  colFilterIndex = displayKey ? keys.indexOf(displayKey) : (keys.length > 1 ? 1 : 0); 
-
-                  dataList.forEach(function (d) {
-                    var rowData = [];
-                    keys.forEach(function(k) { rowData.push(d[k] !== null && d[k] !== undefined ? d[k] : ''); });
-                    comboData.push(rowData);
-                  });
-                } else {
-                  // Dự phòng trường hợp object rỗng
-                  dataList.forEach(function (d) { comboData.push(['', '']); });
-                }
-              }
-              
-              var newCombo = UIControls.createDataComboBox({
-                 placeholder: '-- Vui lòng chọn --',
-                 headers: headers,
-                 data: comboData,
-                 colFilterIndex: colFilterIndex,
-                 onSelect: function(row) {
-                    hiddenInput.value = row[0];
+            var searchApiCall = function(q, page) {
+               var payload = Object.assign({}, fetchPayload);
+               if (q) payload.Keyword = q;
+               return ApiClient.post(finalUrl, payload).then(function (res) {
+                 var comboData = [];
+                 var dataList = res.list || res.records;
+                 var headers = ['Mã', 'Tên'];
+                 var colFilterIndex = 1;
+                 if (dataList && dataList.length > 0) {
+                   var keys = Object.keys(dataList[0]);
+                   if (keys.length > 0) {
+                     headers = keys; 
+                     var labelRegex = /name|tên|ten|label|desc|title/i;
+                     var displayKey = keys.find(function(k) { return labelRegex.test(k); });
+                     colFilterIndex = displayKey ? keys.indexOf(displayKey) : (keys.length > 1 ? 1 : 0); 
+                     dataList.forEach(function (d) {
+                       var rowData = [];
+                       keys.forEach(function(k) { rowData.push(d[k] !== null && d[k] !== undefined ? d[k] : ''); });
+                       comboData.push(rowData);
+                     });
+                   } else {
+                     dataList.forEach(function (d) { comboData.push(['', '']); });
+                   }
                  }
-              });
-              
-              var newDisplayInput = newCombo.querySelector('input.ui-input');
-              var matched = comboData.find(function(r) { return r[0] == field.value; });
-              if (matched && newDisplayInput) newDisplayInput.value = matched[1];
-              
-              formGroupWrapper.replaceChild(newCombo, comboLoading);
-            }).catch(function (err) {
-              console.error('[DynamicFormEngine] DataComboBox error:', err);
-              var displayInput = comboLoading.querySelector('input.ui-input');
-              if (displayInput) displayInput.placeholder = 'Lỗi tải dữ liệu';
+                 return { headers: headers, data: comboData, colFilterIndex: colFilterIndex };
+               });
+            };
+
+            var lazyCombo = UIControls.createDataComboBox({
+               placeholder: '-- Vui lòng chọn --',
+               headers: ['Mã', 'Tên'],
+               disabled: isEdit && (String(field.isReadOnlyEdit) === '1' || field.isReadOnlyEdit === true),
+               onSearch: searchApiCall,
+               onSelect: function(row) { hiddenInput.value = row[0]; }
             });
+
+            if (field.value) {
+                searchApiCall('', 1).then(function(res) {
+                   var displayInput = lazyCombo.querySelector('input.ui-input');
+                   var matched = res.data.find(function(r) { return r[0] == field.value; });
+                   if (matched && displayInput) displayInput.value = matched[res.colFilterIndex || 1];
+                }).catch(function(err) {
+                   console.error('[DynamicFormEngine] DataComboBox initial fetch error:', err);
+                   var displayInput = lazyCombo.querySelector('input.ui-input');
+                   if (displayInput) displayInput.placeholder = 'Lỗi tải dữ liệu';
+                });
+            }
+
+            formGroupWrapper.replaceChild(lazyCombo, comboLoading);
           }
         } else {
           var comboEmpty = UIControls.createDataComboBox({ placeholder: 'Chưa có dữ liệu' });
@@ -1362,6 +1362,15 @@ window.DynamicFormEngine = (function () {
       }
 
       // Áp dụng kích thước FlexBox từ field.position
+      if (isEdit && (String(field.isReadOnlyEdit) === '1' || field.isReadOnlyEdit === true)) {
+        var innerFields = inputEl.querySelectorAll('input, select, textarea, button');
+        if (innerFields.length > 0) {
+          innerFields.forEach(function(el) { el.disabled = true; });
+        } else if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(inputEl.tagName)) {
+          inputEl.disabled = true;
+        }
+        inputEl.classList.add('ui-input-disabled');
+      }
       var span = String(field.position || 'body');
       if (span === 'grid') span = '6'; 
       if (span === 'body') span = '12';

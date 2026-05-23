@@ -24,6 +24,13 @@ UIControls.createDataComboBox = function (options) {
   btnArrow.title = 'Mở danh sách (F4)';
   btnArrow.type = 'button';
 
+  if (options.disabled) {
+    input.disabled = true;
+    btnArrow.disabled = true;
+    container.classList.add('ui-input-disabled');
+    btnArrow.innerHTML = '<span class="material-symbols-outlined">lock</span>';
+  }
+
   actions.appendChild(btnArrow);
 
   // ── Dropdown Panel ──────────────────────────────────────────────
@@ -199,6 +206,11 @@ UIControls.createDataComboBox = function (options) {
     if (typeof options.onSearch === 'function') {
       tableWrapper.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted,#94a3b8);font-size:13px">Đang tải...</div>';
       Promise.resolve(options.onSearch(q, page)).then(function (result) {
+        if (result && !Array.isArray(result) && result.data) {
+          if (result.headers) options.headers = result.headers;
+          if (result.colFilterIndex !== undefined) options.colFilterIndex = result.colFilterIndex;
+          result = result.data;
+        }
         if (Array.isArray(result)) {
           fullData = result;
           renderTable(fullData);

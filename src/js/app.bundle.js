@@ -1,4 +1,4 @@
-﻿/* --- mockData.js --- */
+/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -132,12 +132,22 @@ var MockData = {
  */
 var Permission = (function () {
   function _get(module) {
-    var perms = JSON.parse(localStorage.getItem('app_permissions') || '{}');
+    var legacyPerms = JSON.parse(localStorage.getItem('app_permissions') || '{}');
+    var newPerms = JSON.parse(localStorage.getItem('pmql_permissions') || '{}');
+    var perms = Object.keys(newPerms).length > 0 ? newPerms : legacyPerms;
+    
     // Mặc định cho phép tất cả ở môi trường phát triển ban đầu
     if (Object.keys(perms).length === 0) {
       return { xem: true, them: true, sua: true, xoa: true };
     }
-    return perms[module] || { xem: false, them: false, sua: false, xoa: false };
+    
+    var p = perms[module] || {};
+    return {
+        xem: p.CanView === 1 || p.CanView === true || p.xem === true || p.xem === 1,
+        them: p.CanAdd === 1 || p.CanAdd === true || p.them === true || p.them === 1,
+        sua: p.CanEdit === 1 || p.CanEdit === true || p.sua === true || p.sua === 1,
+        xoa: p.CanDelete === 1 || p.CanDelete === true || p.xoa === true || p.xoa === 1
+    };
   }
 
   return {
@@ -1426,6 +1436,33 @@ var Navbar = (function () {
   var NAV_CONFIG = [];
 
   function _buildConfigFromDB(dbMenus) {
+    if (window.Router && typeof window.Router.addDynamicRoutes === 'function') {
+      var before = window.Router.ROUTES.length;
+      window.Router.addDynamicRoutes(dbMenus);
+      if (window.Router.ROUTES.length > before && location.hash) {
+        setTimeout(function() { window.dispatchEvent(new HashChangeEvent('hashchange')); }, 50);
+      }
+    }
+    
+    // Lưu quyền cục bộ từ kết quả menu trả về
+    var permMap = {};
+    if (Array.isArray(dbMenus)) {
+      if (dbMenus.length > 0) { localStorage.setItem('debug_menu_row', JSON.stringify(dbMenus[0])); }
+      function _isTrue(v) { return v === 1 || v === '1' || v === true || v === 'true' || String(v).toLowerCase() === 'true'; }
+      dbMenus.forEach(function (p) {
+          var formName = p.FormName || p.formName || p.formname || p.FORMNAME;
+          if (formName) {
+              permMap[formName] = {
+                  CanView: _isTrue(p.IsRun) || _isTrue(p.isRun) || _isTrue(p.isrun) || _isTrue(p.ISRUN),
+                  CanAdd: _isTrue(p.IsAdd) || _isTrue(p.isAdd) || _isTrue(p.isadd) || _isTrue(p.ISADD),
+                  CanEdit: _isTrue(p.IsUpdate) || _isTrue(p.isUpdate) || _isTrue(p.isupdate) || _isTrue(p.ISUPDATE),
+                  CanDelete: _isTrue(p.IsDelete) || _isTrue(p.isDelete) || _isTrue(p.isdelete) || _isTrue(p.ISDELETE)
+              };
+          }
+      });
+      localStorage.setItem('pmql_permissions', JSON.stringify(permMap));
+    }
+    
     var config = [];
     // API trả về: id, parent, label, icon, URLPara
     var parents = dbMenus.filter(function (m) { return !m.parent || String(m.parent).trim() === ''; });
@@ -1747,9 +1784,18 @@ var Navbar = (function () {
             cached = null;
           }
           if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
-            NAV_CONFIG = cached.config;
-            _doRender(container);
-            return;
+            if (!cached.records) {
+                // Cache cũ không có records -> Xóa cache để fetch lại
+                sessionStorage.removeItem(CACHE_KEY);
+                cached = null;
+            } else {
+                if (window.Router && typeof window.Router.addDynamicRoutes === 'function') {
+                  window.Router.addDynamicRoutes(cached.records);
+                }
+                NAV_CONFIG = cached.config;
+                _doRender(container);
+                return;
+            }
           }
         } catch (e) { }
         _fetchAndRender(container, groupId, serverVer);
@@ -1762,9 +1808,17 @@ var Navbar = (function () {
       try {
         var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
         if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
-          NAV_CONFIG = cached.config;
-          _doRender(container);
-          return;
+          if (!cached.records) {
+              sessionStorage.removeItem(CACHE_KEY);
+              cached = null;
+          } else {
+              if (window.Router && typeof window.Router.addDynamicRoutes === 'function') {
+                window.Router.addDynamicRoutes(cached.records);
+              }
+              NAV_CONFIG = cached.config;
+              _doRender(container);
+              return;
+          }
         }
       } catch (e) { }
       _fetchAndRender(container, groupId, null);
@@ -1788,6 +1842,7 @@ var Navbar = (function () {
             sessionStorage.setItem(CACHE_KEY, JSON.stringify({
               groupId: groupId,
               config: NAV_CONFIG,
+              records: records,
               syncVer: syncVer || ''
             }));
           } catch (e) { }
@@ -2093,6 +2148,13 @@ UIControls.createDataComboBox = function (options) {
   btnArrow.title = 'Mở danh sách (F4)';
   btnArrow.type = 'button';
 
+  if (options.disabled) {
+    input.disabled = true;
+    btnArrow.disabled = true;
+    container.classList.add('ui-input-disabled');
+    btnArrow.innerHTML = '<span class="material-symbols-outlined">lock</span>';
+  }
+
   actions.appendChild(btnArrow);
 
   // ── Dropdown Panel ──────────────────────────────────────────────
@@ -2268,6 +2330,11 @@ UIControls.createDataComboBox = function (options) {
     if (typeof options.onSearch === 'function') {
       tableWrapper.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted,#94a3b8);font-size:13px">Đang tải...</div>';
       Promise.resolve(options.onSearch(q, page)).then(function (result) {
+        if (result && !Array.isArray(result) && result.data) {
+          if (result.headers) options.headers = result.headers;
+          if (result.colFilterIndex !== undefined) options.colFilterIndex = result.colFilterIndex;
+          result = result.data;
+        }
         if (Array.isArray(result)) {
           fullData = result;
           renderTable(fullData);

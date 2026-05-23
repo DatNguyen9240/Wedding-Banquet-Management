@@ -27,6 +27,8 @@ window.API_CONFIG = {
             GET_ALL_MENUS_FOR_GROUP: '/api/API_LayQuyenNhomDayDu',
             SAVE_GROUP_PERMISSIONS: '/api/API_LuuQuyenCuaNhom',
             GET_GROUP_LIST: '/api/API_LayDanhSachNhom',
+            GET_VERSION: '/api/API_LayPhienBanQuyen',
+            GET_MY_PERMISSIONS: '/api/API_LayQuyenCuaToi',
         },
 
         BOOKING: {

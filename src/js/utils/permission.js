@@ -4,12 +4,23 @@
  */
 var Permission = (function () {
   function _get(module) {
-    var perms = JSON.parse(localStorage.getItem('app_permissions') || '{}');
-    // Mặc định cho phép tất cả ở môi trường phát triển ban đầu
+    var legacyPerms = JSON.parse(localStorage.getItem('app_permissions') || '{}');
+    var newPerms = JSON.parse(localStorage.getItem('pmql_permissions') || '{}');
+    var perms = Object.keys(newPerms).length > 0 ? newPerms : legacyPerms;
+    
     if (Object.keys(perms).length === 0) {
       return { xem: true, them: true, sua: true, xoa: true };
     }
-    return perms[module] || { xem: false, them: false, sua: false, xoa: false };
+    
+    var p = perms[module] || {};
+
+    
+    return {
+        xem: p.CanView == 1 || p.CanView === '1' || p.CanView === true || p.CanView === 'true' || p.xem == 1 || p.xem === '1' || p.xem === true || p.xem === 'true',
+        them: p.CanAdd == 1 || p.CanAdd === '1' || p.CanAdd === true || p.CanAdd === 'true' || p.them == 1 || p.them === '1' || p.them === true || p.them === 'true',
+        sua: p.CanEdit == 1 || p.CanEdit === '1' || p.CanEdit === true || p.CanEdit === 'true' || p.sua == 1 || p.sua === '1' || p.sua === true || p.sua === 'true',
+        xoa: p.CanDelete == 1 || p.CanDelete === '1' || p.CanDelete === true || p.CanDelete === 'true' || p.xoa == 1 || p.xoa === '1' || p.xoa === true || p.xoa === 'true'
+    };
   }
 
   return {
