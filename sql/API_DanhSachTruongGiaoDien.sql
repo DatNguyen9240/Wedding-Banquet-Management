@@ -66,7 +66,7 @@ BEGIN
            OR ff.CaptionVN LIKE N'%' + @Keyword + '%')
       AND (@FormName IS NULL OR @FormName = '' OR ff.FormName = @FormName)
     ORDER BY ff.FormName ASC, ff.FieldName ASC
-    OFFSET (@Page - 1) * @Limit ROWS
-    FETCH NEXT @Limit ROWS ONLY;
+    OFFSET (ISNULL(@Page, 1) - 1) * ISNULL(@Limit, 15) ROWS
+    FETCH NEXT ISNULL(@Limit, 15) ROWS ONLY;
 END
 GO
