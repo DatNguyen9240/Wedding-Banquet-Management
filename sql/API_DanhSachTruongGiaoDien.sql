@@ -26,6 +26,8 @@ BEGIN
         ff.IsRequired, 
         ff.FormPosition, 
         ff.ShowInForm,
+        ff.ValidateRule,
+        ff.DependsOn,
         
         -- Tính toán động showInAdd từ AddNewColumnArr
         CASE 

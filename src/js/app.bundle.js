@@ -3571,8 +3571,10 @@ var UITable = (function () {
     var table = document.createElement('table');
     table.className = 'data-table';
 
-    // Tbody
+    // Tbody & Thead
+    var thead = document.createElement('thead');
     var tbody = document.createElement('tbody');
+    table.appendChild(thead);
     table.appendChild(tbody);
 
     var currentData = config.data ? config.data.slice() : [];
@@ -3631,15 +3633,59 @@ var UITable = (function () {
     }
 
     // Thead
-    if (config.headers && config.headers.length > 0) {
-      var thead = document.createElement('thead');
-      var trHead = document.createElement('tr');
-      
-      config.headers.forEach(function(h, idx) {
-        var th = document.createElement('th');
+    function renderHead() {
+      thead.innerHTML = '';
+      if (config.headers && config.headers.length > 0) {
+        var trHead = document.createElement('tr');
+        
+        config.headers.forEach(function(h, idx) {
+          var th = document.createElement('th');
+          th.draggable = true; // Enable drag
+          th.style.cursor = 'grab'; // Add grab cursor to indicate draggable
+          th.style.userSelect = 'none'; // Prevent text selection during drag
+
+          // Drag and Drop Logic
+          th.addEventListener('dragstart', function(e) {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(idx));
+            setTimeout(function() { th.style.opacity = '0.5'; }, 0);
+          });
+          th.addEventListener('dragend', function(e) {
+            th.style.opacity = '1';
+            th.style.cursor = 'grab';
+          });
+          th.addEventListener('dragenter', function(e) {
+            e.preventDefault();
+          });
+          th.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            th.style.borderLeft = '2px solid var(--color-primary)';
+          });
+          th.addEventListener('dragleave', function(e) {
+            th.style.borderLeft = '';
+          });
+          th.addEventListener('drop', function(e) {
+            e.preventDefault();
+            th.style.borderLeft = '';
+            var fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+            var toIdx = idx;
+            if (!isNaN(fromIdx) && fromIdx !== toIdx) {
+              // Swap headers
+              var movedHeader = config.headers.splice(fromIdx, 1)[0];
+              config.headers.splice(toIdx, 0, movedHeader);
+              // Swap columns
+              if (config.columns) {
+                var movedCol = config.columns.splice(fromIdx, 1)[0];
+                config.columns.splice(toIdx, 0, movedCol);
+              }
+              renderAll(); // Re-render head and body
+            }
+          });
         
         var spanTxt = document.createElement('span');
         spanTxt.innerText = h.label || h;
+        spanTxt.style.pointerEvents = 'none'; // Prevent child interference
         th.appendChild(spanTxt);
 
         if (h.width) th.style.width = h.width;
@@ -3647,11 +3693,10 @@ var UITable = (function () {
 
         // Nếu header có sortable
         if (h.sortable && h.field) {
-          th.style.cursor = 'pointer';
-          th.style.userSelect = 'none';
           
           var icon = document.createElement('span');
           icon.className = 'material-symbols-outlined sort-icon';
+          icon.style.pointerEvents = 'none'; // Prevent child interference
           
           if (currentSort.field === h.field) {
             icon.innerText = currentSort.dir === 'asc' ? 'expand_less' : 'expand_more';
@@ -3710,11 +3755,40 @@ var UITable = (function () {
         trHead.appendChild(th);
       });
       thead.appendChild(trHead);
-      table.appendChild(thead);
+    }
     }
 
-    renderBody();
+    function renderAll() {
+      renderHead();
+      renderBody();
+    }
+
+    renderAll();
     wrapper.appendChild(table);
+
+    wrapper.updateData = function(newData) {
+      currentData = newData ? newData.slice() : [];
+      renderBody();
+      wrapper.hideLoading();
+    };
+
+    wrapper.showLoading = function(text) {
+      wrapper.style.position = 'relative';
+      var loader = wrapper.querySelector('.table-loader');
+      if (!loader) {
+        loader = document.createElement('div');
+        loader.className = 'table-loader';
+        loader.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.7);display:flex;align-items:center;justify-content:center;z-index:10;font-weight:600;color:var(--color-primary);border-radius:8px;backdrop-filter:blur(2px);';
+        wrapper.appendChild(loader);
+      }
+      loader.innerText = text || 'Đang tải dữ liệu...';
+      loader.style.display = 'flex';
+    };
+
+    wrapper.hideLoading = function() {
+      var loader = wrapper.querySelector('.table-loader');
+      if (loader) loader.style.display = 'none';
+    };
 
     return wrapper;
   }

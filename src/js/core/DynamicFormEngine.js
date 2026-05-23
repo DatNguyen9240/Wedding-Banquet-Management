@@ -124,7 +124,9 @@ window.DynamicFormEngine = (function () {
             renderRule: (item.renderRule || '').toLowerCase().trim(),
             dataSource: (item.dataSource || '').trim(),
             isReadOnlyEdit: String(item.isReadOnlyEdit) === '1' || item.isReadOnlyEdit === true || String(item.IsReadOnlyEdit) === '1' || item.IsReadOnlyEdit === true,
-            isReadOnlyAdd: String(item.isReadOnlyAdd) === '1' || item.isReadOnlyAdd === true || String(item.IsReadOnlyAdd) === '1' || item.IsReadOnlyAdd === true
+            isReadOnlyAdd: String(item.isReadOnlyAdd) === '1' || item.isReadOnlyAdd === true || String(item.IsReadOnlyAdd) === '1' || item.IsReadOnlyAdd === true,
+            validateRule: (item.validateRule || item.ValidateRule || '').trim(),
+            dependsOn: (item.dependsOn || item.DependsOn || '').trim()
           });
         });
 
@@ -271,9 +273,18 @@ window.DynamicFormEngine = (function () {
   }
 
   // ── Load Data ─────────────────────────────────────────────
+  var savedScrollY = 0; // Lưu vị trí scroll
+
   function _loadData() {
     var gridContainer = $container ? $container.querySelector('#dynamic-grid-container') : null;
-    if (gridContainer) gridContainer.innerHTML = '<div class="p-4 text-center" style="color:var(--color-text-secondary);">' + MODULE_CONFIG.TextLoading + '</div>';
+    var existingTable = gridContainer ? gridContainer.querySelector('.table-wrapper') : null;
+    
+    if (existingTable && typeof existingTable.showLoading === 'function') {
+        savedScrollY = window.scrollY;
+        existingTable.showLoading(MODULE_CONFIG.TextLoading);
+    } else if (gridContainer) {
+        gridContainer.innerHTML = '<div class="p-4 text-center" style="color:var(--color-text-secondary);">' + MODULE_CONFIG.TextLoading + '</div>';
+    }
 
     if (MODULE_CONFIG.ApiSearch) {
       var query = {
@@ -391,6 +402,11 @@ window.DynamicFormEngine = (function () {
           }
         });
         gridContainer.appendChild(paginationEl);
+      }
+
+      // Phục hồi vị trí cuộn trang
+      if (savedScrollY > 0) {
+         setTimeout(function() { window.scrollTo(0, savedScrollY); }, 10);
       }
 
       var tbody = tableEl.querySelector('tbody');
@@ -1229,6 +1245,8 @@ window.DynamicFormEngine = (function () {
     body.style.flexDirection = 'column';
     body.style.gap = '14px';
 
+    var currentModalFormState = {}; // Trạng thái form để truyền cho các Combobox gọi API
+
     var grid = document.createElement('div');
     grid.style.display = 'flex';
     grid.style.flexWrap = 'wrap';
@@ -1302,6 +1320,7 @@ window.DynamicFormEngine = (function () {
                disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
                onSelect: function(row) {
                   hiddenInput.value = row[0]; // Cập nhật ID
+                  hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
                }
             });
             
@@ -1335,6 +1354,10 @@ window.DynamicFormEngine = (function () {
 
             var searchApiCall = function(q, page) {
                var payload = Object.assign({}, fetchPayload);
+               // Lấy formState từ biến local của modal nếu có
+               if (typeof currentModalFormState !== 'undefined') {
+                  payload = Object.assign(payload, currentModalFormState);
+               }
                if (q) payload.Keyword = q;
                return ApiClient.post(finalUrl, payload).then(function (res) {
                  var comboData = [];
@@ -1366,7 +1389,10 @@ window.DynamicFormEngine = (function () {
                headers: ['Mã', 'Tên'],
                disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
                onSearch: searchApiCall,
-               onSelect: function(row) { hiddenInput.value = row[0]; }
+               onSelect: function(row) { 
+                  hiddenInput.value = row[0]; 
+                  hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+               }
             });
 
             if (field.value) {
@@ -1417,6 +1443,33 @@ window.DynamicFormEngine = (function () {
       
       wrapper.appendChild(inputEl);
       grid.appendChild(wrapper);
+      
+      // Gán giá trị mặc định vào currentModalFormState
+      currentModalFormState[field.name] = field.value || '';
+    });
+
+    // Lắng nghe sự kiện thay đổi để xử lý Phụ thuộc (Dependencies)
+    body.addEventListener('change', function(e) {
+        var changedName = e.target.name;
+        if (changedName) {
+            currentModalFormState[changedName] = e.target.value;
+            // Tìm các trường phụ thuộc vào trường vừa đổi
+            globalFormSchema.forEach(function(f) {
+                if (f.dependsOn === changedName) {
+                    currentModalFormState[f.name] = ''; // Reset state
+                    var childInput = body.querySelector('input[name="'+f.name+'"]');
+                    if (childInput) {
+                        childInput.value = ''; // Xóa value ẩn
+                        // Xóa luôn giá trị hiển thị trên màn hình nếu là combobox
+                        var comboWrap = childInput.closest('.form-group');
+                        if (comboWrap) {
+                           var displayInp = comboWrap.querySelector('input.ui-input');
+                           if (displayInp) displayInp.value = '';
+                        }
+                    }
+                }
+            });
+        }
     });
 
     // Footer buttons
@@ -1543,14 +1596,34 @@ window.DynamicFormEngine = (function () {
       }
     });
 
-    // 2. Validate Required 
+    // 2. Validate Required và ValidateRule
     var isInvalid = false;
     for (var i = 0; i < globalFormSchema.length; i++) {
       var field = globalFormSchema[i];
-      if (field.required && !formInputData[field.name]) {
+      var val = formInputData[field.name];
+      if (field.required && !val) {
         Alert.warning(MODULE_CONFIG.WarnMissingInfo, MODULE_CONFIG.WarnMissingInput.replace('{0}', field.label));
         isInvalid = true;
         break;
+      }
+      if (val && field.validateRule) {
+        var rule = field.validateRule.toLowerCase();
+        if (rule.startsWith('min:')) {
+           var min = parseInt(rule.split(':')[1]);
+           if (val.length < min) { Alert.warning('Lỗi nhập liệu', field.label + ' phải có ít nhất ' + min + ' ký tự'); isInvalid = true; break; }
+        } else if (rule.startsWith('max:')) {
+           var max = parseInt(rule.split(':')[1]);
+           if (val.length > max) { Alert.warning('Lỗi nhập liệu', field.label + ' không được vượt quá ' + max + ' ký tự'); isInvalid = true; break; }
+        } else if (rule === 'email') {
+           var emailRe = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+           if (!emailRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng Email'); isInvalid = true; break; }
+        } else if (rule.startsWith('regex:')) {
+           var reStr = field.validateRule.substring(6);
+           try {
+              var re = new RegExp(reStr);
+              if (!re.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng yêu cầu'); isInvalid = true; break; }
+           } catch(e) { console.error('Lỗi Regex:', e); }
+        }
       }
     }
     if (isInvalid) return;
