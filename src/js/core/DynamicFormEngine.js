@@ -56,6 +56,9 @@ window.DynamicFormEngine = (function () {
     $container = container;
     MODULE_CONFIG = config;
 
+    try { var cached = sessionStorage.getItem('selectedRows_' + MODULE_CONFIG.FormName); selectedRows = cached ? JSON.parse(cached) : []; } catch(e) { selectedRows = []; }
+
+
     // 1. Lấy Từ điển UI từ Database trước
     var configEndpoint = MODULE_CONFIG.ApiDictionary;
 
@@ -451,6 +454,8 @@ window.DynamicFormEngine = (function () {
   }
 
   function _updateSelectionCounter() {
+    try { sessionStorage.setItem('selectedRows_' + MODULE_CONFIG.FormName, JSON.stringify(selectedRows)); } catch(e) {}
+
     var btnContainer = $container.querySelector('#dynamic-btn-container');
     if (!btnContainer) return;
     var actualToolbar = btnContainer.firstElementChild;
