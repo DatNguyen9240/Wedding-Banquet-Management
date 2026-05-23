@@ -365,50 +365,8 @@ window.DynamicFormEngine = (function () {
         if (actualTable) actualTable.classList.add('no-mobile-stack');
       }
 
-      // Bắt sự kiện Click Chuột Phải (Context Menu) để Copy
-      if (typeof UIContextMenu !== 'undefined') {
-        tableEl.addEventListener('contextmenu', function (e) {
-          e.preventDefault(); // Ngăn menu mặc định của trình duyệt
-
-          var td = e.target.closest('td');
-          var tr = e.target.closest('tr');
-          if (!td && !tr) return;
-
-          // Hàm lấy nội dung của hàng (nối các ô bằng dấu cách hoặc tab)
-          var getRowText = function (rowEl) {
-            if (!rowEl) return '';
-            var cells = rowEl.querySelectorAll('td');
-            var textArr = [];
-            for (var i = 0; i < cells.length; i++) {
-              textArr.push(cells[i].innerText.trim());
-            }
-            return textArr.join(' | ');
-          };
-
-          UIContextMenu.show(e, [
-            {
-              icon: 'content_copy',
-              label: MODULE_CONFIG.MenuCopyCell,
-              onClick: function () {
-                if (td) {
-                  navigator.clipboard.writeText(td.innerText.trim());
-                  if (typeof UIToast !== 'undefined') UIToast.show(MODULE_CONFIG.ToastCopyCell, 'success');
-                }
-              }
-            },
-            {
-              icon: 'file_copy',
-              label: MODULE_CONFIG.MenuCopyRow,
-              onClick: function () {
-                if (tr) {
-                  navigator.clipboard.writeText(getRowText(tr));
-                  if (typeof UIToast !== 'undefined') UIToast.show(MODULE_CONFIG.ToastCopyRow, 'success');
-                }
-              }
-            }
-          ]);
-        });
-      }
+      // Các tính năng nâng cao (Copy, Vuốt chọn) giờ đã được chuẩn hóa trong UITable
+      // (Sẽ gọi sau khi gán gridData và selectedRows)
 
       gridContainer.appendChild(tableEl);
 
@@ -441,151 +399,20 @@ window.DynamicFormEngine = (function () {
             tr.classList.add('active');
           }
         });
-        // Drag Select Variables
-        var isDragSelecting = false;
-        var dragAction = null;
-        var dragTimer = null;
-        var lastDragRowIdx = -1;
-        var lastPointerX = -1;
-        var lastPointerY = -1;
-        var autoScrollFrame = null;
-
-        function updateSelectionAtPoint(x, y) {
-           var el = document.elementFromPoint(x, y);
-           if (el) {
-              var moveTr = el.closest('tr');
-              if (moveTr && moveTr.parentNode === tbody) {
-                 var moveIdx = Array.from(tbody.children).indexOf(moveTr);
-                 if (moveIdx !== lastDragRowIdx) {
-                    toggleRow(moveTr, moveIdx, dragAction);
-                    _updateSelectionCounter();
-                    lastDragRowIdx = moveIdx;
-                 }
-              }
+        // Lắng nghe sự kiện từ Global Drag Select (Trạm gác UITable)
+        tbody.addEventListener('rowSelectionToggled', function(e) {
+           var rData = gridData[e.detail.rowIndex];
+           if (!rData) return;
+           if (e.detail.action === 'add') {
+               if (!selectedRows.find(function(sr) { return sr.id === rData.id; })) selectedRows.push(rData);
+           } else {
+               selectedRows = selectedRows.filter(function(sr) { return sr.id !== rData.id; });
            }
-        }
-
-        function handleAutoScroll() {
-           if (!isDragSelecting) return;
-           var scrollArea = document.querySelector('.app-content') || document.documentElement;
-           var rect = scrollArea.getBoundingClientRect ? scrollArea.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
-           var edgeSize = 80; // Margin to trigger scroll
-           var scrollAmount = 0;
-
-           if (lastPointerY > 0 && lastPointerY < rect.top + edgeSize) {
-               scrollAmount = -15; // Scroll up
-           } else if (lastPointerY > 0 && lastPointerY > rect.bottom - edgeSize) {
-               scrollAmount = 15; // Scroll down
-           }
-
-           if (scrollAmount !== 0) {
-               scrollArea.scrollTop += scrollAmount;
-               updateSelectionAtPoint(lastPointerX, lastPointerY);
-           }
-           autoScrollFrame = requestAnimationFrame(handleAutoScroll);
-        }
-
-        function toggleRow(tr, idx, forceAction) {
-          var rData = gridData[idx];
-          if (!rData) return;
-          var isActive = tr.classList.contains('active');
-          if (forceAction === 'add' && !isActive) {
-             tr.classList.add('active');
-             if (!selectedRows.find(function(sr) { return sr.id === rData.id; })) selectedRows.push(rData);
-             lastSelectedIdx = idx;
-          } else if (forceAction === 'remove' && isActive) {
-             tr.classList.remove('active');
-             selectedRows = selectedRows.filter(function(sr) { return sr.id !== rData.id; });
-             lastSelectedIdx = idx;
-          }
-        }
-
-        // Global touchmove handler to prevent scrolling during drag select
-        var preventTouchScroll = function(e) {
-          if (isDragSelecting) {
-            e.preventDefault();
-          }
-        };
-        // Add globally once
-        if (!window.__dragSelectTouchAttached) {
-           document.addEventListener('touchmove', preventTouchScroll, { passive: false });
-           window.__dragSelectTouchAttached = true;
-        }
-
-        tbody.addEventListener('pointerdown', function(e) {
-           var tr = e.target.closest('tr');
-           if (!tr || tr.children.length === 1 || e.button !== 0) return;
-
-           var startX = e.clientX, startY = e.clientY;
-           var idx = Array.from(tbody.children).indexOf(tr);
-           lastDragRowIdx = idx;
-           isDragSelecting = false;
-
-           dragTimer = setTimeout(function() {
-             isDragSelecting = true;
-             var isActive = tr.classList.contains('active');
-             dragAction = isActive ? 'remove' : 'add';
-             
-             // Tắt cuộn trang và bôi đen chữ khi đang drag select
-             document.body.style.userSelect = 'none';
-             tbody.style.touchAction = 'none';
-             
-             // Haptic feedback (Mobile)
-             if (navigator.vibrate) navigator.vibrate(50);
-             
-             // Bắt đầu vòng lặp auto scroll
-             lastPointerX = startX;
-             lastPointerY = startY;
-             autoScrollFrame = requestAnimationFrame(handleAutoScroll);
-             
-             toggleRow(tr, idx, dragAction);
-             _updateSelectionCounter();
-           }, 350); // Giữ 350ms để kích hoạt chế độ vuốt chọn
-
-           function onPointerMove(ev) {
-             if (!isDragSelecting) {
-                if (Math.abs(ev.clientX - startX) > 10 || Math.abs(ev.clientY - startY) > 10) {
-                   clearTimeout(dragTimer);
-                }
-             } else {
-                ev.preventDefault(); // Cố gắng chặn cuộn trên Desktop/chuột
-                lastPointerX = ev.clientX;
-                lastPointerY = ev.clientY;
-                updateSelectionAtPoint(lastPointerX, lastPointerY);
-             }
-           }
-
-           function onPointerUp(ev) {
-             clearTimeout(dragTimer);
-             if (autoScrollFrame) cancelAnimationFrame(autoScrollFrame);
-             document.body.style.userSelect = '';
-             tbody.style.touchAction = '';
-             document.removeEventListener('pointermove', onPointerMove);
-             document.removeEventListener('pointerup', onPointerUp);
-             document.removeEventListener('pointercancel', onPointerUp);
-             
-             if (isDragSelecting) {
-                // Ngăn chặn sự kiện click bình thường phát sinh ngay sau khi thả tay
-                var preventClick = function(evt) {
-                   evt.stopPropagation();
-                   evt.preventDefault();
-                   document.removeEventListener('click', preventClick, true);
-                };
-                document.addEventListener('click', preventClick, true);
-                setTimeout(function() { 
-                   document.removeEventListener('click', preventClick, true);
-                   isDragSelecting = false; 
-                }, 50);
-             }
-           }
-
-           document.addEventListener('pointermove', onPointerMove);
-           document.addEventListener('pointerup', onPointerUp);
-           document.addEventListener('pointercancel', onPointerUp);
+           _updateSelectionCounter();
         });
 
         tbody.addEventListener('click', function (e) {
-          if (isDragSelecting) return;
+          if (typeof tbody.isDragSelecting === 'function' && tbody.isDragSelecting()) return;
           var tr = e.target.closest('tr');
           if (!tr || tr.children.length === 1) return;
           var idx = Array.from(tbody.children).indexOf(tr);

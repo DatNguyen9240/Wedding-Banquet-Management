@@ -106,6 +106,8 @@ var ContractPage = (function () {
       `;
       tbody.appendChild(tr);
     });
+
+
   }
 
   function getSelectedRow() {
@@ -148,8 +150,11 @@ var ContractPage = (function () {
     var tbody = $container.querySelector('#contract-table tbody');
     if (tbody) {
       tbody.addEventListener('click', function (e) {
+        if (typeof tbody.isDragSelecting === 'function' && tbody.isDragSelecting()) return;
         var tr = e.target.closest('tr');
         if (!tr) return;
+        // Nếu người dùng đang giữ phím Ctrl/Cmd thì cho phép multi-select (nếu muốn)
+        // Hiện tại giữ nguyên single select cho click thường
         Array.from(tbody.querySelectorAll('tr')).forEach(r => r.classList.remove('active'));
         tr.classList.add('active');
       });
