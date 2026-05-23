@@ -365,6 +365,9 @@ var Navbar = (function () {
           }
           if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
             NAV_CONFIG = cached.config;
+            if (cached.rawRecords && window.Router && typeof Router.addDynamicRoutes === 'function') {
+              Router.addDynamicRoutes(cached.rawRecords);
+            }
             _doRender(container);
             return;
           }
@@ -380,6 +383,9 @@ var Navbar = (function () {
         var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
         if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
           NAV_CONFIG = cached.config;
+          if (cached.rawRecords && window.Router && typeof Router.addDynamicRoutes === 'function') {
+            Router.addDynamicRoutes(cached.rawRecords);
+          }
           _doRender(container);
           return;
         }
@@ -400,11 +406,15 @@ var Navbar = (function () {
         var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
         if (records && records.length > 0) {
           NAV_CONFIG = _buildConfigFromDB(records);
+          if (window.Router && typeof Router.addDynamicRoutes === 'function') {
+            Router.addDynamicRoutes(records);
+          }
           // Lưu cache kèm syncVer để lần sau so sánh
           try {
             sessionStorage.setItem(CACHE_KEY, JSON.stringify({
               groupId: groupId,
               config: NAV_CONFIG,
+              rawRecords: records,
               syncVer: syncVer || ''
             }));
           } catch (e) { }
