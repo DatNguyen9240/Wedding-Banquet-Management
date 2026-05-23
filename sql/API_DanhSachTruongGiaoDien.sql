@@ -3,12 +3,19 @@ IF OBJECT_ID('API_DanhSachTruongGiaoDien', 'P') IS NOT NULL
 GO
 
 CREATE PROCEDURE API_DanhSachTruongGiaoDien
-    @Keyword nvarchar(100) = NULL
+    @Keyword nvarchar(100) = NULL,
+    @FormName nvarchar(100) = NULL,
+    @UserName nvarchar(100) = NULL,
+    @SortColumn nvarchar(100) = NULL,
+    @SortDir nvarchar(10) = NULL,
+    @Page int = 1,
+    @Limit int = 15
 AS
 BEGIN
     SET NOCOUNT ON;
     
     SELECT 
+        COUNT(*) OVER() AS TotalRecords,
         ff.AutoID, 
         ff.FormName, 
         ff.FieldName, 
@@ -54,6 +61,9 @@ BEGIN
            OR ff.FormName LIKE '%' + @Keyword + '%' 
            OR ff.FieldName LIKE '%' + @Keyword + '%'
            OR ff.CaptionVN LIKE N'%' + @Keyword + '%')
-    ORDER BY ff.FormName ASC, ff.FieldName ASC;
+      AND (@FormName IS NULL OR @FormName = '' OR ff.FormName = @FormName)
+    ORDER BY ff.FormName ASC, ff.FieldName ASC
+    OFFSET (@Page - 1) * @Limit ROWS
+    FETCH NEXT @Limit ROWS ONLY;
 END
 GO
