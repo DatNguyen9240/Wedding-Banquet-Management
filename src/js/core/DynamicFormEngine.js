@@ -554,32 +554,45 @@ window.DynamicFormEngine = (function () {
     var btnContainer = $container.querySelector('#dynamic-btn-container');
     if (!btnContainer) return;
     
-    var counter = btnContainer.querySelector('#selection-counter');
+    var actualToolbar = btnContainer.firstElementChild; // .button-bar
+    if (!actualToolbar) return;
+
+    var counter = actualToolbar.querySelector('#selection-counter');
     if (!counter) {
+      // Bọc các nút bấm hiện tại vào một vùng cuộn riêng để bảo toàn background trắng của toolbar gốc
+      if (!actualToolbar.querySelector('.btn-scroll-wrapper')) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'btn-scroll-wrapper';
+        while (actualToolbar.firstChild) {
+          wrapper.appendChild(actualToolbar.firstChild);
+        }
+        actualToolbar.appendChild(wrapper);
+      }
+
       if (!document.getElementById('selection-counter-style')) {
         var style = document.createElement('style');
         style.id = 'selection-counter-style';
         style.innerHTML = `
-          /* Parent container cho phép rớt dòng */
-          #dynamic-btn-container {
+          /* Toolbar gốc: Cho phép rớt dòng để chứa counter ở dưới trên mobile */
+          #dynamic-btn-container .button-bar {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             gap: 10px;
           }
-          /* Toolbar chứa các nút: Ép KHÔNG rớt dòng, hiển thị thanh cuộn ngang */
-          #dynamic-btn-container .button-bar {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            overflow-x: auto !important;
+          /* Wrapper chứa nút bấm: Cuộn ngang, không rớt dòng */
+          .btn-scroll-wrapper {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
             flex: 1 1 auto;
             min-width: 0;
             gap: 8px;
             -ms-overflow-style: none;
             scrollbar-width: none;
-            padding-bottom: 2px; /* Tránh lẹm shadow nếu có */
+            padding-bottom: 2px;
           }
-          #dynamic-btn-container .button-bar::-webkit-scrollbar {
+          .btn-scroll-wrapper::-webkit-scrollbar {
             display: none;
           }
           /* Badge Đã chọn */
@@ -598,7 +611,7 @@ window.DynamicFormEngine = (function () {
             gap: 4px;
           }
           @media (max-width: 768px) {
-            #dynamic-btn-container .button-bar {
+            .btn-scroll-wrapper {
               flex: 1 1 100%;
               width: 100%;
             }
@@ -615,7 +628,7 @@ window.DynamicFormEngine = (function () {
       }
       counter = document.createElement('div');
       counter.id = 'selection-counter';
-      btnContainer.appendChild(counter);
+      actualToolbar.appendChild(counter);
     }
     
     if (selectedRows.length > 0) {
