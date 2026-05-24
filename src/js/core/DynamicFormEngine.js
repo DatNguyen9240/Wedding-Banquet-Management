@@ -209,7 +209,7 @@ window.DynamicFormEngine = (function () {
         '</div>' +
         '</div>' +
         '<div id="dynamic-btn-container" style="margin-bottom: 16px;"></div>' +
-        '<div class="card">' +
+        '<div class="card dynamic-grid-card">' +
         '<div class="card-body">' +
         '<div id="dynamic-filter-container" style="margin-bottom: 16px;"></div>' +
         '<div id="dynamic-grid-container"></div>' +
@@ -385,7 +385,7 @@ window.DynamicFormEngine = (function () {
       var query = {
         FormName: MODULE_CONFIG.FormName,
         UserName: _currentUser(),
-        Keyword: currentKeyword || MODULE_CONFIG.FormName, // Ép FormName vào Keyword nếu rỗng theo lệnh sếp
+        Keyword: currentKeyword, // Bỏ hack ép FormName vào Keyword để tránh API_TruyVanDong tìm kiếm sai
         SortColumn: currentSortCol,
         SortDir: currentSortDir,
         Page: currentPage,
@@ -438,10 +438,8 @@ window.DynamicFormEngine = (function () {
         actionRenderers: customRenderers
       });
 
-      if (MODULE_CONFIG.FormName === 'frmFormBuilder') {
-        var actualTable = tableEl.querySelector('table');
-        if (actualTable) actualTable.classList.add('no-mobile-stack');
-      }
+      var actualTable = tableEl.querySelector('table');
+      if (actualTable) actualTable.classList.add('no-mobile-stack');
 
       // Các tính năng nâng cao (Copy, Vuốt chọn) giờ đã được chuẩn hóa trong UITable
       // (Sẽ gọi sau khi gán gridData và selectedRows)

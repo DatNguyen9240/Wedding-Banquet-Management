@@ -1,4 +1,4 @@
-﻿/* --- design-tokens.css --- */
+/* --- design-tokens.css --- */
 /* ═══════════════════════════════════════════
    Design Tokens — TailAdmin Style
    Dành cho Quản lý Tiệc Cưới
@@ -4313,6 +4313,12 @@ body.dark-theme .data-table tbody tr:hover {
     font-size: 12px;
     flex-shrink: 0;
   }
+
+  /* Ẩn pseudo-element tạo spacing rác cho dòng Không có dữ liệu */
+  .data-table:not(.no-mobile-stack) tbody tr.empty-row td::before {
+    display: none;
+    margin: 0;
+  }
 }
 
 
@@ -5297,4 +5303,49 @@ body.dark-theme .data-table tbody tr:hover {
   opacity: 1 !important;
 }
 
+
+
+/* --- FULL BLEED FOR DYNAMIC GRID ON MOBILE --- */
+@media (max-width: 768px) {
+  .dynamic-grid-card {
+    margin-left: -16px !important;
+    margin-right: -16px !important;
+    width: calc(100% + 32px) !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+  .dynamic-grid-card .card-body {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  #dynamic-filter-container, .pagination-container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  .dynamic-grid-card .table-wrapper {
+    margin: 0 !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+}
+
+
+/* --- TIGHTEN TABLE CELLS ON MOBILE --- */
+@media (max-width: 768px) {
+  .data-table th, .data-table td {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .data-table th:last-child, .data-table td:last-child {
+    padding-right: 12px !important;
+  }
+}
 

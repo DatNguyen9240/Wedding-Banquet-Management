@@ -169,14 +169,14 @@ img {
   }
 
   /* Tràn lề 2 bên (Full-bleed) cho các thanh công cụ trên Mobile */
-  .page-title-bar, .button-bar {
-    margin-left: -16px;
-    margin-right: -16px;
+  .page-title-bar, .button-bar, .dynamic-grid-card {
+    margin-left: -16px !important;
+    margin-right: -16px !important;
     width: calc(100% + 32px) !important;
     max-width: none !important;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
   }
 
   .header-left {
@@ -249,8 +249,10 @@ img {
   }
 
   .table-wrapper {
-    width: 100%;
-    border-radius: var(--radius-sm);
+    margin-left: -16px !important;
+    margin-right: -16px !important;
+    width: calc(100% + 32px) !important;
+    border-radius: 0 !important;
   }
 
   .data-table th,
