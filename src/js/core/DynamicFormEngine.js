@@ -385,7 +385,7 @@ window.DynamicFormEngine = (function () {
       var query = {
         FormName: MODULE_CONFIG.FormName,
         UserName: _currentUser(),
-        Keyword: currentKeyword,
+        Keyword: currentKeyword || MODULE_CONFIG.FormName, // Ép FormName vào Keyword nếu rỗng theo lệnh sếp
         SortColumn: currentSortCol,
         SortDir: currentSortDir,
         Page: currentPage,
