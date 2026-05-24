@@ -383,16 +383,16 @@ window.DynamicFormEngine = (function () {
 
     if (MODULE_CONFIG.ApiSearch) {
       var query = {
-        FormName: MODULE_CONFIG.FormName === 'frmFormBuilder' ? '' : MODULE_CONFIG.FormName,
+        FormName: MODULE_CONFIG.FormName,
         UserName: _currentUser(),
-        Keyword: currentKeyword,
+        Keyword: currentKeyword || MODULE_CONFIG.FormName, // Ép FormName vào Keyword nếu rỗng theo lệnh sếp
         SortColumn: currentSortCol,
         SortDir: currentSortDir,
         Page: currentPage,
         Limit: currentLimit
       };
       ApiClient.post(MODULE_CONFIG.ApiSearch, query).then(function (result) {
-        totalRecords = result.total || result._recordtotal || 0;
+        totalRecords = result._recordtotal || 0;
         var dataList = result.list || result.records || [];
         gridData = dataList.map(function (item) {
           // Gắn ID tạm để Table hoạt động
