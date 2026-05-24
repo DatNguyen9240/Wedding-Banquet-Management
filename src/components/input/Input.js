@@ -29,7 +29,13 @@ var UIInput = (function () {
     input.className = 'ui-input';
     if (config.id) input.id = config.id;
     if (config.name) input.name = config.name;
-    if (config.placeholder) input.placeholder = config.placeholder;
+    
+    var finalPlaceholder = config.placeholder;
+    if (!finalPlaceholder && config.label && inputType !== 'checkbox' && inputType !== 'radio' && inputType !== 'date') {
+      finalPlaceholder = 'Nhập ' + config.label.toLowerCase() + '...';
+    }
+    if (finalPlaceholder) input.placeholder = finalPlaceholder;
+    
     if (config.value !== undefined) input.value = config.value;
     if (config.disabled) input.disabled = true;
     if (config.readonly) input.readOnly = true;

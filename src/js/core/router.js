@@ -38,22 +38,43 @@ var Router = (function () {
       };
 
       var formKey = m.FormKey || m.formKey;
+      var formName = m.FormName || m.formName || '';
 
-      // Fallback: Nếu Backend chưa kịp update FormKey, tự suy luận từ urlPara (vd: form-builder -> FORM_BUILDER)
-      if ((!formKey || formKey.trim() === '') && window.APP_MODULES) {
-        var deducedKey = url.trim().replace(/-/g, '_').toUpperCase();
-        if (window.APP_MODULES[deducedKey]) {
-          formKey = deducedKey;
+      var existingConfig = null;
+      
+      // 1. Tìm config dựa vào FormKey hoặc FormName
+      if (window.APP_MODULES) {
+        if (formKey && window.APP_MODULES[formKey]) {
+          existingConfig = window.APP_MODULES[formKey];
+        } else if (formName) {
+          var targetName = formName.toLowerCase();
+          for (var k in window.APP_MODULES) {
+            if (window.APP_MODULES[k].FormName && window.APP_MODULES[k].FormName.toLowerCase() === targetName) {
+              existingConfig = window.APP_MODULES[k];
+              formKey = k;
+              break;
+            }
+          }
+        }
+        
+        // 2. Fallback: tự suy luận từ urlPara (vd: form-builder -> FORM_BUILDER)
+        if (!existingConfig) {
+          var deducedKey = url.trim().replace(/-/g, '_').toUpperCase();
+          if (window.APP_MODULES[deducedKey]) {
+            existingConfig = window.APP_MODULES[deducedKey];
+            formKey = deducedKey;
+          }
         }
       }
 
-      var existingConfig = (formKey && formKey.trim() !== '' && window.APP_MODULES) ? window.APP_MODULES[formKey.trim()] : null;
-
-      if (existingConfig) {
+      // Quyết định dùng DynamicFormEngine:
+      // - Nếu tìm thấy config trong APP_MODULES
+      // - HOẶC nếu FormName bắt đầu bằng chữ "frm"
+      if (existingConfig || formName.toLowerCase().indexOf('frm') === 0) {
         // Dùng DynamicFormEngine
         route.script = 'src/js/core/DynamicFormEngine.js';
         route.pageFn = 'DynamicFormEngine';
-        route.config = existingConfig;
+        route.config = existingConfig || { FormName: formName, PageTitle: route.title };
       } else {
         // Convention: template và script nằm trong thư mục trùng tên URLPara
         var folder = url.trim();

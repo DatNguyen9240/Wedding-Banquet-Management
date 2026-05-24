@@ -20,9 +20,19 @@ var UIActionToolbar = (function () {
       { text: 'Đóng',  icon: 'close',      type: 'tool', onClick: actions.onClose,  attrs: 'data-tooltip="Đóng trang hiện tại"' }
     ];
 
-    return UIButton.createBar(buttons.filter(function(b) {
-      return b.onClick !== false;
-    }));
+    var filteredButtons = [];
+    buttons.forEach(function(b) {
+      if (b.onClick === false) return; // Hide button
+      if (b.onClick === 'DISABLED' || b.onClick === 'disabled') {
+        b.disabled = true;
+        b.onClick = function() {
+          if (typeof Alert !== 'undefined') Alert.warning('Từ chối', 'Bạn không có quyền thao tác chức năng này!');
+        };
+      }
+      filteredButtons.push(b);
+    });
+
+    return UIButton.createBar(filteredButtons);
   }
 
   return {

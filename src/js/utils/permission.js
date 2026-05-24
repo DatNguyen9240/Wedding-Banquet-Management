@@ -12,8 +12,17 @@ var Permission = (function () {
       return { xem: true, them: true, sua: true, xoa: true };
     }
     
-    var p = perms[module] || {};
-
+    var p = perms[module];
+    if (!p) {
+      var target = (module || '').toLowerCase();
+      for (var key in perms) {
+        if (key.toLowerCase() === target) {
+          p = perms[key];
+          break;
+        }
+      }
+    }
+    p = p || {};
     
     return {
         xem: p.CanView == 1 || p.CanView === '1' || p.CanView === true || p.CanView === 'true' || p.xem == 1 || p.xem === '1' || p.xem === true || p.xem === 'true',
