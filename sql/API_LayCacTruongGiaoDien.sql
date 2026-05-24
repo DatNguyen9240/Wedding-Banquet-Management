@@ -9,6 +9,10 @@ BEGIN
         ISNULL(ff.IsRequired, 0) AS [required], 
         ISNULL(ff.FormPosition, 'grid') AS [position],
         
+        -- Trả về thêm cấu hình cấp độ Form để loại bỏ hoàn toàn AppModules.js
+        ISNULL(l.CaptionVN, '') AS [formTitle],
+        ISNULL(l.PrimaryKey, '') AS [primaryKey],
+        
         -- Tính toán động showInAdd từ AddNewColumnArr
         CASE 
             WHEN l.FormID IS NULL THEN 1 -- Nếu không map được Form thì mặc định hiện

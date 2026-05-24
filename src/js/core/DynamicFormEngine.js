@@ -34,12 +34,26 @@ window.DynamicFormEngine = (function () {
   }
 
   function _hasPermission(action) {
+    if (typeof Permission !== 'undefined') {
+      var module = MODULE_CONFIG.FormName;
+      if (action === 'ADD') return Permission.canAdd(module);
+      if (action === 'EDIT') return Permission.canEdit(module);
+      if (action === 'DELETE') return Permission.canDelete(module);
+    }
+    
+    // Fallback logic
     var perms = JSON.parse(localStorage.getItem('pmql_permissions') || 'null');
     if (!perms) return true; // Chưa ráp hệ thống phân quyền thì thả cửa
 
-    // Ví dụ: perms = { 'frmStaff': { CanAdd: 1, CanEdit: 0, CanDelete: 0 } }
-    var modulePerm = perms[MODULE_CONFIG.FormName];
-    if (!modulePerm) return true;
+    var targetKey = (MODULE_CONFIG.FormName || '').toLowerCase();
+    var modulePerm = null;
+    for (var key in perms) {
+      if (key.toLowerCase() === targetKey) {
+        modulePerm = perms[key];
+        break;
+      }
+    }
+    if (!modulePerm) return false; // Fail-closed
 
     if (action === 'ADD') return !!modulePerm.CanAdd;
     if (action === 'EDIT') return !!modulePerm.CanEdit;
@@ -55,6 +69,13 @@ window.DynamicFormEngine = (function () {
     }
     $container = container;
     MODULE_CONFIG = config;
+
+    // --- GENERIC API (PURE LOW-CODE/NO-CODE) ---
+    // Ghi đè hoàn toàn: LUÔN LUÔN gọi SP động dưới SQL, phớt lờ mọi cấu hình API trong JS
+    MODULE_CONFIG.ApiSearch = '/api/API_TruyVanDong';
+    MODULE_CONFIG.ApiSave = '/api/API_LuuDong';
+    MODULE_CONFIG.ApiDelete = '/api/API_XoaDong';
+    MODULE_CONFIG.ApiDictionary = '/api/API_LayCacTruongGiaoDien'; // Hardcode URL luôn nếu muốn
 
     try { var cached = sessionStorage.getItem('selectedRows_' + MODULE_CONFIG.FormName); selectedRows = cached ? JSON.parse(cached) : []; } catch (e) { selectedRows = []; }
 
@@ -86,6 +107,32 @@ window.DynamicFormEngine = (function () {
       // 2. Lưu Từ điển vào biến toàn cục
       var dataList = resConfig ? (resConfig.list || resConfig.records) : null;
       if (resConfig && resConfig.code === 0 && dataList) {
+        
+        // --- NO-CODE MAGIC: Đọc cấu hình cấp Form từ Record đầu tiên ---
+        if (dataList.length > 0) {
+            var firstRow = dataList[0];
+            if (firstRow.formTitle) MODULE_CONFIG.PageTitle = firstRow.formTitle;
+            if (firstRow.primaryKey) MODULE_CONFIG.PrimaryKey = firstRow.primaryKey;
+            
+            // Tự động sinh một số nhãn mặc định nếu chưa có
+            MODULE_CONFIG.TitleAdd = MODULE_CONFIG.TitleAdd || ('➕ Thêm ' + (firstRow.formTitle || 'Mới'));
+            MODULE_CONFIG.TitleEdit = MODULE_CONFIG.TitleEdit || ('✏️ Sửa ' + (firstRow.formTitle || ''));
+            MODULE_CONFIG.BtnSaveAdd = MODULE_CONFIG.BtnSaveAdd || 'Thêm mới';
+            MODULE_CONFIG.BtnSaveEdit = MODULE_CONFIG.BtnSaveEdit || 'Lưu thay đổi';
+            MODULE_CONFIG.BtnCancel = MODULE_CONFIG.BtnCancel || 'Hủy bỏ';
+            MODULE_CONFIG.ToastAdd = MODULE_CONFIG.ToastAdd || 'Đã thêm mới thành công!';
+            MODULE_CONFIG.ToastEdit = MODULE_CONFIG.ToastEdit || 'Đã cập nhật thành công!';
+            MODULE_CONFIG.WarnSelectEdit = MODULE_CONFIG.WarnSelectEdit || 'Vui lòng chọn dữ liệu cần sửa';
+            MODULE_CONFIG.WarnSelectDelete = MODULE_CONFIG.WarnSelectDelete || 'Vui lòng chọn dữ liệu cần xóa';
+            MODULE_CONFIG.ConfirmDelete = MODULE_CONFIG.ConfirmDelete || 'Bạn có chắc muốn xóa {0}?';
+            MODULE_CONFIG.TextDeleteFallback = MODULE_CONFIG.TextDeleteFallback || 'dòng này';
+            MODULE_CONFIG.AlertTitleConfirm = MODULE_CONFIG.AlertTitleConfirm || 'Xác nhận xóa';
+            MODULE_CONFIG.AlertTitleWarning = MODULE_CONFIG.AlertTitleWarning || 'Cảnh báo';
+            MODULE_CONFIG.AlertTitleError = MODULE_CONFIG.AlertTitleError || 'Lỗi';
+            MODULE_CONFIG.AlertTitleInfo = MODULE_CONFIG.AlertTitleInfo || 'Thông báo';
+            MODULE_CONFIG.ModalWidth = MODULE_CONFIG.ModalWidth || '600px';
+        }
+
         globalDictionary = {};
         globalFormSchema = [];
 
@@ -175,7 +222,7 @@ window.DynamicFormEngine = (function () {
       var btnContainer = $container.querySelector('#dynamic-btn-container');
       if (btnContainer && typeof UIActionToolbar !== 'undefined') {
         var toolbar = UIActionToolbar.create({
-          onAdd: _hasPermission('ADD') ? _openAddForm : false,
+          onAdd: _hasPermission('ADD') ? _openAddForm : 'DISABLED',
           onEdit: _hasPermission('EDIT') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectEdit);
             if (selectedRows.length > 1) {
@@ -183,7 +230,7 @@ window.DynamicFormEngine = (function () {
             } else {
               _openEditForm(selectedRows[0]);
             }
-          } : false,
+          } : 'DISABLED',
           onDelete: _hasPermission('DELETE') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectDelete);
 
@@ -258,24 +305,25 @@ window.DynamicFormEngine = (function () {
         toolbar.style.width = 'auto';
 
         // Custom Buttons
-        if (_hasPermission('ADD')) {
-          var btnBulkAdd = UIButton.create({
-            text: 'Thêm nhiều',
-            icon: 'post_add',
-            type: 'tool',
-            onClick: function () {
-              var emptyRows = [];
-              for (var i = 0; i < 3; i++) emptyRows.push({});
-              _openBulkGridEditForm(emptyRows, true);
-            }
-          });
-          // Chèn sau nút Thêm
-          var btnAddOriginal = toolbar.querySelector('.btn-primary');
-          if (btnAddOriginal) {
-            btnAddOriginal.parentNode.insertBefore(btnBulkAdd, btnAddOriginal.nextSibling);
-          } else {
-            toolbar.insertBefore(btnBulkAdd, toolbar.firstChild);
+        var hasAdd = _hasPermission('ADD');
+        var btnBulkAdd = UIButton.create({
+          text: 'Thêm nhiều',
+          icon: 'post_add',
+          type: 'tool',
+          disabled: !hasAdd,
+          onClick: function () {
+            if (!hasAdd) return typeof Alert !== 'undefined' ? Alert.warning('Từ chối', 'Bạn không có quyền thao tác chức năng này!') : null;
+            var emptyRows = [];
+            for (var i = 0; i < 3; i++) emptyRows.push({});
+            _openBulkGridEditForm(emptyRows, true);
           }
+        });
+        // Chèn sau nút Thêm
+        var btnAddOriginal = toolbar.querySelector('.btn-primary, [title*="Thêm bản ghi mới"]');
+        if (btnAddOriginal) {
+          btnAddOriginal.parentNode.insertBefore(btnBulkAdd, btnAddOriginal.nextSibling);
+        } else {
+          toolbar.insertBefore(btnBulkAdd, toolbar.firstChild);
         }
 
         // HACK: Thiết kế Layout dành riêng cho Form Builder
