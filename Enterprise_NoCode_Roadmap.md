@@ -7,7 +7,11 @@
 ## PHẦN 1: TRẢI NGHIỆM NHẬP LIỆU (DATA ENTRY & UX)
 *Mục tiêu: Giúp người dùng nhập dữ liệu nhanh nhất, ít lỗi nhất và "lười" nhất có thể.*
 
-1. **Các loại Input siêu cấp (Advanced Input Types):**
+1. **Quick Add & Smart Combobox (Tạo mới ngay trong ô Dropdown):**
+   - **Tạo mới tức thời (Inline Creation):** Khi tìm kiếm trong Combobox không thấy dữ liệu (VD: Khách hàng mới chưa có trong hệ thống), user có thể bấm nút `[+ Thêm mới]` ngay tại đáy Combobox để gọi Modal tạo nhanh. Nhập xong, dữ liệu lưu qua API và tự động điền ngược lại vào ô Combobox mà không cần rời khỏi trang hiện tại.
+   - **Hiển thị thông minh theo Phân quyền (Permission-Aware UI):** Nút `[+ Thêm mới]` tự động ẩn/hiện dựa trên cấu hình Database và quyền hạn thực tế của User đối với thực thể đó. User có quyền xem nhưng không có quyền tạo mới sẽ không nhìn thấy nút này, bảo mật tuyệt đối từ Frontend xuống Backend.
+
+2. **Các loại Input siêu cấp (Advanced Input Types):**
    - **Rich Text Editor:** Trình soạn thảo văn bản giống Word (chèn ảnh, link, bảng biểu).
    - **File / Image Upload:** Hỗ trợ kéo thả (drag & drop), upload nhiều file cùng lúc, có thanh trình trạng (progress bar) và xem trước (preview) ảnh/PDF.
    - **Signature Pad:** Ô cho phép khách hàng ký tên trực tiếp bằng chuột hoặc ngón tay trên màn hình cảm ứng.
