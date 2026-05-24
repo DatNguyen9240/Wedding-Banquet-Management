@@ -71,11 +71,18 @@ window.DynamicFormEngine = (function () {
     MODULE_CONFIG = config;
 
     // --- GENERIC API (PURE LOW-CODE/NO-CODE) ---
-    // Ghi đè hoàn toàn: LUÔN LUÔN gọi SP động dưới SQL, phớt lờ mọi cấu hình API trong JS
-    MODULE_CONFIG.ApiSearch = '/api/API_TruyVanDong';
-    MODULE_CONFIG.ApiSave = '/api/API_LuuDong';
-    MODULE_CONFIG.ApiDelete = '/api/API_XoaDong';
-    MODULE_CONFIG.ApiDictionary = '/api/API_LayCacTruongGiaoDien'; // Hardcode URL luôn nếu muốn
+    // Ghi đè API động, NHƯNG phải loại trừ Form Builder vì nó dùng API chuyên biệt (có logic Join bảng)
+    if (String(MODULE_CONFIG.FormName).toLowerCase() !== 'frmformbuilder') {
+      MODULE_CONFIG.ApiSearch = MODULE_CONFIG.ApiSearch || '/api/API_TruyVanDong';
+      MODULE_CONFIG.ApiSave = MODULE_CONFIG.ApiSave || '/api/API_LuuDong';
+      MODULE_CONFIG.ApiDelete = MODULE_CONFIG.ApiDelete || '/api/API_XoaDong';
+    } else {
+      // Vì AppModules.js đã bị vô hiệu hóa ở HTML, ta phải gắn API chuyên biệt thẳng vào đây
+      MODULE_CONFIG.ApiSearch = '/api/API_DanhSachTruongGiaoDien';
+      MODULE_CONFIG.ApiSave = '/api/API_LuuTruongGiaoDien';
+      MODULE_CONFIG.ApiDelete = '/api/API_XoaTruongGiaoDien';
+    }
+    MODULE_CONFIG.ApiDictionary = MODULE_CONFIG.ApiDictionary || '/api/API_LayCacTruongGiaoDien';
 
     try { var cached = sessionStorage.getItem('selectedRows_' + MODULE_CONFIG.FormName); selectedRows = cached ? JSON.parse(cached) : []; } catch (e) { selectedRows = []; }
 
@@ -86,8 +93,11 @@ window.DynamicFormEngine = (function () {
     var cachedData = null;
 
     // Nếu không phải đang mở Form Builder, ta ưu tiên đọc từ Cache để tăng tốc
-    if (MODULE_CONFIG.FormName !== 'frmFormBuilder') {
-      try { cachedData = sessionStorage.getItem(cacheKey); } catch (e) { }
+    // FIX: Bỏ luôn sessionStorage để mỗi lần vào trang đều load giao diện mới nhất,
+    // đảm bảo khi bạn sửa trong Form Builder thì trang sẽ cập nhật ngay lập tức.
+    if (String(MODULE_CONFIG.FormName).toLowerCase() !== 'frmformbuilder') {
+      // try { cachedData = window._uiCache ? window._uiCache[cacheKey] : null; } catch (e) { }
+      cachedData = null; // Tạm thời TẮT cache để test Form Builder mượt mà
     }
 
     var pConfig;
@@ -95,8 +105,10 @@ window.DynamicFormEngine = (function () {
       pConfig = Promise.resolve(JSON.parse(cachedData));
     } else {
       pConfig = configEndpoint ? ApiClient.post(configEndpoint, { FormName: MODULE_CONFIG.FormName }).then(function (res) {
-        if (res && res.code === 0 && MODULE_CONFIG.FormName !== 'frmFormBuilder') {
-          try { sessionStorage.setItem(cacheKey, JSON.stringify(res)); } catch (e) { }
+        if (res && res.code === 0 && String(MODULE_CONFIG.FormName).toLowerCase() !== 'frmformbuilder') {
+          // Lưu vào RAM cache thay vì sessionStorage (để F5 là làm mới)
+          // window._uiCache = window._uiCache || {};
+          // window._uiCache[cacheKey] = JSON.stringify(res);
         }
         return res;
       }) : Promise.resolve(null);
