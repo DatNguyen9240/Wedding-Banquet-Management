@@ -1,4 +1,4 @@
-/* --- mockData.js --- */
+﻿/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -140,8 +140,17 @@ var Permission = (function () {
       return { xem: true, them: true, sua: true, xoa: true };
     }
     
-    var p = perms[module] || {};
-
+    var p = perms[module];
+    if (!p) {
+      var target = (module || '').toLowerCase();
+      for (var key in perms) {
+        if (key.toLowerCase() === target) {
+          p = perms[key];
+          break;
+        }
+      }
+    }
+    p = p || {};
     
     return {
         xem: p.CanView == 1 || p.CanView === '1' || p.CanView === true || p.CanView === 'true' || p.xem == 1 || p.xem === '1' || p.xem === true || p.xem === 'true',
@@ -2119,6 +2128,12 @@ UIControls.createDataComboBox = function (options) {
     btnArrow.disabled = true;
     container.classList.add('ui-input-disabled');
     btnArrow.innerHTML = '<span class="material-symbols-outlined">lock</span>';
+  } else if (options.readonlyInput) {
+    input.readOnly = true;
+    input.style.cursor = 'pointer';
+    input.style.background = 'var(--color-background)'; // slight gray background to indicate read-only
+    input.style.caretColor = 'transparent';
+    input.style.userSelect = 'none';
   }
 
   actions.appendChild(btnArrow);
@@ -2390,6 +2405,19 @@ UIControls.createDataComboBox = function (options) {
   btnArrow.addEventListener('click', function (e) {
     e.preventDefault();
     dropdown.classList.contains('active') ? hideDropdown() : showDropdown();
+  });
+
+  input.addEventListener('click', function (e) {
+    if (options.readonlyInput) {
+      e.preventDefault();
+      dropdown.classList.contains('active') ? hideDropdown() : showDropdown();
+    }
+  });
+
+  input.addEventListener('mousedown', function (e) {
+    if (options.readonlyInput) {
+      e.preventDefault(); // Prevent focus and blinking cursor
+    }
   });
 
   input.addEventListener('input', function (e) {
@@ -2920,20 +2948,49 @@ var Pagination = (function () {
     };
     controls.appendChild(btnPrev);
 
-    // Page numbers logic (simplified for Max 5 pages shown)
-    var startP = Math.max(1, currentPage - 2);
-    var endP = Math.min(totalPages, startP + 4);
-    if (endP - startP < 4) startP = Math.max(1, endP - 4);
+    // Page numbers logic with '...'
+    var isMobile = window.innerWidth <= 480;
+    var delta = isMobile ? 0 : 1; 
+    var left = currentPage - delta;
+    var right = currentPage + delta + 1;
+    var range = [];
+    var rangeWithDots = [];
+    var l;
 
-    for (let i = startP; i <= endP; i++) {
-      let pBtn = document.createElement('button');
-      pBtn.className = 'page-btn' + (i === currentPage ? ' active' : '');
-      pBtn.innerText = i;
-      pBtn.onclick = function() {
-        if (typeof options.onPageChange === 'function' && i !== currentPage) options.onPageChange(i);
-      };
-      controls.appendChild(pBtn);
+    for (var i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= left && i < right)) {
+        range.push(i);
+      }
     }
+
+    range.forEach(function(i) {
+      if (l) {
+        if (i - l === 2) {
+          rangeWithDots.push(l + 1);
+        } else if (i - l !== 1) {
+          rangeWithDots.push('...');
+        }
+      }
+      rangeWithDots.push(i);
+      l = i;
+    });
+
+    rangeWithDots.forEach(function(i) {
+      if (i === '...') {
+        var dotBtn = document.createElement('span');
+        dotBtn.className = 'page-btn dots';
+        dotBtn.innerText = '...';
+        controls.appendChild(dotBtn);
+      } else {
+        var pBtn = document.createElement('button');
+        pBtn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+        pBtn.innerText = i;
+        pBtn.onclick = function() {
+          if (typeof options.onPageChange === 'function' && i !== currentPage) options.onPageChange(i);
+        };
+        controls.appendChild(pBtn);
+      }
+    });
 
     // Next Button
     var btnNext = document.createElement('button');
@@ -3067,11 +3124,13 @@ var UIInput = (function () {
     input.className = 'ui-input';
     if (config.id) input.id = config.id;
     if (config.name) input.name = config.name;
+    
     var finalPlaceholder = config.placeholder;
     if (!finalPlaceholder && config.label && inputType !== 'checkbox' && inputType !== 'radio' && inputType !== 'date') {
       finalPlaceholder = 'Nhập ' + config.label.toLowerCase() + '...';
     }
     if (finalPlaceholder) input.placeholder = finalPlaceholder;
+    
     if (config.value !== undefined) input.value = config.value;
     if (config.disabled) input.disabled = true;
     if (config.readonly) input.readOnly = true;
@@ -3493,9 +3552,19 @@ var UIActionToolbar = (function () {
       { text: 'Đóng',  icon: 'close',      type: 'tool', onClick: actions.onClose,  attrs: 'data-tooltip="Đóng trang hiện tại"' }
     ];
 
-    return UIButton.createBar(buttons.filter(function(b) {
-      return b.onClick !== false;
-    }));
+    var filteredButtons = [];
+    buttons.forEach(function(b) {
+      if (b.onClick === false) return; // Hide button
+      if (b.onClick === 'DISABLED' || b.onClick === 'disabled') {
+        b.disabled = true;
+        b.onClick = function() {
+          if (typeof Alert !== 'undefined') Alert.warning('Từ chối', 'Bạn không có quyền thao tác chức năng này!');
+        };
+      }
+      filteredButtons.push(b);
+    });
+
+    return UIButton.createBar(filteredButtons);
   }
 
   return {
@@ -3625,12 +3694,20 @@ var UITable = (function () {
       });
     } else {
          var trEmpty = document.createElement('tr');
+         trEmpty.className = 'empty-row';
+         trEmpty.style.border = 'none';
+         trEmpty.style.background = 'transparent';
+         trEmpty.style.boxShadow = 'none';
+         
          var tdEmpty = document.createElement('td');
          tdEmpty.colSpan = config.headers ? config.headers.length : 1;
+         tdEmpty.style.display = 'block';
          tdEmpty.style.textAlign = 'center';
-         tdEmpty.style.padding = '32px';
+         tdEmpty.style.padding = '32px 16px';
          tdEmpty.style.color = 'var(--color-text-secondary)';
+         tdEmpty.style.borderBottom = 'none';
          tdEmpty.innerText = 'Không có dữ liệu';
+         
          trEmpty.appendChild(tdEmpty);
          tbody.appendChild(trEmpty);
       }
@@ -4169,6 +4246,7 @@ var UITabs = (function () {
         // Set active cho nút được bấm
         btn.classList.add('active');
         panel.classList.add('active');
+        btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       });
     });
 
@@ -4295,6 +4373,7 @@ var UINestedTabs = (function () {
           // Click: activate child tab
           cBtn.addEventListener('click', function () {
             _activateChildTab(childBar, panelArea, cBtn, panel);
+            cBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             if (typeof options.onTabChange === 'function') {
               options.onTabChange(parentItem.id, childItem.id);
             }
@@ -4320,6 +4399,7 @@ var UINestedTabs = (function () {
       // Click: activate parent tab
       pBtn.addEventListener('click', function () {
         _activateParentTab(parentBar, childArea, pBtn, childSection);
+        pBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         if (typeof options.onTabChange === 'function') {
           var activeChild = childSection.querySelector('.ui-nested-tab-child-btn.active');
           options.onTabChange(parentItem.id, activeChild ? activeChild.dataset.childId : null);

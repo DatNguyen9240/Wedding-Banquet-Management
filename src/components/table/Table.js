@@ -65,12 +65,20 @@ var UITable = (function () {
       });
     } else {
          var trEmpty = document.createElement('tr');
+         trEmpty.className = 'empty-row';
+         trEmpty.style.border = 'none';
+         trEmpty.style.background = 'transparent';
+         trEmpty.style.boxShadow = 'none';
+         
          var tdEmpty = document.createElement('td');
          tdEmpty.colSpan = config.headers ? config.headers.length : 1;
+         tdEmpty.style.display = 'block';
          tdEmpty.style.textAlign = 'center';
-         tdEmpty.style.padding = '32px';
+         tdEmpty.style.padding = '32px 16px';
          tdEmpty.style.color = 'var(--color-text-secondary)';
+         tdEmpty.style.borderBottom = 'none';
          tdEmpty.innerText = 'Không có dữ liệu';
+         
          trEmpty.appendChild(tdEmpty);
          tbody.appendChild(trEmpty);
       }

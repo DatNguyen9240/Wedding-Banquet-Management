@@ -67,7 +67,8 @@ BEGIN
         SET @OrderByClause = ' ORDER BY ' + QUOTENAME(@SortColumn) + ' ' + @SortDir + ' ';
 
     -- Sinh câu SQL động query dữ liệu có phân trang
-    SET @sql = 'SELECT * ' +
+    -- Thêm COUNT(1) OVER() AS _recordtotal để trả về tổng số dòng cho phân trang của JS
+    SET @sql = 'SELECT *, COUNT(1) OVER() AS _recordtotal ' +
                ' FROM ' + QUOTENAME(@TableName) + @whereClause +
                @OrderByClause +
                ' OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;';

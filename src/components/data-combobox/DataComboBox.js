@@ -29,6 +29,12 @@ UIControls.createDataComboBox = function (options) {
     btnArrow.disabled = true;
     container.classList.add('ui-input-disabled');
     btnArrow.innerHTML = '<span class="material-symbols-outlined">lock</span>';
+  } else if (options.readonlyInput) {
+    input.readOnly = true;
+    input.style.cursor = 'pointer';
+    input.style.background = 'var(--color-background)'; // slight gray background to indicate read-only
+    input.style.caretColor = 'transparent';
+    input.style.userSelect = 'none';
   }
 
   actions.appendChild(btnArrow);
@@ -300,6 +306,19 @@ UIControls.createDataComboBox = function (options) {
   btnArrow.addEventListener('click', function (e) {
     e.preventDefault();
     dropdown.classList.contains('active') ? hideDropdown() : showDropdown();
+  });
+
+  input.addEventListener('click', function (e) {
+    if (options.readonlyInput) {
+      e.preventDefault();
+      dropdown.classList.contains('active') ? hideDropdown() : showDropdown();
+    }
+  });
+
+  input.addEventListener('mousedown', function (e) {
+    if (options.readonlyInput) {
+      e.preventDefault(); // Prevent focus and blinking cursor
+    }
   });
 
   input.addEventListener('input', function (e) {

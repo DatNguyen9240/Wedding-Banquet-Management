@@ -36,20 +36,49 @@ var Pagination = (function () {
     };
     controls.appendChild(btnPrev);
 
-    // Page numbers logic (simplified for Max 5 pages shown)
-    var startP = Math.max(1, currentPage - 2);
-    var endP = Math.min(totalPages, startP + 4);
-    if (endP - startP < 4) startP = Math.max(1, endP - 4);
+    // Page numbers logic with '...'
+    var isMobile = window.innerWidth <= 480;
+    var delta = isMobile ? 0 : 1; 
+    var left = currentPage - delta;
+    var right = currentPage + delta + 1;
+    var range = [];
+    var rangeWithDots = [];
+    var l;
 
-    for (let i = startP; i <= endP; i++) {
-      let pBtn = document.createElement('button');
-      pBtn.className = 'page-btn' + (i === currentPage ? ' active' : '');
-      pBtn.innerText = i;
-      pBtn.onclick = function() {
-        if (typeof options.onPageChange === 'function' && i !== currentPage) options.onPageChange(i);
-      };
-      controls.appendChild(pBtn);
+    for (var i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= left && i < right)) {
+        range.push(i);
+      }
     }
+
+    range.forEach(function(i) {
+      if (l) {
+        if (i - l === 2) {
+          rangeWithDots.push(l + 1);
+        } else if (i - l !== 1) {
+          rangeWithDots.push('...');
+        }
+      }
+      rangeWithDots.push(i);
+      l = i;
+    });
+
+    rangeWithDots.forEach(function(i) {
+      if (i === '...') {
+        var dotBtn = document.createElement('span');
+        dotBtn.className = 'page-btn dots';
+        dotBtn.innerText = '...';
+        controls.appendChild(dotBtn);
+      } else {
+        var pBtn = document.createElement('button');
+        pBtn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+        pBtn.innerText = i;
+        pBtn.onclick = function() {
+          if (typeof options.onPageChange === 'function' && i !== currentPage) options.onPageChange(i);
+        };
+        controls.appendChild(pBtn);
+      }
+    });
 
     // Next Button
     var btnNext = document.createElement('button');

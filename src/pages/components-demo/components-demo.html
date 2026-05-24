@@ -2,9 +2,13 @@
    MINH HOẠ TOÀN BỘ UI COMPONENTS - HTML Template
    ═══════════════════════════════════════════ -->
 
-<div class="page-title-bar d-flex justify-content-between align-items-center">
-  <span>Bộ Sưu Tập UI Components</span>
-  <span class="status-badge primary">34 Components</span>
+<div class="page-title-bar">
+  <div class="page-title-info">
+    <h1 class="page-title-heading">Bộ Sưu Tập UI Components</h1>
+  </div>
+  <div class="page-title-actions">
+    <span class="status-badge primary" style="white-space: nowrap;">34 Components</span>
+  </div>
 </div>
 
 <!-- 1. CHECKBOX -->
@@ -16,10 +20,18 @@
 <!-- 2. COMBOBOX -->
 <div class="card mb-4" style="animation: slideUp 0.32s ease forwards;">
   <div class="card-header">2. ComboBox (DataGrid xổ xuống)</div>
-  <div class="card-body p-4">
+  <div class="card-body p-4 d-flex flex-column gap-3">
     <div style="max-width: 400px;">
       <label class="form-label" style="color:var(--color-text-secondary);">Người bán (F4 hiển thị, F3 tra cứu, F2 thêm)</label>
       <div id="demo-combobox-wrapper"></div>
+    </div>
+    <div style="max-width: 400px;">
+      <label class="form-label" style="color:var(--color-text-secondary);">ComboBox (Trạng thái vô hiệu hóa - Disabled)</label>
+      <div id="demo-combobox-disabled-wrapper"></div>
+    </div>
+    <div style="max-width: 400px;">
+      <label class="form-label" style="color:var(--color-text-secondary);">ComboBox (Chỉ chọn từ danh sách - Readonly)</label>
+      <div id="demo-combobox-readonly-wrapper"></div>
     </div>
   </div>
 </div>
@@ -29,7 +41,7 @@
   <div class="card-header">3. Grid Dropdown (trong DataGrid)</div>
   <div class="card-body p-0">
     <div class="table-wrapper">
-      <table class="data-table">
+      <table class="data-table no-mobile-stack">
         <thead><tr><th>Mã kho</th><th style="width:300px;">Mã hàng (Click/Focus)</th><th>Tên hàng</th><th>ĐVT</th></tr></thead>
         <tbody>
           <tr><td>K001</td><td id="td-grid-dropdown-1" class="p-0"></td><td id="lbl-tenhang-1"></td><td id="lbl-dvt-1"></td></tr>
@@ -145,7 +157,7 @@
 <!-- 18. LOADING SPINNER -->
 <div class="card mb-4" style="animation: slideUp 0.64s ease forwards;">
   <div class="card-header">18. Loading Spinner</div>
-  <div class="card-body p-4 d-flex gap-4 align-items-center" id="demo-spinner"></div>
+  <div class="card-body p-4 d-flex gap-4 align-items-center" style="flex-wrap: wrap;" id="demo-spinner"></div>
 </div>
 
 <!-- 19. POPOVER -->

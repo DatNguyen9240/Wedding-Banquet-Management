@@ -64,7 +64,7 @@ BEGIN
            OR ff.FormName LIKE '%' + @Keyword + '%' 
            OR ff.FieldName LIKE '%' + @Keyword + '%'
            OR ff.CaptionVN LIKE N'%' + @Keyword + '%')
-      AND (@FormName IS NULL OR @FormName = '' OR ff.FormName = @FormName)
+      AND (@FormName IS NULL OR @FormName = '' OR @FormName = 'frmFormBuilder' OR ff.FormName = @FormName)
     ORDER BY ff.FormName ASC, ff.FieldName ASC
     OFFSET (ISNULL(@Page, 1) - 1) * ISNULL(@Limit, 15) ROWS
     FETCH NEXT ISNULL(@Limit, 15) ROWS ONLY;

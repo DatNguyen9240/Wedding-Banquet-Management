@@ -90,6 +90,8 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* ── Tab Cha ─────────────────────────────── */
@@ -97,6 +99,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  max-width: 100%;
+  min-width: 0;
   padding: 6px 8px;
   background: var(--color-surface-elevated, #f4f6fb);
   border-radius: 12px;
@@ -180,6 +184,8 @@
   display: flex;
   align-items: center;
   gap: 0;
+  max-width: 100%;
+  min-width: 0;
   border-bottom: 2px solid var(--color-border, #e8eaf0);
   margin-bottom: 20px;
   overflow-x: auto;
@@ -528,25 +534,39 @@
     max-width: 100%;
     border-right: none;
     border-bottom: 2px solid var(--color-border, #e8eaf0);
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 8px;
-    gap: 4px;
+    flex-direction: column;
+    padding: 0;
   }
   .ui-nested-tab-parent-btn--v {
-    border-radius: 8px;
-    padding: 7px 12px;
+    border-radius: 0;
   }
-  .ui-nested-tab-parent-btn--v.active::before { display: none; }
   .ui-nested-tabs__child-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .ui-nested-tab-child-btn--v {
-    padding: 6px 12px;
+    flex-direction: column;
   }
   .ui-nested-tabs__vertical-content {
     padding: 16px 0 0;
   }
-  .ui-nested-parent-chevron { display: none; }
 }
+@media (max-width: 768px) {
+  .ui-nested-tabs:not(.ui-nested-tabs--vertical) {
+    margin-left: -24px;
+    margin-right: -24px;
+    width: auto !important;
+    max-width: none !important;
+  }
+  .ui-nested-tabs__parent-bar {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+    border-radius: 0 !important;
+  }
+  .ui-nested-tabs__child-bar {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+  .ui-nested-tabs__panel-area {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+
+

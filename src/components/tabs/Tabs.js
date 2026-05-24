@@ -51,6 +51,7 @@ var UITabs = (function () {
         // Set active cho nút được bấm
         btn.classList.add('active');
         panel.classList.add('active');
+        btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       });
     });
 
