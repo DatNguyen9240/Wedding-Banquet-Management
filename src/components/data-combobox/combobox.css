@@ -115,14 +115,7 @@
   background: var(--color-surface, #fff);
 }
 
-.dd-table-wrapper::-webkit-scrollbar { 
-  width: 6px; 
-  height: 6px; 
-}
-.dd-table-wrapper::-webkit-scrollbar-thumb {
-  background: var(--color-border, #e2e8f0);
-  border-radius: 4px;
-}
+
 
 /* ── Dropdown: Footer "+ Thêm mới" ───────────────────────────── */
 .dd-footer {
