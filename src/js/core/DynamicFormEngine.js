@@ -383,7 +383,7 @@ window.DynamicFormEngine = (function () {
 
     if (MODULE_CONFIG.ApiSearch) {
       var query = {
-        FormName: MODULE_CONFIG.FormName === 'frmFormBuilder' ? '' : MODULE_CONFIG.FormName,
+        FormName: MODULE_CONFIG.FormName,
         UserName: _currentUser(),
         Keyword: currentKeyword,
         SortColumn: currentSortCol,
