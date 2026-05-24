@@ -553,21 +553,97 @@ window.DynamicFormEngine = (function () {
 
     var btnContainer = $container.querySelector('#dynamic-btn-container');
     if (!btnContainer) return;
-    var actualToolbar = btnContainer.firstElementChild;
-    if (!actualToolbar) return;
-
-    var counter = actualToolbar.querySelector('#selection-counter');
+    
+    var counter = btnContainer.querySelector('#selection-counter');
     if (!counter) {
-      counter = document.createElement('span');
+      if (!document.getElementById('selection-counter-style')) {
+        var style = document.createElement('style');
+        style.id = 'selection-counter-style';
+        style.innerHTML = `
+          /* Parent container cho phép rớt dòng */
+          #dynamic-btn-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+          }
+          /* Toolbar chứa các nút: Ép KHÔNG rớt dòng, hiển thị thanh cuộn ngang */
+          #dynamic-btn-container .button-bar {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            flex: 1 1 auto;
+            min-width: 0;
+            gap: 8px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            padding-bottom: 2px; /* Tránh lẹm shadow nếu có */
+          }
+          #dynamic-btn-container .button-bar::-webkit-scrollbar {
+            display: none;
+          }
+          /* Badge Đã chọn */
+          #selection-counter {
+            margin-left: auto;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--color-primary);
+            background: var(--color-primary-light);
+            padding: 4px 8px 4px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            display: none;
+            align-items: center;
+            gap: 4px;
+          }
+          @media (max-width: 768px) {
+            #dynamic-btn-container .button-bar {
+              flex: 1 1 100%;
+              width: 100%;
+            }
+            #selection-counter {
+              margin-left: 0;
+              margin-top: 4px;
+              width: 100%;
+              flex: 1 1 100%;
+              justify-content: center;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      counter = document.createElement('div');
       counter.id = 'selection-counter';
-      counter.style.cssText = 'margin-left: 12px; align-self: center; font-size: 13px; font-weight: 500; color: var(--color-primary); background: var(--color-primary-light); padding: 4px 12px; border-radius: 20px; white-space: nowrap; flex-shrink: 0;';
-      actualToolbar.appendChild(counter);
+      btnContainer.appendChild(counter);
     }
+    
     if (selectedRows.length > 0) {
-      counter.style.display = 'inline-block';
-      counter.innerText = 'Đã chọn ' + selectedRows.length + ' dòng';
+      counter.style.display = 'inline-flex';
+      counter.innerHTML = `
+        <span>Đã chọn ${selectedRows.length} dòng</span>
+        <span class="material-symbols-outlined btn-clear-selection" title="Bỏ chọn" style="font-size: 16px; cursor: pointer; border-radius: 50%; padding: 2px;">close</span>
+      `;
+      var btnClear = counter.querySelector('.btn-clear-selection');
+      if (btnClear) {
+        btnClear.onmouseover = function() { this.style.backgroundColor='rgba(0,0,0,0.05)'; };
+        btnClear.onmouseout = function() { this.style.backgroundColor='transparent'; };
+        btnClear.onclick = function() {
+          selectedRows = [];
+          _updateSelectionCounter();
+          // Bỏ check tất cả checkbox trên giao diện
+          var checkboxes = $container.querySelectorAll('tbody .form-check-input');
+          if (checkboxes) checkboxes.forEach(function(cb) { cb.checked = false; });
+          var checkAll = $container.querySelector('thead .form-check-input');
+          if (checkAll) checkAll.checked = false;
+          // Bỏ bôi đen (highlight) tất cả các dòng
+          var allTrs = $container.querySelectorAll('tbody tr');
+          if (allTrs) allTrs.forEach(function(tr) { tr.classList.remove('active', 'selected', 'table-active', 'table-primary'); });
+        };
+      }
     } else {
       counter.style.display = 'none';
+      counter.innerHTML = '';
     }
   }
 
