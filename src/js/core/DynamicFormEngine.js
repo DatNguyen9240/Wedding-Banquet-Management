@@ -392,7 +392,7 @@ window.DynamicFormEngine = (function () {
         Limit: currentLimit
       };
       ApiClient.post(MODULE_CONFIG.ApiSearch, query).then(function (result) {
-        totalRecords = result.total || result._recordtotal || 0;
+        totalRecords = result._recordtotal || 0;
         var dataList = result.list || result.records || [];
         gridData = dataList.map(function (item) {
           // Gắn ID tạm để Table hoạt động
