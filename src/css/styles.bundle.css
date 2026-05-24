@@ -1,4 +1,4 @@
-/* --- design-tokens.css --- */
+﻿/* --- design-tokens.css --- */
 /* ═══════════════════════════════════════════
    Design Tokens — TailAdmin Style
    Dành cho Quản lý Tiệc Cưới
@@ -298,14 +298,14 @@ img {
   }
 
   /* Tràn lề 2 bên (Full-bleed) cho các thanh công cụ trên Mobile */
-  .page-title-bar, .button-bar {
-    margin-left: -16px;
-    margin-right: -16px;
+  .page-title-bar, .button-bar, .dynamic-grid-card {
+    margin-left: -16px !important;
+    margin-right: -16px !important;
     width: calc(100% + 32px) !important;
     max-width: none !important;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
   }
 
   .header-left {
@@ -378,8 +378,10 @@ img {
   }
 
   .table-wrapper {
-    width: 100%;
-    border-radius: var(--radius-sm);
+    margin-left: -16px !important;
+    margin-right: -16px !important;
+    width: calc(100% + 32px) !important;
+    border-radius: 0 !important;
   }
 
   .data-table th,
@@ -3818,6 +3820,10 @@ body.dark-theme .calendar-dropdown-month-btn {
 }
 
 /* --- RESPONSIVE PAGINATION --- */
+
+.page-btn.dots { background: transparent !important; border-color: transparent !important; color: var(--color-text-secondary); pointer-events: none; min-width: 24px; padding: 0; }
+
+
 @media (max-width: 768px) {
   .pagination-wrapper {
     flex-direction: column;
@@ -3828,14 +3834,27 @@ body.dark-theme .calendar-dropdown-month-btn {
   
   .pagination-info {
     text-align: center;
-    white-space: normal; /* Đảm bảo chữ dàn đều, không bị ép thành 1 cục dọc */
+    white-space: normal;
   }
   
   .pagination-controls {
-    flex-wrap: wrap; /* Tránh tràn nút nếu có quá nhiều số trang */
+    flex-wrap: wrap;
     justify-content: center;
+    overflow: hidden;
+  }
+
+  .page-btn {
+    min-width: 28px;
+    height: 28px;
+    font-size: 12px;
+    padding: 0 4px;
+  }
+  
+  .page-btn .material-symbols-outlined {
+    font-size: 16px;
   }
 }
+
 
 
 /* --- popover.css --- */
@@ -4180,6 +4199,45 @@ body.dark-theme .calendar-dropdown-month-btn {
 .ui-step.completed .ui-step-label {
   color: var(--color-success);
 }
+.ui-stepper::before {
+  display: none !important;
+}
+.ui-step {
+  flex: 1 0 auto;
+  min-width: 80px;
+  background: transparent !important;
+  padding: 0 8px;
+}
+.ui-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--color-border);
+  z-index: -1;
+}
+.ui-step.completed:not(:last-child)::after {
+  background: var(--color-success);
+}
+@media (max-width: 768px) {
+  .ui-stepper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+    padding-bottom: 12px;
+    margin: 0 -24px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .ui-step {
+    min-width: 90px;
+  }
+}
+.ui-stepper {
+  align-items: flex-start !important;
+}
 
 
 /* --- table.css --- */
@@ -4274,6 +4332,11 @@ body.dark-theme .data-table tbody tr:hover {
 
 /* --- RESPONSIVE TABLE (Card View on Mobile) --- */
 @media (max-width: 768px) {
+  .data-table:not(.no-mobile-stack),
+  .data-table:not(.no-mobile-stack) tbody {
+    display: block;
+    width: 100%;
+  }
   .data-table:not(.no-mobile-stack) thead {
     display: none; /* Ẩn tiêu đề ngang trên mobile */
   }
@@ -4292,9 +4355,9 @@ body.dark-theme .data-table tbody tr:hover {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid rgba(0,0,0,0.05);
-    padding: 12px 8px;
+    padding: 12px 12px;
     text-align: right !important;
-    white-space: normal; /* Cho phép chữ tự xuống dòng nếu quá dài */
+    white-space: normal; word-break: break-word;
     max-width: 100%;
   }
 
@@ -4313,13 +4376,10 @@ body.dark-theme .data-table tbody tr:hover {
     font-size: 12px;
     flex-shrink: 0;
   }
-
-  /* Ẩn pseudo-element tạo spacing rác cho dòng Không có dữ liệu */
-  .data-table:not(.no-mobile-stack) tbody tr.empty-row td::before {
-    display: none;
-    margin: 0;
-  }
 }
+
+
+
 
 
 /* --- tabs.css --- */
@@ -4415,6 +4475,8 @@ body.dark-theme .data-table tbody tr:hover {
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* ── Tab Cha ─────────────────────────────── */
@@ -4422,6 +4484,8 @@ body.dark-theme .data-table tbody tr:hover {
   display: flex;
   align-items: center;
   gap: 4px;
+  max-width: 100%;
+  min-width: 0;
   padding: 6px 8px;
   background: var(--color-surface-elevated, #f4f6fb);
   border-radius: 12px;
@@ -4505,6 +4569,8 @@ body.dark-theme .data-table tbody tr:hover {
   display: flex;
   align-items: center;
   gap: 0;
+  max-width: 100%;
+  min-width: 0;
   border-bottom: 2px solid var(--color-border, #e8eaf0);
   margin-bottom: 20px;
   overflow-x: auto;
@@ -4853,28 +4919,42 @@ body.dark-theme .data-table tbody tr:hover {
     max-width: 100%;
     border-right: none;
     border-bottom: 2px solid var(--color-border, #e8eaf0);
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 8px;
-    gap: 4px;
+    flex-direction: column;
+    padding: 0;
   }
   .ui-nested-tab-parent-btn--v {
-    border-radius: 8px;
-    padding: 7px 12px;
+    border-radius: 0;
   }
-  .ui-nested-tab-parent-btn--v.active::before { display: none; }
   .ui-nested-tabs__child-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .ui-nested-tab-child-btn--v {
-    padding: 6px 12px;
+    flex-direction: column;
   }
   .ui-nested-tabs__vertical-content {
     padding: 16px 0 0;
   }
-  .ui-nested-parent-chevron { display: none; }
 }
+@media (max-width: 768px) {
+  .ui-nested-tabs:not(.ui-nested-tabs--vertical) {
+    margin-left: -24px;
+    margin-right: -24px;
+    width: auto !important;
+    max-width: none !important;
+  }
+  .ui-nested-tabs__parent-bar {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+    border-radius: 0 !important;
+  }
+  .ui-nested-tabs__child-bar {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+  .ui-nested-tabs__panel-area {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
+
+
 
 
 /* --- timeline.css --- */
@@ -4995,9 +5075,9 @@ body.dark-theme .data-table tbody tr:hover {
   opacity: 1;
 }
 
-.ui-toast.success { border-left-color: var(--color-success); }
-.ui-toast.error   { border-left-color: var(--color-danger); }
-.ui-toast.warning { border-left-color: var(--color-warning); }
+.ui-toast.success { border-left-color: var(--color-success); background: linear-gradient(rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.1)), var(--color-surface); }
+.ui-toast.error { border-left-color: var(--color-danger); background: linear-gradient(rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.1)), var(--color-surface); }
+.ui-toast.warning { border-left-color: var(--color-warning); background: linear-gradient(rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.1)), var(--color-surface); }
 
 .ui-toast-icon {
   font-size: 20px;
@@ -5013,6 +5093,8 @@ body.dark-theme .data-table tbody tr:hover {
   color: var(--color-text);
   font-weight: 500;
 }
+
+
 
 
 /* --- tooltip.css --- */
@@ -5303,49 +5385,4 @@ body.dark-theme .data-table tbody tr:hover {
   opacity: 1 !important;
 }
 
-
-
-/* --- FULL BLEED FOR DYNAMIC GRID ON MOBILE --- */
-@media (max-width: 768px) {
-  .dynamic-grid-card {
-    margin-left: -16px !important;
-    margin-right: -16px !important;
-    width: calc(100% + 32px) !important;
-    max-width: none !important;
-    border-radius: 0 !important;
-    border-left: none !important;
-    border-right: none !important;
-  }
-  .dynamic-grid-card .card-body {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-  #dynamic-filter-container, .pagination-container {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-  }
-  .dynamic-grid-card .table-wrapper {
-    margin: 0 !important;
-    width: 100% !important;
-    border-radius: 0 !important;
-    border-left: none !important;
-    border-right: none !important;
-  }
-}
-
-
-/* --- TIGHTEN TABLE CELLS ON MOBILE --- */
-@media (max-width: 768px) {
-  .data-table th, .data-table td {
-    padding: 10px 12px !important;
-    font-size: 13px !important;
-  }
-}
-
-
-@media (max-width: 768px) {
-  .data-table th:last-child, .data-table td:last-child {
-    padding-right: 12px !important;
-  }
-}
 

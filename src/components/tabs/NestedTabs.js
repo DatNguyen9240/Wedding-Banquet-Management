@@ -108,6 +108,7 @@ var UINestedTabs = (function () {
           // Click: activate child tab
           cBtn.addEventListener('click', function () {
             _activateChildTab(childBar, panelArea, cBtn, panel);
+            cBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             if (typeof options.onTabChange === 'function') {
               options.onTabChange(parentItem.id, childItem.id);
             }
@@ -133,6 +134,7 @@ var UINestedTabs = (function () {
       // Click: activate parent tab
       pBtn.addEventListener('click', function () {
         _activateParentTab(parentBar, childArea, pBtn, childSection);
+        pBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         if (typeof options.onTabChange === 'function') {
           var activeChild = childSection.querySelector('.ui-nested-tab-child-btn.active');
           options.onTabChange(parentItem.id, activeChild ? activeChild.dataset.childId : null);

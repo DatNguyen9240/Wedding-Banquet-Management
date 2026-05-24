@@ -89,6 +89,11 @@ body.dark-theme .data-table tbody tr:hover {
 
 /* --- RESPONSIVE TABLE (Card View on Mobile) --- */
 @media (max-width: 768px) {
+  .data-table:not(.no-mobile-stack),
+  .data-table:not(.no-mobile-stack) tbody {
+    display: block;
+    width: 100%;
+  }
   .data-table:not(.no-mobile-stack) thead {
     display: none; /* Ẩn tiêu đề ngang trên mobile */
   }
@@ -107,9 +112,9 @@ body.dark-theme .data-table tbody tr:hover {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid rgba(0,0,0,0.05);
-    padding: 12px 8px;
+    padding: 12px 12px;
     text-align: right !important;
-    white-space: normal; /* Cho phép chữ tự xuống dòng nếu quá dài */
+    white-space: normal; word-break: break-word;
     max-width: 100%;
   }
 
@@ -129,3 +134,6 @@ body.dark-theme .data-table tbody tr:hover {
     flex-shrink: 0;
   }
 }
+
+
+

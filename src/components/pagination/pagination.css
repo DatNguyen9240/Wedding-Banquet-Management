@@ -61,6 +61,10 @@
 }
 
 /* --- RESPONSIVE PAGINATION --- */
+
+.page-btn.dots { background: transparent !important; border-color: transparent !important; color: var(--color-text-secondary); pointer-events: none; min-width: 24px; padding: 0; }
+
+
 @media (max-width: 768px) {
   .pagination-wrapper {
     flex-direction: column;
@@ -71,11 +75,24 @@
   
   .pagination-info {
     text-align: center;
-    white-space: normal; /* Đảm bảo chữ dàn đều, không bị ép thành 1 cục dọc */
+    white-space: normal;
   }
   
   .pagination-controls {
-    flex-wrap: wrap; /* Tránh tràn nút nếu có quá nhiều số trang */
+    flex-wrap: wrap;
     justify-content: center;
+    overflow: hidden;
+  }
+
+  .page-btn {
+    min-width: 28px;
+    height: 28px;
+    font-size: 12px;
+    padding: 0 4px;
+  }
+  
+  .page-btn .material-symbols-outlined {
+    font-size: 16px;
   }
 }
+

@@ -73,3 +73,42 @@
 .ui-step.completed .ui-step-label {
   color: var(--color-success);
 }
+.ui-stepper::before {
+  display: none !important;
+}
+.ui-step {
+  flex: 1 0 auto;
+  min-width: 80px;
+  background: transparent !important;
+  padding: 0 8px;
+}
+.ui-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--color-border);
+  z-index: -1;
+}
+.ui-step.completed:not(:last-child)::after {
+  background: var(--color-success);
+}
+@media (max-width: 768px) {
+  .ui-stepper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+    padding-bottom: 12px;
+    margin: 0 -24px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .ui-step {
+    min-width: 90px;
+  }
+}
+.ui-stepper {
+  align-items: flex-start !important;
+}

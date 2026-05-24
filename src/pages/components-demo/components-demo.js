@@ -59,16 +59,39 @@ var ComponentsDemoPage = (function () {
   // ── 2. COMBOBOX ──
   function _mountComboBox() {
     var el = document.getElementById('demo-combobox-wrapper');
-    if (!el) return;
+    var elDisabled = document.getElementById('demo-combobox-disabled-wrapper');
     var nvData = window.MockData ? window.MockData.demoEmployees : [];
-    el.appendChild(UIControls.createDataComboBox({
-      placeholder: 'Chọn nhân viên...',
-      headers: ['Mã nhân viên', 'Tên nhân viên', 'Điện thoại'],
-      data: nvData, colFilterIndex: 1, colHighlightIndex: 1,
-      onSelect: function (row) { UIToast.show('Đã chọn: ' + row[1]); },
-      onF2: function () { alert('Mở form Thêm nhân viên (F2)'); },
-      onF3: function () { alert('Mở form Tra cứu nhân viên (F3)'); }
-    }));
+    
+    if (el) {
+      el.appendChild(UIControls.createDataComboBox({
+        placeholder: 'Chọn nhân viên...',
+        headers: ['Mã nhân viên', 'Tên nhân viên', 'Điện thoại'],
+        data: nvData, colFilterIndex: 1, colHighlightIndex: 1,
+        onSelect: function (row) { UIToast.show('Đã chọn: ' + row[1]); },
+        onF2: function () { alert('Mở form Thêm nhân viên (F2)'); },
+        onF3: function () { alert('Mở form Tra cứu nhân viên (F3)'); }
+      }));
+    }
+
+    if (elDisabled) {
+      elDisabled.appendChild(UIControls.createDataComboBox({
+        placeholder: 'Đã bị khóa (không thể tương tác)',
+        headers: ['Mã', 'Tên'],
+        data: [],
+        disabled: true
+      }));
+    }
+
+    var elReadonly = document.getElementById('demo-combobox-readonly-wrapper');
+    if (elReadonly) {
+      elReadonly.appendChild(UIControls.createDataComboBox({
+        placeholder: 'Click để chọn (không thể gõ)...',
+        headers: ['Mã nhân viên', 'Tên nhân viên', 'Điện thoại'],
+        data: nvData, colFilterIndex: 1, colHighlightIndex: 1,
+        readonlyInput: true,
+        onSelect: function (row) { UIToast.show('Đã chọn: ' + row[1]); }
+      }));
+    }
   }
 
   // ── 3. GRID DROPDOWN ──
@@ -154,6 +177,7 @@ var ComponentsDemoPage = (function () {
       btn.textContent = 'Mở Modal';
       btn.onclick = function() {
         var footer = document.createElement('div');
+        footer.className = 'd-flex justify-content-end gap-2';
         footer.innerHTML = UIButton.createHTML({ text: 'Hủy', className: 'btn-cancel' }) + UIButton.createHTML({ text: 'Xác nhận', type: 'primary', className: 'btn-confirm' });
         
         var m = UIModal.show({
