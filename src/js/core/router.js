@@ -17,6 +17,9 @@ var Router = (function () {
   function addDynamicRoutes(menus) {
     if (!menus || !Array.isArray(menus)) return;
 
+    var currentHash = window.location.hash.replace('#', '').split('?')[0] || '/dashboard';
+    var needsReload = false;
+
     menus.forEach(function (m) {
       // url có thể nằm ở URLPara hoặc urlPara
       var rawUrl = m.URLPara || m.urlPara || '';
@@ -90,7 +93,20 @@ var Router = (function () {
 
       ROUTES.push(route);
       _routeMap[path] = route; // Update Map
+
+      if (path === currentHash) {
+        needsReload = true;
+      }
     });
+
+    if (needsReload) {
+      if (!_currentRoute || _currentRoute.path !== currentHash) {
+        // Delay slightly to allow Navbar to finish rendering before we trigger routing
+        setTimeout(function() {
+          _handleRoute();
+        }, 50);
+      }
+    }
   }
 
   // ── State ──────────────────────────────────────────────────────────────
