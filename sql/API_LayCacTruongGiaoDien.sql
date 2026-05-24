@@ -11,6 +11,7 @@ BEGIN
         
         -- Trả về thêm cấu hình cấp độ Form để loại bỏ hoàn toàn AppModules.js
         ISNULL(l.CaptionVN, '') AS [formTitle],
+        ISNULL(l.SubTitle, '') AS [formSubtitle],
         ISNULL(l.PrimaryKey, '') AS [primaryKey],
         
         -- Tính toán động showInAdd từ AddNewColumnArr

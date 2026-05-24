@@ -40,7 +40,7 @@ window.DynamicFormEngine = (function () {
       if (action === 'EDIT') return Permission.canEdit(module);
       if (action === 'DELETE') return Permission.canDelete(module);
     }
-    
+
     // Fallback logic
     var perms = JSON.parse(localStorage.getItem('pmql_permissions') || 'null');
     if (!perms) return true; // Chưa ráp hệ thống phân quyền thì thả cửa
@@ -107,30 +107,30 @@ window.DynamicFormEngine = (function () {
       // 2. Lưu Từ điển vào biến toàn cục
       var dataList = resConfig ? (resConfig.list || resConfig.records) : null;
       if (resConfig && resConfig.code === 0 && dataList) {
-        
+
         // --- NO-CODE MAGIC: Đọc cấu hình cấp Form từ Record đầu tiên ---
         if (dataList.length > 0) {
-            var firstRow = dataList[0];
-            if (firstRow.formTitle) MODULE_CONFIG.PageTitle = firstRow.formTitle;
-            if (firstRow.primaryKey) MODULE_CONFIG.PrimaryKey = firstRow.primaryKey;
-            
-            // Tự động sinh một số nhãn mặc định nếu chưa có
-            MODULE_CONFIG.TitleAdd = MODULE_CONFIG.TitleAdd || ('➕ Thêm ' + (firstRow.formTitle || 'Mới'));
-            MODULE_CONFIG.TitleEdit = MODULE_CONFIG.TitleEdit || ('✏️ Sửa ' + (firstRow.formTitle || ''));
-            MODULE_CONFIG.BtnSaveAdd = MODULE_CONFIG.BtnSaveAdd || 'Thêm mới';
-            MODULE_CONFIG.BtnSaveEdit = MODULE_CONFIG.BtnSaveEdit || 'Lưu thay đổi';
-            MODULE_CONFIG.BtnCancel = MODULE_CONFIG.BtnCancel || 'Hủy bỏ';
-            MODULE_CONFIG.ToastAdd = MODULE_CONFIG.ToastAdd || 'Đã thêm mới thành công!';
-            MODULE_CONFIG.ToastEdit = MODULE_CONFIG.ToastEdit || 'Đã cập nhật thành công!';
-            MODULE_CONFIG.WarnSelectEdit = MODULE_CONFIG.WarnSelectEdit || 'Vui lòng chọn dữ liệu cần sửa';
-            MODULE_CONFIG.WarnSelectDelete = MODULE_CONFIG.WarnSelectDelete || 'Vui lòng chọn dữ liệu cần xóa';
-            MODULE_CONFIG.ConfirmDelete = MODULE_CONFIG.ConfirmDelete || 'Bạn có chắc muốn xóa {0}?';
-            MODULE_CONFIG.TextDeleteFallback = MODULE_CONFIG.TextDeleteFallback || 'dòng này';
-            MODULE_CONFIG.AlertTitleConfirm = MODULE_CONFIG.AlertTitleConfirm || 'Xác nhận xóa';
-            MODULE_CONFIG.AlertTitleWarning = MODULE_CONFIG.AlertTitleWarning || 'Cảnh báo';
-            MODULE_CONFIG.AlertTitleError = MODULE_CONFIG.AlertTitleError || 'Lỗi';
-            MODULE_CONFIG.AlertTitleInfo = MODULE_CONFIG.AlertTitleInfo || 'Thông báo';
-            MODULE_CONFIG.ModalWidth = MODULE_CONFIG.ModalWidth || '600px';
+          var firstRow = dataList[0];
+          if (firstRow.formTitle) MODULE_CONFIG.PageTitle = firstRow.formTitle;
+          if (firstRow.primaryKey) MODULE_CONFIG.PrimaryKey = firstRow.primaryKey;
+          if (firstRow.formSubtitle) MODULE_CONFIG.PageSubtitle = firstRow.formSubtitle;
+          // Tự động sinh một số nhãn mặc định nếu chưa có
+          MODULE_CONFIG.TitleAdd = MODULE_CONFIG.TitleAdd || ('➕ Thêm ' + (firstRow.formTitle || 'Mới'));
+          MODULE_CONFIG.TitleEdit = MODULE_CONFIG.TitleEdit || ('✏️ Sửa ' + (firstRow.formTitle || ''));
+          MODULE_CONFIG.BtnSaveAdd = MODULE_CONFIG.BtnSaveAdd || 'Thêm mới';
+          MODULE_CONFIG.BtnSaveEdit = MODULE_CONFIG.BtnSaveEdit || 'Lưu thay đổi';
+          MODULE_CONFIG.BtnCancel = MODULE_CONFIG.BtnCancel || 'Hủy bỏ';
+          MODULE_CONFIG.ToastAdd = MODULE_CONFIG.ToastAdd || 'Đã thêm mới thành công!';
+          MODULE_CONFIG.ToastEdit = MODULE_CONFIG.ToastEdit || 'Đã cập nhật thành công!';
+          MODULE_CONFIG.WarnSelectEdit = MODULE_CONFIG.WarnSelectEdit || 'Vui lòng chọn dữ liệu cần sửa';
+          MODULE_CONFIG.WarnSelectDelete = MODULE_CONFIG.WarnSelectDelete || 'Vui lòng chọn dữ liệu cần xóa';
+          MODULE_CONFIG.ConfirmDelete = MODULE_CONFIG.ConfirmDelete || 'Bạn có chắc muốn xóa {0}?';
+          MODULE_CONFIG.TextDeleteFallback = MODULE_CONFIG.TextDeleteFallback || 'dòng này';
+          MODULE_CONFIG.AlertTitleConfirm = MODULE_CONFIG.AlertTitleConfirm || 'Xác nhận xóa';
+          MODULE_CONFIG.AlertTitleWarning = MODULE_CONFIG.AlertTitleWarning || 'Cảnh báo';
+          MODULE_CONFIG.AlertTitleError = MODULE_CONFIG.AlertTitleError || 'Lỗi';
+          MODULE_CONFIG.AlertTitleInfo = MODULE_CONFIG.AlertTitleInfo || 'Thông báo';
+          MODULE_CONFIG.ModalWidth = MODULE_CONFIG.ModalWidth || '600px';
         }
 
         globalDictionary = {};
