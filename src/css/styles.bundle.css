@@ -163,11 +163,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong, #cbd5e1);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary, #94a3b8);
+  background: rgba(0, 0, 0, 0.3);
 }
 body.dark-theme ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
@@ -1547,8 +1547,11 @@ body.dark-theme .navbar-user:hover {
 
 .sidebar-nav::-webkit-scrollbar { width: 4px; }
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.1);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
+}
+body.dark-theme .sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* nav-group-title inside sidebar */
@@ -1814,8 +1817,12 @@ body.dark-theme .icon-btn:hover {
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
+}
+
+body.dark-theme .sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .nav-group-title {
@@ -3336,14 +3343,7 @@ body.dark-theme .calendar-dropdown-month-btn {
   background: var(--color-surface, #fff);
 }
 
-.dd-table-wrapper::-webkit-scrollbar { 
-  width: 6px; 
-  height: 6px; 
-}
-.dd-table-wrapper::-webkit-scrollbar-thumb {
-  background: var(--color-border, #e2e8f0);
-  border-radius: 4px;
-}
+
 
 /* ── Dropdown: Footer "+ Thêm mới" ───────────────────────────── */
 .dd-footer {
@@ -3976,15 +3976,7 @@ body.dark-theme .calendar-dropdown-month-btn {
   visibility: visible;
 }
 
-/* Custom Scrollbar for Dropdown Menu */
-.data-dropdown-menu::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.data-dropdown-menu::-webkit-scrollbar-thumb {
-  background-color: var(--color-border);
-  border-radius: 4px;
-}
+
 
 .dropdown-table {
   width: 100%;
@@ -5328,15 +5320,7 @@ body.dark-theme .data-table tbody tr:hover {
   transform: translateY(0);
 }
 
-.ui-search-dropdown-menu::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
 
-.ui-search-dropdown-menu::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-}
 
 .ui-search-dropdown-item {
   display: block;

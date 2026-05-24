@@ -1061,8 +1061,10 @@ window.DynamicFormEngine = (function () {
         /* Custom Scrollbar cho bảng */
         .table-bulk-edit-container::-webkit-scrollbar { width: 8px; height: 8px; }
         .table-bulk-edit-container::-webkit-scrollbar-track { background: transparent; }
-        .table-bulk-edit-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
-        .table-bulk-edit-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+        .table-bulk-edit-container::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
+        .table-bulk-edit-container::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.3); }
+        body.dark-theme .table-bulk-edit-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); }
+        body.dark-theme .table-bulk-edit-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
         .table-bulk-edit-container::-webkit-scrollbar-corner { background: transparent; }
     `;
     tableContainer.appendChild(styleNode);
