@@ -92,12 +92,9 @@ window.DynamicFormEngine = (function () {
     var cacheKey = 'FormConfigCache_' + MODULE_CONFIG.FormName;
     var cachedData = null;
 
-    // Nếu không phải đang mở Form Builder, ta ưu tiên đọc từ Cache để tăng tốc
-    // FIX: Bỏ luôn sessionStorage để mỗi lần vào trang đều load giao diện mới nhất,
-    // đảm bảo khi bạn sửa trong Form Builder thì trang sẽ cập nhật ngay lập tức.
+    // RAM Cache cho giao diện
     if (String(MODULE_CONFIG.FormName).toLowerCase() !== 'frmformbuilder') {
-      // try { cachedData = window._uiCache ? window._uiCache[cacheKey] : null; } catch (e) { }
-      cachedData = null; // Tạm thời TẮT cache để test Form Builder mượt mà
+      try { cachedData = window._uiConfigCache ? window._uiConfigCache[cacheKey] : null; } catch (e) { }
     }
 
     var pConfig;
@@ -106,9 +103,8 @@ window.DynamicFormEngine = (function () {
     } else {
       pConfig = configEndpoint ? ApiClient.post(configEndpoint, { FormName: MODULE_CONFIG.FormName }).then(function (res) {
         if (res && res.code === 0 && String(MODULE_CONFIG.FormName).toLowerCase() !== 'frmformbuilder') {
-          // Lưu vào RAM cache thay vì sessionStorage (để F5 là làm mới)
-          // window._uiCache = window._uiCache || {};
-          // window._uiCache[cacheKey] = JSON.stringify(res);
+          window._uiConfigCache = window._uiConfigCache || {};
+          window._uiConfigCache[cacheKey] = JSON.stringify(res);
         }
         return res;
       }) : Promise.resolve(null);
@@ -268,6 +264,7 @@ window.DynamicFormEngine = (function () {
                 if (res && res.code === 0) {
                   if (typeof Toast !== 'undefined') Toast.success('Xóa thành công!');
                   selectedRows = [];
+                  if (String(MODULE_CONFIG.FormName).toLowerCase() === 'frmformbuilder') window._uiConfigCache = {}; // Cache Invalidate
                   _updateSelectionCounter();
                   _loadData();
                 } else {
@@ -736,6 +733,7 @@ window.DynamicFormEngine = (function () {
         if (index >= payloads.length) {
           modalBulk.closeNow();
           Alert.success('Thành công', 'Đã lưu thành công ' + payloads.length + ' trường!');
+          if (String(MODULE_CONFIG.FormName).toLowerCase() === 'frmformbuilder') window._uiConfigCache = {}; // Cache Invalidate
           _loadData();
           return;
         }
@@ -1683,7 +1681,7 @@ window.DynamicFormEngine = (function () {
         modal.closeNow();
         Alert.success('Thành công', 'Đã lưu xong ' + successCount + ' dòng!');
         if (!isAdd) selectedRows = [];
-        if (MODULE_CONFIG.FormName === 'frmFormBuilder') sessionStorage.clear(); // Xóa sạch cache nếu vừa thiết kế Form
+        if (String(MODULE_CONFIG.FormName).toLowerCase() === 'frmformbuilder') window._uiConfigCache = {}; // Cache Invalidate
         _updateSelectionCounter();
         _loadData();
         return;
@@ -1777,7 +1775,7 @@ window.DynamicFormEngine = (function () {
         if (res && res.code === 0) {
           UIToast.show(isEdit ? MODULE_CONFIG.ToastEdit : MODULE_CONFIG.ToastAdd, 'success');
           modal.closeNow();
-          if (MODULE_CONFIG.FormName === 'frmFormBuilder') sessionStorage.clear(); // Xóa sạch cache nếu vừa thiết kế Form
+          if (String(MODULE_CONFIG.FormName).toLowerCase() === 'frmformbuilder') window._uiConfigCache = {}; // Cache Invalidate
           selectedRows = [];
           _updateSelectionCounter();
           _loadData();
