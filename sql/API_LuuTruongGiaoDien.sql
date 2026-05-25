@@ -17,7 +17,7 @@ CREATE PROCEDURE API_LuuTruongGiaoDien
     @IsReadOnlyAdd bit = 0,
     @ValidateRule nvarchar(500) = NULL,
     @DependsOn varchar(50) = NULL,
-    @VisibleRule nvarchar(255) = NULL
+    @NoResult bit = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -33,14 +33,13 @@ BEGIN
             IsRequired = ISNULL(@IsRequired, IsRequired),
             FormPosition = ISNULL(@FormPosition, FormPosition),
             ValidateRule = ISNULL(@ValidateRule, ValidateRule),
-            DependsOn = ISNULL(@DependsOn, DependsOn),
-            VisibleRule = ISNULL(@VisibleRule, VisibleRule)
+            DependsOn = ISNULL(@DependsOn, DependsOn)
         WHERE FieldName = @FieldName AND FormName = @FormName;
     END
     ELSE
     BEGIN
-        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition, ValidateRule, DependsOn, VisibleRule)
-        VALUES (@FormName, @FieldName, @CaptionVN, @FormatID, @CaptionEN, @DataSource, @IsRequired, @FormPosition, @ValidateRule, @DependsOn, @VisibleRule);
+        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition, ValidateRule, DependsOn)
+        VALUES (@FormName, @FieldName, @CaptionVN, @FormatID, @CaptionEN, @DataSource, @IsRequired, @FormPosition, @ValidateRule, @DependsOn);
     END
 
     -- 2. Xử lý Mảng (Array) bên bảng SY_FrmLstTbl
@@ -118,10 +117,13 @@ BEGIN
         LockAddColumnArr = @LockAddArr
     WHERE FormID = @FormName;
 
-    -- Trả về dữ liệu vừa lưu
-    SELECT FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition, ValidateRule, DependsOn,
-           @ShowInAdd AS ShowInAdd, @ShowInEdit AS ShowInEdit, @IsReadOnlyEdit AS IsReadOnlyEdit, @IsReadOnlyAdd AS IsReadOnlyAdd
-    FROM SY_FormatFields 
-    WHERE FieldName = @FieldName;
+    -- Trả về dữ liệu vừa lưu nếu không yêu cầu ẩn
+    IF @NoResult = 0
+    BEGIN
+        SELECT FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource, IsRequired, FormPosition, ValidateRule, DependsOn,
+               @ShowInAdd AS ShowInAdd, @ShowInEdit AS ShowInEdit, @IsReadOnlyEdit AS IsReadOnlyEdit, @IsReadOnlyAdd AS IsReadOnlyAdd
+        FROM SY_FormatFields 
+        WHERE FieldName = @FieldName;
+    END
 END
 GO

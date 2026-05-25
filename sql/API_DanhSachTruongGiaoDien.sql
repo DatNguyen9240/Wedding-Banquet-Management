@@ -15,7 +15,6 @@ BEGIN
     SET NOCOUNT ON;
     
     SELECT 
-        COUNT(*) OVER() AS TotalRecords,
         ff.AutoID, 
         ff.FormName, 
         ff.FieldName, 
@@ -25,10 +24,8 @@ BEGIN
         ff.DataSource,
         ff.IsRequired, 
         ff.FormPosition, 
-        ff.ShowInForm,
         ff.ValidateRule,
         ff.DependsOn,
-        ff.VisibleRule,
         
         -- Tính toán động showInAdd từ AddNewColumnArr
         CASE 

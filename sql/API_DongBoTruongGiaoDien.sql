@@ -60,6 +60,10 @@ BEGIN
         FROM sys.dm_exec_describe_first_result_set(@TSQL, NULL, 0)
         WHERE name IS NOT NULL;
     END
+    -- Xóa các trường cũ không còn tồn tại trong kết quả của Procedure/Table
+    DELETE FROM SY_FormatFields 
+    WHERE FormName = @FormName 
+      AND FieldName NOT IN (SELECT name FROM @Columns);
 
     -- Cursor duyệt qua các cột để tự động thêm vào SY_FormatFields
     DECLARE @FieldName NVARCHAR(128);
@@ -96,7 +100,8 @@ BEGIN
                 @ShowInAdd = 1,
                 @ShowInEdit = 1,
                 @IsReadOnlyEdit = 0,
-                @IsReadOnlyAdd = 0;
+                @IsReadOnlyAdd = 0,
+                @NoResult = 1; -- Ẩn output của SP con để tránh crash
             
             -- Cập nhật thêm OrderNo để giữ thứ tự giống hệt trong Procedure (vì API_LuuTruongGiaoDien chưa có nhận OrderNo)
             UPDATE SY_FormatFields 

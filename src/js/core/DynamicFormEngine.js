@@ -184,7 +184,7 @@ window.DynamicFormEngine = (function () {
             };
           }
 
-          // Xây Schema cho Form (Lưu toàn bộ để lấy Khóa chính, nhưng đánh dấu showInForm)
+          // Xây Schema cho Form (Lưu toàn bộ để lấy Khóa chính)
           globalFormSchema.push({
             name: item.name || item.FieldName,
             label: item.label || item.CaptionVN,
@@ -553,7 +553,7 @@ window.DynamicFormEngine = (function () {
 
     var btnContainer = $container.querySelector('#dynamic-btn-container');
     if (!btnContainer) return;
-    
+
     var actualToolbar = btnContainer.firstElementChild; // .button-bar
     if (!actualToolbar) return;
 
@@ -630,7 +630,7 @@ window.DynamicFormEngine = (function () {
       counter.id = 'selection-counter';
       actualToolbar.appendChild(counter);
     }
-    
+
     if (selectedRows.length > 0) {
       counter.style.display = 'inline-flex';
       counter.innerHTML = `
@@ -639,19 +639,19 @@ window.DynamicFormEngine = (function () {
       `;
       var btnClear = counter.querySelector('.btn-clear-selection');
       if (btnClear) {
-        btnClear.onmouseover = function() { this.style.backgroundColor='rgba(0,0,0,0.05)'; };
-        btnClear.onmouseout = function() { this.style.backgroundColor='transparent'; };
-        btnClear.onclick = function() {
+        btnClear.onmouseover = function () { this.style.backgroundColor = 'rgba(0,0,0,0.05)'; };
+        btnClear.onmouseout = function () { this.style.backgroundColor = 'transparent'; };
+        btnClear.onclick = function () {
           selectedRows = [];
           _updateSelectionCounter();
           // Bỏ check tất cả checkbox trên giao diện
           var checkboxes = $container.querySelectorAll('tbody .form-check-input');
-          if (checkboxes) checkboxes.forEach(function(cb) { cb.checked = false; });
+          if (checkboxes) checkboxes.forEach(function (cb) { cb.checked = false; });
           var checkAll = $container.querySelector('thead .form-check-input');
           if (checkAll) checkAll.checked = false;
           // Bỏ bôi đen (highlight) tất cả các dòng
           var allTrs = $container.querySelectorAll('tbody tr');
-          if (allTrs) allTrs.forEach(function(tr) { tr.classList.remove('active', 'selected', 'table-active', 'table-primary'); });
+          if (allTrs) allTrs.forEach(function (tr) { tr.classList.remove('active', 'selected', 'table-active', 'table-primary'); });
         };
       }
     } else {
@@ -1604,10 +1604,6 @@ window.DynamicFormEngine = (function () {
       var wrapper = document.createElement('div');
       wrapper.className = 'df-col-' + span;
 
-      if (field.visibleRule) {
-        wrapper.setAttribute('data-visible-rule', field.visibleRule);
-      }
-
       wrapper.appendChild(inputEl);
       grid.appendChild(wrapper);
 
@@ -1615,47 +1611,7 @@ window.DynamicFormEngine = (function () {
       currentModalFormState[field.name] = field.value || '';
     });
 
-    function _evaluateVisibility() {
-      var elements = grid.querySelectorAll('[data-visible-rule]');
-      if (elements.length === 0) return;
-
-      var state = Object.assign({}, currentModalFormState);
-      elements.forEach(function (el) {
-        var rule = el.getAttribute('data-visible-rule');
-        try {
-          // Sử dụng new Function kết hợp with(state) để evaluate an toàn logic
-          var func = new Function('state', 'with(state) { return (' + rule + '); }');
-          var isVisible = func(state);
-
-          if (isVisible) {
-            el.style.display = '';
-          } else {
-            el.style.display = 'none';
-            // Xóa giá trị rác của trường đang ẩn để tránh lưu sai
-            var innerInputs = el.querySelectorAll('input:not([type="hidden"]), select, textarea');
-            innerInputs.forEach(function (inp) {
-              if (inp.value !== '') {
-                inp.value = '';
-                inp.dispatchEvent(new Event('change', { bubbles: true }));
-              }
-            });
-            // Xóa value ẩn nếu là data-combo
-            var hiddenInput = el.querySelector('input[type="hidden"]');
-            if (hiddenInput && hiddenInput.value !== '') {
-              hiddenInput.value = '';
-              hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-          }
-        } catch (e) {
-          console.error("Lỗi biên dịch VisibleRule:", rule, e);
-        }
-      });
-    }
-
-    // Chạy kiểm tra hiển thị lần đầu tiên
-    setTimeout(_evaluateVisibility, 200);
-
-    // Lắng nghe sự kiện thay đổi để xử lý Phụ thuộc (Dependencies) và Hiển thị động
+    // Lắng nghe sự kiện thay đổi để xử lý Phụ thuộc (Dependencies)
     body.addEventListener('change', function (e) {
       var changedName = e.target.name;
       if (changedName) {
@@ -1676,7 +1632,6 @@ window.DynamicFormEngine = (function () {
             }
           }
         });
-        _evaluateVisibility();
       }
     });
 
