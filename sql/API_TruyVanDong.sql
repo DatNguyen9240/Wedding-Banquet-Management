@@ -66,9 +66,20 @@ BEGIN
     ELSE
         SET @OrderByClause = ' ORDER BY ' + QUOTENAME(@SortColumn) + ' ' + @SortDir + ' ';
 
+    -- Lấy danh sách cột thay vì dùng SELECT * (Tránh rò rỉ bảo mật như Password)
+    DECLARE @ColumnList NVARCHAR(MAX);
+    SELECT @ColumnList = STUFF((
+        SELECT ', ' + QUOTENAME(FieldName)
+        FROM SY_FormatFields
+        WHERE FormName = @FormName
+        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
+        
+    -- Nếu chưa cấu hình form, lấy tạm *
+    IF @ColumnList IS NULL OR @ColumnList = ''
+        SET @ColumnList = '*';
+
     -- Sinh câu SQL động query dữ liệu có phân trang
-    -- Thêm COUNT(1) OVER() AS _recordtotal để trả về tổng số dòng cho phân trang của JS
-    SET @sql = 'SELECT *, COUNT(1) OVER() AS _recordtotal ' +
+    SET @sql = 'SELECT ' + @ColumnList + ' ' +
                ' FROM ' + QUOTENAME(@TableName) + @whereClause +
                @OrderByClause +
                ' OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;';
