@@ -435,6 +435,9 @@ window.DynamicFormEngine = (function () {
       // Render các cột tùy chỉnh (Sinh ra tự động từ RenderRule trong DB)
       var customRenderers = globalRenderers;
 
+      // Lọc ra các cột cần ẩn khỏi Lưới (Grid)
+      var hiddenCols = globalFormSchema.filter(function(f) { return f.position !== 'grid'; }).map(function(f) { return f.name; });
+
       // Gọi UITable.createDynamic siêu cấp
       var tableEl = UITable.createDynamic(gridData, dictionary, {
         currentSort: { field: currentSortCol, dir: currentSortDir },
@@ -444,7 +447,8 @@ window.DynamicFormEngine = (function () {
           currentPage = 1;
           _loadData();
         },
-        actionRenderers: customRenderers
+        actionRenderers: customRenderers,
+        hiddenColumns: hiddenCols
       });
 
       var actualTable = tableEl.querySelector('table');

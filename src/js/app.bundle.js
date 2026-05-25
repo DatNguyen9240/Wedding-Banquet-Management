@@ -1,4 +1,4 @@
-﻿/* --- mockData.js --- */
+/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -3908,6 +3908,7 @@ var UITable = (function () {
     if (keys.length > 0) {
       keys.forEach(function(key) {
         if (key === 'id' || key === 'Id') return;
+        if (options.hiddenColumns && options.hiddenColumns.indexOf(key) >= 0) return;
         
         var headerLabel = dictionary[key] || key;
         var header = { label: headerLabel, sortable: true, field: key };
