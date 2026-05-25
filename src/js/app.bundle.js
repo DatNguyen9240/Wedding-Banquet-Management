@@ -3035,17 +3035,24 @@ var FilterComponent = (function () {
     filters.forEach(function(f) {
       var item = document.createElement('div');
       item.className = 'filter-item';
+      // Inline styling to force horizontal alignment
+      item.style.flexDirection = 'row';
+      item.style.alignItems = 'center';
+      item.style.minWidth = 'auto';
 
       if (f.label) {
         var lbl = document.createElement('label');
-        lbl.innerText = f.label;
+        lbl.innerText = f.label + ':';
+        lbl.style.marginBottom = '0';
+        lbl.style.whiteSpace = 'nowrap';
         item.appendChild(lbl);
       }
 
       var input = document.createElement('input');
       input.type = f.type || 'text';
       input.className = 'ui-input';
-      if (f.placeholder) input.placeholder = f.placeholder;
+      // Set placeholder properly
+      input.placeholder = f.placeholder || f.label || '';
       input.id = f.id;
 
       inputs[f.id] = input;
@@ -3055,6 +3062,9 @@ var FilterComponent = (function () {
 
     var actions = document.createElement('div');
     actions.className = 'filter-actions';
+    // Reset fixed height from CSS to align horizontally with the inputs
+    actions.style.height = 'auto';
+    actions.style.alignItems = 'center';
 
     var btnSearch = document.createElement('button');
     btnSearch.className = 'btn btn-primary';
