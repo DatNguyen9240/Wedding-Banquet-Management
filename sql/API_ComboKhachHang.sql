@@ -18,10 +18,19 @@ BEGIN
 
     SELECT 
         Makh,
-        -- Cột 2: Tên Khách Hàng (Đóng vai trò là Nhãn - Label hiển thị lên ô text sau khi chọn)
-        ISNULL(NULLIF(Tenkh, ''), ISNULL(Tenchure + ' & ' + Tencodau, N'Khách vãng lai')) AS [Tên Khách Hàng],
-        -- Cột 3: Số Điện Thoại (Hiển thị thêm trong lưới Dropdown để dễ phân biệt người trùng tên)
-        ISNULL(NULLIF(Dienthoai, ''), ISNULL(DTchure, DTcodau)) AS [Số Điện Thoại]
+        -- Cột 2 & 3: Sẽ được hiển thị trên Lưới thả xuống (Do frontend chỉ render max 3 cột đầu)
+        ISNULL(NULLIF(Tenkh, ''), ISNULL(Tenchure + ' & ' + Tencodau, N'Khách vãng lai')) AS [TenKhachHang],
+        ISNULL(NULLIF(Dienthoai, ''), ISNULL(DTchure, DTcodau)) AS [Dienthoai],
+        
+        -- Cột 4 trở đi: Bị ẨN khỏi Lưới, nhưng Frontend sẽ TỰ ĐỘNG BẮT LẤY để Auto-fill vào các ô nhập liệu trùng tên
+        Tenchure,
+        Tencodau,
+        DTchure,
+        DTcodau,
+        Diachi,
+        Nguoigd,
+        Mail,
+        DienThoaiDaiDien
     FROM dmkhachhang
     WHERE 
         (@Keyword IS NULL OR @Keyword = '')

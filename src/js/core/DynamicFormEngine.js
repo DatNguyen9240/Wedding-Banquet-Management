@@ -1524,7 +1524,6 @@ window.DynamicFormEngine = (function () {
 
             var searchApiCall = function (q, page) {
               var payload = Object.assign({}, fetchPayload);
-              // Lấy formState từ biến local của modal nếu có
               if (typeof currentModalFormState !== 'undefined') {
                 payload = Object.assign(payload, currentModalFormState);
               }
@@ -1536,11 +1535,16 @@ window.DynamicFormEngine = (function () {
                 var colFilterIndex = 1;
                 if (dataList && dataList.length > 0) {
                   var keys = Object.keys(dataList[0]);
+                  comboLoading.dataset.lastKeys = JSON.stringify(keys); // Lưu lại keys để dùng cho auto-fill
                   if (keys.length > 0) {
-                    headers = keys;
+                    // Dùng từ điển hiện tại của form để dịch tiêu đề lưới (nếu có), CHỈ HIỆN MAX 3 CỘT ĐẦU cho đỡ chật
+                    var displayKeys = keys.slice(0, 3);
+                    headers = displayKeys.map(function(k) { 
+                       return (typeof currentDictionary !== 'undefined' && currentDictionary[k]) ? currentDictionary[k].CaptionVN : k; 
+                    });
                     var labelRegex = /name|tên|ten|label|desc|title/i;
-                    var displayKey = keys.find(function (k) { return labelRegex.test(k); });
-                    colFilterIndex = displayKey ? keys.indexOf(displayKey) : (keys.length > 1 ? 1 : 0);
+                    var displayKey = displayKeys.find(function (k) { return labelRegex.test(k); });
+                    colFilterIndex = displayKey ? displayKeys.indexOf(displayKey) : (displayKeys.length > 1 ? 1 : 0);
                     dataList.forEach(function (d) {
                       var rowData = [];
                       keys.forEach(function (k) { rowData.push(d[k] !== null && d[k] !== undefined ? d[k] : ''); });
@@ -1561,6 +1565,31 @@ window.DynamicFormEngine = (function () {
               onSearch: searchApiCall,
               onSelect: function (row) {
                 hiddenInput.value = row[0];
+                
+                // === AUTO FILL LOGIC ===
+                // Lấy lại danh sách keys đã lưu
+                var savedKeysStr = comboLoading.dataset.lastKeys;
+                if (savedKeysStr) {
+                    var keys = JSON.parse(savedKeysStr);
+                    // Duyệt qua các cột trả về từ API
+                    keys.forEach(function(keyName, index) {
+                        // Tìm xem trong Form hiện tại có Input nào tên trùng với tên Cột không (bỏ qua chính nó)
+                        // Chuẩn hóa tên cột để dễ map (loại bỏ dấu cách, ký tự đặc biệt nếu cần, nhưng tốt nhất API nên trả về đúng ID)
+                        // Tìm container bao ngoài form (do form động render vào div chứ không phải thẻ <form>)
+                        var form = hiddenInput.closest('.ui-modal') || hiddenInput.closest('body');
+                        if (form) {
+                            var targetInput = form.querySelector('[name="' + keyName + '"]');
+                            if (targetInput && targetInput !== hiddenInput) {
+                                // Điền giá trị
+                                targetInput.value = row[index] || '';
+                                // Kích hoạt sự kiện để UI update (nếu là ô chọn ngày, số lượng...)
+                                targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        }
+                    });
+                }
+                // =======================
+
                 hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
               }
             });
