@@ -33,6 +33,105 @@ window.DynamicFormEngine = (function () {
     return u.Username || u.UserName || u.username || 'Admin';
   }
 
+  /**
+   * Đọc giá trị boolean từ API field có thể trả về camelCase hoặc PascalCase
+   * và có thể là '1'/true/1 hoặc '0'/false/0
+   * @param {*} camel  - item.showInAdd, item.required ...
+   * @param {*} pascal - item.ShowInAdd, item.IsRequired ...
+   */
+  function _bool(camel, pascal) {
+    return String(camel) === '1' || camel === true || String(pascal) === '1' || pascal === true;
+  }
+
+  /**
+   * Gọi API tuần tự cho mảng payload (tránh sập API khi gửi đồng loạt)
+   * @param {string}   endpoint  - API URL
+   * @param {Array}    payloads  - Mảng payload cần gọi lần lượt
+   * @param {Function} onDone    - Gọi khi tất cả xong, nhận (successCount)
+   * @param {Function} [onError] - Gọi khi 1 payload lỗi, nhận (err, payload, index)
+   *                               Nếu return false → dừng chuỗi. Mặc định tiếp tục.
+   */
+  function _sendSequential(endpoint, payloads, onDone, onError) {
+    var successCount = 0;
+    function _next(i) {
+      if (i >= payloads.length) { onDone(successCount); return; }
+      ApiClient.post(endpoint, payloads[i])
+        .then(function (res) {
+          if (res && res.code === 0) successCount++;
+          _next(i + 1);
+        })
+        .catch(function (err) {
+          var stop = typeof onError === 'function' && onError(err, payloads[i], i) === false;
+          if (!stop) _next(i + 1);
+        });
+    }
+    _next(0);
+  }
+
+  /** Kiểm tra form hiện tại có phải Form Builder không */
+  function _isFormBuilder() {
+    return String(MODULE_CONFIG.FormName).toLowerCase() === 'frmformbuilder';
+  }
+
+  /**
+   * Bật/tắt trạng thái loading trên nút bấm
+   * @param {HTMLElement} btn
+   * @param {boolean}     loading
+   * @param {string}      [originalHTML] - HTML gốc để restore khi loading=false
+   */
+  function _setBtnLoading(btn, loading, originalHTML) {
+    if (loading) {
+      btn._originalHTML = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang lưu...';
+      btn.disabled = true;
+    } else {
+      btn.innerHTML = originalHTML || btn._originalHTML || btn.innerHTML;
+      btn.disabled = false;
+    }
+  }
+
+  /**
+   * Áp giá trị mặc định cho object — chỉ ghi nếu chưa có (giống pattern X = X || default)
+   * @param {Object} obj      - Object cần áp mặc định (ví dụ: MODULE_CONFIG)
+   * @param {Object} defaults - Các giá trị mặc định { key: value }
+   */
+  function _setDefaults(obj, defaults) {
+    Object.keys(defaults).forEach(function (k) {
+      if (!obj[k]) obj[k] = defaults[k];
+    });
+  }
+
+  /** Lưu selectedRows vào sessionStorage (silent fail) */
+  function _saveSelectedRows() {
+    try {
+      sessionStorage.setItem('selectedRows_' + MODULE_CONFIG.FormName, JSON.stringify(selectedRows));
+    } catch (e) { }
+  }
+
+  /** Đọc selectedRows từ sessionStorage (silent fail, trả mảng rỗng nếu lỗi) */
+  function _loadSelectedRows() {
+    try {
+      var cached = sessionStorage.getItem('selectedRows_' + MODULE_CONFIG.FormName);
+      selectedRows = cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      selectedRows = [];
+    }
+  }
+
+  /**
+   * Khởi tạo payload chuẩn cho API: clone base, áp user + isEdit flag
+   * @param {Object}  base   - Dữ liệu gốc (formInputData hoặc targetRow)
+   * @param {boolean} isEdit - true = edit, false = add
+   * @returns {Object} payload đã gắn UserName, UserCreate, IsEdit
+   */
+  function _buildPayload(base, isEdit) {
+    var p = Object.assign({}, base);
+    p.UserName   = _currentUser();
+    p.UserCreate = _currentUser();
+    p.IsEdit     = isEdit ? 1 : 0;
+    return p;
+  }
+
   function _hasPermission(action) {
     if (typeof Permission !== 'undefined') {
       var module = MODULE_CONFIG.FormName;
@@ -70,21 +169,19 @@ window.DynamicFormEngine = (function () {
     $container = container;
     MODULE_CONFIG = config;
 
-    // --- GENERIC API (PURE LOW-CODE/NO-CODE) ---
-    // Ghi đè API động, NHƯNG phải loại trừ Form Builder vì nó dùng API chuyên biệt (có logic Join bảng)
-    if (String(MODULE_CONFIG.FormName).toLowerCase() !== 'frmformbuilder') {
-      MODULE_CONFIG.ApiSearch = MODULE_CONFIG.ApiSearch || '/api/API_TruyVanDong';
-      MODULE_CONFIG.ApiSave = MODULE_CONFIG.ApiSave || '/api/API_LuuDong';
-      MODULE_CONFIG.ApiDelete = MODULE_CONFIG.ApiDelete || '/api/API_XoaDong';
-    } else {
-      // Vì AppModules.js đã bị vô hiệu hóa ở HTML, ta phải gắn API chuyên biệt thẳng vào đây
-      MODULE_CONFIG.ApiSearch = '/api/API_DanhSachTruongGiaoDien';
-      MODULE_CONFIG.ApiSave = '/api/API_LuuTruongGiaoDien';
-      MODULE_CONFIG.ApiDelete = '/api/API_XoaTruongGiaoDien';
-    }
-    MODULE_CONFIG.ApiDictionary = MODULE_CONFIG.ApiDictionary || '/api/API_LayCacTruongGiaoDien';
+    // API defaults: FormBuilder dùng API chuyên biệt, các form khác dùng generic No-Code API
+    _setDefaults(MODULE_CONFIG, _isFormBuilder() ? {
+      ApiSearch: '/api/API_DanhSachTruongGiaoDien',
+      ApiSave:   '/api/API_LuuTruongGiaoDien',
+      ApiDelete: '/api/API_XoaTruongGiaoDien'
+    } : {
+      ApiSearch: '/api/API_TruyVanDong',
+      ApiSave:   '/api/API_LuuDong',
+      ApiDelete: '/api/API_XoaDong'
+    });
+    _setDefaults(MODULE_CONFIG, { ApiDictionary: '/api/API_LayCacTruongGiaoDien' });
 
-    try { var cached = sessionStorage.getItem('selectedRows_' + MODULE_CONFIG.FormName); selectedRows = cached ? JSON.parse(cached) : []; } catch (e) { selectedRows = []; }
+    _loadSelectedRows();
 
 
     // 1. Lấy Từ điển UI từ Database trước (Cơ chế Caching siêu tốc)
@@ -93,7 +190,7 @@ window.DynamicFormEngine = (function () {
     var cachedData = null;
 
     // RAM Cache cho giao diện
-    if (String(MODULE_CONFIG.FormName).toLowerCase() !== 'frmformbuilder') {
+    if (!_isFormBuilder()) {
       try { cachedData = window._uiConfigCache ? window._uiConfigCache[cacheKey] : null; } catch (e) { }
     }
 
@@ -102,7 +199,7 @@ window.DynamicFormEngine = (function () {
       pConfig = Promise.resolve(JSON.parse(cachedData));
     } else {
       pConfig = configEndpoint ? ApiClient.post(configEndpoint, { FormName: MODULE_CONFIG.FormName }).then(function (res) {
-        if (res && res.code === 0 && String(MODULE_CONFIG.FormName).toLowerCase() !== 'frmformbuilder') {
+        if (res && res.code === 0 && !_isFormBuilder()) {
           window._uiConfigCache = window._uiConfigCache || {};
           window._uiConfigCache[cacheKey] = JSON.stringify(res);
         }
@@ -119,26 +216,41 @@ window.DynamicFormEngine = (function () {
         // --- NO-CODE MAGIC: Đọc cấu hình cấp Form từ Record đầu tiên ---
         if (dataList.length > 0) {
           var firstRow = dataList[0];
-          if (firstRow.formTitle) MODULE_CONFIG.PageTitle = firstRow.formTitle;
-          if (firstRow.primaryKey) MODULE_CONFIG.PrimaryKey = firstRow.primaryKey;
-          if (firstRow.formSubtitle) MODULE_CONFIG.PageSubtitle = firstRow.formSubtitle;
-          // Tự động sinh một số nhãn mặc định nếu chưa có
-          MODULE_CONFIG.TitleAdd = MODULE_CONFIG.TitleAdd || ('➕ Thêm ' + (firstRow.formTitle || 'Mới'));
-          MODULE_CONFIG.TitleEdit = MODULE_CONFIG.TitleEdit || ('✏️ Sửa ' + (firstRow.formTitle || ''));
-          MODULE_CONFIG.BtnSaveAdd = MODULE_CONFIG.BtnSaveAdd || 'Thêm mới';
-          MODULE_CONFIG.BtnSaveEdit = MODULE_CONFIG.BtnSaveEdit || 'Lưu thay đổi';
-          MODULE_CONFIG.BtnCancel = MODULE_CONFIG.BtnCancel || 'Hủy bỏ';
-          MODULE_CONFIG.ToastAdd = MODULE_CONFIG.ToastAdd || 'Đã thêm mới thành công!';
-          MODULE_CONFIG.ToastEdit = MODULE_CONFIG.ToastEdit || 'Đã cập nhật thành công!';
-          MODULE_CONFIG.WarnSelectEdit = MODULE_CONFIG.WarnSelectEdit || 'Vui lòng chọn dữ liệu cần sửa';
-          MODULE_CONFIG.WarnSelectDelete = MODULE_CONFIG.WarnSelectDelete || 'Vui lòng chọn dữ liệu cần xóa';
-          MODULE_CONFIG.ConfirmDelete = MODULE_CONFIG.ConfirmDelete || 'Bạn có chắc muốn xóa {0}?';
-          MODULE_CONFIG.TextDeleteFallback = MODULE_CONFIG.TextDeleteFallback || 'dòng này';
-          MODULE_CONFIG.AlertTitleConfirm = MODULE_CONFIG.AlertTitleConfirm || 'Xác nhận xóa';
-          MODULE_CONFIG.AlertTitleWarning = MODULE_CONFIG.AlertTitleWarning || 'Cảnh báo';
-          MODULE_CONFIG.AlertTitleError = MODULE_CONFIG.AlertTitleError || 'Lỗi';
-          MODULE_CONFIG.AlertTitleInfo = MODULE_CONFIG.AlertTitleInfo || 'Thông báo';
-          MODULE_CONFIG.ModalWidth = MODULE_CONFIG.ModalWidth || '600px';
+
+          // Map API fields → MODULE_CONFIG (chỉ ghi nếu API trả về giá trị)
+          var _rowMap = { formTitle: 'PageTitle', primaryKey: 'PrimaryKey', formSubtitle: 'PageSubtitle' };
+          Object.keys(_rowMap).forEach(function (src) {
+            if (firstRow[src]) MODULE_CONFIG[_rowMap[src]] = firstRow[src];
+          });
+
+          // Sinh nhãn mặc định — caller có thể override từ config
+          _setDefaults(MODULE_CONFIG, {
+            TitleAdd:           '➕ Thêm ' + (firstRow.formTitle || 'Mới'),
+            TitleEdit:          '✏️ Sửa '  + (firstRow.formTitle || ''),
+            BtnSaveAdd:         'Thêm mới',
+            BtnSaveEdit:        'Lưu thay đổi',
+            BtnSaveAll:         'Lưu Tất Cả',
+            BtnCancel:          'Hủy bỏ',
+            BtnSaveSaving:      'Đang lưu...',
+            ToastAdd:           'Đã thêm mới thành công!',
+            ToastEdit:          'Đã cập nhật thành công!',
+            ToastDelete:        'Xóa thành công!',
+            WarnMissingInfo:    'Thiếu thông tin',
+            WarnMissingInput:   'Vui lòng điền đầy đủ thông tin: {0}',
+            WarnSelectEdit:     'Vui lòng chọn dữ liệu cần sửa',
+            WarnSelectDelete:   'Vui lòng chọn dữ liệu cần xóa',
+            ConfirmDelete:      'Bạn có chắc muốn xóa {0}?',
+            TextDeleteFallback: 'dòng này',
+            AlertTitleConfirm:  'Xác nhận xóa',
+            AlertTitleWarning:  'Cảnh báo',
+            AlertTitleError:    'Lỗi',
+            AlertTitleInfo:     'Thông báo',
+            AlertApiMissing:    'Chưa cấu hình API lưu',
+            AlertSaveFailed:    'Lưu dữ liệu thất bại',
+            AlertDeleteFailed:  'Xóa dữ liệu thất bại',
+            AlertNetworkError:  'Lỗi kết nối mạng',
+            ModalWidth:         '600px'
+          });
         }
 
         globalDictionary = {};
@@ -186,19 +298,20 @@ window.DynamicFormEngine = (function () {
 
           // Xây Schema cho Form (Lưu toàn bộ để lấy Khóa chính)
           globalFormSchema.push({
-            name: item.name || item.FieldName,
-            label: item.label || item.CaptionVN,
-            required: String(item.required) === '1' || item.required === true || String(item.IsRequired) === '1' || item.IsRequired === true,
-            position: item.FormPosition || item.formPosition || item.position || 'grid', // Đọc đúng FormPosition (Hoa thường)
-            orderNo: item.OrderNo || item.orderNo || 0, // Đọc OrderNo (Hoa thường)
-            showInAdd: String(item.showInAdd) === '1' || item.showInAdd === true || String(item.ShowInAdd) === '1' || item.ShowInAdd === true,
-            showInEdit: String(item.showInEdit) === '1' || item.showInEdit === true || String(item.ShowInEdit) === '1' || item.ShowInEdit === true,
-            renderRule: (item.renderRule || '').toLowerCase().trim(),
-            dataSource: (item.dataSource || '').trim(),
-            isReadOnlyEdit: String(item.isReadOnlyEdit) === '1' || item.isReadOnlyEdit === true || String(item.IsReadOnlyEdit) === '1' || item.IsReadOnlyEdit === true,
-            isReadOnlyAdd: String(item.isReadOnlyAdd) === '1' || item.isReadOnlyAdd === true || String(item.IsReadOnlyAdd) === '1' || item.IsReadOnlyAdd === true,
-            validateRule: (item.validateRule || item.ValidateRule || '').trim(),
-            dependsOn: (item.dependsOn || item.DependsOn || '').trim()
+            name:          item.name         || item.FieldName,
+            label:         item.label        || item.CaptionVN,
+            required:      _bool(item.required,      item.IsRequired),
+            showInAdd:     _bool(item.showInAdd,     item.ShowInAdd),
+            showInEdit:    _bool(item.showInEdit,    item.ShowInEdit),
+            isReadOnlyEdit:_bool(item.isReadOnlyEdit,item.IsReadOnlyEdit),
+            isReadOnlyAdd: _bool(item.isReadOnlyAdd, item.IsReadOnlyAdd),
+            position:      item.FormPosition || item.formPosition || item.position || 'grid',
+            orderNo:       item.OrderNo      || item.orderNo     || 0,
+            renderRule:    (item.renderRule  || '').toLowerCase().trim(),
+            dataSource:    (item.dataSource  || item.DataSource  || '').trim(),
+            validateRule:  (item.validateRule|| item.ValidateRule|| '').trim(),
+            dependsOn:     (item.dependsOn   || item.DependsOn  || '').trim(),
+            visibleRule:   (item.visibleRule  || item.VisibleRule || '').trim()
           });
         });
 
@@ -209,22 +322,21 @@ window.DynamicFormEngine = (function () {
         console.warn('API Dictionary fetch failed or empty', resConfig);
       }
       // Tự động sinh mã HTML (Không cần file .html rời nữa)
-      var html =
-        '<div class="page-title-bar">' +
-        '<div class="page-title-info">' +
-        '<h1 class="page-title-heading">' + (MODULE_CONFIG.PageTitle || 'Quản lý Dữ liệu') + '</h1>' +
-        '<span class="page-title-sub">' + (MODULE_CONFIG.PageSubtitle || '') + '</span>' +
-        '</div>' +
-        '</div>' +
-        '<div id="dynamic-btn-container" style="margin-bottom: 16px;"></div>' +
-        '<div class="card dynamic-grid-card">' +
-        '<div class="card-body">' +
-        '<div id="dynamic-filter-container" style="margin-bottom: 16px;"></div>' +
-        '<div id="dynamic-grid-container"></div>' +
-        '</div>' +
-        '</div>';
-
-      $container.innerHTML = html;
+      $container.innerHTML = `
+        <div class="page-title-bar">
+          <div class="page-title-info">
+            <h1 class="page-title-heading">${MODULE_CONFIG.PageTitle || 'Quản lý Dữ liệu'}</h1>
+            <span class="page-title-sub">${MODULE_CONFIG.PageSubtitle || ''}</span>
+          </div>
+        </div>
+        <div id="dynamic-btn-container" style="margin-bottom:16px;"></div>
+        <div class="card dynamic-grid-card">
+          <div class="card-body">
+            <div id="dynamic-filter-container" style="margin-bottom:16px;"></div>
+            <div id="dynamic-grid-container"></div>
+          </div>
+        </div>
+      `;
 
       // Action Toolbar
       var btnContainer = $container.querySelector('#dynamic-btn-container');
@@ -257,18 +369,15 @@ window.DynamicFormEngine = (function () {
               var ids = selectedRows.map(function (r) { return r[MODULE_CONFIG.PrimaryKey] || r.Id || r.AutoID; });
               payload.IDs = ids.join(',');
 
-              var btnLoading = null;
-              // Nếu lấy được container của modal, có thể tìm nút để loading tạm
-
               ApiClient.post(MODULE_CONFIG.ApiDelete, payload).then(function (res) {
                 if (res && res.code === 0) {
-                  if (typeof Toast !== 'undefined') Toast.success('Xóa thành công!');
+                  if (typeof Toast !== 'undefined') Toast.success(MODULE_CONFIG.ToastDelete);
                   selectedRows = [];
-                  if (String(MODULE_CONFIG.FormName).toLowerCase() === 'frmformbuilder') window._uiConfigCache = {}; // Cache Invalidate
+                  if (_isFormBuilder()) window._uiConfigCache = {};
                   _updateSelectionCounter();
                   _loadData();
                 } else {
-                  Alert.error(MODULE_CONFIG.AlertTitleError, res.message || 'Xóa thất bại');
+                  Alert.error(MODULE_CONFIG.AlertTitleError, res.message || MODULE_CONFIG.AlertDeleteFailed);
                 }
               }).catch(function (err) {
                 Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertNetworkError);
@@ -336,7 +445,7 @@ window.DynamicFormEngine = (function () {
         }
 
         // HACK: Thiết kế Layout dành riêng cho Form Builder
-        if (MODULE_CONFIG.FormName === 'frmFormBuilder') {
+        if (_isFormBuilder()) {
           var divider = document.createElement('div');
           divider.className = 'divider';
           toolbar.appendChild(divider);
@@ -549,7 +658,7 @@ window.DynamicFormEngine = (function () {
   }
 
   function _updateSelectionCounter() {
-    try { sessionStorage.setItem('selectedRows_' + MODULE_CONFIG.FormName, JSON.stringify(selectedRows)); } catch (e) { }
+    _saveSelectedRows();
 
     var btnContainer = $container.querySelector('#dynamic-btn-container');
     if (!btnContainer) return;
@@ -812,30 +921,24 @@ window.DynamicFormEngine = (function () {
 
       if (payloads.length === 0) return Alert.warning('Lỗi', 'Chưa có dòng dữ liệu nào hợp lệ!');
 
-      var btn = this;
-      var originalText = btn.innerHTML;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang lưu...';
-      btn.disabled = true;
+      _setBtnLoading(btn, true);
 
-      // Hàm đệ quy gửi tuần tự để không bị sập API
-      function sendNext(index) {
-        if (index >= payloads.length) {
+      // Gọi API tuần tự
+      _sendSequential(
+        MODULE_CONFIG.ApiSave,
+        payloads,
+        function () {                // onDone
           modalBulk.closeNow();
           Alert.success('Thành công', 'Đã lưu thành công ' + payloads.length + ' trường!');
-          if (String(MODULE_CONFIG.FormName).toLowerCase() === 'frmformbuilder') window._uiConfigCache = {}; // Cache Invalidate
+          if (_isFormBuilder()) window._uiConfigCache = {};
           _loadData();
-          return;
+        },
+        function (err, payload) {   // onError → return false để dừng chuỗi
+          Alert.error('Lỗi ở dòng: ' + payload.FieldName, err.message);
+          _setBtnLoading(btn, false);
+          return false;
         }
-        ApiClient.post(MODULE_CONFIG.ApiSave, payloads[index])
-          .then(function () { sendNext(index + 1); })
-          .catch(function (err) {
-            Alert.error('Lỗi ở dòng: ' + payloads[index].FieldName, err.message);
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-          });
-      }
-
-      sendNext(0);
+      );
     };
   }
 
@@ -1084,22 +1187,19 @@ window.DynamicFormEngine = (function () {
             return;
           }
 
-          function sendNext(i) {
-            if (i >= payloads.length) {
+          // Gọi API tuần tự
+          _sendSequential(
+            saveEndpoint,
+            payloads,
+            function () {              // onDone
               modalLayout.closeNow();
               Alert.success('Thành công', 'Đã cập nhật xong cấu hình Layout!');
               _loadData();
-              return;
+            },
+            function (err, payload) { // onError → không dừng, tiếp tục lưu các trường khác
+              console.error('Lỗi khi lưu field', payload.FieldName, err);
             }
-            ApiClient.post(saveEndpoint, payloads[i])
-              .then(function () { sendNext(i + 1); })
-              .catch(function (err) {
-                console.error('Lỗi khi lưu field', payloads[i].FieldName, err);
-                sendNext(i + 1); // Cố gắng lưu tiếp các trường khác
-              });
-          }
-
-          sendNext(0);
+          );
         };
 
       })
@@ -1387,7 +1487,7 @@ window.DynamicFormEngine = (function () {
 
     var btnSave = document.createElement('button');
     btnSave.className = 'btn btn-primary';
-    btnSave.textContent = 'Lưu Tất Cả';
+    btnSave.textContent = MODULE_CONFIG.BtnSaveAll;
 
     footer.appendChild(btnCancel);
     footer.appendChild(btnSave);
@@ -1603,6 +1703,8 @@ window.DynamicFormEngine = (function () {
 
       var wrapper = document.createElement('div');
       wrapper.className = 'df-col-' + span;
+      // Gán VisibleRule lên wrapper để UIControls.utils.applyVisibleRules xử lý
+      if (field.visibleRule) wrapper.dataset.visibleRule = field.visibleRule;
 
       wrapper.appendChild(inputEl);
       grid.appendChild(wrapper);
@@ -1610,6 +1712,11 @@ window.DynamicFormEngine = (function () {
       // Gán giá trị mặc định vào currentModalFormState
       currentModalFormState[field.name] = field.value || '';
     });
+
+    // Áp VisibleRule: show/hide fields theo cấu hình trong SY_FormatFields.VisibleRule
+    if (typeof UIControls !== 'undefined' && UIControls.utils && UIControls.utils.applyVisibleRules) {
+      UIControls.utils.applyVisibleRules(body);
+    }
 
     // Lắng nghe sự kiện thay đổi để xử lý Phụ thuộc (Dependencies)
     body.addEventListener('change', function (e) {
@@ -1682,12 +1789,8 @@ window.DynamicFormEngine = (function () {
 
     var payloads = [];
     rows.forEach(function (targetRow, rowIdx) {
-      var payload = Object.assign({}, targetRow); // Kế thừa dữ liệu gốc
-      payload.UserName = _currentUser();
-      payload.UserCreate = _currentUser();
-      payload.IsEdit = isAdd ? 0 : 1;
+      var payload = _buildPayload(targetRow, !isAdd);
 
-      // Thu thập dữ liệu từ các input có cùng data-row-index
       var inputs = body.querySelectorAll('input[data-row-index="' + rowIdx + '"], select[data-row-index="' + rowIdx + '"], textarea[data-row-index="' + rowIdx + '"]');
       var hasData = false;
       inputs.forEach(function (el) {
@@ -1695,7 +1798,6 @@ window.DynamicFormEngine = (function () {
         var val = el.value.trim();
         if (fieldName) {
           payload[fieldName] = val;
-          // Để tránh tạo các row trống (không nhập gì), ta kiểm tra xem có trường nào ngoài khóa chính được nhập không
           if (val && fieldName !== MODULE_CONFIG.PrimaryKey && fieldName !== 'OrderNo') {
             hasData = true;
           }
@@ -1703,44 +1805,34 @@ window.DynamicFormEngine = (function () {
       });
 
       if (isAdd) {
-        // Khi Thêm Hàng Loạt, chỉ push những dòng có dữ liệu
         if (hasData) payloads.push(payload);
       } else {
-        // Khi Sửa Hàng Loạt, luôn push
         payloads.push(payload);
       }
     });
 
     if (payloads.length === 0) {
-      Alert.warning('Thông báo', 'Không có dữ liệu hợp lệ để lưu.');
-      btnSave.disabled = false;
-      btnSave.textContent = 'Lưu Tất Cả';
+      Alert.warning(MODULE_CONFIG.AlertTitleInfo, 'Không có dữ liệu hợp lệ để lưu.');
+      _setBtnLoading(btnSave, false);
       return;
     }
 
-    // Gọi API đệ quy
-    var successCount = 0;
-    function sendNext(idx) {
-      if (idx >= payloads.length) {
+    // Gọi API tuần tự
+    _sendSequential(
+      endpoint,
+      payloads,
+      function (count) {             // onDone
         modal.closeNow();
-        Alert.success('Thành công', 'Đã lưu xong ' + successCount + ' dòng!');
+        Alert.success('Thành công', 'Đã lưu xong ' + count + ' dòng!');
         if (!isAdd) selectedRows = [];
-        if (String(MODULE_CONFIG.FormName).toLowerCase() === 'frmformbuilder') window._uiConfigCache = {}; // Cache Invalidate
+        if (_isFormBuilder()) window._uiConfigCache = {};
         _updateSelectionCounter();
         _loadData();
-        return;
+      },
+      function (err) {               // onError → tiếp tục
+        console.error('Grid Edit Error', err);
       }
-      ApiClient.post(endpoint, payloads[idx])
-        .then(function (res) {
-          if (res && res.code === 0) successCount++;
-          sendNext(idx + 1);
-        })
-        .catch(function (err) {
-          console.error('Grid Edit Error', err);
-          sendNext(idx + 1);
-        });
-    }
-    sendNext(0);
+    );
   }
 
   // ── Save ──────────────────────────────────────────────────
@@ -1792,47 +1884,40 @@ window.DynamicFormEngine = (function () {
     }
     if (isInvalid) return;
 
-    btnSave.disabled = true;
-    btnSave.textContent = MODULE_CONFIG.BtnSaveSaving;
+    // 3. Lưu — bật loading, tắt khi xong (dùng _setBtnLoading thóat khỏi duplicate)
+    _setBtnLoading(btnSave, true);
+    var _restoreSaveBtn = function () { _setBtnLoading(btnSave, false); };
 
-    // 3. Xây dựng danh sách Payload
+    // 4. Xây dựng danh sách Payload
     var payloads = [];
-    var singlePayload = Object.assign({}, formInputData);
-    singlePayload.UserName = _currentUser();
-    singlePayload.UserCreate = _currentUser();
+    var singlePayload = _buildPayload(formInputData, isEdit);
     singlePayload.OrderNo = rowData && rowData.OrderNo ? rowData.OrderNo : 0;
-    singlePayload.IsEdit = isEdit ? 1 : 0;
 
     if (isEdit && rowData && MODULE_CONFIG.PrimaryKey && !singlePayload[MODULE_CONFIG.PrimaryKey]) {
       singlePayload[MODULE_CONFIG.PrimaryKey] = rowData[MODULE_CONFIG.PrimaryKey];
     }
     payloads.push(singlePayload);
 
-    if (payloads.length === 0) {
-      modal.closeNow();
-      return;
-    }
+    if (payloads.length === 0) { modal.closeNow(); return; }
 
-    // 4. Gọi API Lưu
+    // 5. Gọi API Lưu
     ApiClient.post(endpoint, payloads[0])
       .then(function (res) {
         if (res && res.code === 0) {
           UIToast.show(isEdit ? MODULE_CONFIG.ToastEdit : MODULE_CONFIG.ToastAdd, 'success');
           modal.closeNow();
-          if (String(MODULE_CONFIG.FormName).toLowerCase() === 'frmformbuilder') window._uiConfigCache = {}; // Cache Invalidate
+          if (_isFormBuilder()) window._uiConfigCache = {}; // Cache Invalidate
           selectedRows = [];
           _updateSelectionCounter();
           _loadData();
         } else {
           Alert.error(MODULE_CONFIG.AlertTitleError, res && res.msg ? res.msg : MODULE_CONFIG.AlertSaveFailed);
-          btnSave.disabled = false;
-          btnSave.textContent = isEdit ? MODULE_CONFIG.BtnSaveEdit : MODULE_CONFIG.BtnSaveAdd;
+          _restoreSaveBtn();
         }
       })
       .catch(function () {
         Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertNetworkError);
-        btnSave.disabled = false;
-        btnSave.textContent = isEdit ? MODULE_CONFIG.BtnSaveEdit : MODULE_CONFIG.BtnSaveAdd;
+        _restoreSaveBtn();
       });
   }
 

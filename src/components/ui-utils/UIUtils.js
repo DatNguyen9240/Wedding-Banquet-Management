@@ -134,6 +134,92 @@ UIControls.utils = (function() {
           if (typeof onSelect === 'function') onSelect(null);
         }
       });
+    },
+
+    /**
+     * Áp VisibleRule cho các field trong một container (form modal hoặc filter dialog)
+     *
+     * Syntax (lưu trong SY_FormatFields.VisibleRule):
+     *   "fieldA=val"           → hiện khi fieldA = val
+     *   "fieldA=v1|v2"         → hiện khi fieldA = v1 HOẶC v2
+     *   "fieldA!=val"          → hiện khi fieldA KHÁC val
+     *   "fieldA=v1&fieldB=v2"  → hiện khi CẢ HAI đúng (AND)
+     *
+     * @param {HTMLElement} container  - Phần tử chứa các field (form body, dialog body)
+     * @param {string} [rowSelector]   - CSS selector của "row" cần show/hide
+     *                                   Mặc định '[data-visible-rule]'
+     * @param {string} [fieldSelector] - Cách tìm input theo fieldName
+     *                                   'data'  → dùng [data-field-name="x"]  (ReportFilterDialog)
+     *                                   'name'  → dùng [name="x"]             (DynamicFormEngine)
+     *                                   Mặc định: thử data-field-name trước, fallback name
+     */
+    applyVisibleRules: function(container, rowSelector, fieldSelector) {
+      rowSelector = rowSelector || '[data-visible-rule]';
+      var rows = Array.from(container.querySelectorAll(rowSelector));
+      if (!rows.length) return;
+
+      function _parseRule(ruleStr) {
+        return ruleStr.split('&').map(function(part) {
+          part = part.trim();
+          var op = part.indexOf('!=') !== -1 ? '!=' : '=';
+          var sides = part.split(op === '!=' ? '!=' : '=');
+          return {
+            field: sides[0].trim(),
+            op: op,
+            values: (sides[1] || '').split('|').map(function(v) { return v.trim().toLowerCase(); })
+          };
+        });
+      }
+
+      function _getFieldValue(fieldName) {
+        // Thử data-field-name trước (ReportFilterDialog), fallback sang name (DynamicFormEngine)
+        var el = container.querySelector('[data-field-name="' + fieldName + '"]')
+               || container.querySelector('[name="' + fieldName + '"]');
+        return el ? (el.value || '').toLowerCase() : '';
+      }
+
+      function _evaluate(ruleStr) {
+        return _parseRule(ruleStr).every(function(cond) {
+          var current = _getFieldValue(cond.field);
+          var match = cond.values.indexOf(current) !== -1;
+          return cond.op === '=' ? match : !match;
+        });
+      }
+
+      function _applyRow(row) {
+        var rule = row.dataset.visibleRule;
+        if (!rule) return;
+        var visible = _evaluate(rule);
+        row.style.display = visible ? '' : 'none';
+        // Disable input ẩn để không bị validate và không serialize vào payload
+        row.querySelectorAll('input, select, textarea').forEach(function(inp) {
+          inp.disabled = !visible;
+        });
+      }
+
+      // Áp trạng thái ban đầu
+      rows.forEach(function(row) { _applyRow(row); });
+
+      // Tìm trigger fields và đăng ký change listener
+      var triggerMap = {};
+      rows.forEach(function(row) {
+        _parseRule(row.dataset.visibleRule || '').forEach(function(cond) {
+          if (!triggerMap[cond.field]) triggerMap[cond.field] = [];
+          triggerMap[cond.field].push(row);
+        });
+      });
+
+      Object.keys(triggerMap).forEach(function(fieldName) {
+        var triggerEl = container.querySelector('[data-field-name="' + fieldName + '"]')
+                      || container.querySelector('[name="' + fieldName + '"]');
+        if (!triggerEl) return;
+        var handler = function() {
+          triggerMap[fieldName].forEach(function(row) { _applyRow(row); });
+        };
+        triggerEl.addEventListener('change', handler);
+        triggerEl.addEventListener('input', handler);
+      });
     }
   };
 })();
+
