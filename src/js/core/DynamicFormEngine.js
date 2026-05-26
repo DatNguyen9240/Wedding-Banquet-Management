@@ -577,6 +577,14 @@ window.DynamicFormEngine = (function () {
           onPageChange: function (page) {
             currentPage = page;
             _loadData();
+          },
+          onLimitChange: function (newLimit) {
+            currentLimit = newLimit;
+            currentPage = 1;
+            _loadData();
+          },
+          onRefresh: function () {
+            _loadData();
           }
         });
         gridContainer.appendChild(paginationEl);

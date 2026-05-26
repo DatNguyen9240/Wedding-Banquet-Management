@@ -52,7 +52,8 @@ $cssFiles = @(
   "components\tree\tree.css",
   "components\user-profile\user-profile.css",
   "components\search-dropdown\search-dropdown.css",
-  "components\side-panel\side-panel.css"
+  "components\side-panel\side-panel.css",
+  "components\screen-capture\screen-capture.css"
 )
 
 # ====== DANH SACH JS ======
@@ -114,7 +115,8 @@ $jsFiles = @(
   "components\header\Header.js",
   "components\sidebar\Sidebar.js",
   "components\search-dropdown\SearchDropdown.js",
-  "components\side-panel\SidePanel.js"
+  "components\side-panel\SidePanel.js",
+  "components\screen-capture\ScreenCapture.js"
 )
 
 # --- Build CSS ---

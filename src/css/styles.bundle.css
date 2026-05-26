@@ -4354,103 +4354,127 @@ body.dark-theme .calendar-dropdown-month-btn {
 
 /* --- pagination.css --- */
 /* ═══════════════════════════════════════════
-   PAGINATION COMPONENT
+   DATAGRID PAGER COMPONENT
    ═══════════════════════════════════════════ */
 
-.pagination-wrapper {
+.datagrid-pager {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  border-top: 1px solid var(--color-border);
+  justify-content: flex-start;
+  padding: 8px 12px;
   background: var(--color-surface);
-}
-
-.pagination-info {
+  border-top: 1px solid var(--color-border);
+  gap: 12px;
   font-size: 13px;
   color: var(--color-text-secondary);
 }
 
-.pagination-controls {
+.pager-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border);
+  margin: 0 4px;
+}
+
+/* 1. Size Selector */
+.pager-size-selector select {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  outline: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.pager-size-selector select:hover {
+  border-color: var(--color-primary);
+}
+
+/* 2. Controls */
+.pager-controls {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.page-btn {
+.pager-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 4px;
   color: var(--color-text-secondary);
-  font-size: 13px;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  padding: 0 8px;
 }
 
-.page-btn:hover:not(:disabled) {
+.pager-btn:hover:not(:disabled) {
   background: var(--color-background);
   color: var(--color-primary);
-  border-color: var(--color-primary);
+  border-color: var(--color-border);
 }
 
-.page-btn.active {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-.page-btn:disabled {
-  opacity: 0.5;
+.pager-btn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-.page-btn .material-symbols-outlined {
+.pager-btn .material-symbols-outlined {
   font-size: 18px;
 }
 
-/* --- RESPONSIVE PAGINATION --- */
-
-.page-btn.dots { background: transparent !important; border-color: transparent !important; color: var(--color-text-secondary); pointer-events: none; min-width: 24px; padding: 0; }
-
-
-@media (max-width: 768px) {
-  .pagination-wrapper {
-    flex-direction: column;
-    gap: 12px;
-    justify-content: center;
-    padding: 16px;
-  }
-  
-  .pagination-info {
-    text-align: center;
-    white-space: normal;
-  }
-  
-  .pagination-controls {
-    flex-wrap: wrap;
-    justify-content: center;
-    overflow: hidden;
-  }
-
-  .page-btn {
-    min-width: 28px;
-    height: 28px;
-    font-size: 12px;
-    padding: 0 4px;
-  }
-  
-  .page-btn .material-symbols-outlined {
-    font-size: 16px;
-  }
+.pager-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 4px;
 }
 
+.pager-input {
+  width: 45px;
+  height: 26px;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.pager-input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+/* 3. Info */
+.pager-info {
+  margin-left: auto; /* Push info to the right */
+}
+
+/* --- RESPONSIVE PAGINATION --- */
+@media (max-width: 768px) {
+  .datagrid-pager {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 12px;
+  }
+  
+  .pager-separator {
+    display: none;
+  }
+  
+  .pager-info {
+    margin-left: 0;
+    width: 100%;
+    text-align: center;
+    margin-top: 8px;
+  }
+}
 
 
 /* --- popover.css --- */
@@ -5963,6 +5987,45 @@ body.dark-theme .data-table tbody tr:hover {
 .ui-side-panel.show {
   right: 0 !important;
   opacity: 1 !important;
+}
+
+
+/* --- screen-capture.css --- */
+/* ═══════════════════════════════════════════
+   SCREEN CAPTURE COMPONENT CSS
+   ═══════════════════════════════════════════ */
+
+.screen-capture-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 99999;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.screen-capture-toolbar button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.screen-capture-toolbar button:hover {
+  background: var(--color-background);
+  color: var(--color-primary);
+}
+
+.screen-capture-toolbar button .material-symbols-outlined {
+  font-size: 18px;
 }
 
 

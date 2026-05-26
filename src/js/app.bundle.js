@@ -4442,7 +4442,7 @@ var Pagination = (function () {
    */
   function create(options) {
     var wrapper = document.createElement('div');
-    wrapper.className = 'pagination-wrapper';
+    wrapper.className = 'pagination-wrapper datagrid-pager';
 
     var totalPages = Math.ceil(options.totalItems / (options.itemsPerPage || 10));
     var currentPage = options.currentPage || 1;
@@ -4451,79 +4451,107 @@ var Pagination = (function () {
     var endItem = Math.min(currentPage * options.itemsPerPage, options.totalItems);
     if (options.totalItems === 0) { startItem = 0; endItem = 0; }
 
-    var info = document.createElement('div');
-    info.className = 'pagination-info';
-    info.innerText = `Hiển thị ${startItem}-${endItem} trong số ${options.totalItems} bản ghi`;
-
-    var controls = document.createElement('div');
-    controls.className = 'pagination-controls';
-
-    // Prev Button
-    var btnPrev = document.createElement('button');
-    btnPrev.className = 'page-btn';
-    btnPrev.innerHTML = '<span class="material-symbols-outlined">chevron_left</span>';
-    btnPrev.disabled = currentPage === 1;
-    btnPrev.onclick = function() {
-      if (typeof options.onPageChange === 'function') options.onPageChange(currentPage - 1);
-    };
-    controls.appendChild(btnPrev);
-
-    // Page numbers logic with '...'
-    var isMobile = window.innerWidth <= 480;
-    var delta = isMobile ? 0 : 1; 
-    var left = currentPage - delta;
-    var right = currentPage + delta + 1;
-    var range = [];
-    var rangeWithDots = [];
-    var l;
-
-    for (var i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || (i >= left && i < right)) {
-        range.push(i);
+    // 1. Cụm Page Size Dropdown
+    var sizeSelector = document.createElement('div');
+    sizeSelector.className = 'pager-size-selector';
+    var select = document.createElement('select');
+    [10, 15, 20, 50, 100].forEach(function(val) {
+      var opt = document.createElement('option');
+      opt.value = val;
+      opt.text = val;
+      if (val === options.itemsPerPage) opt.selected = true;
+      select.appendChild(opt);
+    });
+    select.onchange = function(e) {
+      if (typeof options.onLimitChange === 'function') {
+        options.onLimitChange(parseInt(e.target.value, 10));
       }
+    };
+    sizeSelector.appendChild(select);
+
+    // 2. Cụm Điều Hướng (Navigation)
+    var controls = document.createElement('div');
+    controls.className = 'pager-controls';
+
+    function createBtn(icon, disabled, onClick) {
+      var btn = document.createElement('button');
+      btn.className = 'pager-btn';
+      btn.innerHTML = `<span class="material-symbols-outlined">${icon}</span>`;
+      btn.disabled = disabled;
+      if (!disabled && typeof onClick === 'function') {
+        btn.onclick = onClick;
+      }
+      return btn;
     }
 
-    range.forEach(function(i) {
-      if (l) {
-        if (i - l === 2) {
-          rangeWithDots.push(l + 1);
-        } else if (i - l !== 1) {
-          rangeWithDots.push('...');
+    var btnFirst = createBtn('first_page', currentPage === 1, function() { options.onPageChange(1); });
+    var btnPrev = createBtn('chevron_left', currentPage === 1, function() { options.onPageChange(currentPage - 1); });
+    var btnNext = createBtn('chevron_right', currentPage === totalPages || totalPages === 0, function() { options.onPageChange(currentPage + 1); });
+    var btnLast = createBtn('last_page', currentPage === totalPages || totalPages === 0, function() { options.onPageChange(totalPages); });
+    var btnRefresh = createBtn('refresh', false, function() { 
+      if (typeof options.onRefresh === 'function') options.onRefresh();
+      else if (typeof options.onPageChange === 'function') options.onPageChange(currentPage);
+    });
+    var btnCapture = createBtn('photo_camera', false, function() {
+      if (typeof ScreenCapture !== 'undefined') {
+        ScreenCapture.start();
+      } else {
+        if (typeof UIToast !== 'undefined') UIToast.show('Công cụ chụp ảnh chưa sẵn sàng!', 'warning');
+      }
+    });
+    btnCapture.title = "Chụp vùng màn hình bị lỗi (như Zalo)";
+    btnCapture.style.color = "var(--color-primary)";
+
+    var pageInputWrapper = document.createElement('span');
+    pageInputWrapper.className = 'pager-input-wrapper';
+    pageInputWrapper.innerHTML = 'Page ';
+    var pageInput = document.createElement('input');
+    pageInput.type = 'number';
+    pageInput.className = 'pager-input';
+    pageInput.value = currentPage;
+    pageInput.min = 1;
+    pageInput.max = totalPages || 1;
+    pageInput.onkeydown = function(e) {
+      if (e.key === 'Enter') {
+        var p = parseInt(pageInput.value, 10);
+        if (p >= 1 && p <= totalPages && p !== currentPage) {
+          options.onPageChange(p);
+        } else {
+          pageInput.value = currentPage; // reset if invalid
         }
       }
-      rangeWithDots.push(i);
-      l = i;
-    });
-
-    rangeWithDots.forEach(function(i) {
-      if (i === '...') {
-        var dotBtn = document.createElement('span');
-        dotBtn.className = 'page-btn dots';
-        dotBtn.innerText = '...';
-        controls.appendChild(dotBtn);
-      } else {
-        var pBtn = document.createElement('button');
-        pBtn.className = 'page-btn' + (i === currentPage ? ' active' : '');
-        pBtn.innerText = i;
-        pBtn.onclick = function() {
-          if (typeof options.onPageChange === 'function' && i !== currentPage) options.onPageChange(i);
-        };
-        controls.appendChild(pBtn);
-      }
-    });
-
-    // Next Button
-    var btnNext = document.createElement('button');
-    btnNext.className = 'page-btn';
-    btnNext.innerHTML = '<span class="material-symbols-outlined">chevron_right</span>';
-    btnNext.disabled = currentPage === totalPages || totalPages === 0;
-    btnNext.onclick = function() {
-      if (typeof options.onPageChange === 'function') options.onPageChange(currentPage + 1);
     };
-    controls.appendChild(btnNext);
+    pageInputWrapper.appendChild(pageInput);
+    pageInputWrapper.appendChild(document.createTextNode(` of ${totalPages}`));
 
-    wrapper.appendChild(info);
+    // Vách ngăn
+    function createSeparator() {
+      var sep = document.createElement('div');
+      sep.className = 'pager-separator';
+      return sep;
+    }
+
+    controls.appendChild(btnFirst);
+    controls.appendChild(btnPrev);
+    controls.appendChild(createSeparator());
+    controls.appendChild(pageInputWrapper);
+    controls.appendChild(createSeparator());
+    controls.appendChild(btnNext);
+    controls.appendChild(btnLast);
+    controls.appendChild(createSeparator());
+    controls.appendChild(btnRefresh);
+    controls.appendChild(btnCapture);
+
+    // 3. Cụm Info
+    var info = document.createElement('div');
+    info.className = 'pager-info';
+    info.innerText = `Displaying ${startItem} to ${endItem} of ${options.totalItems} items`;
+
+    // Lắp ráp
+    wrapper.appendChild(sizeSelector);
+    wrapper.appendChild(createSeparator());
     wrapper.appendChild(controls);
+    wrapper.appendChild(info);
 
     return wrapper;
   }
@@ -8206,6 +8234,242 @@ var UISidePanel = (function () {
   };
 
   return SidePanel;
+})();
+
+
+/* --- ScreenCapture.js --- */
+/* ═══════════════════════════════════════════
+   SCREEN CAPTURE COMPONENT (Canvas-based)
+   ═══════════════════════════════════════════ */
+var ScreenCapture = (function () {
+
+  var overlayCanvas = null;
+  var ctx = null;
+  var startX = 0, startY = 0;
+  var isDrawing = false;
+  var currentRect = null;
+  var currentCallback = null;
+  var ww = 0, wh = 0;
+
+  function initOverlay() {
+    if (overlayCanvas) return;
+    
+    ww = window.innerWidth;
+    wh = window.innerHeight;
+
+    overlayCanvas = document.createElement('canvas');
+    overlayCanvas.className = 'screen-capture-canvas';
+    overlayCanvas.width = ww;
+    overlayCanvas.height = wh;
+    
+    ctx = overlayCanvas.getContext('2d');
+    
+    document.body.appendChild(overlayCanvas);
+    
+    drawMask(0, 0, 0, 0); // Vẽ màn đen khởi tạo
+    
+    overlayCanvas.addEventListener('mousedown', onMouseDown);
+    overlayCanvas.addEventListener('mousemove', onMouseMove);
+    overlayCanvas.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('keydown', onKeyDown);
+  }
+
+  function destroyOverlay() {
+    if (overlayCanvas) {
+      overlayCanvas.removeEventListener('mousedown', onMouseDown);
+      overlayCanvas.removeEventListener('mousemove', onMouseMove);
+      overlayCanvas.removeEventListener('mouseup', onMouseUp);
+      if (overlayCanvas.parentNode) {
+        document.body.removeChild(overlayCanvas);
+      }
+      overlayCanvas = null;
+      ctx = null;
+    }
+    document.removeEventListener('keydown', onKeyDown);
+  }
+
+  function onKeyDown(e) {
+    if (e.key === 'Escape') {
+      destroyOverlay();
+    }
+  }
+
+  function drawMask(x, y, w, h) {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, ww, wh);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+    ctx.fillRect(0, 0, ww, wh);
+
+    if (w > 0 && h > 0) {
+      ctx.clearRect(x, y, w, h);
+      ctx.strokeStyle = '#4F46E5';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeRect(x, y, w, h);
+    }
+    
+    // Vẽ helper text
+    if (!isDrawing && w === 0) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      var txtWidth = 300;
+      ctx.fillRect(ww/2 - txtWidth/2, 20, txtWidth, 60);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Nhấn và kéo chuột để chọn vùng', ww/2, 45);
+      ctx.font = '12px Arial';
+      ctx.fillText('Nhấn ESC để thoát', ww/2, 65);
+    }
+  }
+
+  function onMouseDown(e) {
+    isDrawing = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    drawMask(startX, startY, 0, 0);
+  }
+
+  var rafId = null;
+  function onMouseMove(e) {
+    if (!isDrawing) return;
+    var currentX = e.clientX;
+    var currentY = e.clientY;
+
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(function() {
+      var left = Math.min(startX, currentX);
+      var top = Math.min(startY, currentY);
+      var width = Math.abs(currentX - startX);
+      var height = Math.abs(currentY - startY);
+      drawMask(left, top, width, height);
+    });
+  }
+
+  function onMouseUp(e) {
+    if (!isDrawing) return;
+    isDrawing = false;
+
+    var endX = e.clientX;
+    var endY = e.clientY;
+
+    var left = Math.min(startX, endX);
+    var top = Math.min(startY, endY);
+    var width = Math.abs(endX - startX);
+    var height = Math.abs(endY - startY);
+
+    if (width > 20 && height > 20) {
+      currentRect = { left: left, top: top, width: width, height: height };
+      captureAndAction();
+    } else {
+      drawMask(0, 0, 0, 0); // Reset
+    }
+  }
+
+  function captureAndAction() {
+    if (typeof html2canvas === 'undefined') {
+      if (typeof UIToast !== 'undefined') UIToast.show('Thư viện html2canvas chưa được load (Kiểm tra mạng)!', 'error');
+      destroyOverlay();
+      return;
+    }
+
+    // Xóa ngay overlay để chụp cho chuẩn
+    destroyOverlay();
+    
+    if (typeof UIToast !== 'undefined') UIToast.show('Đang xử lý ảnh...', 'info');
+
+    // Chống treo (Dính): Nếu html2canvas chạy quá 5s mà không xong, tự động giải phóng
+    var isDone = false;
+    var timeoutId = setTimeout(function() {
+      if (!isDone) {
+        console.error('html2canvas bị treo (timeout)');
+        if (typeof UIToast !== 'undefined') UIToast.show('Xử lý ảnh quá lâu, đã tự động hủy!', 'error');
+        isDone = true;
+      }
+    }, 5000);
+
+    try {
+      html2canvas(document.body, {
+        x: currentRect.left + window.scrollX,
+        y: currentRect.top + window.scrollY,
+        width: currentRect.width,
+        height: currentRect.height,
+        useCORS: true,
+        scale: 1, // Tốc độ nhanh nhất
+        logging: false,
+        backgroundColor: null
+      }).then(function(canvas) {
+        if (isDone) return; // Nếu đã bị timeout thì bỏ qua
+        isDone = true;
+        clearTimeout(timeoutId);
+
+        if (currentCallback) {
+          currentCallback(canvas);
+          return;
+        }
+
+        function fallbackDownload() {
+          try {
+            var imgData = canvas.toDataURL('image/png');
+            var a = document.createElement('a');
+            a.href = imgData;
+            a.download = 'screenshot_' + new Date().getTime() + '.png';
+            a.click();
+            if (typeof UIToast !== 'undefined') UIToast.show('Đã tự động tải ảnh về máy!', 'success');
+          } catch (e) {
+            console.error('Lỗi khi xuất ảnh (Tainted Canvas):', e);
+            if (typeof UIToast !== 'undefined') UIToast.show('Lỗi bảo mật trình duyệt, không thể xuất ảnh!', 'error');
+          }
+        }
+
+        try {
+          canvas.toBlob(function(blob) {
+            try {
+              if (!blob) {
+                fallbackDownload();
+                return;
+              }
+              if (navigator.clipboard && window.ClipboardItem) {
+                navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function() {
+                  if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ảnh vào bộ nhớ tạm!', 'success');
+                }).catch(function(err) {
+                  console.warn('Lỗi copy clipboard:', err);
+                  fallbackDownload();
+                });
+              } else {
+                fallbackDownload();
+              }
+            } catch(errInner) {
+              fallbackDownload();
+            }
+          });
+        } catch (errOuter) {
+          fallbackDownload();
+        }
+
+      }).catch(function(err) {
+        if (isDone) return;
+        isDone = true;
+        clearTimeout(timeoutId);
+        console.error('Lỗi chụp màn hình (Async):', err);
+        if (typeof UIToast !== 'undefined') UIToast.show('Lỗi hệ thống khi chụp!', 'error');
+      });
+    } catch(err) {
+      if (isDone) return;
+      isDone = true;
+      clearTimeout(timeoutId);
+      console.error('Lỗi chụp màn hình (Sync):', err);
+      if (typeof UIToast !== 'undefined') UIToast.show('Lỗi hệ thống khi chụp!', 'error');
+    }
+  }
+
+  function start(onCaptureCallback) {
+    currentCallback = onCaptureCallback || null;
+    initOverlay();
+  }
+
+  return {
+    start: start
+  };
 })();
 
 

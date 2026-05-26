@@ -41,6 +41,9 @@
 
 2. **Hiển thị có điều kiện (Conditional Visibility):**
    - Ẩn/Hiện động: Nếu chọn Loại thanh toán = "Chuyển khoản" thì mới hiện thêm ô "Ngân hàng" và "Số tài khoản".
+
+3. **Advanced DataGrid Pager (Hoàn tất):**
+   - Tích hợp thanh phân trang chuẩn Enterprise với khả năng: Chuyển đổi Số dòng/trang, Nhảy trang trực tiếp (Jump to page), Làm mới dữ liệu (Refresh) và hiển thị tổng số bản ghi chi tiết.
    - Ẩn/Hiện theo Vai trò (Role-based): Ô "Chiết khấu tối đa" chỉ hiện ra nếu người đang mở Form là Quản lý.
 
 3. **Hỗ trợ người dùng trực quan (User Assistance):**
@@ -56,6 +59,11 @@
    - **Inline Editing:** Click đúp để sửa trực tiếp 1 ô trên lưới mà không cần mở nguyên cái Form.
    - **Mass Update:** Quét chọn 50 dòng, bấm 1 nút để đổi trạng thái tất cả sang "Đã duyệt".
    - **Drag-to-fill:** Kéo góc của một ô xuống để copy giá trị cho các hàng bên dưới (như Excel).
+
+2. **In-grid Screen Capture Tool (Tích hợp Pagination):**
+   - Đặt nút chụp ảnh (Camera) ngay trên thanh Pagination của lưới dữ liệu.
+   - Trải nghiệm giống Zalo: Quét chọn một vùng lưới bị lỗi hoặc cần báo cáo.
+   - Hỗ trợ vẽ vời, đánh dấu (annotate) và copy ngay vào Clipboard hoặc gửi báo cáo trực tiếp cho bộ phận hỗ trợ/IT.
 
 2. **Cá nhân hóa sâu (Deep Personalization):**
    - **Lưu View cá nhân:** Mỗi user tự thiết lập các cột muốn xem, thứ tự cột, độ rộng cột, luật filter và lưu lại thành "View của tôi".
