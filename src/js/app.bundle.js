@@ -8361,7 +8361,8 @@ var ScreenCapture = (function () {
       currentRect = { left: left, top: top, width: width, height: height };
       captureAndAction();
     } else {
-      drawMask(0, 0, 0, 0); // Reset
+      // Nếu kéo vùng quá nhỏ hoặc chỉ click nhấp nhả thì tự động hủy luôn để tránh bị "dính"
+      destroyOverlay(); 
     }
   }
 
