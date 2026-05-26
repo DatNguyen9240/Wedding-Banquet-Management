@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 8px 12px;
+  padding: 8px 0;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   gap: 12px;
@@ -105,18 +105,44 @@
 @media (max-width: 768px) {
   .datagrid-pager {
     flex-wrap: wrap;
-    justify-content: center;
-    padding: 12px;
+    justify-content: flex-start;
+    padding: 8px 0;
+    gap: 8px;
   }
   
   .pager-separator {
     display: none;
+  }
+
+  .pager-btn-capture {
+    display: none; /* Ẩn nút chụp màn hình cho đỡ tốn diện tích */
+  }
+
+  .pager-btn {
+    width: 24px;
+    height: 24px;
+  }
+
+  .pager-btn .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  .pager-input {
+    width: 35px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .pager-size-selector select {
+    padding: 2px 6px;
+    font-size: 12px;
   }
   
   .pager-info {
     margin-left: 0;
     width: 100%;
     text-align: center;
-    margin-top: 8px;
+    margin-top: 6px;
+    font-size: 12px;
   }
 }

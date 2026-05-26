@@ -4501,10 +4501,11 @@ var Pagination = (function () {
     });
     btnCapture.title = "Chụp vùng màn hình bị lỗi (như Zalo)";
     btnCapture.style.color = "var(--color-primary)";
+    btnCapture.classList.add('pager-btn-capture');
 
     var pageInputWrapper = document.createElement('span');
     pageInputWrapper.className = 'pager-input-wrapper';
-    pageInputWrapper.innerHTML = 'Page ';
+    pageInputWrapper.innerHTML = 'Trang ';
     var pageInput = document.createElement('input');
     pageInput.type = 'number';
     pageInput.className = 'pager-input';
@@ -4522,7 +4523,7 @@ var Pagination = (function () {
       }
     };
     pageInputWrapper.appendChild(pageInput);
-    pageInputWrapper.appendChild(document.createTextNode(` of ${totalPages}`));
+    pageInputWrapper.appendChild(document.createTextNode(` / ${totalPages}`));
 
     // Vách ngăn
     function createSeparator() {
@@ -4545,7 +4546,7 @@ var Pagination = (function () {
     // 3. Cụm Info
     var info = document.createElement('div');
     info.className = 'pager-info';
-    info.innerText = `Displaying ${startItem} to ${endItem} of ${options.totalItems} items`;
+    info.innerText = `Hiển thị ${startItem} - ${endItem} / ${options.totalItems} dòng`;
 
     // Lắp ráp
     wrapper.appendChild(sizeSelector);
