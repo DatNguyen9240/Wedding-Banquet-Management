@@ -1258,6 +1258,925 @@ var MenusService = (function () {
 })();
 
 
+/* --- CompareBadge.js --- */
+/**
+ * CompareBadge Component
+ * ─────────────────────────────────────────────
+ * Hiển thị badge so sánh kỳ trước: +12.5% ▲ / -3.2% ▼
+ *
+ * Usage:
+ *   CompareBadge.create(12.5)                      // HTMLElement, green ▲
+ *   CompareBadge.create(-3.2)                       // HTMLElement, red ▼
+ *   CompareBadge.create(5.0, { reverse: true })     // tăng = xấu (chi phí)
+ *   CompareBadge.create(12.5, { size: 'sm' })       // size nhỏ
+ *   CompareBadge.createHTML(-3.2, { size: 'sm' })   // HTML string
+ *   CompareBadge.update(el, -5.0)                   // cập nhật element
+ */
+var CompareBadge = (function () {
+
+  /**
+   * Tính trạng thái badge (up/down/neutral) từ phần trăm và reverse flag
+   * @param {number} pct
+   * @param {boolean} reverse - true = tăng là xấu (vd: chi phí)
+   * @returns {'up'|'down'|'neutral'}
+   */
+  function _getDirection(pct, reverse) {
+    if (pct === 0 || isNaN(pct)) return 'neutral';
+    var isPositive = pct > 0;
+    return (isPositive !== reverse) ? 'up' : 'down';
+  }
+
+  /**
+   * Build nội dung badge
+   * @param {number} pct
+   * @param {Object} opts - { reverse, size, showSign, decimalPlaces }
+   * @returns {{ direction, className, html }}
+   */
+  function _build(pct, opts) {
+    opts = opts || {};
+    var reverse = !!opts.reverse;
+    var size = opts.size || 'md'; // 'sm' | 'md'
+    var places = opts.decimalPlaces !== undefined ? opts.decimalPlaces : 1;
+    var direction = _getDirection(pct, reverse);
+
+    var icon = direction === 'up'
+      ? '<span class="material-symbols-outlined cb-icon">arrow_upward</span>'
+      : direction === 'down'
+        ? '<span class="material-symbols-outlined cb-icon">arrow_downward</span>'
+        : '<span class="material-symbols-outlined cb-icon">remove</span>';
+
+    var sign = pct > 0 ? '+' : '';
+    var absVal = Math.abs(pct);
+    var text = sign + (isNaN(pct) ? '--' : pct.toFixed(places)) + '%';
+
+    var cls = 'compare-badge compare-badge--' + direction + ' compare-badge--' + size;
+
+    return {
+      direction: direction,
+      className: cls,
+      contentHTML: icon + '<span class="cb-text">' + text + '</span>'
+    };
+  }
+
+  /**
+   * Tạo HTMLElement badge
+   * @param {number} pct - Phần trăm thay đổi (vd: 12.5, -3.2)
+   * @param {Object} [opts]
+   * @param {boolean} [opts.reverse=false] - Nếu true, tăng = xấu
+   * @param {'sm'|'md'} [opts.size='md']
+   * @param {number} [opts.decimalPlaces=1]
+   * @returns {HTMLElement}
+   */
+  function create(pct, opts) {
+    var b = _build(pct, opts);
+    var el = document.createElement('span');
+    el.className = b.className;
+    el.innerHTML = b.contentHTML;
+    return el;
+  }
+
+  /**
+   * Tạo HTML string badge
+   * @param {number} pct
+   * @param {Object} [opts]
+   * @returns {string}
+   */
+  function createHTML(pct, opts) {
+    var b = _build(pct, opts);
+    return '<span class="' + b.className + '">' + b.contentHTML + '</span>';
+  }
+
+  /**
+   * Cập nhật element badge đã tồn tại (không re-render toàn bộ DOM)
+   * @param {HTMLElement} el - element được tạo bởi create()
+   * @param {number} pct
+   * @param {Object} [opts]
+   */
+  function update(el, pct, opts) {
+    if (!el) return;
+    var b = _build(pct, opts);
+    el.className = b.className;
+    el.innerHTML = b.contentHTML;
+  }
+
+  return {
+    create: create,
+    createHTML: createHTML,
+    update: update
+  };
+})();
+
+
+/* --- MetricCard.js --- */
+/**
+ * MetricCard Component
+ * ─────────────────────────────────────────────
+ * Thẻ số liệu KPI với icon + label + value lớn + sub text
+ * Dùng cho: Dashboard "Hoạt động trong ngày", trang báo cáo, KPI panels
+ *
+ * Usage:
+ *   var el = MetricCard.create({
+ *     icon: 'payments',
+ *     iconColor: '#4F46E5',
+ *     iconBg: 'rgba(79,70,229,0.08)',
+ *     label: 'Doanh thu ước tính',
+ *     value: '185M',
+ *     subValue: '₫185.000.000',     // optional
+ *     size: 'large',                // 'large' | 'normal' (default)
+ *     onClick: function() { ... }   // optional
+ *   });
+ *
+ *   MetricCard.update(el, { value: '192M', subValue: '₫192.000.000' });
+ */
+var MetricCard = (function () {
+
+  /**
+   * Tạo MetricCard element
+   * @param {Object} opts
+   * @param {string}   opts.icon       - Material Symbol icon name
+   * @param {string}   [opts.iconColor]  - CSS color string
+   * @param {string}   [opts.iconBg]    - CSS background string cho icon wrapper
+   * @param {string}   opts.label      - Nhãn mô tả (nhỏ, trên value)
+   * @param {string|number} opts.value - Giá trị chính (to, đậm)
+   * @param {string}   [opts.subValue]  - Giá trị phụ (nhỏ hơn, bên dưới)
+   * @param {'large'|'normal'} [opts.size='normal'] - 'large' tăng cỡ value
+   * @param {Function} [opts.onClick]  - click handler
+   * @returns {HTMLElement}
+   */
+  function create(opts) {
+    opts = opts || {};
+    var size = opts.size || 'normal';
+
+    var card = document.createElement('div');
+    card.className = 'metric-card metric-card--' + size;
+    if (typeof opts.onClick === 'function') {
+      card.classList.add('metric-card--clickable');
+      card.addEventListener('click', opts.onClick);
+    }
+
+    // Icon wrapper
+    var iconWrap = document.createElement('div');
+    iconWrap.className = 'metric-card__icon';
+    if (opts.iconColor) iconWrap.style.color = opts.iconColor;
+    if (opts.iconBg)    iconWrap.style.background = opts.iconBg;
+
+    var iconEl = document.createElement('span');
+    iconEl.className = 'material-symbols-outlined';
+    iconEl.textContent = opts.icon || 'info';
+    iconWrap.appendChild(iconEl);
+
+    // Content wrapper
+    var content = document.createElement('div');
+    content.className = 'metric-card__content';
+
+    var label = document.createElement('div');
+    label.className = 'metric-card__label';
+    label.textContent = opts.label || '';
+
+    var valueEl = document.createElement('div');
+    valueEl.className = 'metric-card__value';
+    valueEl.dataset.metricValue = '1'; // selector hook for update()
+    valueEl.textContent = opts.value !== undefined ? String(opts.value) : '--';
+
+    content.appendChild(label);
+    content.appendChild(valueEl);
+
+    if (opts.subValue !== undefined) {
+      var sub = document.createElement('div');
+      sub.className = 'metric-card__sub';
+      sub.dataset.metricSub = '1';
+      sub.textContent = String(opts.subValue);
+      content.appendChild(sub);
+    }
+
+    card.appendChild(iconWrap);
+    card.appendChild(content);
+    return card;
+  }
+
+  /**
+   * Cập nhật giá trị của MetricCard mà không re-render
+   * @param {HTMLElement} el - element tạo bởi create()
+   * @param {Object} patch - { value, subValue, icon, iconColor, iconBg }
+   */
+  function update(el, patch) {
+    if (!el || !patch) return;
+    if (patch.value !== undefined) {
+      var v = el.querySelector('[data-metric-value]');
+      if (v) v.textContent = String(patch.value);
+    }
+    if (patch.subValue !== undefined) {
+      var s = el.querySelector('[data-metric-sub]');
+      if (s) {
+        s.textContent = String(patch.subValue);
+      } else {
+        // Tạo mới nếu ban đầu không có subValue
+        var content = el.querySelector('.metric-card__content');
+        if (content) {
+          var newSub = document.createElement('div');
+          newSub.className = 'metric-card__sub';
+          newSub.dataset.metricSub = '1';
+          newSub.textContent = String(patch.subValue);
+          content.appendChild(newSub);
+        }
+      }
+    }
+    if (patch.icon !== undefined) {
+      var iconEl = el.querySelector('.metric-card__icon .material-symbols-outlined');
+      if (iconEl) iconEl.textContent = patch.icon;
+    }
+    if (patch.iconColor !== undefined) {
+      var iconWrap = el.querySelector('.metric-card__icon');
+      if (iconWrap) iconWrap.style.color = patch.iconColor;
+    }
+    if (patch.iconBg !== undefined) {
+      var iconWrap2 = el.querySelector('.metric-card__icon');
+      if (iconWrap2) iconWrap2.style.background = patch.iconBg;
+    }
+  }
+
+  /**
+   * Mount MetricCard vào container (helper tiện lợi)
+   * @param {string|HTMLElement} target - selector string hoặc element
+   * @param {Object} opts - như create()
+   * @returns {HTMLElement} card element
+   */
+  function mount(target, opts) {
+    var container = typeof target === 'string'
+      ? document.querySelector(target)
+      : target;
+    if (!container) return null;
+    var card = create(opts);
+    container.innerHTML = '';
+    container.appendChild(card);
+    return card;
+  }
+
+  return {
+    create: create,
+    update: update,
+    mount: mount
+  };
+})();
+
+
+/* --- SparklineChart.js --- */
+/**
+ * SparklineChart Component
+ * ─────────────────────────────────────────────
+ * Vẽ mini sparkline chart trên Canvas (không cần Chart.js)
+ * Nhẹ, tự động responsive, hỗ trợ animation
+ *
+ * Usage:
+ *   // Option 1: Vẽ vào canvas có sẵn
+ *   SparklineChart.draw({
+ *     canvas: document.getElementById('my-canvas'),
+ *     data: [40, 55, 48, 70, 65, 80, 75],
+ *     color: '#4F46E5'   // optional, default = --color-primary
+ *   });
+ *
+ *   // Option 2: Tạo canvas mới + container
+ *   var el = SparklineChart.create({
+ *     data: [40, 55, 48, 70, 65],
+ *     color: '#10B981',
+ *     width: 160,
+ *     height: 48
+ *   });
+ *   document.getElementById('chart-wrap').appendChild(el);
+ */
+var SparklineChart = (function () {
+
+  var _dpr = window.devicePixelRatio || 1;
+
+  /**
+   * Lấy màu primary từ CSS variable
+   */
+  function _getPrimaryColor() {
+    return getComputedStyle(document.documentElement)
+      .getPropertyValue('--color-primary').trim() || '#4F46E5';
+  }
+
+  /**
+   * Core render function — vẽ sparkline lên canvas context
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number[]} data
+   * @param {number} W - logical width
+   * @param {number} H - logical height
+   * @param {string} color
+   */
+  function _render(ctx, data, W, H, color) {
+    if (!data || data.length < 2) return;
+    ctx.clearRect(0, 0, W, H);
+
+    var min = Math.min.apply(null, data);
+    var max = Math.max.apply(null, data);
+    var range = max - min || 1;
+    var pad = 4;
+    var stepX = (W - pad * 2) / (data.length - 1);
+
+    // Helper: data[i] → canvas y
+    function yOf(v) {
+      return pad + (1 - (v - min) / range) * (H - pad * 2);
+    }
+
+    // Gradient fill
+    var grad = ctx.createLinearGradient(0, 0, 0, H);
+    var hex = color.trim();
+    // Convert hex / named color → rgba với opacity
+    grad.addColorStop(0, _hexToRgba(hex, 0.18));
+    grad.addColorStop(1, _hexToRgba(hex, 0.0));
+
+    // Draw fill path
+    ctx.beginPath();
+    data.forEach(function (v, i) {
+      var x = pad + i * stepX;
+      var y = yOf(v);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.lineTo(pad + (data.length - 1) * stepX, H);
+    ctx.lineTo(pad, H);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Draw line
+    ctx.beginPath();
+    data.forEach(function (v, i) {
+      var x = pad + i * stepX;
+      var y = yOf(v);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = _hexToRgba(hex, 0.9);
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // End dot
+    var lastX = pad + (data.length - 1) * stepX;
+    var lastY = yOf(data[data.length - 1]);
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = hex;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  /**
+   * Chuyển hex color → rgba string
+   * Hỗ trợ: #RGB, #RRGGBB, rgba(...) trực tiếp
+   */
+  function _hexToRgba(hex, alpha) {
+    if (!hex) return 'rgba(79,70,229,' + alpha + ')';
+    hex = hex.trim();
+    if (hex.startsWith('rgba') || hex.startsWith('rgb')) {
+      // Đã là rgba, chỉ cần thêm alpha
+      return hex.replace(/[\d.]+\)$/, alpha + ')').replace(/^rgb\(/, 'rgba(');
+    }
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(function (c) { return c + c; }).join('');
+    var r = parseInt(hex.substring(0, 2), 16);
+    var g = parseInt(hex.substring(2, 4), 16);
+    var b = parseInt(hex.substring(4, 6), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  }
+
+  /**
+   * Setup canvas size theo DPR để sharp trên Retina
+   * @param {HTMLCanvasElement} canvas
+   * @param {number} W - logical width
+   * @param {number} H - logical height
+   */
+  function _setupCanvas(canvas, W, H) {
+    canvas.width  = W * _dpr;
+    canvas.height = H * _dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(_dpr, _dpr);
+    return ctx;
+  }
+
+  /**
+   * Vẽ sparkline vào canvas có sẵn
+   * @param {Object} opts
+   * @param {HTMLCanvasElement} opts.canvas
+   * @param {number[]} opts.data
+   * @param {string} [opts.color]
+   * @param {number} [opts.width=220]
+   * @param {number} [opts.height=60]
+   */
+  function draw(opts) {
+    var canvas = opts.canvas;
+    if (!canvas || !canvas.getContext) return;
+
+    var W = opts.width || parseInt(canvas.style.width) || 220;
+    var H = opts.height || parseInt(canvas.style.height) || 60;
+    var color = opts.color || _getPrimaryColor();
+    var ctx = _setupCanvas(canvas, W, H);
+    _render(ctx, opts.data || [], W, H, color);
+  }
+
+  /**
+   * Tạo canvas element mới với sparkline đã vẽ
+   * @param {Object} opts
+   * @param {number[]} opts.data
+   * @param {string} [opts.color]
+   * @param {number} [opts.width=220]
+   * @param {number} [opts.height=60]
+   * @param {string} [opts.className]   - thêm CSS class vào canvas
+   * @returns {HTMLCanvasElement}
+   */
+  function create(opts) {
+    var canvas = document.createElement('canvas');
+    if (opts.className) canvas.className = opts.className;
+    else canvas.className = 'sparkline-canvas';
+
+    var W = opts.width || 220;
+    var H = opts.height || 60;
+    var color = opts.color || _getPrimaryColor();
+    var ctx = _setupCanvas(canvas, W, H);
+    _render(ctx, opts.data || [], W, H, color);
+    return canvas;
+  }
+
+  /**
+   * Redraw sparkline trên canvas — dùng khi data thay đổi
+   * @param {HTMLCanvasElement} canvas
+   * @param {number[]} data
+   * @param {string} [color]
+   */
+  function redraw(canvas, data, color) {
+    if (!canvas || !canvas.getContext) return;
+    var W = Math.round(parseInt(canvas.style.width) || 220);
+    var H = Math.round(parseInt(canvas.style.height) || 60);
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(_dpr, 0, 0, _dpr, 0, 0);
+    _render(ctx, data || [], W, H, color || _getPrimaryColor());
+  }
+
+  return {
+    draw: draw,
+    create: create,
+    redraw: redraw
+  };
+})();
+
+
+/* --- KVTable.js --- */
+/**
+ * KVTable Component (Key-Value Table)
+ * ─────────────────────────────────────────────
+ * Bảng 2 cột: label ↔ value — dùng cho tóm tắt tài chính, báo cáo
+ *
+ * Usage:
+ *   var el = KVTable.create({
+ *     rows: [
+ *       { label: 'Doanh thu', value: '2.1 tỷ' },
+ *       { label: 'Chi phí', value: '798M', color: 'danger' },
+ *       { label: 'Khuyến mãi', value: '42M', color: 'warning',
+ *         dot: '#F59E0B' },           // dot màu trước label
+ *       { label: 'Lợi nhuận', value: '1.26 tỷ', color: 'success',
+ *         isTotal: true }             // highlight row tổng
+ *     ]
+ *   });
+ *
+ *   // Cập nhật 1 row không re-render toàn bộ
+ *   KVTable.updateRow(el, 2, { value: '1.30 tỷ' });
+ */
+var KVTable = (function () {
+
+  var _COLOR_MAP = {
+    success: 'var(--color-success)',
+    danger:  'var(--color-danger)',
+    warning: 'var(--color-warning)',
+    info:    'var(--color-info)',
+    primary: 'var(--color-primary)'
+  };
+
+  /**
+   * Tạo 1 row element
+   */
+  function _buildRow(row, index) {
+    var div = document.createElement('div');
+    div.className = 'kvtable__row'
+      + (row.isHeader ? ' kvtable__row--header' : '')
+      + (row.isTotal  ? ' kvtable__row--total'  : '');
+    div.dataset.kvRowIndex = index;
+
+    // Label side
+    var labelEl = document.createElement('span');
+    labelEl.className = 'kvtable__label';
+
+    if (row.dot) {
+      var dot = document.createElement('span');
+      dot.className = 'kvtable__dot';
+      dot.style.background = row.dot;
+      labelEl.appendChild(dot);
+    }
+
+    var labelText = document.createTextNode(row.label || '');
+    labelEl.appendChild(labelText);
+
+    // Value side
+    var valueEl = document.createElement('span');
+    valueEl.className = 'kvtable__value';
+    valueEl.dataset.kvValue = '1';
+    valueEl.textContent = row.value !== undefined ? String(row.value) : '--';
+
+    if (row.color && _COLOR_MAP[row.color]) {
+      valueEl.style.color = _COLOR_MAP[row.color];
+    }
+
+    div.appendChild(labelEl);
+    div.appendChild(valueEl);
+    return div;
+  }
+
+  /**
+   * Tạo KVTable element
+   * @param {Object} opts
+   * @param {Array}  opts.rows - mảng row objects
+   * @param {string} [opts.className] - thêm class vào wrapper
+   * @returns {HTMLElement}
+   */
+  function create(opts) {
+    opts = opts || {};
+    var rows = opts.rows || [];
+
+    var wrapper = document.createElement('div');
+    wrapper.className = 'kvtable' + (opts.className ? ' ' + opts.className : '');
+
+    rows.forEach(function (row, i) {
+      wrapper.appendChild(_buildRow(row, i));
+    });
+
+    return wrapper;
+  }
+
+  /**
+   * Cập nhật value của 1 row theo index
+   * @param {HTMLElement} tableEl - element tạo bởi create()
+   * @param {number} rowIndex
+   * @param {Object} patch - { value, color }
+   */
+  function updateRow(tableEl, rowIndex, patch) {
+    if (!tableEl || !patch) return;
+    var row = tableEl.querySelector('[data-kv-row-index="' + rowIndex + '"]');
+    if (!row) return;
+    if (patch.value !== undefined) {
+      var valEl = row.querySelector('[data-kv-value]');
+      if (valEl) valEl.textContent = String(patch.value);
+    }
+    if (patch.color !== undefined) {
+      var valEl2 = row.querySelector('[data-kv-value]');
+      if (valEl2) valEl2.style.color = _COLOR_MAP[patch.color] || patch.color;
+    }
+  }
+
+  /**
+   * Re-render toàn bộ table với rows mới
+   * @param {HTMLElement} tableEl
+   * @param {Array} rows
+   */
+  function setRows(tableEl, rows) {
+    if (!tableEl) return;
+    tableEl.innerHTML = '';
+    (rows || []).forEach(function (row, i) {
+      tableEl.appendChild(_buildRow(row, i));
+    });
+  }
+
+  return {
+    create: create,
+    updateRow: updateRow,
+    setRows: setRows
+  };
+})();
+
+
+/* --- HallGauge.js --- */
+/**
+ * HallGauge Component
+ * ─────────────────────────────────────────────
+ * Hiển thị tình trạng sảnh/phòng với progress bar + số liệu
+ * Dùng cho: Dashboard "Hoạt động trong ngày", trang Hall Status
+ *
+ * Usage:
+ *   var el = HallGauge.create({
+ *     total: 5,
+ *     done: 2,
+ *     ongoing: 3,
+ *     label: 'sảnh hoạt động',
+ *     doneLabel: 'Đã phục vụ xong',    // optional
+ *     ongoingLabel: 'Đang phục vụ',    // optional
+ *     color: '#4F46E5'                  // optional
+ *   });
+ *
+ *   // Cập nhật không re-render
+ *   HallGauge.update(el, { done: 3, ongoing: 2 });
+ */
+var HallGauge = (function () {
+
+  /**
+   * Tính phần trăm và đảm bảo [0, 100]
+   */
+  function _pct(part, total) {
+    if (!total || total <= 0) return 0;
+    return Math.min(100, Math.round((part / total) * 100));
+  }
+
+  /**
+   * Tạo HallGauge element
+   * @param {Object} opts
+   * @param {number} opts.total
+   * @param {number} opts.done
+   * @param {number} opts.ongoing
+   * @param {string} [opts.label='sảnh hoạt động']
+   * @param {string} [opts.doneLabel='Đã phục vụ xong']
+   * @param {string} [opts.ongoingLabel='Đang phục vụ']
+   * @param {string} [opts.color] - CSS color, default = --color-primary
+   * @returns {HTMLElement}
+   */
+  function create(opts) {
+    opts = opts || {};
+    var total   = opts.total   || 0;
+    var done    = opts.done    || 0;
+    var ongoing = opts.ongoing || 0;
+    var label       = opts.label       || 'đang hoạt động';
+    var doneLabel    = opts.doneLabel    || 'Đã phục vụ xong';
+    var ongoingLabel = opts.ongoingLabel || 'Đang phục vụ';
+    var color = opts.color || 'var(--color-primary)';
+
+    var activePct = _pct(ongoing, total);
+
+    var wrap = document.createElement('div');
+    wrap.className = 'hall-gauge';
+
+    wrap.innerHTML =
+      '<div class="hall-gauge__title">' +
+        '<span class="material-symbols-outlined hall-gauge__icon">location_city</span>' +
+        (opts.titleText || 'Sảnh tiệc hôm nay') +
+      '</div>' +
+      '<div class="hall-gauge__count">' +
+        '<span class="hall-gauge__count-num" data-hg-total>' + total + '</span>' +
+        '<span class="hall-gauge__count-label">' + label + '</span>' +
+      '</div>' +
+      '<div class="hall-gauge__bar-row">' +
+        '<div class="hall-gauge__bar">' +
+          '<div class="hall-gauge__fill" data-hg-fill' +
+            ' style="width:0%; background:' + color + '"></div>' +
+        '</div>' +
+        '<span class="hall-gauge__pct" data-hg-pct style="color:' + color + '">0%</span>' +
+      '</div>' +
+      '<div class="hall-gauge__sub">' +
+        '<span>' + doneLabel + ': <strong data-hg-done>' + done + '</strong></span>' +
+        '<span>' + ongoingLabel + ': <strong data-hg-ongoing>' + ongoing + '</strong></span>' +
+      '</div>';
+
+    // Animate fill sau 1 frame để CSS transition hoạt động
+    setTimeout(function () {
+      var fill = wrap.querySelector('[data-hg-fill]');
+      var pctEl = wrap.querySelector('[data-hg-pct]');
+      if (fill) fill.style.width = activePct + '%';
+      if (pctEl) pctEl.textContent = activePct + '%';
+    }, 80);
+
+    return wrap;
+  }
+
+  /**
+   * Cập nhật HallGauge không re-render
+   * @param {HTMLElement} el - element tạo bởi create()
+   * @param {Object} patch - { total, done, ongoing }
+   */
+  function update(el, patch) {
+    if (!el || !patch) return;
+
+    var total   = parseInt(el.querySelector('[data-hg-total]').textContent)   || 0;
+    var done    = parseInt(el.querySelector('[data-hg-done]').textContent)    || 0;
+    var ongoing = parseInt(el.querySelector('[data-hg-ongoing]').textContent) || 0;
+
+    if (patch.total   !== undefined) total   = patch.total;
+    if (patch.done    !== undefined) done    = patch.done;
+    if (patch.ongoing !== undefined) ongoing = patch.ongoing;
+
+    var activePct = _pct(ongoing, total);
+
+    var totalEl   = el.querySelector('[data-hg-total]');
+    var doneEl    = el.querySelector('[data-hg-done]');
+    var ongoingEl = el.querySelector('[data-hg-ongoing]');
+    var fillEl    = el.querySelector('[data-hg-fill]');
+    var pctEl     = el.querySelector('[data-hg-pct]');
+
+    if (totalEl)   totalEl.textContent   = total;
+    if (doneEl)    doneEl.textContent    = done;
+    if (ongoingEl) ongoingEl.textContent = ongoing;
+    if (fillEl)    fillEl.style.width    = activePct + '%';
+    if (pctEl)     pctEl.textContent     = activePct + '%';
+  }
+
+  return {
+    create: create,
+    update: update
+  };
+})();
+
+
+/* --- SectionPanel.js --- */
+/**
+ * SectionPanel Component
+ * ─────────────────────────────────────────────
+ * Wrapper card có header: icon + tiêu đề + actions (period select, refresh)
+ * Dùng cho: Mọi section trên dashboard, báo cáo, bảng tóm tắt
+ *
+ * Usage:
+ *   var result = SectionPanel.create({
+ *     icon: 'calendar_today',
+ *     title: 'HOẠT ĐỘNG TRONG NGÀY',
+ *     trailing: '(22/05/2026 - 10:28)',   // optional
+ *     actions: [
+ *       {
+ *         type: 'select',
+ *         id: 'period-revenue',
+ *         options: [
+ *           { value: 'week', label: 'Tuần này' },
+ *           { value: 'month', label: 'Tháng này' }
+ *         ],
+ *         defaultValue: 'week',
+ *         onChange: function(val) { ... }
+ *       },
+ *       {
+ *         type: 'refresh',
+ *         onClick: function() { ... }
+ *       },
+ *       {
+ *         type: 'custom',
+ *         element: HTMLElement    // bất kỳ element nào
+ *       }
+ *     ]
+ *   });
+ *
+ *   // result.panel  = toàn bộ wrapper (để appendChild vào container)
+ *   // result.body   = nơi để append nội dung bên trong
+ *
+ *   result.body.appendChild(myContent);
+ *   document.getElementById('some-wrap').appendChild(result.panel);
+ *
+ *   // Cập nhật trailing text (vd: timestamp)
+ *   SectionPanel.setTrailing(result.panel, '(22/05/2026 - 10:30)');
+ */
+var SectionPanel = (function () {
+
+  /**
+   * Build 1 action element từ config
+   */
+  function _buildAction(action) {
+    if (!action) return null;
+
+    if (action.type === 'refresh') {
+      var btn = document.createElement('button');
+      // Kế thừa .btn (cursor, transition, font) + .btn-tool (compact, transparent)
+      btn.className = 'btn btn-tool section-panel__refresh-btn';
+      btn.title = 'Làm mới';
+      if (action.id) btn.id = action.id;
+      btn.innerHTML = '<span class="material-symbols-outlined">refresh</span>';
+      if (typeof action.onClick === 'function') {
+        btn.addEventListener('click', action.onClick);
+      }
+      return btn;
+    }
+
+    if (action.type === 'select') {
+      var sel = document.createElement('select');
+      sel.className = 'section-panel__period-select';
+      if (action.id) sel.id = action.id;
+      (action.options || []).forEach(function (opt) {
+        var o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.label;
+        if (opt.value === action.defaultValue) o.selected = true;
+        sel.appendChild(o);
+      });
+      if (typeof action.onChange === 'function') {
+        sel.addEventListener('change', function () {
+          action.onChange(sel.value);
+        });
+      }
+      return sel;
+    }
+
+    if (action.type === 'custom' && action.element) {
+      return action.element;
+    }
+
+    return null;
+  }
+
+  /**
+   * Tạo SectionPanel
+   * @param {Object} opts
+   * @param {string}  [opts.icon]       - Material Symbol name
+   * @param {string}  opts.title        - Tiêu đề (uppercase)
+   * @param {string}  [opts.trailing]   - text sau tiêu đề (vd: timestamp)
+   * @param {Array}   [opts.actions]    - mảng action objects
+   * @param {string}  [opts.id]         - id cho wrapper panel
+   * @param {string}  [opts.className]  - thêm class vào wrapper
+   * @returns {{ panel: HTMLElement, body: HTMLElement, header: HTMLElement }}
+   */
+  function create(opts) {
+    opts = opts || {};
+
+    // Wrapper
+    var panel = document.createElement('div');
+    // Kế thừa .card (background, border, shadow, border-radius, overflow)
+    panel.className = 'card section-panel' + (opts.className ? ' ' + opts.className : '');
+    if (opts.id) panel.id = opts.id;
+
+    // ── Header ──
+    var header = document.createElement('div');
+    // Kế thừa .card-header (border-bottom, flex, align-items)
+    header.className = 'card-header section-panel__header';
+
+    // Title group (icon + title + trailing)
+    var titleGroup = document.createElement('span');
+    titleGroup.className = 'section-panel__title';
+
+    if (opts.icon) {
+      var iconEl = document.createElement('span');
+      iconEl.className = 'material-symbols-outlined section-panel__icon';
+      iconEl.textContent = opts.icon;
+      titleGroup.appendChild(iconEl);
+    }
+
+    var titleText = document.createElement('span');
+    titleText.className = 'section-panel__title-text';
+    titleText.textContent = opts.title || '';
+    titleGroup.appendChild(titleText);
+
+    if (opts.trailing) {
+      var trailing = document.createElement('span');
+      trailing.className = 'section-panel__trailing';
+      trailing.dataset.spTrailing = '1';
+      trailing.textContent = opts.trailing;
+      titleGroup.appendChild(trailing);
+    }
+
+    header.appendChild(titleGroup);
+
+    // Actions group
+    if (opts.actions && opts.actions.length > 0) {
+      var actionsGroup = document.createElement('div');
+      actionsGroup.className = 'section-panel__actions';
+      opts.actions.forEach(function (action) {
+        var el = _buildAction(action);
+        if (el) actionsGroup.appendChild(el);
+      });
+      header.appendChild(actionsGroup);
+    }
+
+    // ── Body ──
+    var body = document.createElement('div');
+    body.className = 'section-panel__body';
+
+    panel.appendChild(header);
+    panel.appendChild(body);
+
+    return { panel: panel, body: body, header: header };
+  }
+
+  /**
+   * Cập nhật trailing text (vd: timestamp thay đổi)
+   * @param {HTMLElement} panelEl - panel element từ create()
+   * @param {string} text
+   */
+  function setTrailing(panelEl, text) {
+    if (!panelEl) return;
+    var el = panelEl.querySelector('[data-sp-trailing]');
+    if (el) {
+      el.textContent = text;
+    } else {
+      // Tạo mới nếu chưa có
+      var titleGroup = panelEl.querySelector('.section-panel__title');
+      if (titleGroup) {
+        var trailing = document.createElement('span');
+        trailing.className = 'section-panel__trailing';
+        trailing.dataset.spTrailing = '1';
+        trailing.textContent = text;
+        titleGroup.appendChild(trailing);
+      }
+    }
+  }
+
+  return {
+    create: create,
+    setTrailing: setTrailing
+  };
+})();
+
+
 /* --- UIUtils.js --- */
 /**
  * Shared UI Utilities for Components
