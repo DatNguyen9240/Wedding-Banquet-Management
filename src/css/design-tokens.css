@@ -27,6 +27,7 @@
   --color-background: var(--color-background);
   /* Nền Slate 50 - Sáng, sang */
   --color-surface: #FFFFFF;
+  --color-surface-elevated: #F4F6FB;
   --color-sidebar: var(--color-surface);
   /* Slate 900 - Đen sâu thăm thẳm */
   --color-header: rgba(255, 255, 255, 0.85);
@@ -98,6 +99,7 @@
 body.dark-theme {
   --color-background: #0F172A; /* Slate 900 */
   --color-surface: #1E293B; /* Slate 800 */
+  --color-surface-elevated: #0F172A; /* Slate 900 (Tối hơn surface một chút để tạo độ sâu) */
   --color-sidebar: var(--color-surface); /* Slate 950 */
   --color-header: rgba(30, 41, 59, 0.85);
   --color-text: #F8FAFC; /* Slate 50 */

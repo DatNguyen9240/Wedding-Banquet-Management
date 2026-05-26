@@ -96,8 +96,9 @@
 
 /* ── Tab Cha ─────────────────────────────── */
 .ui-nested-tabs__parent-bar {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  width: fit-content;
   gap: 4px;
   max-width: 100%;
   min-width: 0;
@@ -548,24 +549,18 @@
   }
 }
 @media (max-width: 768px) {
-  .ui-nested-tabs:not(.ui-nested-tabs--vertical) {
-    margin-left: -24px;
-    margin-right: -24px;
-    width: auto !important;
-    max-width: none !important;
-  }
+  /* Cho phép cuộn ngang (Scrollable) khi thu hẹp thay vì phá vỡ layout */
   .ui-nested-tabs__parent-bar {
-    padding-left: 24px !important;
-    padding-right: 24px !important;
-    border-radius: 0 !important;
+    padding: 4px 6px;
+    /* Vẫn giữ nguyên bo tròn border-radius: 12px; */
   }
-  .ui-nested-tabs__child-bar {
-    padding-left: 24px !important;
-    padding-right: 24px !important;
+  .ui-nested-tab-parent-btn {
+    padding: 8px 14px;
+    font-size: 12px;
   }
-  .ui-nested-tabs__panel-area {
-    padding-left: 24px !important;
-    padding-right: 24px !important;
+  .ui-nested-tab-child-btn {
+    padding: 8px 14px;
+    font-size: 12px;
   }
 }
 
