@@ -801,14 +801,15 @@ window.DynamicFormEngine = (function () {
     var thead = document.createElement('thead');
     thead.innerHTML = `
       <tr>
-        <th style="width:150px;">Tên Cột (Database) *</th>
-        <th style="width:180px;">Tiêu đề (Tiếng Việt)</th>
-        <th style="width:130px;">Loại Input</th>
-        <th style="width:80px; text-align:center;">Bắt buộc</th>
-        <th style="width:180px;">Nguồn dữ liệu (API/STATIC)</th>
+        <th style="width:140px;">Tên Cột (Database) *</th>
+        <th style="width:160px;">Tiêu đề (Tiếng Việt)</th>
+        <th style="width:120px;">Loại Input</th>
+        <th style="width:70px; text-align:center;">Bắt buộc</th>
+        <th style="width:160px;">Nguồn dữ liệu (API/STATIC)</th>
         <th style="width:80px;">Vị trí</th>
-        <th style="width:70px; text-align:center;">Thêm</th>
-        <th style="width:70px; text-align:center;">Sửa</th>
+        <th style="width:150px;" title="Ví dụ: TrangThai=huy|doi">VisibleRule</th>
+        <th style="width:60px; text-align:center;">Thêm</th>
+        <th style="width:60px; text-align:center;">Sửa</th>
         <th style="width:40px;"></th>
       </tr>
     `;
@@ -847,6 +848,7 @@ window.DynamicFormEngine = (function () {
         </td>
         <td class="p-1"><input type="text" class="ui-input" name="DataSource" placeholder="/api/... hoặc STATIC:..."></td>
         <td class="p-1"><input type="text" class="ui-input" name="FormPosition" placeholder="grid/6/4/12..."></td>
+        <td class="p-1"><input type="text" class="ui-input" name="VisibleRule" placeholder="VD: TrangThai=huy|doi"></td>
         <td class="p-1 text-center align-middle">
           <div class="d-flex justify-content-center h-100 align-items-center">
             <input type="checkbox" class="modern-checkbox" name="ShowInAdd" value="1" checked style="cursor: pointer; margin-top: 0;" title="Hiển thị khi Thêm Mới">
@@ -897,28 +899,30 @@ window.DynamicFormEngine = (function () {
       var payloads = [];
 
       rows.forEach(function (tr) {
-        var fieldName = tr.querySelector('[name="FieldName"]').value.trim();
-        var captionVN = tr.querySelector('[name="CaptionVN"]').value.trim() || fieldName;
-        var formatID = tr.querySelector('[name="FormatID"]').value;
-        var isRequired = tr.querySelector('[name="IsRequired"]').checked ? 1 : 0;
-        var dataSource = tr.querySelector('[name="DataSource"]').value.trim();
+        var fieldName    = tr.querySelector('[name="FieldName"]').value.trim();
+        var captionVN    = tr.querySelector('[name="CaptionVN"]').value.trim() || fieldName;
+        var formatID     = tr.querySelector('[name="FormatID"]').value;
+        var isRequired   = tr.querySelector('[name="IsRequired"]').checked ? 1 : 0;
+        var dataSource   = tr.querySelector('[name="DataSource"]').value.trim();
         var formPosition = tr.querySelector('[name="FormPosition"]').value.trim();
-        var showInAdd = tr.querySelector('[name="ShowInAdd"]').checked ? 1 : 0;
-        var showInEdit = tr.querySelector('[name="ShowInEdit"]').checked ? 1 : 0;
+        var visibleRule  = tr.querySelector('[name="VisibleRule"]').value.trim();
+        var showInAdd    = tr.querySelector('[name="ShowInAdd"]').checked ? 1 : 0;
+        var showInEdit   = tr.querySelector('[name="ShowInEdit"]').checked ? 1 : 0;
 
         if (fieldName) {
           payloads.push({
-            AutoID: '',
-            FormName: targetForm,
-            FieldName: fieldName,
-            CaptionVN: captionVN,
-            FormatID: formatID,
-            IsRequired: isRequired,
-            DataSource: dataSource,
-            ShowInAdd: showInAdd,
-            ShowInEdit: showInEdit,
+            AutoID:       '',
+            FormName:     targetForm,
+            FieldName:    fieldName,
+            CaptionVN:    captionVN,
+            FormatID:     formatID,
+            IsRequired:   isRequired,
+            DataSource:   dataSource,
+            ShowInAdd:    showInAdd,
+            ShowInEdit:   showInEdit,
             FormPosition: formPosition,
-            OrderNo: 0
+            VisibleRule:  visibleRule,
+            OrderNo:      0
           });
         }
       });
@@ -1161,20 +1165,19 @@ window.DynamicFormEngine = (function () {
           var cards = dropZone.querySelectorAll('.layout-card');
           var payloads = [];
 
-          cards.forEach(function (c, index) {
-            var orig = JSON.parse(c.dataset.orig);
-            orig.OrderNo = index + 1; // Đánh số thứ tự từ 1
-            orig.orderNo = index + 1; // Truyền thêm định dạng camelCase
+          cards.forEach(function (c) {
+            var fieldName = c.dataset.id;
 
-            // Map 12 -> 'body' và 6 -> 'grid' để lách validation của C# Backend
+            // Map span số → giá trị DB ('body'/'grid'/...)
             var savedSpan = c.dataset.span;
             if (savedSpan === '12') savedSpan = 'body';
-            if (savedSpan === '6') savedSpan = 'grid';
+            if (savedSpan === '6')  savedSpan = 'grid';
 
-            orig.FormPosition = savedSpan;
-            orig.formPosition = savedSpan;
-            orig.position = savedSpan;
-            payloads.push(orig);
+            payloads.push({
+              FormName:     targetFormName,
+              FieldName:    fieldName,
+              FormPosition: savedSpan
+            });
           });
 
           if (payloads.length === 0) return;
@@ -1184,14 +1187,17 @@ window.DynamicFormEngine = (function () {
           btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang lưu...';
           btn.disabled = true;
 
-          // Lưu liên hoàn API
-          var saveEndpoint = window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM ? window.API_CONFIG.ENDPOINTS.SYSTEM.SAVE_FIELD : null;
+          var saveEndpoint = window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.SYSTEM
+            ? window.API_CONFIG.ENDPOINTS.SYSTEM.SAVE_FIELD
+            : null;
+
           if (!saveEndpoint) {
             Alert.error('Lỗi', 'Chưa cấu hình API_CONFIG.ENDPOINTS.SYSTEM.SAVE_FIELD');
+            btn.innerHTML = origTxt;
+            btn.disabled = false;
             return;
           }
 
-          // Gọi API tuần tự
           _sendSequential(
             saveEndpoint,
             payloads,
@@ -1200,7 +1206,7 @@ window.DynamicFormEngine = (function () {
               Alert.success('Thành công', 'Đã cập nhật xong cấu hình Layout!');
               _loadData();
             },
-            function (err, payload) { // onError → không dừng, tiếp tục lưu các trường khác
+            function (err, payload) { // onError → tiếp tục
               console.error('Lỗi khi lưu field', payload.FieldName, err);
             }
           );

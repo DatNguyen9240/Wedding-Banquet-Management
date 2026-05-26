@@ -4,9 +4,9 @@ GO
 
 CREATE PROCEDURE API_LuuCauHinhForm
     @FormID varchar(50),
-    @AddNewColumnArr varchar(max) = NULL,
-    @HideColumnArr varchar(max) = NULL,
-    @LockColumnArr varchar(100) = NULL
+    @CaptionVN nvarchar(200) = NULL,
+    @SubTitle nvarchar(200) = NULL,
+    @PrimaryKey varchar(50) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -14,23 +14,23 @@ BEGIN
     -- Kiểm tra xem FormID đã tồn tại trong SY_FrmLstTbl chưa
     IF EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = @FormID)
     BEGIN
-        -- Cập nhật mảng cấu hình
+        -- Cập nhật thông tin cấu hình chung của Form
         UPDATE SY_FrmLstTbl
         SET 
-            AddNewColumnArr = ISNULL(@AddNewColumnArr, AddNewColumnArr),
-            HideColumnArr = ISNULL(@HideColumnArr, HideColumnArr),
-            LockColumnArr = ISNULL(@LockColumnArr, LockColumnArr)
+            CaptionVN = ISNULL(@CaptionVN, CaptionVN),
+            SubTitle = ISNULL(@SubTitle, SubTitle),
+            PrimaryKey = ISNULL(@PrimaryKey, PrimaryKey)
         WHERE FormID = @FormID;
     END
     ELSE
     BEGIN
-        -- Nếu là Form Web mới tinh (ví dụ: frmCustomer), tạo dòng mới
-        INSERT INTO SY_FrmLstTbl (FormID, AddNewColumnArr, HideColumnArr, LockColumnArr)
-        VALUES (@FormID, @AddNewColumnArr, @HideColumnArr, @LockColumnArr);
+        -- Nếu là Form mới, tạo dòng mới
+        INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, SubTitle, PrimaryKey)
+        VALUES (@FormID, @CaptionVN, @SubTitle, @PrimaryKey);
     END
 
     -- Trả về dữ liệu vừa lưu
-    SELECT FormID, AddNewColumnArr, HideColumnArr, LockColumnArr
+    SELECT FormID, CaptionVN, SubTitle, PrimaryKey
     FROM SY_FrmLstTbl 
     WHERE FormID = @FormID;
 END

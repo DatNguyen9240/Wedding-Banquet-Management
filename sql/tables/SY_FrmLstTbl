@@ -1,26 +1,25 @@
-KH_dmPhanLoaiKhachHangFrm	LIST	Danh mục phân loại khách hàng	Danh mục phân loại khách hàng	KH_dmPhanLoaiKhachHangTbl	PhanLoaiKhachHangID	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	NULL	Danh mục phân loại khách hàng	NULL
-
-
-FormID	varchar	100
-FormType	varchar	50
-CaptionVN	nvarchar	200
-CaptionEN	nvarchar	200
-TableName	varchar	100
-PrimaryKey	varchar	100
-HideColumnArr	varchar	-1
-SummaryColumnArr	varchar	200
-AddNewColumnArr	varchar	-1
-FilterEx	nvarchar	100
-LockColumnArr	varchar	100
-TableDetail	varchar	50
-TableDetailLeftJoinField	varchar	100
-TableDetailSelectFrom	varchar	500
-TableDetail2	varchar	50
-TableDetail2LeftJoinField	varchar	100
-TableDetail2SelectFrom	varchar	500
-Filter	nvarchar	200
-PrimaryKeyFormat	nvarchar	500
-PrimaryKeyLen	int	4
-DefaultColumnArr	varchar	250
-CaptionCH	nvarchar	400
-EditorColumnArr	varchar	-1
+FormID	varchar
+FormType	varchar
+CaptionVN	nvarchar
+CaptionEN	nvarchar
+TableName	varchar
+PrimaryKey	varchar
+HideColumnArr	varchar
+SummaryColumnArr	varchar
+AddNewColumnArr	varchar
+FilterEx	nvarchar
+LockColumnArr	varchar
+TableDetail	varchar
+TableDetailLeftJoinField	varchar
+TableDetailSelectFrom	varchar
+TableDetail2	varchar
+TableDetail2LeftJoinField	varchar
+TableDetail2SelectFrom	varchar
+Filter	nvarchar
+PrimaryKeyFormat	nvarchar
+PrimaryKeyLen	int
+DefaultColumnArr	varchar
+CaptionCH	nvarchar
+EditorColumnArr	varchar
+LockAddColumnArr	varchar
+SubTitle	nvarchar

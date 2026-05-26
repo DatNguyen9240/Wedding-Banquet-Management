@@ -1,4 +1,4 @@
-/* --- mockData.js --- */
+﻿/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -2787,9 +2787,7 @@ UIControls.utils = (function() {
   function createDropdownTableHTML(headers, data, colHighlightIndex) {
     var theadHTML = headers.map(h => `<th>${h}</th>`).join('');
     var tbodyHTML = data.map(function(row, rIdx) {
-      // Cắt bớt dữ liệu hiển thị cho bằng với số lượng cột header (tránh lỗi lòi cột nếu data nhiều hơn header)
-      var displayRow = row.slice(0, headers.length);
-      var cells = displayRow.map(function(cell, cIdx) {
+      var cells = row.map(function(cell, cIdx) {
         var cls = (cIdx === colHighlightIndex) ? 'highlight-col' : '';
         return `<td class="${cls}">${cell}</td>`;
       }).join('');
@@ -5430,7 +5428,6 @@ var UITable = (function () {
     if (keys.length > 0) {
       keys.forEach(function(key) {
         if (key === 'id' || key === 'Id') return;
-        if (options.hiddenColumns && options.hiddenColumns.indexOf(key) >= 0) return;
         
         var headerLabel = dictionary[key] || key;
         var header = { label: headerLabel, sortable: true, field: key };

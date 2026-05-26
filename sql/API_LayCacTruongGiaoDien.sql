@@ -14,33 +14,10 @@ BEGIN
         ISNULL(l.SubTitle, '') AS [formSubtitle],
         ISNULL(l.PrimaryKey, '') AS [primaryKey],
         
-        -- Tính toán động showInAdd từ AddNewColumnArr
-        CASE 
-            WHEN l.FormID IS NULL THEN 1 -- Nếu không map được Form thì mặc định hiện
-            WHEN CHARINDEX(',' + ff.FieldName + ',', ',' + ISNULL(l.AddNewColumnArr, '') + ',') > 0 THEN 1 
-            ELSE 0 
-        END AS [showInAdd],
-
-        -- Tính toán động showInEdit từ HideColumnArr
-        CASE 
-            WHEN l.FormID IS NULL THEN 1
-            WHEN CHARINDEX(',' + ff.FieldName + ',', ',' + ISNULL(l.HideColumnArr, '') + ',') > 0 THEN 0 
-            ELSE 1 
-        END AS [showInEdit],
-
-        -- Tính toán động isReadOnlyEdit từ LockColumnArr
-        CASE 
-            WHEN l.FormID IS NULL THEN 0
-            WHEN CHARINDEX(',' + ff.FieldName + ',', ',' + ISNULL(l.LockColumnArr, '') + ',') > 0 THEN 1 
-            ELSE 0 
-        END AS [isReadOnlyEdit],
-
-        -- Tính toán động isReadOnlyAdd từ LockAddColumnArr
-        CASE 
-            WHEN l.FormID IS NULL THEN 0
-            WHEN CHARINDEX(',' + ff.FieldName + ',', ',' + ISNULL(l.LockAddColumnArr, '') + ',') > 0 THEN 1 
-            ELSE 0 
-        END AS [isReadOnlyAdd],
+        ISNULL(ff.ShowInAdd,      1) AS [showInAdd],
+        ISNULL(ff.ShowInEdit,     1) AS [showInEdit],
+        ISNULL(ff.IsReadOnlyEdit, 0) AS [isReadOnlyEdit],
+        ISNULL(ff.IsReadOnlyAdd,  0) AS [isReadOnlyAdd],
 
         ISNULL(ff.FormatID, '') AS [renderRule],
         ISNULL(ff.DataSource, '') AS [dataSource],
