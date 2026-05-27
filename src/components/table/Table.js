@@ -170,10 +170,14 @@ var UITable = (function () {
         
         var resizer = document.createElement('div');
         resizer.className = 'col-resizer';
-        resizer.style.cssText = 'position: absolute; right: 0; top: 0; bottom: 0; width: 6px; cursor: col-resize; z-index: 10; background: transparent; transition: background 0.2s;';
+        resizer.style.cssText = 'position: absolute; right: -8px; top: 0; bottom: 0; width: 16px; cursor: col-resize; z-index: 10; display: flex; justify-content: center; touch-action: none;';
         
-        resizer.addEventListener('mouseenter', function() { resizer.style.background = 'var(--color-primary, #4361ee)'; });
-        resizer.addEventListener('mouseleave', function() { resizer.style.background = 'transparent'; });
+        var resizerLine = document.createElement('div');
+        resizerLine.style.cssText = 'width: 2px; height: 100%; background: transparent; transition: background 0.2s;';
+        resizer.appendChild(resizerLine);
+        
+        resizer.addEventListener('mouseenter', function() { resizerLine.style.background = 'var(--color-primary, #4361ee)'; });
+        resizer.addEventListener('mouseleave', function() { resizerLine.style.background = 'transparent'; });
         
         resizer.addEventListener('pointerdown', function(e) {
             e.stopPropagation(); // Ngăn sự kiện drag and drop cột
