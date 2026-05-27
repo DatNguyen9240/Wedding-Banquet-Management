@@ -67,5 +67,11 @@ BEGIN
         FROM SY_FormatFields
         WHERE FieldName = @FieldName AND FormName = @FormName;
     END
+    -- ==========================================================
+    -- TỰ ĐỘNG TRIGGER AUTO-HEAL MỖI KHI LƯU CẤU HÌNH GIAO DIỆN
+    -- Nhờ dòng này, người dùng trên Web bấm Lưu xong là hệ thống 
+    -- tự build lại API_TruyVanDong ngay lập tức (100% No-Code)
+    -- ==========================================================
+    EXEC dbo.AutoHeal_API_TruyVanDong;
 END
 GO
