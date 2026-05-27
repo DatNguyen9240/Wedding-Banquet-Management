@@ -1173,8 +1173,14 @@ window.DynamicFormEngine = (function () {
           var cards = dropZone.querySelectorAll('.layout-card');
           var payloads = [];
 
-          cards.forEach(function (c) {
+          cards.forEach(function (c, index) {
             var fieldName = c.dataset.id;
+
+            // Tìm lại field gốc từ API để giữ nguyên các giá trị cũ
+            var orig = fields.find(function(item) {
+              return (item.name || item.FieldName || item.FIELDNAME || item.fieldname) === fieldName;
+            });
+            if (!orig) orig = {};
 
             // Map span số → giá trị DB ('body'/'grid'/...)
             var savedSpan = c.dataset.span;
@@ -1182,9 +1188,21 @@ window.DynamicFormEngine = (function () {
             if (savedSpan === '6')  savedSpan = 'grid';
 
             payloads.push({
-              FormName:     targetFormName,
-              FieldName:    fieldName,
-              FormPosition: savedSpan
+              FormName:       targetFormName,
+              FieldName:      fieldName,
+              FormPosition:   savedSpan,
+              OrderNo:        index + 1,
+              CaptionVN:      orig.label || orig.CaptionVN || orig.CAPTIONVN || orig.captionvn || fieldName,
+              FormatID:       orig.renderRule || orig.FormatID || orig.FORMATID || orig.formatid || '',
+              DataSource:     orig.dataSource || orig.DataSource || orig.DATASOURCE || orig.datasource || '',
+              IsRequired:     orig.required !== undefined ? orig.required : (orig.IsRequired !== undefined ? orig.IsRequired : 0),
+              ShowInAdd:      orig.showInAdd !== undefined ? orig.showInAdd : (orig.ShowInAdd !== undefined ? orig.ShowInAdd : 1),
+              ShowInEdit:     orig.showInEdit !== undefined ? orig.showInEdit : (orig.ShowInEdit !== undefined ? orig.ShowInEdit : 1),
+              IsReadOnlyAdd:  orig.isReadOnlyAdd !== undefined ? orig.isReadOnlyAdd : (orig.IsReadOnlyAdd !== undefined ? orig.IsReadOnlyAdd : 0),
+              IsReadOnlyEdit: orig.isReadOnlyEdit !== undefined ? orig.isReadOnlyEdit : (orig.IsReadOnlyEdit !== undefined ? orig.IsReadOnlyEdit : 0),
+              ValidateRule:   orig.validateRule || orig.ValidateRule || orig.VALIDATERULE || '',
+              DependsOn:      orig.dependsOn || orig.DependsOn || orig.DEPENDSON || '',
+              VisibleRule:    orig.visibleRule || orig.VisibleRule || orig.VISIBLERULE || ''
             });
           });
 
