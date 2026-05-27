@@ -1735,7 +1735,15 @@ window.DynamicFormEngine = (function () {
             formGroupWrapper.appendChild(comboLoading);
             inputEl = formGroupWrapper;
 
-            var endpoint = field.dataSource.startsWith('http') ? field.dataSource : ((typeof API_CONFIG !== 'undefined' ? API_CONFIG.BASE_URL : '') + field.dataSource);
+            var endpointRaw = field.dataSource;
+            var maxCols = 4; // Mặc định hiển thị 4 cột
+            if (endpointRaw.indexOf('|') > -1) {
+              var dsParts = endpointRaw.split('|');
+              endpointRaw = dsParts[0];
+              var parsedCols = parseInt(dsParts[1], 10);
+              if (!isNaN(parsedCols) && parsedCols > 0) maxCols = parsedCols;
+            }
+            var endpoint = endpointRaw.startsWith('http') ? endpointRaw : ((typeof API_CONFIG !== 'undefined' ? API_CONFIG.BASE_URL : '') + endpointRaw);
             var finalUrl = endpoint;
             var fetchPayload = {};
             if (endpoint.indexOf('?') > -1) {
@@ -1761,8 +1769,8 @@ window.DynamicFormEngine = (function () {
                   var keys = Object.keys(dataList[0]);
                   comboLoading.dataset.lastKeys = JSON.stringify(keys); // Lưu lại keys để dùng cho auto-fill
                   if (keys.length > 0) {
-                    // Dùng từ điển hiện tại của form để dịch tiêu đề lưới (nếu có), CHỈ HIỆN MAX 3 CỘT ĐẦU cho đỡ chật
-                    var displayKeys = keys.slice(0, 3);
+                    // Dùng từ điển hiện tại của form để dịch tiêu đề lưới (nếu có), CHỈ HIỆN MAX CỘT ĐƯỢC CHỈ ĐỊNH (mặc định 4)
+                    var displayKeys = keys.slice(0, maxCols);
                     headers = displayKeys.map(function (k) {
                       return (typeof currentDictionary !== 'undefined' && currentDictionary[k]) ? currentDictionary[k].CaptionVN : k;
                     });
