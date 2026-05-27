@@ -5564,6 +5564,12 @@ var UITable = (function () {
             document.addEventListener('pointerup', onPointerUp);
         });
         
+        // Cực kỳ quan trọng: Ngăn event click bong bóng lên <th> sau khi thả chuột (nếu không sẽ bị kích hoạt Sort)
+        resizer.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+        });
+        
         th.appendChild(resizer);
 
         // Nếu header có sortable
