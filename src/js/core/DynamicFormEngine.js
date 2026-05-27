@@ -15,6 +15,10 @@ window.DynamicFormEngine = (function () {
   var currentLimit = 15;
   var totalRecords = 0;
 
+  // Lưu trữ state (page, sort, filter) theo từng FormName để giữ vết khi chuyển lại
+  var moduleStates = {};
+  var currentFormName = '';
+
   // Dữ liệu Từ điển lấy từ API (Database)
   var globalDictionary = {};
   var globalFormSchema = [];
@@ -126,9 +130,9 @@ window.DynamicFormEngine = (function () {
    */
   function _buildPayload(base, isEdit) {
     var p = Object.assign({}, base);
-    p.UserName   = _currentUser();
+    p.UserName = _currentUser();
     p.UserCreate = _currentUser();
-    p.IsEdit     = isEdit ? 1 : 0;
+    p.IsEdit = isEdit ? 1 : 0;
     return p;
   }
 
@@ -166,17 +170,47 @@ window.DynamicFormEngine = (function () {
       console.error('DynamicFormEngine: Missing container or config');
       return;
     }
+
+    // 1. Lưu lại state của module hiện tại trước khi chuyển sang module mới
+    if (currentFormName) {
+      moduleStates[currentFormName] = {
+        keyword: currentKeyword,
+        sortCol: currentSortCol,
+        sortDir: currentSortDir,
+        page: currentPage,
+        filters: window.currentFilters
+      };
+    }
+
     $container = container;
     MODULE_CONFIG = config;
+    currentFormName = config.FormName;
+
+    // 2. Khôi phục state của module mới (nếu đã từng vào trước đó)
+    var savedState = moduleStates[currentFormName];
+    if (savedState) {
+      currentKeyword = savedState.keyword;
+      currentSortCol = savedState.sortCol;
+      currentSortDir = savedState.sortDir;
+      currentPage = savedState.page;
+      window.currentFilters = savedState.filters;
+    } else {
+      // Nếu chưa từng vào thì reset về mặc định
+      currentKeyword = '';
+      currentSortCol = '';
+      currentSortDir = '';
+      currentPage = 1;
+      window.currentFilters = null;
+    }
 
     // API defaults: FormBuilder dùng API chuyên biệt, các form khác dùng generic No-Code API
     _setDefaults(MODULE_CONFIG, _isFormBuilder() ? {
       ApiSearch: '/api/API_DanhSachTruongGiaoDien',
-      ApiSave:   '/api/API_LuuTruongGiaoDien',
+      ApiSave: '/api/API_LuuTruongGiaoDien',
       ApiDelete: '/api/API_XoaTruongGiaoDien'
     } : {
       ApiSearch: '/api/API_TruyVanDong',
-      ApiSave:   '/api/API_LuuDong',
+      ApiSave: '/api/API_LuuDong',
       ApiDelete: '/api/API_XoaDong'
     });
     _setDefaults(MODULE_CONFIG, { ApiDictionary: '/api/API_LayCacTruongGiaoDien' });
@@ -225,31 +259,31 @@ window.DynamicFormEngine = (function () {
 
           // Sinh nhãn mặc định — caller có thể override từ config
           _setDefaults(MODULE_CONFIG, {
-            TitleAdd:           '➕ Thêm ' + (firstRow.formTitle || 'Mới'),
-            TitleEdit:          '✏️ Sửa '  + (firstRow.formTitle || ''),
-            BtnSaveAdd:         'Thêm mới',
-            BtnSaveEdit:        'Lưu thay đổi',
-            BtnSaveAll:         'Lưu Tất Cả',
-            BtnCancel:          'Hủy bỏ',
-            BtnSaveSaving:      'Đang lưu...',
-            ToastAdd:           'Đã thêm mới thành công!',
-            ToastEdit:          'Đã cập nhật thành công!',
-            ToastDelete:        'Xóa thành công!',
-            WarnMissingInfo:    'Thiếu thông tin',
-            WarnMissingInput:   'Vui lòng điền đầy đủ thông tin: {0}',
-            WarnSelectEdit:     'Vui lòng chọn dữ liệu cần sửa',
-            WarnSelectDelete:   'Vui lòng chọn dữ liệu cần xóa',
-            ConfirmDelete:      'Bạn có chắc muốn xóa {0}?',
+            TitleAdd: '➕ Thêm ' + (firstRow.formTitle || 'Mới'),
+            TitleEdit: '✏️ Sửa ' + (firstRow.formTitle || ''),
+            BtnSaveAdd: 'Thêm mới',
+            BtnSaveEdit: 'Lưu thay đổi',
+            BtnSaveAll: 'Lưu Tất Cả',
+            BtnCancel: 'Hủy bỏ',
+            BtnSaveSaving: 'Đang lưu...',
+            ToastAdd: 'Đã thêm mới thành công!',
+            ToastEdit: 'Đã cập nhật thành công!',
+            ToastDelete: 'Xóa thành công!',
+            WarnMissingInfo: 'Thiếu thông tin',
+            WarnMissingInput: 'Vui lòng điền đầy đủ thông tin: {0}',
+            WarnSelectEdit: 'Vui lòng chọn dữ liệu cần sửa',
+            WarnSelectDelete: 'Vui lòng chọn dữ liệu cần xóa',
+            ConfirmDelete: 'Bạn có chắc muốn xóa {0}?',
             TextDeleteFallback: 'dòng này',
-            AlertTitleConfirm:  'Xác nhận xóa',
-            AlertTitleWarning:  'Cảnh báo',
-            AlertTitleError:    'Lỗi',
-            AlertTitleInfo:     'Thông báo',
-            AlertApiMissing:    'Chưa cấu hình API lưu',
-            AlertSaveFailed:    'Lưu dữ liệu thất bại',
-            AlertDeleteFailed:  'Xóa dữ liệu thất bại',
-            AlertNetworkError:  'Lỗi kết nối mạng',
-            ModalWidth:         '600px'
+            AlertTitleConfirm: 'Xác nhận xóa',
+            AlertTitleWarning: 'Cảnh báo',
+            AlertTitleError: 'Lỗi',
+            AlertTitleInfo: 'Thông báo',
+            AlertApiMissing: 'Chưa cấu hình API lưu',
+            AlertSaveFailed: 'Lưu dữ liệu thất bại',
+            AlertDeleteFailed: 'Xóa dữ liệu thất bại',
+            AlertNetworkError: 'Lỗi kết nối mạng',
+            ModalWidth: '600px'
           });
         }
 
@@ -298,21 +332,21 @@ window.DynamicFormEngine = (function () {
 
           // Xây Schema cho Form (Lưu toàn bộ để lấy Khóa chính)
           globalFormSchema.push({
-            name:          item.name         || item.FieldName,
-            label:         item.label        || item.CaptionVN,
-            required:      _bool(item.required,      item.IsRequired),
-            showInAdd:     _bool(item.showInAdd,     item.ShowInAdd),
-            showInEdit:    _bool(item.showInEdit,    item.ShowInEdit),
-            showInFilter:  _bool(item.showInFilter,  item.ShowInFilter),
-            isReadOnlyEdit:_bool(item.isReadOnlyEdit,item.IsReadOnlyEdit),
+            name: item.name || item.FieldName,
+            label: item.label || item.CaptionVN,
+            required: _bool(item.required, item.IsRequired),
+            showInAdd: _bool(item.showInAdd, item.ShowInAdd),
+            showInEdit: _bool(item.showInEdit, item.ShowInEdit),
+            showInFilter: _bool(item.showInFilter, item.ShowInFilter),
+            isReadOnlyEdit: _bool(item.isReadOnlyEdit, item.IsReadOnlyEdit),
             isReadOnlyAdd: _bool(item.isReadOnlyAdd, item.IsReadOnlyAdd),
-            position:      item.FormPosition || item.formPosition || item.position || 'grid',
-            orderNo:       item.OrderNo      || item.orderNo     || 0,
-            renderRule:    (item.renderRule  || '').toLowerCase().trim(),
-            dataSource:    (item.dataSource  || item.DataSource  || '').trim(),
-            validateRule:  (item.validateRule|| item.ValidateRule|| '').trim(),
-            dependsOn:     (item.dependsOn   || item.DependsOn  || '').trim(),
-            visibleRule:   (item.visibleRule  || item.VisibleRule || '').trim()
+            position: item.FormPosition || item.formPosition || item.position || 'grid',
+            orderNo: item.OrderNo || item.orderNo || 0,
+            renderRule: (item.renderRule || '').toLowerCase().trim(),
+            dataSource: (item.dataSource || item.DataSource || '').trim(),
+            validateRule: (item.validateRule || item.ValidateRule || '').trim(),
+            dependsOn: (item.dependsOn || item.DependsOn || '').trim(),
+            visibleRule: (item.visibleRule || item.VisibleRule || '').trim()
           });
         });
 
@@ -467,16 +501,16 @@ window.DynamicFormEngine = (function () {
       var filterContainer = $container.querySelector('#dynamic-filter-container');
       if (filterContainer && typeof FilterComponent !== 'undefined') {
         filterContainer.innerHTML = ''; // Xóa placeholder nếu có
-        
+
         // 1. Tự động lấy các trường cấu hình ShowInFilter từ Database
         var dynamicFilters = globalFormSchema
-          .filter(function(f) { return f.showInFilter; })
-          .map(function(f) {
+          .filter(function (f) { return f.showInFilter; })
+          .map(function (f) {
             // Chuyển đổi định dạng từ FormEngine sang FilterComponent
             var filterType = 'text';
             if (f.renderRule === 'dt') filterType = 'date';
             if (f.renderRule === 'nm') filterType = 'number';
-            
+
             var filterObj = {
               id: f.name,
               label: f.label,
@@ -489,13 +523,13 @@ window.DynamicFormEngine = (function () {
               filterObj.type = 'select';
               filterObj.options = [];
               if (f.renderRule === 'sw') {
-                 filterObj.options = [ {value: 1, label: 'Có'}, {value: 0, label: 'Không'} ];
+                filterObj.options = [{ value: 1, label: 'Có' }, { value: 0, label: 'Không' }];
               } else if (f.dataSource && f.dataSource.indexOf('STATIC:') === 0) {
-                 var parts = f.dataSource.replace('STATIC:', '').split(',');
-                 parts.forEach(function(p) {
-                   var kv = p.split('|');
-                   filterObj.options.push({ value: kv[0], label: kv[1] || kv[0] });
-                 });
+                var parts = f.dataSource.replace('STATIC:', '').split(',');
+                parts.forEach(function (p) {
+                  var kv = p.split('|');
+                  filterObj.options.push({ value: kv[0], label: kv[1] || kv[0] });
+                });
               }
             }
             return filterObj;
@@ -504,11 +538,11 @@ window.DynamicFormEngine = (function () {
         // 2. Gom với cấu hình cứng trong AppModules.js (nếu có) hoặc xài Keyword mặc định
         var filters = [];
         if (dynamicFilters.length > 0) {
-           filters = filters.concat(dynamicFilters);
+          filters = filters.concat(dynamicFilters);
         } else if (MODULE_CONFIG.Filters && MODULE_CONFIG.Filters.length > 0) {
-           filters = MODULE_CONFIG.Filters;
+          filters = MODULE_CONFIG.Filters;
         } else {
-           filters = [ { id: 'keyword', label: MODULE_CONFIG.FilterKeywordLabel || 'Từ khóa', placeholder: MODULE_CONFIG.SearchPlaceholder } ];
+          filters = [{ id: 'keyword', label: MODULE_CONFIG.FilterKeywordLabel || 'Từ khóa', placeholder: MODULE_CONFIG.SearchPlaceholder }];
         }
 
         var filterNode = FilterComponent.create(filters, function (values) {
@@ -547,13 +581,13 @@ window.DynamicFormEngine = (function () {
       var query = {
         FormName: MODULE_CONFIG.FormName,
         UserName: _currentUser(),
-        Keyword: currentKeyword, 
+        Keyword: currentKeyword,
         SortColumn: currentSortCol,
         SortDir: currentSortDir,
         Page: currentPage,
         Limit: currentLimit
       };
-      
+
       // Nếu có các trường lọc tùy chỉnh, gộp chúng vào payload gửi lên API
       if (window.currentFilters) {
         Object.assign(query, window.currentFilters);
@@ -594,7 +628,7 @@ window.DynamicFormEngine = (function () {
       var customRenderers = globalRenderers;
 
       // Lọc ra các cột cần ẩn khỏi Lưới (Grid)
-      var hiddenCols = globalFormSchema.filter(function(f) { return f.position !== 'grid'; }).map(function(f) { return f.name; });
+      var hiddenCols = globalFormSchema.filter(function (f) { return f.position !== 'grid'; }).map(function (f) { return f.name; });
 
       // Gọi UITable.createDynamic siêu cấp
       var tableEl = UITable.createDynamic(gridData, dictionary, {
@@ -962,30 +996,30 @@ window.DynamicFormEngine = (function () {
       var payloads = [];
 
       rows.forEach(function (tr) {
-        var fieldName    = tr.querySelector('[name="FieldName"]').value.trim();
-        var captionVN    = tr.querySelector('[name="CaptionVN"]').value.trim() || fieldName;
-        var formatID     = tr.querySelector('[name="FormatID"]').value;
-        var isRequired   = tr.querySelector('[name="IsRequired"]').checked ? 1 : 0;
-        var dataSource   = tr.querySelector('[name="DataSource"]').value.trim();
+        var fieldName = tr.querySelector('[name="FieldName"]').value.trim();
+        var captionVN = tr.querySelector('[name="CaptionVN"]').value.trim() || fieldName;
+        var formatID = tr.querySelector('[name="FormatID"]').value;
+        var isRequired = tr.querySelector('[name="IsRequired"]').checked ? 1 : 0;
+        var dataSource = tr.querySelector('[name="DataSource"]').value.trim();
         var formPosition = tr.querySelector('[name="FormPosition"]').value.trim();
-        var visibleRule  = tr.querySelector('[name="VisibleRule"]').value.trim();
-        var showInAdd    = tr.querySelector('[name="ShowInAdd"]').checked ? 1 : 0;
-        var showInEdit   = tr.querySelector('[name="ShowInEdit"]').checked ? 1 : 0;
+        var visibleRule = tr.querySelector('[name="VisibleRule"]').value.trim();
+        var showInAdd = tr.querySelector('[name="ShowInAdd"]').checked ? 1 : 0;
+        var showInEdit = tr.querySelector('[name="ShowInEdit"]').checked ? 1 : 0;
 
         if (fieldName) {
           payloads.push({
-            AutoID:       '',
-            FormName:     targetForm,
-            FieldName:    fieldName,
-            CaptionVN:    captionVN,
-            FormatID:     formatID,
-            IsRequired:   isRequired,
-            DataSource:   dataSource,
-            ShowInAdd:    showInAdd,
-            ShowInEdit:   showInEdit,
+            AutoID: '',
+            FormName: targetForm,
+            FieldName: fieldName,
+            CaptionVN: captionVN,
+            FormatID: formatID,
+            IsRequired: isRequired,
+            DataSource: dataSource,
+            ShowInAdd: showInAdd,
+            ShowInEdit: showInEdit,
             FormPosition: formPosition,
-            VisibleRule:  visibleRule,
-            OrderNo:      0
+            VisibleRule: visibleRule,
+            OrderNo: 0
           });
         }
       });
@@ -1232,7 +1266,7 @@ window.DynamicFormEngine = (function () {
             var fieldName = c.dataset.id;
 
             // Tìm lại field gốc từ API để giữ nguyên các giá trị cũ
-            var orig = fields.find(function(item) {
+            var orig = fields.find(function (item) {
               return (item.name || item.FieldName || item.FIELDNAME || item.fieldname) === fieldName;
             });
             if (!orig) orig = {};
@@ -1240,25 +1274,25 @@ window.DynamicFormEngine = (function () {
             // Map span số → giá trị DB ('body'/'grid'/...)
             var savedSpan = c.dataset.span;
             if (savedSpan === '12') savedSpan = 'body';
-            if (savedSpan === '6')  savedSpan = 'grid';
+            if (savedSpan === '6') savedSpan = 'grid';
 
             payloads.push({
-              FormName:       targetFormName,
-              FieldName:      fieldName,
-              FormPosition:   savedSpan,
-              OrderNo:        index + 1,
-              CaptionVN:      orig.label || orig.CaptionVN || orig.CAPTIONVN || orig.captionvn || fieldName,
-              FormatID:       orig.renderRule || orig.FormatID || orig.FORMATID || orig.formatid || '',
-              DataSource:     orig.dataSource || orig.DataSource || orig.DATASOURCE || orig.datasource || '',
-              IsRequired:     orig.required !== undefined ? orig.required : (orig.IsRequired !== undefined ? orig.IsRequired : 0),
-              ShowInAdd:      orig.showInAdd !== undefined ? orig.showInAdd : (orig.ShowInAdd !== undefined ? orig.ShowInAdd : 1),
-              ShowInEdit:     orig.showInEdit !== undefined ? orig.showInEdit : (orig.ShowInEdit !== undefined ? orig.ShowInEdit : 1),
-              ShowInFilter:   orig.showInFilter !== undefined ? orig.showInFilter : (orig.ShowInFilter !== undefined ? orig.ShowInFilter : 0),
-              IsReadOnlyAdd:  orig.isReadOnlyAdd !== undefined ? orig.isReadOnlyAdd : (orig.IsReadOnlyAdd !== undefined ? orig.IsReadOnlyAdd : 0),
+              FormName: targetFormName,
+              FieldName: fieldName,
+              FormPosition: savedSpan,
+              OrderNo: index + 1,
+              CaptionVN: orig.label || orig.CaptionVN || orig.CAPTIONVN || orig.captionvn || fieldName,
+              FormatID: orig.renderRule || orig.FormatID || orig.FORMATID || orig.formatid || '',
+              DataSource: orig.dataSource || orig.DataSource || orig.DATASOURCE || orig.datasource || '',
+              IsRequired: orig.required !== undefined ? orig.required : (orig.IsRequired !== undefined ? orig.IsRequired : 0),
+              ShowInAdd: orig.showInAdd !== undefined ? orig.showInAdd : (orig.ShowInAdd !== undefined ? orig.ShowInAdd : 1),
+              ShowInEdit: orig.showInEdit !== undefined ? orig.showInEdit : (orig.ShowInEdit !== undefined ? orig.ShowInEdit : 1),
+              ShowInFilter: orig.showInFilter !== undefined ? orig.showInFilter : (orig.ShowInFilter !== undefined ? orig.ShowInFilter : 0),
+              IsReadOnlyAdd: orig.isReadOnlyAdd !== undefined ? orig.isReadOnlyAdd : (orig.IsReadOnlyAdd !== undefined ? orig.IsReadOnlyAdd : 0),
               IsReadOnlyEdit: orig.isReadOnlyEdit !== undefined ? orig.isReadOnlyEdit : (orig.IsReadOnlyEdit !== undefined ? orig.IsReadOnlyEdit : 0),
-              ValidateRule:   orig.validateRule || orig.ValidateRule || orig.VALIDATERULE || '',
-              DependsOn:      orig.dependsOn || orig.DependsOn || orig.DEPENDSON || '',
-              VisibleRule:    orig.visibleRule || orig.VisibleRule || orig.VISIBLERULE || ''
+              ValidateRule: orig.validateRule || orig.ValidateRule || orig.VALIDATERULE || '',
+              DependsOn: orig.dependsOn || orig.DependsOn || orig.DEPENDSON || '',
+              VisibleRule: orig.visibleRule || orig.VisibleRule || orig.VISIBLERULE || ''
             });
           });
 
@@ -1727,8 +1761,8 @@ window.DynamicFormEngine = (function () {
                   if (keys.length > 0) {
                     // Dùng từ điển hiện tại của form để dịch tiêu đề lưới (nếu có), CHỈ HIỆN MAX 3 CỘT ĐẦU cho đỡ chật
                     var displayKeys = keys.slice(0, 3);
-                    headers = displayKeys.map(function(k) { 
-                       return (typeof currentDictionary !== 'undefined' && currentDictionary[k]) ? currentDictionary[k].CaptionVN : k; 
+                    headers = displayKeys.map(function (k) {
+                      return (typeof currentDictionary !== 'undefined' && currentDictionary[k]) ? currentDictionary[k].CaptionVN : k;
                     });
                     var labelRegex = /name|tên|ten|label|desc|title/i;
                     var displayKey = displayKeys.find(function (k) { return labelRegex.test(k); });
@@ -1753,28 +1787,28 @@ window.DynamicFormEngine = (function () {
               onSearch: searchApiCall,
               onSelect: function (row) {
                 hiddenInput.value = row[0];
-                
+
                 // === AUTO FILL LOGIC ===
                 // Lấy lại danh sách keys đã lưu
                 var savedKeysStr = comboLoading.dataset.lastKeys;
                 if (savedKeysStr) {
-                    var keys = JSON.parse(savedKeysStr);
-                    // Duyệt qua các cột trả về từ API
-                    keys.forEach(function(keyName, index) {
-                        // Tìm xem trong Form hiện tại có Input nào tên trùng với tên Cột không (bỏ qua chính nó)
-                        // Chuẩn hóa tên cột để dễ map (loại bỏ dấu cách, ký tự đặc biệt nếu cần, nhưng tốt nhất API nên trả về đúng ID)
-                        // Tìm container bao ngoài form (do form động render vào div chứ không phải thẻ <form>)
-                        var form = hiddenInput.closest('.ui-modal') || hiddenInput.closest('body');
-                        if (form) {
-                            var targetInput = form.querySelector('[name="' + keyName + '"]');
-                            if (targetInput && targetInput !== hiddenInput) {
-                                // Điền giá trị
-                                targetInput.value = row[index] || '';
-                                // Kích hoạt sự kiện để UI update (nếu là ô chọn ngày, số lượng...)
-                                targetInput.dispatchEvent(new Event('change', { bubbles: true }));
-                            }
-                        }
-                    });
+                  var keys = JSON.parse(savedKeysStr);
+                  // Duyệt qua các cột trả về từ API
+                  keys.forEach(function (keyName, index) {
+                    // Tìm xem trong Form hiện tại có Input nào tên trùng với tên Cột không (bỏ qua chính nó)
+                    // Chuẩn hóa tên cột để dễ map (loại bỏ dấu cách, ký tự đặc biệt nếu cần, nhưng tốt nhất API nên trả về đúng ID)
+                    // Tìm container bao ngoài form (do form động render vào div chứ không phải thẻ <form>)
+                    var form = hiddenInput.closest('.ui-modal') || hiddenInput.closest('body');
+                    if (form) {
+                      var targetInput = form.querySelector('[name="' + keyName + '"]');
+                      if (targetInput && targetInput !== hiddenInput) {
+                        // Điền giá trị
+                        targetInput.value = row[index] || '';
+                        // Kích hoạt sự kiện để UI update (nếu là ô chọn ngày, số lượng...)
+                        targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+                      }
+                    }
+                  });
                 }
                 // =======================
 

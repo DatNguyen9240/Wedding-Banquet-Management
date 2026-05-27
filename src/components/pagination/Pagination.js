@@ -23,14 +23,14 @@ var Pagination = (function () {
     var sizeSelector = document.createElement('div');
     sizeSelector.className = 'pager-size-selector';
     var select = document.createElement('select');
-    [10, 15, 20, 50, 100].forEach(function(val) {
+    [10, 15, 20, 50, 100].forEach(function (val) {
       var opt = document.createElement('option');
       opt.value = val;
       opt.text = val;
       if (val === options.itemsPerPage) opt.selected = true;
       select.appendChild(opt);
     });
-    select.onchange = function(e) {
+    select.onchange = function (e) {
       if (typeof options.onLimitChange === 'function') {
         options.onLimitChange(parseInt(e.target.value, 10));
       }
@@ -52,22 +52,22 @@ var Pagination = (function () {
       return btn;
     }
 
-    var btnFirst = createBtn('first_page', currentPage === 1, function() { options.onPageChange(1); });
-    var btnPrev = createBtn('chevron_left', currentPage === 1, function() { options.onPageChange(currentPage - 1); });
-    var btnNext = createBtn('chevron_right', currentPage === totalPages || totalPages === 0, function() { options.onPageChange(currentPage + 1); });
-    var btnLast = createBtn('last_page', currentPage === totalPages || totalPages === 0, function() { options.onPageChange(totalPages); });
-    var btnRefresh = createBtn('refresh', false, function() { 
+    var btnFirst = createBtn('first_page', currentPage === 1, function () { options.onPageChange(1); });
+    var btnPrev = createBtn('chevron_left', currentPage === 1, function () { options.onPageChange(currentPage - 1); });
+    var btnNext = createBtn('chevron_right', currentPage === totalPages || totalPages === 0, function () { options.onPageChange(currentPage + 1); });
+    var btnLast = createBtn('last_page', currentPage === totalPages || totalPages === 0, function () { options.onPageChange(totalPages); });
+    var btnRefresh = createBtn('refresh', false, function () {
       if (typeof options.onRefresh === 'function') options.onRefresh();
       else if (typeof options.onPageChange === 'function') options.onPageChange(currentPage);
     });
-    var btnCapture = createBtn('photo_camera', false, function() {
+    var btnCapture = createBtn('photo_camera', false, function () {
       if (typeof ScreenCapture !== 'undefined') {
         ScreenCapture.start();
       } else {
         if (typeof UIToast !== 'undefined') UIToast.show('Công cụ chụp ảnh chưa sẵn sàng!', 'warning');
       }
     });
-    btnCapture.title = "Chụp vùng màn hình bị lỗi (như Zalo)";
+    btnCapture.title = "Chụp vùng màn hình";
     btnCapture.style.color = "var(--color-primary)";
     btnCapture.classList.add('pager-btn-capture');
 
@@ -80,7 +80,7 @@ var Pagination = (function () {
     pageInput.value = currentPage;
     pageInput.min = 1;
     pageInput.max = totalPages || 1;
-    pageInput.onkeydown = function(e) {
+    pageInput.onkeydown = function (e) {
       if (e.key === 'Enter') {
         var p = parseInt(pageInput.value, 10);
         if (p >= 1 && p <= totalPages && p !== currentPage) {
