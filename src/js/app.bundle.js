@@ -4634,7 +4634,7 @@ var FilterComponent = (function () {
     // 1. Tạo Panel thực sự và gắn thẳng vào body (Tránh bị cắt bởi thẻ cha có overflow: hidden hoặc transform)
     var wrapper = document.createElement('div');
     // Chỉnh lại bóng đổ (box-shadow) mỏng, mịn và sang trọng hơn
-    wrapper.style.cssText = 'position: fixed; left: -9999px; top: -9999px; z-index: 999999; background: var(--color-surface, #fff); border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 12px); box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05); padding: 20px; min-width: 350px; max-width: 600px; display: none; flex-direction: column; gap: 16px; opacity: 0; transform: translateY(-10px); transition: opacity 0.2s ease, transform 0.2s ease;';
+    wrapper.style.cssText = 'position: fixed; left: -9999px; top: -9999px; z-index: 999999; background: var(--color-surface, #fff); border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 12px); box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05); padding: 20px; min-width: 250px; max-width: calc(100vw - 20px); display: none; flex-direction: column; gap: 16px; opacity: 0; transform: translateY(-10px); transition: opacity 0.2s ease, transform 0.2s ease;';
     document.body.appendChild(wrapper);
 
     // Tiêu đề popup
@@ -4781,17 +4781,32 @@ var FilterComponent = (function () {
       if (btnLoc) {
         var btnRect = btnLoc.getBoundingClientRect();
 
-        // Fixed position dựa trực tiếp vào tọa độ gốc Viewport (tuyệt đối không bị vỡ)
+        // Cập nhật vị trí Top
         wrapper.style.top = (btnRect.bottom + 10) + 'px';
 
         var centerBtnX = btnRect.left + (btnRect.width / 2);
-        var panelLeft = centerBtnX - 40;
+        var panelWidth = wrapper.offsetWidth || 250;
+        var panelLeft = centerBtnX - 40; // Default offset
+
+        // Lấy chính xác chiều rộng hiển thị của trình duyệt (trừ đi scrollbar)
+        var clientWidth = document.documentElement.clientWidth || window.innerWidth;
+
+        // Chống tràn màn hình bên phải
+        var maxLeft = clientWidth - panelWidth - 10; 
+        if (panelLeft > maxLeft) panelLeft = maxLeft;
+
+        // Chống tràn màn hình bên trái
         if (panelLeft < 10) panelLeft = 10;
 
         wrapper.style.left = panelLeft + 'px';
 
-        // Căn mũi tên chĩa đúng tâm
+        // Căn mũi tên chĩa đúng tâm nút bấm
         var arrowPos = centerBtnX - panelLeft;
+        
+        // Chặn không cho mũi tên bay ra khỏi ranh giới của popup
+        if (arrowPos < 20) arrowPos = 20;
+        if (arrowPos > panelWidth - 20) arrowPos = panelWidth - 20;
+
         arrowBorder.style.left = (arrowPos - 9) + 'px';
         arrowBg.style.left = (arrowPos - 8) + 'px';
       }
