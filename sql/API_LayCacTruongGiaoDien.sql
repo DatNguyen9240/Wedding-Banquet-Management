@@ -23,7 +23,8 @@ BEGIN
         ISNULL(ff.DataSource, '') AS [dataSource],
         ISNULL(ff.OrderNo, 0) AS [orderNo],
         ISNULL(ff.ValidateRule, '') AS [validateRule],
-        ISNULL(ff.DependsOn, '') AS [dependsOn]
+        ISNULL(ff.DependsOn, '') AS [dependsOn],
+        ISNULL(ff.ShowInFilter, 0) AS [showInFilter]
     FROM SY_FormatFields ff
     LEFT JOIN SY_FrmLstTbl l ON ff.FormName = l.FormID
     WHERE (@FormName IS NULL OR ff.FormName = @FormName)

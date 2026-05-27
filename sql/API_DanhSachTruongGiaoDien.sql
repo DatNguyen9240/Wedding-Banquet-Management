@@ -31,7 +31,8 @@ BEGIN
         ISNULL(ff.ShowInAdd,      1) AS ShowInAdd,
         ISNULL(ff.ShowInEdit,     1) AS ShowInEdit,
         ISNULL(ff.IsReadOnlyEdit, 0) AS IsReadOnlyEdit,
-        ISNULL(ff.IsReadOnlyAdd,  0) AS IsReadOnlyAdd
+        ISNULL(ff.IsReadOnlyAdd,  0) AS IsReadOnlyAdd,
+        ISNULL(ff.ShowInFilter,   0) AS ShowInFilter
 
     FROM SY_FormatFields ff
     LEFT JOIN SY_FrmLstTbl l ON ff.FormName = l.FormID

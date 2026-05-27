@@ -303,6 +303,7 @@ window.DynamicFormEngine = (function () {
             required:      _bool(item.required,      item.IsRequired),
             showInAdd:     _bool(item.showInAdd,     item.ShowInAdd),
             showInEdit:    _bool(item.showInEdit,    item.ShowInEdit),
+            showInFilter:  _bool(item.showInFilter,  item.ShowInFilter),
             isReadOnlyEdit:_bool(item.isReadOnlyEdit,item.IsReadOnlyEdit),
             isReadOnlyAdd: _bool(item.isReadOnlyAdd, item.IsReadOnlyAdd),
             position:      item.FormPosition || item.formPosition || item.position || 'grid',
@@ -466,10 +467,53 @@ window.DynamicFormEngine = (function () {
       var filterContainer = $container.querySelector('#dynamic-filter-container');
       if (filterContainer && typeof FilterComponent !== 'undefined') {
         filterContainer.innerHTML = ''; // Xóa placeholder nếu có
-        var filters = [
-          { id: 'keyword', label: MODULE_CONFIG.FilterKeywordLabel, placeholder: MODULE_CONFIG.SearchPlaceholder }
-        ];
+        
+        // 1. Tự động lấy các trường cấu hình ShowInFilter từ Database
+        var dynamicFilters = globalFormSchema
+          .filter(function(f) { return f.showInFilter; })
+          .map(function(f) {
+            // Chuyển đổi định dạng từ FormEngine sang FilterComponent
+            var filterType = 'text';
+            if (f.renderRule === 'dt') filterType = 'date';
+            if (f.renderRule === 'nm') filterType = 'number';
+            
+            var filterObj = {
+              id: f.name,
+              label: f.label,
+              type: filterType,
+              placeholder: f.label
+            };
+
+            // Parse DataSource cho trường Select/Dropdown
+            if (f.renderRule === 'sl' || f.renderRule === 'sw') {
+              filterObj.type = 'select';
+              filterObj.options = [];
+              if (f.renderRule === 'sw') {
+                 filterObj.options = [ {value: 1, label: 'Có'}, {value: 0, label: 'Không'} ];
+              } else if (f.dataSource && f.dataSource.indexOf('STATIC:') === 0) {
+                 var parts = f.dataSource.replace('STATIC:', '').split(',');
+                 parts.forEach(function(p) {
+                   var kv = p.split('|');
+                   filterObj.options.push({ value: kv[0], label: kv[1] || kv[0] });
+                 });
+              }
+            }
+            return filterObj;
+          });
+
+        // 2. Gom với cấu hình cứng trong AppModules.js (nếu có) hoặc xài Keyword mặc định
+        var filters = [];
+        if (dynamicFilters.length > 0) {
+           filters = filters.concat(dynamicFilters);
+        } else if (MODULE_CONFIG.Filters && MODULE_CONFIG.Filters.length > 0) {
+           filters = MODULE_CONFIG.Filters;
+        } else {
+           filters = [ { id: 'keyword', label: MODULE_CONFIG.FilterKeywordLabel || 'Từ khóa', placeholder: MODULE_CONFIG.SearchPlaceholder } ];
+        }
+
         var filterNode = FilterComponent.create(filters, function (values) {
+          // Lưu lại toàn bộ các giá trị filter thay vì chỉ keyword
+          window.currentFilters = values;
           currentKeyword = values.keyword || '';
           currentPage = 1; // Reset về trang 1 khi lọc mới
           _loadData();
@@ -503,12 +547,17 @@ window.DynamicFormEngine = (function () {
       var query = {
         FormName: MODULE_CONFIG.FormName,
         UserName: _currentUser(),
-        Keyword: currentKeyword, // Bỏ hack ép FormName vào Keyword để tránh API_TruyVanDong tìm kiếm sai
+        Keyword: currentKeyword, 
         SortColumn: currentSortCol,
         SortDir: currentSortDir,
         Page: currentPage,
         Limit: currentLimit
       };
+      
+      // Nếu có các trường lọc tùy chỉnh, gộp chúng vào payload gửi lên API
+      if (window.currentFilters) {
+        Object.assign(query, window.currentFilters);
+      }
       ApiClient.post(MODULE_CONFIG.ApiSearch, query).then(function (result) {
         totalRecords = result._recordtotal || 0;
         var dataList = result.list || result.records || [];
@@ -818,6 +867,7 @@ window.DynamicFormEngine = (function () {
         <th style="width:150px;" title="Ví dụ: TrangThai=huy|doi">VisibleRule</th>
         <th style="width:60px; text-align:center;">Thêm</th>
         <th style="width:60px; text-align:center;">Sửa</th>
+        <th style="width:60px; text-align:center;">Lọc</th>
         <th style="width:40px;"></th>
       </tr>
     `;
@@ -865,6 +915,11 @@ window.DynamicFormEngine = (function () {
         <td class="p-1 text-center align-middle">
           <div class="d-flex justify-content-center h-100 align-items-center">
             <input type="checkbox" class="modern-checkbox" name="ShowInEdit" value="1" checked style="cursor: pointer; margin-top: 0;" title="Hiển thị khi Chỉnh Sửa">
+          </div>
+        </td>
+        <td class="p-1 text-center align-middle">
+          <div class="d-flex justify-content-center h-100 align-items-center">
+            <input type="checkbox" class="modern-checkbox" name="ShowInFilter" value="1" style="cursor: pointer; margin-top: 0;" title="Hiển thị bộ lọc">
           </div>
         </td>
         <td class="p-1 text-center align-middle">
@@ -1198,6 +1253,7 @@ window.DynamicFormEngine = (function () {
               IsRequired:     orig.required !== undefined ? orig.required : (orig.IsRequired !== undefined ? orig.IsRequired : 0),
               ShowInAdd:      orig.showInAdd !== undefined ? orig.showInAdd : (orig.ShowInAdd !== undefined ? orig.ShowInAdd : 1),
               ShowInEdit:     orig.showInEdit !== undefined ? orig.showInEdit : (orig.ShowInEdit !== undefined ? orig.ShowInEdit : 1),
+              ShowInFilter:   orig.showInFilter !== undefined ? orig.showInFilter : (orig.ShowInFilter !== undefined ? orig.ShowInFilter : 0),
               IsReadOnlyAdd:  orig.isReadOnlyAdd !== undefined ? orig.isReadOnlyAdd : (orig.IsReadOnlyAdd !== undefined ? orig.IsReadOnlyAdd : 0),
               IsReadOnlyEdit: orig.isReadOnlyEdit !== undefined ? orig.isReadOnlyEdit : (orig.IsReadOnlyEdit !== undefined ? orig.IsReadOnlyEdit : 0),
               ValidateRule:   orig.validateRule || orig.ValidateRule || orig.VALIDATERULE || '',

@@ -31,15 +31,36 @@ var FilterComponent = (function () {
         item.appendChild(lbl);
       }
 
-      var input = document.createElement('input');
-      input.type = f.type || 'text';
-      input.className = 'ui-input';
-      // Set placeholder properly
-      input.placeholder = f.placeholder || f.label || '';
-      input.id = f.id;
+      var control;
+      if (f.type === 'select') {
+        control = document.createElement('select');
+        control.className = 'ui-input';
+        control.id = f.id;
+        
+        // Option mặc định
+        var defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.innerText = f.placeholder || '-- Tất cả --';
+        control.appendChild(defaultOpt);
+        
+        if (f.options && Array.isArray(f.options)) {
+          f.options.forEach(function(opt) {
+            var o = document.createElement('option');
+            o.value = opt.value !== undefined ? opt.value : opt;
+            o.innerText = opt.label || opt;
+            control.appendChild(o);
+          });
+        }
+      } else {
+        control = document.createElement('input');
+        control.type = f.type || 'text';
+        control.className = 'ui-input';
+        control.placeholder = f.placeholder || f.label || '';
+        control.id = f.id;
+      }
 
-      inputs[f.id] = input;
-      item.appendChild(input);
+      inputs[f.id] = control;
+      item.appendChild(control);
       wrapper.appendChild(item);
     });
 

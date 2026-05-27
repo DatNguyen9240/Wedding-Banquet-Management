@@ -19,6 +19,7 @@ CREATE PROCEDURE API_LuuTruongGiaoDien
     @DependsOn      varchar(50)      = NULL,
     @VisibleRule    nvarchar(500)    = NULL,
     @OrderNo        int              = NULL,
+    @ShowInFilter   bit              = 0,
     @NoResult       bit              = 0
 AS
 BEGIN
@@ -41,7 +42,8 @@ BEGIN
             ValidateRule  = ISNULL(@ValidateRule,  ValidateRule),
             DependsOn     = ISNULL(@DependsOn,     DependsOn),
             VisibleRule   = ISNULL(@VisibleRule,   VisibleRule),
-            OrderNo       = ISNULL(@OrderNo,       OrderNo)
+            OrderNo       = ISNULL(@OrderNo,       OrderNo),
+            ShowInFilter  = ISNULL(@ShowInFilter,  ShowInFilter)
         WHERE FieldName = @FieldName AND FormName = @FormName;
     END
     ELSE
@@ -49,11 +51,11 @@ BEGIN
         INSERT INTO SY_FormatFields
             (FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource,
              IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd,
-             ValidateRule, DependsOn, VisibleRule, OrderNo)
+             ValidateRule, DependsOn, VisibleRule, OrderNo, ShowInFilter)
         VALUES
             (@FormName, @FieldName, @CaptionVN, @FormatID, @CaptionEN, @DataSource,
              @IsRequired, @FormPosition, @ShowInAdd, @ShowInEdit, @IsReadOnlyEdit, @IsReadOnlyAdd,
-             @ValidateRule, @DependsOn, @VisibleRule, ISNULL(@OrderNo, 0));
+             @ValidateRule, @DependsOn, @VisibleRule, ISNULL(@OrderNo, 0), ISNULL(@ShowInFilter, 0));
     END
 
     -- Trả về dữ liệu vừa lưu
@@ -61,7 +63,7 @@ BEGIN
     BEGIN
         SELECT FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource,
                IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd,
-               ValidateRule, DependsOn, VisibleRule, OrderNo
+               ValidateRule, DependsOn, VisibleRule, OrderNo, ShowInFilter
         FROM SY_FormatFields
         WHERE FieldName = @FieldName AND FormName = @FormName;
     END
