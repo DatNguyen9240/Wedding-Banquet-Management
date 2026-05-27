@@ -731,21 +731,26 @@ window.DynamicFormEngine = (function () {
             }
             lastSelectedIdx = idx;
           } else {
-            // Click bình thường: Xoá hết, chỉ chọn 1
-            allTrsList.forEach(function (r) { r.classList.remove('active'); });
-            tr.classList.add('active');
-            selectedRows = [rData];
-            lastSelectedIdx = idx;
+            // Theo yêu cầu mới: Vô hiệu hóa bôi đen bằng 1 click trên TẤT CẢ màn hình
+            // Tránh click nhầm làm mất dải đang chọn. Chỉ bôi đen khi giữ chuột/ngón tay (long press)
+            return;
           }
           _updateSelectionCounter();
         });
         tbody.addEventListener('dblclick', function (e) {
           var tr = e.target.closest('tr');
-          if (!tr || selectedRows.length === 0) return;
-          if (selectedRows.length > 1) {
+          if (!tr) return;
+          
+          var idx = Array.from(tbody.children).indexOf(tr);
+          var rData = gridData[idx];
+          if (!rData) return;
+
+          // Nếu đang chọn nhiều dòng (và dòng được double click nằm trong số đó) thì mở sửa hàng loạt
+          if (selectedRows.length > 1 && selectedRows.find(function (sr) { return sr.id === rData.id; })) {
             _openBulkEditForm();
           } else {
-            _openEditForm(selectedRows[0]);
+            // Mở form sửa cho dòng vừa được double click (bất kể trước đó có được bôi đen hay chưa)
+            _openEditForm(rData);
           }
         });
       }
@@ -1814,10 +1819,10 @@ window.DynamicFormEngine = (function () {
                         targetInput.value = row[index] || '';
                         // Kích hoạt sự kiện để UI update (nếu là ô chọn ngày, số lượng...)
                         targetInput.dispatchEvent(new Event('change', { bubbles: true }));
-                        
+
                         // Nếu trường được Auto-Fill là một Combobox khác, ta cần gọi nó tải lại text hiển thị!
                         if (typeof targetInput.fetchDataForValue === 'function') {
-                           targetInput.fetchDataForValue();
+                          targetInput.fetchDataForValue();
                         }
                       }
                     }
