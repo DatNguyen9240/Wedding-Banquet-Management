@@ -203,6 +203,11 @@ window.DynamicFormEngine = (function () {
       window.currentFilters = null;
     }
 
+    // Reset sạch sẽ Dictionary & Schema của Form cũ để tránh lây nhiễm (ví dụ API form mới bị lỗi thì không hiện rác của form cũ)
+    globalDictionary = {};
+    globalFormSchema = [];
+    globalRenderers = {};
+
     // API defaults: FormBuilder dùng API chuyên biệt, các form khác dùng generic No-Code API
     _setDefaults(MODULE_CONFIG, _isFormBuilder() ? {
       ApiSearch: '/api/API_DanhSachTruongGiaoDien',
@@ -286,9 +291,6 @@ window.DynamicFormEngine = (function () {
             ModalWidth: '600px'
           });
         }
-
-        globalDictionary = {};
-        globalFormSchema = [];
 
         dataList.forEach(function (item) {
           // Xây Dictionary cho Table
