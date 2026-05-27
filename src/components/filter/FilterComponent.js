@@ -9,9 +9,22 @@ var FilterComponent = (function () {
   function create(filters, onSearch) {
     // 1. Tạo Panel thực sự và gắn thẳng vào body (Tránh bị cắt bởi thẻ cha có overflow: hidden hoặc transform)
     var wrapper = document.createElement('div');
-    // Chỉnh lại bóng đổ (box-shadow) mỏng, mịn và sang trọng hơn (Layered shadow kiểu CUKCUK/Stripe)
-    wrapper.style.cssText = 'position: fixed; left: -9999px; top: -9999px; z-index: 999999; background: var(--color-surface, #fff); border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 12px); box-shadow: 0 4px 20px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04); padding: 24px; min-width: 450px; display: none; flex-direction: column; gap: 16px; transition: opacity 0.2s ease, transform 0.2s ease;';
+    // Chỉnh lại bóng đổ (box-shadow) mỏng, mịn và sang trọng hơn
+    wrapper.style.cssText = 'position: fixed; left: -9999px; top: -9999px; z-index: 999999; background: var(--color-surface, #fff); border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 12px); box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05); padding: 20px; min-width: 350px; max-width: 600px; display: none; flex-direction: column; gap: 16px; opacity: 0; transform: translateY(-10px); transition: opacity 0.2s ease, transform 0.2s ease;';
     document.body.appendChild(wrapper);
+
+    // Tiêu đề popup
+    var title = document.createElement('div');
+    title.innerText = 'Lọc dữ liệu';
+    title.style.cssText = 'font-size: 16px; font-weight: 600; color: #1e293b; margin: 0; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;';
+    wrapper.appendChild(title);
+
+    // Grid Container cho Filters
+    var gridContainer = document.createElement('div');
+    // Nếu có nhiều hơn 2 filter thì dùng 2 cột, ngược lại 1 cột
+    var cols = filters.length > 2 ? 2 : 1;
+    gridContainer.style.cssText = 'display: grid; grid-template-columns: repeat(' + cols + ', 1fr); gap: 16px;';
+    wrapper.appendChild(gridContainer);
 
     var inputs = {};
 
@@ -32,44 +45,60 @@ var FilterComponent = (function () {
 
       controlWrapper.className = '';
 
+      // Thiết kế lại Control theo dạng Stacked (Label nằm trên Input)
       controlWrapper.style.display = 'flex';
-      controlWrapper.style.flexDirection = 'row';
-      controlWrapper.style.alignItems = 'center';
-      controlWrapper.style.justifyContent = 'space-between';
+      controlWrapper.style.flexDirection = 'column';
+      controlWrapper.style.alignItems = 'flex-start';
       controlWrapper.style.margin = '0';
-      controlWrapper.style.gap = '16px';
+      controlWrapper.style.gap = '6px';
 
       var lbl = controlWrapper.querySelector('label');
       if (lbl) {
-        lbl.style.width = '140px';
+        lbl.style.width = '100%';
         lbl.style.margin = '0';
-        lbl.style.fontSize = '14px';
-        lbl.style.fontWeight = '500';
-        lbl.style.color = '#334155';
-        lbl.style.flexShrink = '0';
+        lbl.style.fontSize = '13px';
+        lbl.style.fontWeight = '600';
+        lbl.style.color = '#475569';
         lbl.style.display = 'block';
         lbl.style.textAlign = 'left';
       }
 
       var inp = controlWrapper.querySelector('input, select');
       if (inp) {
-        inp.style.flex = '1';
+        inp.style.width = '100%';
         inp.style.minWidth = '0';
         inp.style.padding = '8px 12px';
         inp.style.fontSize = '14px';
+        inp.style.border = '1px solid #cbd5e1';
+        inp.style.borderRadius = '6px';
+        inp.style.outline = 'none';
+        inp.style.transition = 'border-color 0.2s, box-shadow 0.2s';
+        
+        // Hiệu ứng focus
+        inp.addEventListener('focus', function() {
+            this.style.borderColor = '#3b82f6';
+            this.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+        });
+        inp.addEventListener('blur', function() {
+            this.style.borderColor = '#cbd5e1';
+            this.style.boxShadow = 'none';
+        });
+
         inputs[f.id] = inp;
       }
 
-      wrapper.appendChild(controlWrapper);
+      gridContainer.appendChild(controlWrapper);
     });
 
     var actions = document.createElement('div');
-    actions.style.cssText = 'display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px; padding-top: 16px; border-top: 1px solid #f1f5f9;';
+    actions.style.cssText = 'display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; padding-top: 16px; border-top: 1px solid #f1f5f9;';
 
     var btnReset = document.createElement('button');
     btnReset.className = 'btn btn-light';
     btnReset.innerText = 'Xóa bộ lọc';
-    btnReset.style.cssText = 'font-weight: 500; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 16px;';
+    btnReset.style.cssText = 'font-weight: 500; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 16px; background: #fff; color: #64748b; cursor: pointer; transition: all 0.2s;';
+    btnReset.onmouseover = function() { this.style.background = '#f8fafc'; this.style.color = '#0f172a'; };
+    btnReset.onmouseout = function() { this.style.background = '#fff'; this.style.color = '#64748b'; };
     btnReset.onclick = function () {
       for (var key in inputs) {
         inputs[key].value = '';
@@ -80,7 +109,7 @@ var FilterComponent = (function () {
     var btnSearch = document.createElement('button');
     btnSearch.className = 'btn btn-primary d-flex align-items-center gap-2';
     btnSearch.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">search</span> Lọc dữ liệu';
-    btnSearch.style.cssText = 'font-weight: 600; border-radius: 6px; padding: 8px 16px;';
+    btnSearch.style.cssText = 'font-weight: 600; border-radius: 6px; padding: 8px 16px; border: none; cursor: pointer; transition: all 0.2s;';
     btnSearch.onclick = function () {
       if (typeof onSearch === 'function') {
         var values = {};
@@ -156,13 +185,23 @@ var FilterComponent = (function () {
         var observer = new MutationObserver(function () {
           if (parent.style.display !== 'none') {
             wrapper.style.display = 'flex';
+            setTimeout(function() {
+              wrapper.style.opacity = '1';
+              wrapper.style.transform = 'translateY(0)';
+            }, 10);
             alignPopup();
 
             // Focus vào ô đầu tiên
             var firstInput = wrapper.querySelector('input');
             if (firstInput) firstInput.focus();
           } else {
-            wrapper.style.display = 'none';
+            wrapper.style.opacity = '0';
+            wrapper.style.transform = 'translateY(-10px)';
+            setTimeout(function() {
+              if (parent.style.display === 'none') {
+                wrapper.style.display = 'none';
+              }
+            }, 200);
           }
         });
         observer.observe(parent, { attributes: true, attributeFilter: ['style'] });
