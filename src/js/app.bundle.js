@@ -2787,7 +2787,9 @@ UIControls.utils = (function() {
   function createDropdownTableHTML(headers, data, colHighlightIndex) {
     var theadHTML = headers.map(h => `<th>${h}</th>`).join('');
     var tbodyHTML = data.map(function(row, rIdx) {
-      var cells = row.map(function(cell, cIdx) {
+      // Chỉ render số lượng cột bằng với số lượng headers, các cột thừa sẽ bị ẩn (để dùng cho Auto-fill)
+      var displayRow = row.slice(0, headers.length);
+      var cells = displayRow.map(function(cell, cIdx) {
         var cls = (cIdx === colHighlightIndex) ? 'highlight-col' : '';
         return `<td class="${cls}">${cell}</td>`;
       }).join('');
@@ -5544,6 +5546,7 @@ var UITable = (function () {
             var startWidth = th.offsetWidth;
             
             document.body.style.cursor = 'col-resize';
+            window._isResizingColumn = true;
             
             function onPointerMove(ev) {
                 var newWidth = startWidth + (ev.clientX - startX);
@@ -5558,6 +5561,7 @@ var UITable = (function () {
                 document.body.style.cursor = '';
                 document.removeEventListener('pointermove', onPointerMove);
                 document.removeEventListener('pointerup', onPointerUp);
+                setTimeout(function() { window._isResizingColumn = false; }, 100);
             }
             
             document.addEventListener('pointermove', onPointerMove);
@@ -5592,7 +5596,13 @@ var UITable = (function () {
           icon.style.marginLeft = '4px';
           th.appendChild(icon);
 
-          th.addEventListener('click', function() {
+          th.addEventListener('click', function(e) {
+            if (window._isResizingColumn) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
             // Reset all icons
             trHead.querySelectorAll('.sort-icon').forEach(function(i) {
               i.innerText = 'unfold_more';

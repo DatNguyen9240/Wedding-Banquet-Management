@@ -1797,17 +1797,20 @@ window.DynamicFormEngine = (function () {
                   var keys = JSON.parse(savedKeysStr);
                   // Duyệt qua các cột trả về từ API
                   keys.forEach(function (keyName, index) {
-                    // Tìm xem trong Form hiện tại có Input nào tên trùng với tên Cột không (bỏ qua chính nó)
-                    // Chuẩn hóa tên cột để dễ map (loại bỏ dấu cách, ký tự đặc biệt nếu cần, nhưng tốt nhất API nên trả về đúng ID)
-                    // Tìm container bao ngoài form (do form động render vào div chứ không phải thẻ <form>)
+                    // Tìm xem trong Form hiện tại có Input nào tên trùng với tên Cột không (case-insensitive)
                     var form = hiddenInput.closest('.ui-modal') || hiddenInput.closest('body');
                     if (form) {
-                      var targetInput = form.querySelector('[name="' + keyName + '"]');
+                      var targetInput = form.querySelector('[name="' + keyName + '" i]');
                       if (targetInput && targetInput !== hiddenInput) {
                         // Điền giá trị
                         targetInput.value = row[index] || '';
                         // Kích hoạt sự kiện để UI update (nếu là ô chọn ngày, số lượng...)
                         targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        
+                        // Nếu trường được Auto-Fill là một Combobox khác, ta cần gọi nó tải lại text hiển thị!
+                        if (typeof targetInput.fetchDataForValue === 'function') {
+                           targetInput.fetchDataForValue();
+                        }
                       }
                     }
                   });
@@ -1821,7 +1824,7 @@ window.DynamicFormEngine = (function () {
             if (field.value) {
               searchApiCall('', 1).then(function (res) {
                 var displayInput = lazyCombo.querySelector('input.ui-input');
-                var matched = res.data.find(function (r) { return r[0] == field.value; });
+                var matched = res.data.find(function (r) { return String(r[0]) === String(field.value); });
                 if (matched && displayInput) displayInput.value = matched[res.colFilterIndex || 1];
               }).catch(function (err) {
                 console.error('[DynamicFormEngine] DataComboBox initial fetch error:', err);
@@ -1829,6 +1832,23 @@ window.DynamicFormEngine = (function () {
                 if (displayInput) displayInput.placeholder = 'Lỗi tải dữ liệu';
               });
             }
+
+            // Expose hàm để Auto-Fill gọi lại nhằm cập nhật Text
+            hiddenInput.fetchDataForValue = function () {
+              if (hiddenInput.value) {
+                var displayInput = lazyCombo.querySelector('input.ui-input');
+                if (displayInput) displayInput.value = 'Đang tải...';
+                searchApiCall('', 1).then(function (res) {
+                  var displayInp = lazyCombo.querySelector('input.ui-input');
+                  var matched = res.data.find(function (r) { return String(r[0]) === String(hiddenInput.value); });
+                  if (matched && displayInp) displayInp.value = matched[res.colFilterIndex || 1];
+                  else if (displayInp) displayInp.value = hiddenInput.value; // Fallback
+                });
+              } else {
+                var displayInput = lazyCombo.querySelector('input.ui-input');
+                if (displayInput) displayInput.value = '';
+              }
+            };
 
             formGroupWrapper.replaceChild(lazyCombo, comboLoading);
           }

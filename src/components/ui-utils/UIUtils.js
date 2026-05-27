@@ -92,7 +92,9 @@ UIControls.utils = (function() {
   function createDropdownTableHTML(headers, data, colHighlightIndex) {
     var theadHTML = headers.map(h => `<th>${h}</th>`).join('');
     var tbodyHTML = data.map(function(row, rIdx) {
-      var cells = row.map(function(cell, cIdx) {
+      // Chỉ render số lượng cột bằng với số lượng headers, các cột thừa sẽ bị ẩn (để dùng cho Auto-fill)
+      var displayRow = row.slice(0, headers.length);
+      var cells = displayRow.map(function(cell, cIdx) {
         var cls = (cIdx === colHighlightIndex) ? 'highlight-col' : '';
         return `<td class="${cls}">${cell}</td>`;
       }).join('');
