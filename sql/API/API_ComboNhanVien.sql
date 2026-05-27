@@ -10,7 +10,8 @@ GO
 -- API: Lấy danh sách Nhân viên chuyên dụng cho Combo Box (Dropdown)
 -- =============================================
 CREATE OR ALTER PROCEDURE [dbo].[API_ComboNhanVien]
-    @Keyword NVARCHAR(100) = ''
+    @Keyword NVARCHAR(100) = '',
+    @BranchID VARCHAR(50) = ''   -- Thêm tham số BranchID để phân quyền theo chi nhánh
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -27,7 +28,7 @@ BEGIN
         NGAYSINH,           
         NGAYVAOLAM          
     FROM dmNhanvienView 
-    WHERE Tennv LIKE N'%' + @Keyword + '%'
-       OR NHANVIENID LIKE '%' + @Keyword + '%'
+    WHERE (Tennv LIKE N'%' + @Keyword + '%' OR NHANVIENID LIKE '%' + @Keyword + '%')
+      AND (@BranchID = '' OR Bophanid = @BranchID) -- Lọc theo chi nhánh (nếu có truyền)
 END
 GO
