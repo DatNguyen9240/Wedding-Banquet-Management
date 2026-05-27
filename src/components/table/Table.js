@@ -11,15 +11,34 @@ var UITable = (function () {
   function create(config) {
     var wrapper = document.createElement('div');
     wrapper.className = 'table-wrapper ' + (config.className || '');
+    // Bo viền bảng
+    wrapper.style.borderRadius = '8px';
+    wrapper.style.border = '1px solid var(--color-border, #e2e8f0)';
+    wrapper.style.overflow = 'auto'; // Cho phép scroll ngang nếu bị tràn
 
     var table = document.createElement('table');
     table.className = 'data-table';
+    table.style.width = 'max-content'; // Chống kéo giãn, các cột sẽ nằm gần nhau
+    table.style.whiteSpace = 'nowrap'; // Đảm bảo nội dung không bị rớt dòng làm cột bị giãn
+    table.style.tableLayout = 'auto';
 
     // Tbody & Thead
     var thead = document.createElement('thead');
     var tbody = document.createElement('tbody');
     table.appendChild(thead);
     table.appendChild(tbody);
+
+    // Ép style thu gọn khoảng cách (Compact Density)
+    var styleDensity = document.createElement('style');
+    styleDensity.innerHTML = `
+      .table-wrapper .data-table th, 
+      .table-wrapper .data-table td {
+         padding: 6px 10px !important;
+         height: 36px !important; /* Dòng thấp hơn */
+         font-size: 13px !important; /* Chữ nhỏ một xíu để nhìn gọn hơn */
+      }
+    `;
+    wrapper.appendChild(styleDensity);
 
     var currentData = config.data ? config.data.slice() : [];
     var currentSort = config.currentSort ? { field: config.currentSort.field, dir: config.currentSort.dir } : { field: null, dir: 'asc' };
@@ -140,8 +159,51 @@ var UITable = (function () {
         spanTxt.style.pointerEvents = 'none'; // Prevent child interference
         th.appendChild(spanTxt);
 
-        if (h.width) th.style.width = h.width;
+        if (h.width) {
+            th.style.width = h.width;
+            th.style.minWidth = h.width; // Ép cứng chiều rộng ban đầu
+        }
         if (h.align) th.style.textAlign = h.align;
+        
+        // --- COLUMN RESIZING LOGIC ---
+        th.style.position = 'relative'; // Cần thiết để neo resizer
+        
+        var resizer = document.createElement('div');
+        resizer.className = 'col-resizer';
+        resizer.style.cssText = 'position: absolute; right: 0; top: 0; bottom: 0; width: 6px; cursor: col-resize; z-index: 10; background: transparent; transition: background 0.2s;';
+        
+        resizer.addEventListener('mouseenter', function() { resizer.style.background = 'var(--color-primary, #4361ee)'; });
+        resizer.addEventListener('mouseleave', function() { resizer.style.background = 'transparent'; });
+        
+        resizer.addEventListener('pointerdown', function(e) {
+            e.stopPropagation(); // Ngăn sự kiện drag and drop cột
+            e.preventDefault();
+            
+            var startX = e.clientX;
+            var startWidth = th.offsetWidth;
+            
+            document.body.style.cursor = 'col-resize';
+            
+            function onPointerMove(ev) {
+                var newWidth = startWidth + (ev.clientX - startX);
+                if (newWidth > 40) { // Giới hạn nhỏ nhất là 40px
+                    th.style.width = newWidth + 'px';
+                    th.style.minWidth = newWidth + 'px';
+                    h.width = newWidth + 'px'; // Lưu lại config để khi re-render (sort/drag) không bị mất
+                }
+            }
+            
+            function onPointerUp(ev) {
+                document.body.style.cursor = '';
+                document.removeEventListener('pointermove', onPointerMove);
+                document.removeEventListener('pointerup', onPointerUp);
+            }
+            
+            document.addEventListener('pointermove', onPointerMove);
+            document.addEventListener('pointerup', onPointerUp);
+        });
+        
+        th.appendChild(resizer);
 
         // Nếu header có sortable
         if (h.sortable && h.field) {

@@ -331,8 +331,8 @@ window.DynamicFormEngine = (function () {
           </div>
         </div>
         <div id="dynamic-btn-container" style="margin-bottom:16px;"></div>
-        <div class="card dynamic-grid-card">
-          <div class="card-body">
+        <div class="card dynamic-grid-card" style="border: none; box-shadow: none; margin-bottom: 0;">
+          <div class="card-body" style="padding: 0 8px;">
             <div id="dynamic-filter-container" style="margin-bottom:16px;"></div>
             <div id="dynamic-grid-container"></div>
           </div>
