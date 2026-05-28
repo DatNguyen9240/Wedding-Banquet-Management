@@ -214,9 +214,9 @@ window.DynamicFormEngine = (function () {
       ApiSave: '/api/API_LuuTruongGiaoDien',
       ApiDelete: '/api/API_XoaTruongGiaoDien'
     } : {
-      ApiSearch: '/api/API_TruyVanDong',
-      ApiSave: '/api/API_LuuDong',
-      ApiDelete: '/api/API_XoaDong'
+      ApiSearch: '/api/API_Gateway_Router',
+      ApiSave: '/api/API_Gateway_Router',
+      ApiDelete: '/api/API_Gateway_Router'
     });
     _setDefaults(MODULE_CONFIG, { ApiDictionary: '/api/API_LayCacTruongGiaoDien' });
 
@@ -406,7 +406,20 @@ window.DynamicFormEngine = (function () {
               var ids = selectedRows.map(function (r) { return r[MODULE_CONFIG.PrimaryKey] || r.Id || r.AutoID; });
               payload.IDs = ids.join(',');
 
-              ApiClient.post(MODULE_CONFIG.ApiDelete, payload).then(function (res) {
+              var finalUrl = MODULE_CONFIG.ApiDelete;
+            if (finalUrl === '/api/API_Gateway_Router') {
+              payload = {
+                List: MODULE_CONFIG.FormName,
+                Func: 'Delete',
+                UserName: _currentUser(),
+                Keyword: '',
+                Page: 1,
+                Limit: 1,
+                JsonData: JSON.stringify(payload)
+              };
+            }
+
+            ApiClient.post(finalUrl, payload).then(function (res) {
                 if (res && res.code === 0) {
                   if (typeof Toast !== 'undefined') Toast.success(MODULE_CONFIG.ToastDelete);
                   selectedRows = [];
@@ -494,6 +507,69 @@ window.DynamicFormEngine = (function () {
             onClick: _promptLayoutBuilder
           });
           toolbar.appendChild(btnLayout);
+
+          var btnSyncDB = UIButton.create({
+            text: 'Đồng bộ từ DB',
+            icon: 'sync',
+            type: 'tool',
+            onClick: function() {
+              var body = document.createElement('div');
+              body.className = 'p-3';
+              body.innerHTML = `
+                <div class="form-group mb-3">
+                  <label class="form-label fw-bold">Tên Form (FormName):</label>
+                  <input type="text" id="syncFormName" class="ui-input" placeholder="Ví dụ: frmCustomer">
+                  <small class="text-muted d-block mt-1">Form giao diện mà bạn muốn đồng bộ cấu hình.</small>
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label fw-bold">Tên Bảng/View trong DB (ObjectName):</label>
+                  <input type="text" id="syncTableName" class="ui-input" placeholder="Ví dụ: v_DanhSachKhachHang">
+                  <small class="text-muted d-block mt-1">Tên bảng hoặc View thực tế dưới Database.</small>
+                </div>
+              `;
+
+              var modal = UIModal.show({
+                title: 'Đồng bộ cấu hình từ Database',
+                width: 500,
+                content: body,
+                footer: UIButton.createHTML({ text: 'Hủy bỏ', className: 'btn-outline', onclick: 'this.closest(\'.modal-overlay\').remove()' }) +
+                        UIButton.createHTML({ text: 'Chạy Đồng Bộ', type: 'primary', className: 'btn-run-sync', icon: 'play_arrow' })
+              });
+
+              var btnRun = modal.querySelector('.btn-run-sync');
+              btnRun.onclick = function() {
+                var fName = document.getElementById('syncFormName').value.trim();
+                var tName = document.getElementById('syncTableName').value.trim();
+                
+                if (!fName || !tName) {
+                  return Alert.warning('Thiếu thông tin', 'Vui lòng nhập đầy đủ tên Form và tên Bảng!');
+                }
+
+                _setBtnLoading(btnRun, true);
+                var payload = {
+                  List: 'frmFormBuilder',
+                  Func: 'SyncSchema',
+                  UserName: _currentUser(),
+                  JsonData: JSON.stringify({ FormName: fName, ObjectName: tName })
+                };
+
+                ApiClient.post('/api/API_Gateway_Router', payload).then(function(res) {
+                  if (res && res.code === 0) {
+                    Alert.success('Thành công', 'Đồng bộ trường giao diện hoàn tất!');
+                    modal.remove();
+                    _loadData();
+                  } else {
+                    Alert.error('Lỗi', res.msg || 'Đồng bộ thất bại');
+                    _setBtnLoading(btnRun, false);
+                  }
+                }).catch(function(err) {
+                  Alert.error('Lỗi mạng', err.message || 'Không thể kết nối đến server');
+                  _setBtnLoading(btnRun, false);
+                });
+              };
+            }
+          });
+          toolbar.appendChild(btnSyncDB);
         }
 
         btnContainer.appendChild(toolbar);
@@ -581,26 +657,31 @@ window.DynamicFormEngine = (function () {
 
     if (MODULE_CONFIG.ApiSearch) {
       var query = {
-        FormName: MODULE_CONFIG.FormName,
+        List: MODULE_CONFIG.FormName,
+        Func: 'View',
         UserName: _currentUser(),
         Keyword: currentKeyword,
-        SortColumn: currentSortCol,
-        SortDir: currentSortDir,
         Page: currentPage,
         Limit: currentLimit
       };
 
       // Cập nhật chuẩn No-code: Lọc bỏ các trường rỗng và đóng gói thành JSON
+      var activeFilters = {};
       if (window.currentFilters) {
-        var activeFilters = {};
         for (var k in window.currentFilters) {
           if (window.currentFilters[k] !== '' && window.currentFilters[k] !== null) {
             activeFilters[k] = window.currentFilters[k];
           }
         }
-        if (Object.keys(activeFilters).length > 0) {
-          query.FilterJSON = JSON.stringify(activeFilters);
-        }
+      }
+      // Nhét Sort vào JSON luôn vì Backend C# chặn tham số lạ
+      if (currentSortCol) {
+        activeFilters['_SortColumn'] = currentSortCol;
+        activeFilters['_SortDir'] = currentSortDir;
+      }
+      
+      if (Object.keys(activeFilters).length > 0) {
+        query.JsonData = JSON.stringify(activeFilters);
       }
       ApiClient.post(MODULE_CONFIG.ApiSearch, query).then(function (result) {
         totalRecords = result._recordtotal || 0;
@@ -2107,9 +2188,24 @@ window.DynamicFormEngine = (function () {
     }
 
     // Gọi API tuần tự
+    var finalPayloads = payloads;
+    if (endpoint === '/api/API_Gateway_Router') {
+      finalPayloads = payloads.map(function(p) {
+        return {
+          List: MODULE_CONFIG.FormName,
+          Func: 'Save',
+          UserName: _currentUser(),
+          Keyword: '',
+          Page: 1,
+          Limit: 1,
+          JsonData: JSON.stringify(p)
+        };
+      });
+    }
+
     _sendSequential(
       endpoint,
-      payloads,
+      finalPayloads,
       function (count) {             // onDone
         modal.closeNow();
         Alert.success('Thành công', 'Đã lưu xong ' + count + ' dòng!');
@@ -2211,7 +2307,19 @@ window.DynamicFormEngine = (function () {
     if (payloads.length === 0) { modal.closeNow(); return; }
 
     // 5. Gọi API Lưu
-    ApiClient.post(endpoint, payloads[0])
+    var finalPayload = payloads[0];
+    if (endpoint === '/api/API_Gateway_Router') {
+      finalPayload = {
+        List: MODULE_CONFIG.FormName,
+        Func: 'Save',
+        UserName: _currentUser(),
+        Keyword: '',
+        Page: 1,
+        Limit: 1,
+        JsonData: JSON.stringify(payloads[0])
+      };
+    }
+    ApiClient.post(endpoint, finalPayload)
       .then(function (res) {
         if (res && res.code === 0) {
           UIToast.show(isEdit ? MODULE_CONFIG.ToastEdit : MODULE_CONFIG.ToastAdd, 'success');

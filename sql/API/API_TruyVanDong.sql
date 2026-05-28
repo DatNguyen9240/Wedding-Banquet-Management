@@ -50,7 +50,8 @@ BEGIN
                 ELSE ' AND ' + QUOTENAME([key]) + ' LIKE N''%' + REPLACE(CAST([value] AS NVARCHAR(MAX)), '''', '''''') + '%'''
             END
         FROM OPENJSON(@FilterJSON)
-        WHERE CAST([value] AS NVARCHAR(MAX)) <> ''; -- Bỏ qua các key có value rỗng
+        WHERE CAST([value] AS NVARCHAR(MAX)) <> '' -- Bỏ qua các key có value rỗng
+          AND [key] NOT LIKE '\_%' ESCAPE '\'; -- Bỏ qua các key hệ thống (VD: _SortColumn)
     END
 
     -- Thêm điều kiện tìm kiếm nếu có Keyword (Tìm kiếm toàn cục)

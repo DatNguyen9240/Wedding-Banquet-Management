@@ -17,7 +17,9 @@ CREATE OR ALTER PROCEDURE [dbo].[API_Gateway_Router]
     @Keyword NVARCHAR(200) = '',     -- Tham số tìm kiếm chung
     @Page INT = 1,
     @Limit INT = 20,
-    @JsonData NVARCHAR(MAX) = ''     -- Dùng cho các hàm Save/Update có body phức tạp
+    @JsonData NVARCHAR(MAX) = '',    -- Dùng cho các hàm Save/Update có body phức tạp
+    @SortColumn VARCHAR(50) = '',    -- Cột cần sắp xếp
+    @SortDir VARCHAR(10) = ''        -- Chiều sắp xếp (ASC/DESC)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -67,13 +69,32 @@ BEGIN
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{EmployeeID}', ISNULL(@EmployeeID, ''));
     
     -- 3.2. Thay thế các biến Request từ Frontend
+    SET @ParaTemplate = REPLACE(@ParaTemplate, '{List}', ISNULL(@List, ''));
+    
+    -- Lấy Sort từ JsonData (Vì Backend C# không cho truyền tham số mới)
+    IF ISNULL(@JsonData, '') <> '' AND ISJSON(@JsonData) = 1
+    BEGIN
+        SET @SortColumn = ISNULL(JSON_VALUE(@JsonData, '$._SortColumn'), '');
+        SET @SortDir = ISNULL(JSON_VALUE(@JsonData, '$._SortDir'), '');
+    END
+    
     -- Replace {Keyword} an toàn, bọc gấp đôi nháy đơn để tránh lỗi SQL Injection (nếu có nháy đơn trong chữ)
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{Keyword}', REPLACE(ISNULL(@Keyword, ''), '''', ''''''));
+    SET @ParaTemplate = REPLACE(@ParaTemplate, '{SortColumn}', ISNULL(@SortColumn, ''));
+    SET @ParaTemplate = REPLACE(@ParaTemplate, '{SortDir}', ISNULL(@SortDir, ''));
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{Page}', CAST(@Page AS VARCHAR));
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{Limit}', CAST(@Limit AS VARCHAR));
     
     -- Replace JSON Data (Dành cho chức năng Lưu)
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{JsonData}', REPLACE(ISNULL(@JsonData, ''), '''', ''''''));
+
+    -- BƯỚC ĐỘT PHÁ: TỰ ĐỘNG MAP BẤT KỲ BIẾN NÀO TỪ JSON VÀO CHUỖI PARA
+    -- Nhờ câu lệnh này, anh có thể khai báo tham số tự do như {TuNgay}, {DenNgay} trong WA_API
+    IF ISNULL(@JsonData, '') <> '' AND ISJSON(@JsonData) = 1
+    BEGIN
+        SELECT @ParaTemplate = REPLACE(@ParaTemplate, '{' + [key] + '}', REPLACE(ISNULL(CAST([value] AS NVARCHAR(MAX)), ''), '''', ''''''))
+        FROM OPENJSON(@JsonData);
+    END
 
     -- 4. Chạy câu lệnh hoàn chỉnh
     DECLARE @FinalSQL NVARCHAR(MAX);
@@ -93,7 +114,7 @@ BEGIN
     END TRY
     BEGIN CATCH
         -- Bắt lỗi thông minh trả về Frontend
-        SELECT -1 AS code, ERROR_MESSAGE() AS msg, ERROR_LINE() AS error_line;
+        SELECT -1 AS code, ERROR_MESSAGE() + N' [SQL: ' + ISNULL(@FinalSQL, '') + N']' AS msg, ERROR_LINE() AS error_line;
     END CATCH
 END
 GO

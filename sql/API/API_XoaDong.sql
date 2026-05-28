@@ -12,8 +12,9 @@ BEGIN
     DECLARE @PrimaryKey VARCHAR(100);
     
     -- Lấy thông tin Bảng và Khóa chính
+    -- Nâng cấp: Dùng SaveTableName (Bảng gốc) để GHI, nếu không có thì xài TableName (View)
     SELECT 
-        @TableName = TableName,
+        @TableName = COALESCE(SaveTableName, TableName),
         @PrimaryKey = PrimaryKey
     FROM SY_FrmLstTbl 
     WHERE FormID = @FormName;
@@ -30,16 +31,24 @@ BEGIN
         RETURN;
     END
 
-    -- Sinh câu SQL xoá động sử dụng IN (chỉ dành cho string_split nếu SQL version hỗ trợ, 
-    -- Hoặc dùng CHARINDEX để kiểm tra)
-    -- Câu SQL đơn giản nhất xoá nhiều dòng (Dành cho SQL Server >= 2016):
-    DECLARE @sql NVARCHAR(MAX) = 
-        'DELETE FROM ' + QUOTENAME(@TableName) + 
-        ' WHERE ' + QUOTENAME(@PrimaryKey) + ' IN (SELECT value FROM string_split(@DeleteIds, '',''))';
+    BEGIN TRY
+        -- Sinh câu SQL xoá động sử dụng IN (chỉ dành cho SQL Server >= 2016)
+        DECLARE @sql NVARCHAR(MAX) = 
+            'DELETE FROM ' + QUOTENAME(@TableName) + 
+            ' WHERE ' + QUOTENAME(@PrimaryKey) + ' IN (SELECT value FROM string_split(@DeleteIds, '',''))';
+            
+        -- Chạy lệnh
+        EXEC sp_executesql @sql, N'@DeleteIds NVARCHAR(MAX)', @DeleteIds = @Ids;
         
-    -- Chạy lệnh
-    EXEC sp_executesql @sql, N'@DeleteIds NVARCHAR(MAX)', @DeleteIds = @Ids;
-    
-    SELECT 0 AS code, N'Xóa thành công khỏi bảng ' + @TableName AS msg;
+        DECLARE @RowsAffected INT = @@ROWCOUNT;
+        
+        IF @RowsAffected > 0
+            SELECT 0 AS code, N'Xóa thành công ' + CAST(@RowsAffected AS VARCHAR) + N' dòng khỏi bảng ' + @TableName AS msg;
+        ELSE
+            SELECT -1 AS code, N'Không tìm thấy dữ liệu (ID: ' + @Ids + N') để xóa trong bảng ' + @TableName AS msg;
+    END TRY
+    BEGIN CATCH
+        SELECT -1 AS code, N'Lỗi xóa dữ liệu: ' + ERROR_MESSAGE() AS msg;
+    END CATCH
 END
 GO
