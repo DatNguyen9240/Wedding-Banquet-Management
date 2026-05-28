@@ -24,6 +24,7 @@ BEGIN
         ISNULL(ff.OrderNo, 0) AS [orderNo],
         ISNULL(ff.ValidateRule, '') AS [validateRule],
         ISNULL(ff.DependsOn, '') AS [dependsOn],
+        ISNULL(ff.VisibleRule, '') AS [visibleRule],
         ISNULL(ff.ShowInFilter, 0) AS [showInFilter]
     FROM SY_FormatFields ff
     LEFT JOIN SY_FrmLstTbl l ON ff.FormName = l.FormID
