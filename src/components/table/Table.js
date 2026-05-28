@@ -11,9 +11,12 @@ var UITable = (function () {
   function create(config) {
     var wrapper = document.createElement('div');
     wrapper.className = 'table-wrapper ' + (config.className || '');
-    // Bo viền bảng
-    wrapper.style.borderRadius = '8px';
-    wrapper.style.border = '1px solid var(--color-border, #e2e8f0)';
+    // Bỏ viền 2 bên
+    wrapper.style.borderRadius = '0';
+    wrapper.style.borderTop = '1px solid var(--color-border, #e2e8f0)';
+    wrapper.style.borderBottom = '1px solid var(--color-border, #e2e8f0)';
+    wrapper.style.borderLeft = 'none';
+    wrapper.style.borderRight = 'none';
     wrapper.style.overflow = 'auto'; // Cho phép scroll ngang nếu bị tràn
 
     var table = document.createElement('table');

@@ -145,7 +145,8 @@ var Router = (function () {
     return new Promise(function (resolve, reject) {
       if (_loadedScripts[src]) { resolve(); return; }
       var el = document.createElement('script');
-      el.src = src + '?v=' + _appVersion;
+      // Thêm cache-buster để đảm bảo luôn tải file JS mới nhất
+      el.src = src + '?v=' + Date.now();
       el.onload = function () { _loadedScripts[src] = true; resolve(); };
       el.onerror = function () { reject(new Error('Script load failed: ' + src)); };
       document.body.appendChild(el);

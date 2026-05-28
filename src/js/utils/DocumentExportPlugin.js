@@ -77,11 +77,11 @@ var DocumentExportPlugin = (function () {
     btn.setAttribute('aria-label', config.label);
 
     // Style: giống các nút tool trong toolbar của project
-    btn.className = 'btn btn-outline d-flex align-items-center gap-2';
-    btn.style.cssText = 'height:38px;padding:0 14px;font-size:.875rem;font-weight:500;white-space:nowrap;border-radius:8px;';
+    btn.className = 'btn btn-tool d-flex align-items-center gap-1';
+    btn.style.cssText = '';
     btn.innerHTML =
       '<span class="material-symbols-outlined" style="font-size:18px;">' + config.icon + '</span>' +
-      '<span class="d-none d-md-inline">' + config.label + '</span>';
+      '<span>' + config.label + '</span>';
 
     // Disabled mặc định cho đến khi chọn row
     btn.disabled = true;
@@ -118,14 +118,13 @@ var DocumentExportPlugin = (function () {
     // (DynamicFormEngine fire event này khi chọn/bỏ chọn)
     _listenRowSelection(container, config);
 
-    // Append sau toolbar hoặc vào cuối container
-    var toolbar = container.querySelector('.action-toolbar, [class*="toolbar"]');
-    if (toolbar && toolbar.parentNode) {
-      // Thêm separator + nút
+    var toolbar = container.querySelector('.action-toolbar, [class*="toolbar"], .button-bar');
+    if (toolbar) {
+      // Thêm separator + nút VÀO TRONG toolbar để đồng bộ flexbox
       var sep = document.createElement('div');
       sep.style.cssText = 'width:1px;background:var(--color-border,rgba(0,0,0,.1));margin:4px 6px;align-self:stretch;';
-      toolbar.parentNode.insertBefore(sep, toolbar.nextSibling);
-      toolbar.parentNode.insertBefore(btn, sep.nextSibling);
+      toolbar.appendChild(sep);
+      toolbar.appendChild(btn);
     } else {
       container.appendChild(btn);
     }
@@ -158,6 +157,9 @@ var DocumentExportPlugin = (function () {
 
     document.addEventListener('click', _onAnyClick, true);
     document.addEventListener('rowSelectionToggled', _onToggle, true);
+
+    // Sync ngay lần đầu load (vì table có thể khôi phục trạng thái chọn từ sessionStorage)
+    setTimeout(_syncFromSession, 100);
   }
 
   // -- Doc selectedRows tu sessionStorage cua DynamicFormEngine ---------------

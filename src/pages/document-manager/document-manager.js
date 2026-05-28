@@ -53,18 +53,18 @@ var DocumentManagerPage = (function () {
       style.textContent = [
         '/* Ghi đè padding của .app-content để document-manager full màn hình */',
         'body[data-page="document-manager"] .app-content { padding: 0 !important; }',
-        '.docmgr-wrap{display:flex;height:calc(100vh - var(--navbar-height, 56px));overflow:hidden;background:var(--color-background,#0f172a);}',
+        '.docmgr-wrap{display:flex;height:calc(100vh - var(--navbar-height, 56px));overflow:hidden;background:var(--color-surface,#ffffff);}',
         '.docmgr-sidebar{width:300px;flex-shrink:0;display:flex;flex-direction:column;background:var(--color-surface,rgba(15,23,42,.95));border-right:1px solid var(--color-border,rgba(255,255,255,.08));z-index:10;}',
         '.docmgr-sidebar-hd{padding:1.25rem 1rem;border-bottom:1px solid var(--color-border,rgba(255,255,255,.08));background:transparent;}',
         '.docmgr-brand{font-size:1.05rem;font-weight:700;background:linear-gradient(135deg,#a855f7,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;justify-content:center;gap:.5rem;}',
         '.docmgr-list{flex:1;overflow-y:auto;padding:.75rem;}',
         '.docmgr-list::-webkit-scrollbar{width:5px;}',
         '.docmgr-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:10px;}',
-        '.docmgr-item{padding:.85rem 1rem;background:var(--color-surface-raised,rgba(255,255,255,.02));border:1px solid transparent;border-radius:12px;margin-bottom:.6rem;cursor:pointer;transition:all .18s ease;position:relative;overflow:hidden;}',
-        '.docmgr-item:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);transform:translateX(3px);}',
-        '.docmgr-item.active{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.35);}',
+        '.docmgr-item{padding:.85rem 1rem;background:var(--color-surface, #ffffff);border:1px solid var(--color-border, #e2e8f0);border-radius:12px;margin-bottom:.6rem;cursor:pointer;transition:all .18s ease;position:relative;overflow:hidden;}',
+        '.docmgr-item:hover{background:var(--color-surface-elevated, #f8fafc);border-color:var(--color-border-strong, #cbd5e1);transform:translateX(3px);}',
+        '.docmgr-item.active{background:var(--color-primary-light, rgba(79,70,229,.1));border-color:var(--color-primary, #4f46e5);}',
         '.docmgr-item.active::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--color-primary,#4f46e5);border-radius:4px 0 0 4px;}',
-        '.docmgr-item-title{font-weight:500;font-size:.9rem;display:flex;align-items:center;gap:.4rem;color:var(--color-text,#e2e8f0);margin-bottom:.25rem;}',
+        '.docmgr-item-title{font-weight:500;font-size:.9rem;display:flex;align-items:flex-start;gap:.4rem;color:var(--color-text,#e2e8f0);margin-bottom:.35rem;line-height:1.4;}',
         '.docmgr-item-meta{font-size:.75rem;color:var(--color-text-secondary,#94a3b8);display:flex;justify-content:space-between;margin-bottom:.3rem;}',
         '.docmgr-item-actions{display:flex;gap:.35rem;opacity:0;transition:opacity .18s ease;}',
         '.docmgr-item:hover .docmgr-item-actions{opacity:1;}',
@@ -72,8 +72,8 @@ var DocumentManagerPage = (function () {
         '.docmgr-download:hover{background:#4f46e5;color:#fff;}',
         '.docmgr-del{background:rgba(239,68,68,.15);color:#ef4444;border:none;width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s ease;padding:0;}',
         '.docmgr-del:hover{background:#ef4444;color:#fff;}',
-        '.docmgr-workspace{flex:1;position:relative;display:flex;flex-direction:column;background:#f1f5f9;}',
-        '.docmgr-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--color-background,#0f172a);color:var(--color-text-secondary,#94a3b8);z-index:5;}',
+        '.docmgr-workspace{flex:1;position:relative;display:flex;flex-direction:column;background:var(--color-surface,#ffffff);}',
+        '.docmgr-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--color-surface,#ffffff);color:var(--color-text-secondary,#94a3b8);z-index:5;}',
         '.docmgr-empty-icon{width:90px;height:90px;background:rgba(99,102,241,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;}',
         '.docmgr-empty h2{color:var(--color-text,#f8fafc);font-weight:500;margin-bottom:.4rem;font-size:1.3rem;}',
         '#docmgr-editor-area{flex:1;width:100%;height:100%;}',
@@ -143,9 +143,9 @@ var DocumentManagerPage = (function () {
           var div = document.createElement('div');
           div.className = 'docmgr-item' + (_currentFile === doc.fileName ? ' active' : '');
           div.innerHTML =
-            '<div class="docmgr-item-title">' +
-              '<span class="material-symbols-outlined" style="font-size:16px;color:#818cf8;">description</span>' +
-              _escHtml(doc.fileName) +
+            '<div class="docmgr-item-title" title="' + _escHtml(doc.fileName) + '">' +
+              '<span class="material-symbols-outlined" style="font-size:16px;color:#818cf8;flex-shrink:0;margin-top:2px;">description</span>' +
+              '<span style="word-break:break-all;">' + _escHtml(doc.fileName) + '</span>' +
             '</div>' +
             '<div class="docmgr-item-meta">' +
               '<span>' + _escHtml(doc.size || '') + '</span>' +

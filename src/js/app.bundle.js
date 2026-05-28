@@ -4640,7 +4640,7 @@ var FilterComponent = (function () {
     // Tiêu đề popup
     var title = document.createElement('div');
     title.innerText = 'Lọc dữ liệu';
-    title.style.cssText = 'font-size: 16px; font-weight: 600; color: #1e293b; margin: 0; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;';
+    title.style.cssText = 'font-size: 16px; font-weight: 600; color: var(--color-text, #1e293b); margin: 0; padding-bottom: 12px; border-bottom: 1px solid var(--color-border, #f1f5f9);';
     wrapper.appendChild(title);
 
     // Grid Container cho Filters
@@ -4682,7 +4682,7 @@ var FilterComponent = (function () {
         lbl.style.margin = '0';
         lbl.style.fontSize = '13px';
         lbl.style.fontWeight = '600';
-        lbl.style.color = '#475569';
+        lbl.style.color = 'var(--color-text-secondary, #475569)';
         lbl.style.display = 'block';
         lbl.style.textAlign = 'left';
       }
@@ -4693,18 +4693,20 @@ var FilterComponent = (function () {
         inp.style.minWidth = '0';
         inp.style.padding = '8px 12px';
         inp.style.fontSize = '14px';
-        inp.style.border = '1px solid #cbd5e1';
+        inp.style.border = '1px solid var(--color-border, #cbd5e1)';
+        inp.style.background = 'var(--color-surface, #fff)';
+        inp.style.color = 'var(--color-text, #1e293b)';
         inp.style.borderRadius = '6px';
         inp.style.outline = 'none';
         inp.style.transition = 'border-color 0.2s, box-shadow 0.2s';
         
         // Hiệu ứng focus
         inp.addEventListener('focus', function() {
-            this.style.borderColor = '#3b82f6';
+            this.style.borderColor = 'var(--color-primary, #3b82f6)';
             this.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
         });
         inp.addEventListener('blur', function() {
-            this.style.borderColor = '#cbd5e1';
+            this.style.borderColor = 'var(--color-border, #cbd5e1)';
             this.style.boxShadow = 'none';
         });
 
@@ -4715,14 +4717,14 @@ var FilterComponent = (function () {
     });
 
     var actions = document.createElement('div');
-    actions.style.cssText = 'display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; padding-top: 16px; border-top: 1px solid #f1f5f9;';
+    actions.style.cssText = 'display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--color-border, #f1f5f9);';
 
     var btnReset = document.createElement('button');
     btnReset.className = 'btn btn-light';
     btnReset.innerText = 'Xóa bộ lọc';
-    btnReset.style.cssText = 'font-weight: 500; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 16px; background: #fff; color: #64748b; cursor: pointer; transition: all 0.2s;';
-    btnReset.onmouseover = function() { this.style.background = '#f8fafc'; this.style.color = '#0f172a'; };
-    btnReset.onmouseout = function() { this.style.background = '#fff'; this.style.color = '#64748b'; };
+    btnReset.style.cssText = 'font-weight: 500; border: 1px solid var(--color-border, #e2e8f0); border-radius: 6px; padding: 8px 16px; background: var(--color-surface, #fff); color: var(--color-text-secondary, #64748b); cursor: pointer; transition: all 0.2s;';
+    btnReset.onmouseover = function() { this.style.background = 'var(--color-surface-elevated, #f8fafc)'; this.style.color = 'var(--color-text, #0f172a)'; };
+    btnReset.onmouseout = function() { this.style.background = 'var(--color-surface, #fff)'; this.style.color = 'var(--color-text-secondary, #64748b)'; };
     btnReset.onclick = function () {
       for (var key in inputs) {
         inputs[key].value = '';
@@ -5428,9 +5430,12 @@ var UITable = (function () {
   function create(config) {
     var wrapper = document.createElement('div');
     wrapper.className = 'table-wrapper ' + (config.className || '');
-    // Bo viền bảng
-    wrapper.style.borderRadius = '8px';
-    wrapper.style.border = '1px solid var(--color-border, #e2e8f0)';
+    // Bỏ viền 2 bên
+    wrapper.style.borderRadius = '0';
+    wrapper.style.borderTop = '1px solid var(--color-border, #e2e8f0)';
+    wrapper.style.borderBottom = '1px solid var(--color-border, #e2e8f0)';
+    wrapper.style.borderLeft = 'none';
+    wrapper.style.borderRight = 'none';
     wrapper.style.overflow = 'auto'; // Cho phép scroll ngang nếu bị tràn
 
     var table = document.createElement('table');
