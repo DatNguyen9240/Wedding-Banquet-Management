@@ -40,7 +40,7 @@
 }
 
 .db-revenue-main {
-  padding: 20px 24px;
+  padding: 20px 14px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -181,6 +181,9 @@
     background: var(--color-surface);
   }
   
-  /* Giữ nguyên các grid khác */
+  .db-revenue-main {
+    padding: 16px 6px !important;
+  }
+  
   .db-revenue-value { font-size: 22px; }
 }

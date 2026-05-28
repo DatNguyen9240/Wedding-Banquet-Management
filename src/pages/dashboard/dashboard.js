@@ -34,6 +34,7 @@ var DashboardPage = (function () {
     var prev={week:412e6,month:1880e6,quarter:5900e6};
     var c={week:12,month:48,quarter:145}, g={week:890,month:3650,quarter:10800};
     var r=base[p]||base.week, pr=prev[p]||prev.week;
+    var pie = p === 'quarter' ? [55, 25, 12, 8] : (p === 'month' ? [58, 22, 10, 10] : [62, 20, 10, 8]);
     return { revenue:r, prevRevenue:pr, revPct:(r-pr)/pr*100,
              contracts:c[p]||12, prevContracts:Math.round((c[p]||12)*0.82),
              avgContract:Math.round(r/(c[p]||12)),
@@ -41,7 +42,9 @@ var DashboardPage = (function () {
              guests:g[p]||890, prevGuests:Math.round((g[p]||890)*0.87),
              avgGuest:Math.round(r/(g[p]||890)),
              profit:Math.round(r*0.62), prevProfit:Math.round(pr*0.60),
-             sparkline:_spark() };
+             sparkline:_spark(),
+             pieLabels: ['Tiệc cưới', 'Hội nghị', 'Sinh nhật', 'Khác'],
+             pieValues: pie };
   }
   function _spark() {
     var a=[], v=50;
@@ -130,6 +133,63 @@ var DashboardPage = (function () {
     });
   }
 
+  // ── Pie chart ──────────────────────────────────────────────────
+  function _drawPie(canvas, labels, values) {
+    if (!canvas) return;
+    if (typeof Chart !== 'undefined') {
+      if (canvas._chartInstance) canvas._chartInstance.destroy();
+      var isDark = document.body.classList.contains('dark-theme');
+      var colors = ['#4F46E5', '#10B981', '#F59E0B', '#0EA5E9', '#F43F5E', '#8B5CF6'];
+      canvas._chartInstance = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{ data: values, backgroundColor: colors, borderWidth: isDark ? 2 : 1, borderColor: isDark ? '#1e293b' : '#ffffff' }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          cutout: '65%',
+          plugins: { 
+            legend: { display: false }, 
+            tooltip: { callbacks: { label: function(c){ return ' ' + c.label + ': ' + c.raw + '%'; } } }
+          }
+        }
+      });
+      return;
+    }
+    // Fallback Canvas
+    var dpr = window.devicePixelRatio || 1;
+    var W = canvas.parentElement.offsetWidth || 110, H = canvas.parentElement.offsetHeight || 110;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+    var total = values.reduce(function(a,b){return a+b}, 0);
+    var colors = ['#4F46E5', '#10B981', '#F59E0B', '#0EA5E9'];
+    var cx = W/2, cy = H/2, r = Math.min(cx, cy) - 4;
+    var startAngle = -Math.PI/2;
+    var isDark = document.body.classList.contains('dark-theme');
+    
+    values.forEach(function(val, i) {
+      var sliceAngle = (val / total) * 2 * Math.PI;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, startAngle, startAngle + sliceAngle);
+      ctx.closePath();
+      ctx.fillStyle = colors[i % colors.length];
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = isDark ? '#1e293b' : '#ffffff';
+      ctx.stroke();
+      startAngle += sliceAngle;
+    });
+    // Hole
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.65, 0, 2 * Math.PI);
+    ctx.fillStyle = isDark ? '#1e293b' : '#ffffff';
+    ctx.fill();
+  }
+
   // ── Section builders ───────────────────────────────────────────
   function _buildToday(container) {
     var d = _todayData();
@@ -208,30 +268,61 @@ var DashboardPage = (function () {
     var grid = document.createElement('div');
     grid.className = 'db-revenue-grid';
 
-    // Left: big revenue
+    // Left: big revenue + Pie Chart
     var left = document.createElement('div');
     left.className = 'db-revenue-main';
-    left.innerHTML = '<div class="db-revenue-label">Doanh thu</div>';
+    left.style.cssText = 'display: flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: nowrap; gap: 8px;';
+
+    // Info column
+    var infoCol = document.createElement('div');
+    infoCol.style.cssText = 'display: flex; flex-direction: column; gap: 4px; flex: 1 1 50%; min-width: 110px;';
+    infoCol.innerHTML = '<div class="db-revenue-label">Doanh thu</div>';
 
     var revVal = document.createElement('div');
     revVal.className = 'db-revenue-value';
     revVal.dataset.revValue = '1';
     revVal.textContent = _fmtShort(d.revenue);
-    left.appendChild(revVal);
+    infoCol.appendChild(revVal);
 
     var cmpRow = document.createElement('div');
     cmpRow.className = 'db-revenue-compare';
     _refs.badgeRevenue = CompareBadge.create(d.revPct);
     var cmpText = document.createElement('span');
     cmpText.className = 'db-compare-text';
+    cmpText.style.whiteSpace = 'normal';
+    cmpText.style.lineHeight = '1.2';
     cmpText.textContent = 'so với kỳ trước';
     cmpRow.appendChild(_refs.badgeRevenue);
     cmpRow.appendChild(cmpText);
-    left.appendChild(cmpRow);
+    infoCol.appendChild(cmpRow);
 
-    _refs.sparkCanvas = SparklineChart.create({ data:d.sparkline, width:220, height:60 });
-    _refs.sparkCanvas.style.marginTop = '6px';
-    left.appendChild(_refs.sparkCanvas);
+    _refs.sparkCanvas = SparklineChart.create({ data:d.sparkline, width:260, height:65 });
+    _refs.sparkCanvas.style.marginTop = '10px';
+    _refs.sparkCanvas.style.width = '100%';
+    _refs.sparkCanvas.style.maxWidth = '260px';
+    _refs.sparkCanvas.style.height = 'auto';
+    infoCol.appendChild(_refs.sparkCanvas);
+    
+    left.appendChild(infoCol);
+
+    // Pie chart column
+    var pieCol = document.createElement('div');
+    pieCol.style.cssText = 'flex: 1 1 50%; max-width: 140px; min-width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; margin: 0 auto;';
+    
+    var pieWrap = document.createElement('div');
+    pieWrap.style.cssText = 'width: 100%; aspect-ratio: 1/1; max-width: 130px; position: relative;';
+    _refs.pieCanvas = document.createElement('canvas');
+    _refs.pieCanvas.style.width = '100%';
+    _refs.pieCanvas.style.height = '100%';
+    pieWrap.appendChild(_refs.pieCanvas);
+    pieCol.appendChild(pieWrap);
+
+    var pieLabel = document.createElement('div');
+    pieLabel.style.cssText = 'font-size: 11px; color: var(--color-text-secondary); margin-top: 10px; font-weight: 500; text-align: center; line-height: 1.3;';
+    pieLabel.textContent = 'Phân bổ loại tiệc';
+    pieCol.appendChild(pieLabel);
+
+    left.appendChild(pieCol);
 
     // Mid: contracts + cost
     var mid = document.createElement('div');
@@ -275,6 +366,9 @@ var DashboardPage = (function () {
     // Render CompareBadge vào các slot
     _renderCompareBadges(grid, d);
     container.appendChild(sp.panel);
+
+    // Vẽ biểu đồ tròn sau khi DOM mount
+    setTimeout(function(){ _drawPie(_refs.pieCanvas, d.pieLabels, d.pieValues); }, 100);
   }
 
   function _renderCompareBadges(grid, d) {
@@ -390,6 +484,8 @@ var DashboardPage = (function () {
     if (rv) rv.textContent = _fmtShort(d.revenue);
     CompareBadge.update(_refs.badgeRevenue, d.revPct);
     SparklineChart.redraw(_refs.sparkCanvas, d.sparkline);
+    _drawPie(_refs.pieCanvas, d.pieLabels, d.pieValues);
+    
     var update = function(sel, val){ var el=grid.querySelector(sel); if(el) el.textContent=val; };
     update('[data-rv="contracts"]', d.contracts);
     update('[data-rv="avgContract"]', 'Trung bình: '+_fmtShort(d.avgContract)+'/HĐ');
