@@ -590,9 +590,17 @@ window.DynamicFormEngine = (function () {
         Limit: currentLimit
       };
 
-      // Nếu có các trường lọc tùy chỉnh, gộp chúng vào payload gửi lên API
+      // Cập nhật chuẩn No-code: Lọc bỏ các trường rỗng và đóng gói thành JSON
       if (window.currentFilters) {
-        Object.assign(query, window.currentFilters);
+        var activeFilters = {};
+        for (var k in window.currentFilters) {
+          if (window.currentFilters[k] !== '' && window.currentFilters[k] !== null) {
+            activeFilters[k] = window.currentFilters[k];
+          }
+        }
+        if (Object.keys(activeFilters).length > 0) {
+          query.FilterJSON = JSON.stringify(activeFilters);
+        }
       }
       ApiClient.post(MODULE_CONFIG.ApiSearch, query).then(function (result) {
         totalRecords = result._recordtotal || 0;
@@ -1155,7 +1163,7 @@ window.DynamicFormEngine = (function () {
           var span = f.FormPosition || 'body';
           if (span === 'grid') span = '6';
           if (span === 'body') span = '12';
-          if (!['12', '6', '4', '3'].includes(span)) span = '12';
+          if (!['12', '8', '6', '4', '3'].includes(span)) span = '12';
 
           card.className = 'layout-card';
           card.draggable = true;
@@ -1562,6 +1570,46 @@ window.DynamicFormEngine = (function () {
           }
         } else if (field.renderRule === 'nm' || field.renderRule === 'number') {
           inputEl = UIInput.createNumber(field);
+        } else if (field.renderRule === 'rb' || field.renderRule === 'rulebuilder') {
+          var wrapper = document.createElement('div');
+          wrapper.className = 'form-group';
+          var flexDiv = document.createElement('div');
+          flexDiv.style.display = 'flex';
+          flexDiv.style.gap = '8px';
+
+          var input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'ui-input';
+          input.name = field.name;
+          input.value = field.value || '';
+          input.placeholder = 'Click nút Thiết lập...';
+          input.readOnly = true;
+          input.style.flex = '1';
+
+          var btnWrapper = document.createElement('div');
+          btnWrapper.innerHTML = UIButton.createHTML({ text: '', type: 'secondary', icon: 'settings', className: 'btn-icon-only' });
+          var btn = btnWrapper.firstElementChild;
+          btn.style.height = '100%';
+          btn.onclick = function(e) {
+            e.preventDefault();
+            if (typeof RuleBuilderDialog !== 'undefined') {
+              var formNameVal = row.FormName || row.formName || row.FORMNAME || '';
+              RuleBuilderDialog.open({
+                currentRule: input.value,
+                targetFormName: formNameVal,
+                onSave: function(newRule) {
+                  input.value = newRule;
+                  input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+              });
+            } else {
+              Alert.error('Lỗi', 'Chưa tải Component Rule Builder!');
+            }
+          };
+          flexDiv.appendChild(input);
+          flexDiv.appendChild(btn);
+          wrapper.appendChild(flexDiv);
+          inputEl = wrapper;
         } else {
           inputEl = UIInput.createText(field);
         }
@@ -1872,6 +1920,57 @@ window.DynamicFormEngine = (function () {
         }
       } else if (field.renderRule === 'nm' || field.renderRule === 'number') {
         inputEl = UIInput.createNumber(field);
+      } else if (field.renderRule === 'rb' || field.renderRule === 'rulebuilder') {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'form-group';
+        if (field.label) {
+          var lbl = document.createElement('label');
+          lbl.innerText = field.label;
+          wrapper.appendChild(lbl);
+        }
+        var flexDiv = document.createElement('div');
+        flexDiv.style.display = 'flex';
+        flexDiv.style.gap = '8px';
+
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'ui-input';
+        input.name = field.name;
+        input.value = field.value || '';
+        input.placeholder = 'Click [Thiết lập] để chọn điều kiện';
+        input.readOnly = true;
+        input.style.flex = '1';
+
+        var btnWrapper = document.createElement('div');
+        btnWrapper.innerHTML = UIButton.createHTML({ text: 'Thiết lập', type: 'secondary', icon: 'settings' });
+        var btn = btnWrapper.firstElementChild;
+        btn.onclick = function(e) {
+          e.preventDefault();
+          if (typeof RuleBuilderDialog !== 'undefined') {
+            var formNameVal = row ? (row.FormName || row.formName || row.FORMNAME) : '';
+            if (!formNameVal && typeof currentModalFormState !== 'undefined') formNameVal = currentModalFormState['FormName'] || '';
+            if (!formNameVal) {
+              var fnInput = document.querySelector('input[name="FormName"], select[name="FormName"]');
+              if (fnInput) formNameVal = fnInput.value;
+            }
+
+            RuleBuilderDialog.open({
+              currentRule: input.value,
+              targetFormName: formNameVal,
+              onSave: function(newRule) {
+                input.value = newRule;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            });
+          } else {
+            Alert.error('Lỗi', 'Chưa tải Component Rule Builder!');
+          }
+        };
+
+        flexDiv.appendChild(input);
+        flexDiv.appendChild(btn);
+        wrapper.appendChild(flexDiv);
+        inputEl = wrapper;
       } else {
         inputEl = UIInput.createText(field);
       }
@@ -1889,7 +1988,7 @@ window.DynamicFormEngine = (function () {
       var span = String(field.position || 'body');
       if (span === 'grid') span = '6';
       if (span === 'body') span = '12';
-      if (!['12', '6', '4', '3'].includes(span)) span = '12';
+      if (!['12', '8', '6', '4', '3'].includes(span)) span = '12';
 
       var wrapper = document.createElement('div');
       wrapper.className = 'df-col-' + span;
@@ -2063,6 +2162,27 @@ window.DynamicFormEngine = (function () {
         } else if (rule === 'email') {
           var emailRe = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
           if (!emailRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng Email'); isInvalid = true; break; }
+        } else if (rule === 'phone') {
+          var phoneRe = /(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})\b/;
+          if (!phoneRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng số điện thoại'); isInvalid = true; break; }
+        } else if (rule === 'number') {
+          var numRe = /^\d+$/;
+          if (!numRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' chỉ được phép nhập số'); isInvalid = true; break; }
+        } else if (rule === 'cccd') {
+          var cccdRe = /^\d{9}(\d{3})?$/;
+          if (!cccdRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' phải là 9 hoặc 12 số (CMND/CCCD)'); isInvalid = true; break; }
+        } else if (rule === 'url') {
+          var urlRe = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+          if (!urlRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng đường dẫn trang web'); isInvalid = true; break; }
+        } else if (rule === 'taxcode') {
+          var taxRe = /^\d{10}(-\d{3})?$/;
+          if (!taxRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' phải là 10 hoặc 13 số (Mã số thuế)'); isInvalid = true; break; }
+        } else if (rule.startsWith('minval:')) {
+          var minVal = parseFloat(rule.split(':')[1]);
+          if (parseFloat(val) < minVal) { Alert.warning('Lỗi nhập liệu', field.label + ' phải lớn hơn hoặc bằng ' + minVal); isInvalid = true; break; }
+        } else if (rule.startsWith('maxval:')) {
+          var maxVal = parseFloat(rule.split(':')[1]);
+          if (parseFloat(val) > maxVal) { Alert.warning('Lỗi nhập liệu', field.label + ' phải nhỏ hơn hoặc bằng ' + maxVal); isInvalid = true; break; }
         } else if (rule.startsWith('regex:')) {
           var reStr = field.validateRule.substring(6);
           try {

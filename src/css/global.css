@@ -498,6 +498,7 @@ body.dark-theme .nav-item:hover span.icon { opacity: 1; }
 
 /* ════ DYNAMIC FORM GRID SYSTEM ════ */
 .df-col-12 { width: 100% !important; }
+.df-col-8 { width: calc(66.666% - 3px) !important; }
 .df-col-6 { width: calc(50% - 5px) !important; }
 .df-col-4 { width: calc(33.333% - 7px) !important; }
 .df-col-3 { width: calc(25% - 8px) !important; }
@@ -508,6 +509,7 @@ body.dark-theme .nav-item:hover span.icon { opacity: 1; }
      - Các ô 50% (df-col-6) vẫn giữ nguyên 50% để cho phép xếp 2 ô 1 hàng.
      - Các ô quá nhỏ như 33% và 25% sẽ được tự động giãn ra thành 50% (xếp 2 ô 1 hàng) 
        thay vì bị bóp nghẹt quá nhỏ hoặc bị giãn quá to 100%. */
+  .df-col-8,
   .df-col-6,
   .df-col-4,
   .df-col-3 {

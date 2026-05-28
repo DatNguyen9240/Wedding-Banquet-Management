@@ -1,6 +1,7 @@
-CREATE PROCEDURE [dbo].[API_TruyVanDong]
+CREATE OR ALTER PROCEDURE [dbo].[API_TruyVanDong]
     @FormName VARCHAR(50),
     @Keyword NVARCHAR(200) = '',
+    @FilterJSON NVARCHAR(MAX) = NULL,
     @UserName VARCHAR(50) = '',
     @Page INT = 1,
     @Limit INT = 15,
@@ -34,15 +35,30 @@ BEGIN
 
     -- Biến chứa SQL động
     DECLARE @sql NVARCHAR(MAX);
-    DECLARE @sqlCount NVARCHAR(MAX);
     DECLARE @whereClause NVARCHAR(MAX) = ' WHERE 1=1';
 
-    -- Thêm điều kiện tìm kiếm nếu có Keyword (Dynamic Search siêu cấp)
+    -- =========================================================================
+    -- MAGIC: RÃ JSON RA ĐỂ GHÉP ĐIỀU KIỆN TÌM KIẾM ĐỘNG
+    -- =========================================================================
+    IF ISNULL(@FilterJSON, '') <> ''
+    BEGIN
+        SELECT @whereClause = @whereClause + 
+            CASE 
+                -- Nếu tên cột là Mã/ID thì dùng '='
+                WHEN [key] LIKE 'Ma%' OR [key] LIKE '%ID' THEN ' AND ' + QUOTENAME([key]) + ' = N''' + REPLACE(CAST([value] AS NVARCHAR(MAX)), '''', '''''') + ''''
+                -- Còn lại dùng LIKE
+                ELSE ' AND ' + QUOTENAME([key]) + ' LIKE N''%' + REPLACE(CAST([value] AS NVARCHAR(MAX)), '''', '''''') + '%'''
+            END
+        FROM OPENJSON(@FilterJSON)
+        WHERE CAST([value] AS NVARCHAR(MAX)) <> ''; -- Bỏ qua các key có value rỗng
+    END
+
+    -- Thêm điều kiện tìm kiếm nếu có Keyword (Tìm kiếm toàn cục)
     IF ISNULL(@Keyword, '') <> ''
     BEGIN
         DECLARE @searchCols NVARCHAR(MAX);
         
-        -- Dùng sys.columns thay vì INFORMATION_SCHEMA để tránh lỗi phân quyền của C# user
+        -- Dùng sys.columns để lấy danh sách cột text
         SELECT @searchCols = STUFF((
             SELECT ' OR ' + QUOTENAME(c.name) + ' LIKE ''%'' + @kw + ''%'''
             FROM sys.columns c
@@ -52,21 +68,20 @@ BEGIN
               AND ty.name IN ('varchar', 'nvarchar', 'char', 'nchar', 'text', 'ntext')
             FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 4, '');
 
-        -- Nếu bảng có cột text để tìm kiếm, ghép vào WHERE
         IF @searchCols IS NOT NULL AND @searchCols <> ''
         BEGIN
             SET @whereClause = @whereClause + ' AND (' + @searchCols + ')';
         END
     END
 
-    -- Xử lý clause ORDER BY cho an toàn với OFFSET FETCH
+    -- Xử lý ORDER BY
     DECLARE @OrderByClause NVARCHAR(MAX);
     IF @SortColumn = ''
         SET @OrderByClause = ' ORDER BY (SELECT 1) ';
     ELSE
         SET @OrderByClause = ' ORDER BY ' + QUOTENAME(@SortColumn) + ' ' + @SortDir + ' ';
 
-    -- Lấy danh sách cột thay vì dùng SELECT * (Tránh rò rỉ bảo mật như Password)
+    -- Lấy danh sách cột
     DECLARE @ColumnList NVARCHAR(MAX);
     SELECT @ColumnList = STUFF((
         SELECT ', ' + QUOTENAME(FieldName)
@@ -74,7 +89,6 @@ BEGIN
         WHERE FormName = @FormName
         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
         
-    -- Nếu chưa cấu hình form, lấy tạm *
     IF @ColumnList IS NULL OR @ColumnList = ''
         SET @ColumnList = '*';
 

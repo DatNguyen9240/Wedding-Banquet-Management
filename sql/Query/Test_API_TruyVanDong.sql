@@ -2,16 +2,22 @@ USE [QLTiec]
 GO
 
 -- ==============================================================
--- BƯỚC 1: KÍCH HOẠT QUÁ TRÌNH TỰ CHỮA LÀNH (AUTO-HEAL)
--- Lệnh này sẽ quét cấu hình và "tiêm" các biến mới vào API_TruyVanDong
+-- BƯỚC 1: TEST TÌM KIẾM CƠ BẢN (KHÔNG FILTER)
 -- ==============================================================
-EXEC dbo.AutoHeal_API_TruyVanDong;
+EXEC [dbo].[API_TruyVanDong] 
+    @FormName = 'frmCustomer',
+    @Keyword = '',
+    @FilterJSON = NULL,
+    @UserName = 'admin',
+    @SortColumn = '',
+    @SortDir = '',
+    @Page = 1,
+    @Limit = 15;
 GO
 
 -- ==============================================================
--- BƯỚC 2: TEST CÂU LỆNH TỪ GIAO DIỆN (ĐÃ HẾT LỖI)
--- Lệnh dưới đây trước kia báo lỗi "Too many arguments", 
--- nay đã chạy mượt mà và tự ghép WHERE Tenkh LIKE '%Hoàng Dân%'
+-- BƯỚC 2: TEST TÌM KIẾM NÂNG CAO (JSON FILTER)
+-- Tính năng 100% No-Code mới nâng cấp
 -- ==============================================================
 EXEC [dbo].[API_TruyVanDong] 
     @FormName = 'frmCustomer',
@@ -22,8 +28,6 @@ EXEC [dbo].[API_TruyVanDong]
     @Page = 1,
     @Limit = 15,
     
-    -- Biến lọc động truyền từ UI:
-    @Tenkh = N'Hoàng Dân',
-    @Makh = NULL,
-    @DTcodau = '';
+    -- Biến lọc động truyền từ UI dưới dạng JSON:
+    @FilterJSON = N'{"Tenkh": "Hoàng Dân", "DTcodau": "098"}';
 GO
