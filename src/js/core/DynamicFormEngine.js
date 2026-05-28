@@ -820,9 +820,15 @@ window.DynamicFormEngine = (function () {
             }
             lastSelectedIdx = idx;
           } else {
-            // Theo yêu cầu mới: Vô hiệu hóa bôi đen bằng 1 click trên TẤT CẢ màn hình
-            // Tránh click nhầm làm mất dải đang chọn. Chỉ bôi đen khi giữ chuột/ngón tay (long press)
-            return;
+            // Click don: Chon 1 dong (clear dong cu), click lai de bo chon
+            var wasActive = tr.classList.contains('active');
+            allTrsList.forEach(function (r) { r.classList.remove('active'); });
+            selectedRows = [];
+            if (!wasActive) {
+              tr.classList.add('active');
+              selectedRows.push(rData);
+            }
+            lastSelectedIdx = wasActive ? -1 : idx;
           }
           _updateSelectionCounter();
         });

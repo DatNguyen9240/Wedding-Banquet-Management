@@ -90,4 +90,9 @@ document.addEventListener('DOMContentLoaded', function () {
       document.documentElement.style.setProperty('--color-primary-light', colorDef.light);
     }
   }
+
+  // 5. Khởi tạo Plugin xuất tài liệu
+  if (typeof DocumentExportPlugin !== 'undefined') {
+    DocumentExportPlugin.init();
+  }
 });

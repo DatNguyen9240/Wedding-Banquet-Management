@@ -3,11 +3,8 @@ import cors from 'cors';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-import PizZip from 'pizzip';
-import Docxtemplater from 'docxtemplater';
 import { fileURLToPath } from 'url';
 
-// Thiết lập __dirname cho ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -20,34 +17,183 @@ const PORT = process.env.PORT || 5000;
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const SAMPLES_DIR = path.join(__dirname, 'samples');
 
-// Tự động tạo thư mục nếu chưa tồn tại
 [UPLOADS_DIR, SAMPLES_DIR].forEach(dir => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
 // ==========================================
 // MIDDLEWARE
 // ==========================================
-app.use(cors());
+app.use(cors({ origin: '*' }));
 
-// Phân tích JSON body
+app.use('/uploads', function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', '*');
+    next();
+}, express.static(UPLOADS_DIR));
+
+app.use('/samples', function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', '*');
+    next();
+}, express.static(SAMPLES_DIR));
+
 app.use(express.json());
 
-// Bắt lỗi khi parse JSON (Rất quan trọng cho ONLYOFFICE Callback)
-// Nếu ONLYOFFICE gửi payload hỏng, ta vẫn phải trả về {error: 0} để ngắt vòng lặp retry của nó
 app.use((err, req, res, next) => {
     if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
         console.error('[EXPRESS] Lỗi parse JSON payload!');
-        // Trả về error: 0 để ONLYOFFICE dừng gửi lại
         return res.json({ error: 0, message: 'Invalid JSON payload' });
     }
     next();
 });
 
-// Phục vụ file tĩnh để ONLYOFFICE có thể tải về Word Editor
-app.use('/uploads', express.static(UPLOADS_DIR));
+// ==========================================
+// API GATEWAY CHÍNH (SQL Server)
+// ==========================================
+const SQL_API_BASE = 'https://qlt.bms79.com';
+const SQL_API_USER = 'admin';
+
+// Cache thông tin nhà hàng (tránh gọi API nhiều lần)
+let _setupCache = null;
+let _setupCacheTime = 0;
+const SETUP_CACHE_TTL = 5 * 60 * 1000; // 5 phút
+
+/** Lấy thông tin nhà hàng từ API_LayGiaTriSetup (có cache) */
+async function fetchSetupInfo() {
+    const now = Date.now();
+    if (_setupCache && (now - _setupCacheTime) < SETUP_CACHE_TTL) return _setupCache;
+    try {
+        const url = `${SQL_API_BASE}/api/API_LayGiaTriSetup`;
+        const resp = await axios.get(url, { timeout: 8000 });
+        const json = resp.data;
+        // API_LayGiaTriSetup trả về rows có CodeID + CodeValue (xem SQL)
+        const rows = json.records || (Array.isArray(json) ? json : []);
+        const setup = {};
+        rows.forEach(r => {
+            // Field name thực tế theo SQL: CodeID, CodeValue
+            const key = r.CodeID || r.codeID || r.codeid || r.MaSetup;
+            const val = r.CodeValue || r.codeValue || r.GiaTri || r.Value || '';
+            if (key) setup[key] = val;
+        });
+        _setupCache = setup;
+        _setupCacheTime = now;
+        console.log('[SETUP] Keys:', Object.keys(setup).join(', '), '| Raw setup:', JSON.stringify(setup));
+        return setup;
+    } catch (err) {
+        console.error('[SETUP] Lỗi gọi API_LayGiaTriSetup:', err.message);
+        return _setupCache || {};
+    }
+}
+
+/**
+ * Tạo object thông tin Bên A từ setup API
+ * API_LayGiaTriSetup trả về: CodeID='Com1' → tên công ty
+ */
+function mapBenA(setup) {
+    // 'Com1' = Tên công ty theo bảng SY_Setup
+    const tenNhaHang = setup['Com1'] || setup.Com1 || setup.TenNhaHang || setup.TenCongTy || 'NHÀ HÀNG TIỆC CƯỚI';
+    return {
+        TenNhaHang:        tenNhaHang,
+        SlogenNhaHang:     setup.Slogan || setup.SlogenNhaHang || '★ LUXURY WEDDING & EVENTS ★',
+        DiaChiNhaHang:     setup.DiaChi || setup.DiaChiNhaHang || setup.Com2 || '',
+        DienThoaiNhaHang:  setup.DienThoai || setup.DienThoaiNhaHang || setup.Com3 || '',
+        HotlineNhaHang:    setup.Hotline || setup.HotlineNhaHang || setup.Com4 || '',
+    };
+}
+
+/** Gọi API Gateway để lấy record theo List + Keyword */
+async function fetchFromSQLAPI(listName, keyword) {
+    const payload = {
+        List: listName, Func: 'View', UserName: SQL_API_USER,
+        Keyword: keyword || '', Page: 1, Limit: 1
+    };
+    const qs = encodeURIComponent(JSON.stringify(payload));
+    const url = `${SQL_API_BASE}/api/API_Gateway_Router?q=${qs}`;
+    console.log(`[SQL API] Gọi: ${listName} | Keyword: ${keyword}`);
+    const resp = await axios.get(url, { timeout: 10000 });
+    const json = resp.data;
+    if (json && json.records && json.records.length > 0) return json.records[0];
+    if (json && json.code === 0) return json;
+    return null;
+}
+
+/** Map HopDong API row → docx placeholder object */
+function mapHopDong(row, setup) {
+    const now = new Date();
+    const d = String(now.getDate()).padStart(2,'0');
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const y = now.getFullYear();
+    return {
+        // Bên A — từ setup
+        ...mapBenA(setup),
+        // Bên B + tiệc — từ API hợp đồng
+        Sohopdong:        row.Sohopdong    || row.sohopdong    || '',
+        Sobiennhan:       row.Sobiennhan   || row.sobiennhan   || '',
+        TenKhachHang:     row.TenKhachHang || row.tenkh        || '',
+        DienThoai:        row.DienThoai    || row.dienthoai    || '',
+        NgayToChuc:       row.NgayToChuc   || row.ngaytochuc   || '',
+        SoBan:            row.SoBan        || row.soban        || '',
+        SanhDat:          row.SanhDat      || row.sanhdat      || '',
+        TongTien:         _formatMoney(row.TongTien || row.tongtien || '0'),
+        TrangThai:        row.TrangThai    || row.trangthai    || '',
+        NgayKy:           `${d}/${m}/${y}`,
+        NhanVienPhuTrach: row.NhanVien     || row.nhanvien     || '',
+    };
+}
+
+/**
+ * Map DatCoc (PhieuCoc) API row → docx placeholder object
+ * SQL API_DanhSachPhieuCoc trả về: MaChungTu, SoPhieu, TenKhachHang,
+ * DienThoai, NgayToChuc, SoBan, SanhDat, DaCocVND (không phải SoTienCoc!)
+ */
+function mapDatCoc(row, setup) {
+    const now = new Date();
+    const d = String(now.getDate()).padStart(2,'0');
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const y = now.getFullYear();
+    // Field thực tế trong SQL là DaCocVND (xem API_DanhSachPhieuCoc.sql dòng 65)
+    const soTien = row.DaCocVND || row.dacoc || row.SoTienCoc || row.Tongtien || row.tongtien || '0';
+    return {
+        // Bên A — từ setup
+        ...mapBenA(setup),
+        // Thông tin phiếu cọc — field name CHÍNH XÁC theo SQL
+        MaChungTu:    row.MaChungTu  || row.DocumentID || row.SoPhieu || '',
+        SoPhieu:      row.SoPhieu    || row.SoBN       || '',
+        TenKhachHang: row.TenKhachHang || '',
+        DienThoai:    row.DienThoai  || '',
+        NgayToChuc:   row.NgayToChuc || '',
+        SanhDat:      row.SanhDat    || '',
+        SoBan:        row.SoBan      || String(row.SobanManchinhthuc || ''),
+        SoTienCoc:    _formatMoney(soTien),
+        SoTienCocChu: _numberToWords(soTien),
+        NgayLap:      row.NgayLap    || `${d}/${m}/${y}`,
+        NhanVienLap:  row.NhanVien   || '',
+        TrangThai:    row.TrangThai  || '',
+    };
+}
+
+function _formatMoney(val) {
+    const n = parseInt(String(val).replace(/[^0-9]/g, ''), 10);
+    if (isNaN(n)) return String(val);
+    return n.toLocaleString('vi-VN');
+}
+
+function _numberToWords(val) {
+    const n = parseInt(String(val).replace(/[^0-9]/g, ''), 10);
+    if (isNaN(n) || n === 0) return 'Không đồng';
+    const units  = ['','một','hai','ba','bốn','năm','sáu','bảy','tám','chín'];
+    const levels = [{v:1e9,n:'tỷ'},{v:1e6,n:'triệu'},{v:1e3,n:'nghìn'},{v:1,n:''}];
+    let result = '', rem = n;
+    for (const lv of levels) {
+        if (rem >= lv.v) {
+            const q = Math.floor(rem / lv.v);
+            rem -= q * lv.v;
+            result += (q < 10 ? units[q] : q) + (lv.n ? ' ' + lv.n + ' ' : '');
+        }
+    }
+    return result.trim().replace(/\s+/g,' ') + ' đồng chẵn';
+}
 
 // ==========================================
 // API: QUẢN LÝ TÀI LIỆU
@@ -60,7 +206,7 @@ app.get('/api/documents', (req, res) => {
     try {
         const files = fs.readdirSync(UPLOADS_DIR);
         const fileList = files
-            .filter(file => file.endsWith('.docx') || file.endsWith('.xlsx'))
+            .filter(file => file.endsWith('.docx') || file.endsWith('.xlsx') || file.endsWith('.doc'))
             .map(file => {
                 const stats = fs.statSync(path.join(UPLOADS_DIR, file));
                 return {
@@ -70,7 +216,6 @@ app.get('/api/documents', (req, res) => {
                     updatedAt: stats.mtime
                 };
             });
-
         res.json({ success: true, data: fileList });
     } catch (error) {
         console.error('[API] Lỗi lấy danh sách:', error.message);
@@ -78,108 +223,83 @@ app.get('/api/documents', (req, res) => {
     }
 });
 
-/**
- * 2. Tạo tài liệu mới (Tạo từ mẫu chuẩn chỉnh)
- */
-app.post('/api/documents/create', async (req, res) => {
-    try {
-        let { fileName, templateType } = req.body;
-        if (!fileName) {
-            return res.status(400).json({ success: false, message: "Vui lòng cung cấp tên file (fileName)." });
-        }
-        if (!templateType) {
-            return res.status(400).json({ success: false, message: "Vui lòng chọn loại form (templateType) để tạo tài liệu." });
-        }
 
-        if (!fileName.endsWith('.docx')) fileName += '.docx';
-
-        const targetPath = path.join(UPLOADS_DIR, fileName);
-
-        if (fs.existsSync(targetPath)) {
-            return res.status(400).json({ success: false, message: "Tên file đã tồn tại trong hệ thống!" });
-        }
-
-        // Chọn file mẫu tương ứng với templateType
-        const localSamplePath = path.join(SAMPLES_DIR, `${templateType}.docx`);
-
-        if (fs.existsSync(localSamplePath)) {
-            // Copy từ file mẫu chuẩn ở local
-            fs.copyFileSync(localSamplePath, targetPath);
-            return res.json({ success: true, message: `Tạo tài liệu thành công từ mẫu ${templateType}!`, fileName });
-        } else {
-            // Fallback: Nếu không có file mẫu ở server, tải một file mẫu từ internet để làm base
-            const sampleUrl = "https://raw.githubusercontent.com/open-xml-templating/docxtemplater/master/examples/tag-example.docx";
-
-            const response = await axios({
-                method: 'GET',
-                url: sampleUrl,
-                responseType: 'stream'
-            });
-
-            const writer = fs.createWriteStream(targetPath);
-            response.data.pipe(writer);
-
-            await new Promise((resolve, reject) => {
-                writer.on('finish', resolve);
-                writer.on('error', reject);
-            });
-
-            // Lưu lại một bản sao vào SAMPLES_DIR để dùng cho các lần sau, không cần tải lại internet
-            fs.copyFileSync(targetPath, localSamplePath);
-
-            return res.json({ success: true, message: "Tạo tài liệu thành công (tải từ internet & lưu mẫu)!", fileName });
-        }
-    } catch (error) {
-        console.error('[API] Lỗi tạo file:', error.message);
-        res.status(500).json({ success: false, message: 'Lỗi server khi tạo file.' });
-    }
-});
 
 /**
- * 2b. TẠO & ĐIỀN DATA VÀO TÀI LIỆU (DATA-BINDING)
+ * 2b. Generate tài liệu từ HTML template
+ *
+ * Cách hoạt động:
+ *   1. Đọc file mẫu HTML  (samples/hop_dong.html  hoặc dat_coc.html)
+ *   2. Thay tất cả {TenBien} bằng giá trị thật từ rowData
+ *   3. Lưu ra file .doc (Word đọc được HTML)
+ *
+ * Tên biến trong template lấy từ:
+ *   EXEC API_LayCacTruongGiaoDien @FormName = 'frmHopDong'
+ *   → cột [name] = tên biến,  cột [label] = nhãn tiếng Việt
  */
 app.post('/api/documents/generate', async (req, res) => {
     try {
-        let { outputFileName, templateType, customerId } = req.body;
-        if (!templateType) return res.status(400).json({ success: false, message: "Thiếu templateType." });
-        if (!outputFileName) outputFileName = `Generated_${templateType}`;
+        let { outputFileName, templateType, customerId, rowData } = req.body;
+        if (!templateType) return res.status(400).json({ success: false, message: 'Thiếu templateType.' });
+        if (!outputFileName) outputFileName = 'Generated_' + templateType;
+        outputFileName = outputFileName.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_');
 
-        // 1. Lấy dữ liệu khách hàng (Mô phỏng gọi API/Database bằng customerId)
-        const mockDatabase = {
-            'hop_dong': { last_name: 'Nguyễn', first_name: 'Văn Khách', phone: '0901234567', table_count: 50, menu_type: 'VIP Hoàng Gia', total_price: '50,000,000' },
-            'dat_coc': { last_name: 'Trần', first_name: 'Thị Cô Dâu', date: '28/05/2026', deposit_amount: '10,000,000', deposit_amount_words: 'Mười triệu đồng chẵn' },
-            'quyet_toan': { last_name: 'Lê', first_name: 'Văn Chú Rể', date: '30/05/2026', total_amount: '60,000,000', paid_amount: '10,000,000', remaining_amount: '50,000,000' }
+        // ── 1. Lấy thông tin nhà hàng từ Setup API ──────────────────────────
+        const setup = await fetchSetupInfo().catch(() => ({}));
+
+        // ── 2. Map data từ rowData (frontend) hoặc fallback SQL API ─────────
+        const API_MAP = {
+            'hop_dong': { list: 'frmHopDong', mapFn: mapHopDong },
+            'dat_coc':  { list: 'frmDatCoc',  mapFn: mapDatCoc  },
         };
-        const dataToFill = mockDatabase[templateType] || mockDatabase['hop_dong'];
+        const apiCfg = API_MAP[templateType];
+        let dataMap = mapBenA(setup);  // Luôn có thông tin nhà hàng
 
-        // 2. Đọc file mẫu tương ứng
-        const templatePath = path.join(SAMPLES_DIR, `${templateType}.docx`);
-        if (!fs.existsSync(templatePath)) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy file mẫu trong thư mục samples/' });
+        if (rowData && typeof rowData === 'object') {
+            // Frontend đã gửi kèm rowData (selected row từ DynamicFormEngine)
+            dataMap = apiCfg ? apiCfg.mapFn(rowData, setup) : { ...dataMap, ...rowData };
+            console.log('[GENERATE] ✅ Dùng rowData từ frontend');
+        } else if (apiCfg && customerId) {
+            // Fallback: gọi SQL API
+            try {
+                const row = await fetchFromSQLAPI(apiCfg.list, customerId);
+                if (row) dataMap = apiCfg.mapFn(row, setup);
+            } catch (e) {
+                console.error('[GENERATE] Lỗi SQL API:', e.message);
+            }
         }
 
-        const content = fs.readFileSync(templatePath, 'binary');
+        console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
 
-        // 3. Khởi tạo engine thay thế (Data-Binding)
-        const zip = new PizZip(content);
-        const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+        // ── 3. Đọc template HTML ─────────────────────────────────────────────
+        const htmlTemplatePath = path.join(SAMPLES_DIR, `${templateType}.html`);
+        if (!fs.existsSync(htmlTemplatePath)) {
+            return res.status(404).json({
+                success: false,
+                message: `Không tìm thấy template '${templateType}.html' trong samples/`
+            });
+        }
+        let html = fs.readFileSync(htmlTemplatePath, 'utf8');
 
-        // Tiến hành ghi đè dữ liệu vào các biến {last_name}, {phone}...
-        doc.render(dataToFill);
+        // ── 4. Thay thế tất cả {TenBien} bằng giá trị thật ─────────────────
+        // Dùng regex để tìm toàn bộ {placeholder} và replace
+        html = html.replace(/\{(\w+)\}/g, (match, key) => {
+            const val = dataMap[key];
+            return (val !== undefined && val !== null) ? String(val) : '';
+        });
 
-        // 4. Lưu ra thành 1 file .docx hoàn chỉnh mới
-        const buf = doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
-        const finalFileName = `${outputFileName}_${Date.now()}.docx`;
+        // ── 5. Lưu file .doc (template đã có sẵn xmlns header) ──────────────
+        // Template HỢP LỆ: mở được trong Word và OnlyOffice
+        const finalFileName = `${outputFileName}_${Date.now()}.doc`;
         const outputPath = path.join(UPLOADS_DIR, finalFileName);
-        
-        fs.writeFileSync(outputPath, buf);
+        fs.writeFileSync(outputPath, html, 'utf8');
 
-        // Trả về tên file để Frontend có thể gọi openEditor() hiển thị lên OnlyOffice
-        return res.json({ success: true, message: "Đã đổ dữ liệu thành công!", fileName: finalFileName });
+        console.log(`[GENERATE] ✅ Tạo thành công: ${finalFileName}`);
+        return res.json({ success: true, message: 'Tạo tài liệu thành công!', fileName: finalFileName });
 
     } catch (error) {
-        console.error('[API] Lỗi generate file:', error);
-        res.status(500).json({ success: false, message: 'Lỗi server khi render file Word.' });
+        console.error('[API] Lỗi generate:', error.message || error);
+        res.status(500).json({ success: false, message: 'Lỗi server: ' + (error.message || 'Unknown') });
     }
 });
 
@@ -190,12 +310,11 @@ app.delete('/api/documents/:fileName', (req, res) => {
     try {
         const fileName = req.params.fileName;
         const filePath = path.join(UPLOADS_DIR, fileName);
-
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
-            res.json({ success: true, message: "Xóa thành công!" });
+            res.json({ success: true, message: 'Xóa thành công!' });
         } else {
-            res.status(404).json({ success: false, message: "Không tìm thấy file để xóa!" });
+            res.status(404).json({ success: false, message: 'Không tìm thấy file để xóa!' });
         }
     } catch (error) {
         console.error('[API] Lỗi xóa file:', error.message);
@@ -206,83 +325,50 @@ app.delete('/api/documents/:fileName', (req, res) => {
 // ==========================================
 // API: ONLYOFFICE CALLBACK
 // ==========================================
-/**
- * Chuẩn chỉnh xử lý Callback từ OnlyOffice Document Server.
- * LUÔN LUÔN phải trả về {"error": 0} cuối cùng để Document Server biết ta đã xử lý.
- */
 app.post('/api/documents/callback', async (req, res) => {
-    // Hàm phản hồi tiêu chuẩn cho OnlyOffice
     const respondSuccess = () => res.json({ error: 0 });
-
     try {
         const data = req.body;
-        const docId = req.query.docId || 'unknown';
+        const docId    = req.query.docId    || 'unknown';
         const fileName = req.query.fileName || `${docId}.docx`;
-        const status = data.status;
+        const status   = data.status;
 
-        console.log(`[ONLYOFFICE] Nhận Callback - DocID: ${docId}, Tên file: ${fileName}, Trạng thái: ${status}`);
+        console.log(`[ONLYOFFICE] Callback — DocID: ${docId}, File: ${fileName}, Status: ${status}`);
 
-        /* 
-           Ý nghĩa các Status (theo chuẩn ONLYOFFICE):
-           1 - Đang chỉnh sửa (Document is being edited)
-           2 - Đã đóng & Sẵn sàng lưu (Document is ready for saving)
-           3 - Lỗi khi lưu (Document saving error)
-           4 - Đóng không có thay đổi (Document is closed with no changes)
-           6 - Forcesave (Document is being edited, but the current state is saved)
-           7 - Lỗi Forcesave (Error has occurred while force saving)
-        */
+        const isTemplate = req.query.isTemplate === '1';
+        const targetDir = isTemplate ? SAMPLES_DIR : UPLOADS_DIR;
 
         if (status === 2 || status === 6) {
             const downloadUri = data.url;
+            if (!downloadUri) { console.warn('[ONLYOFFICE] Không có URL tải file!'); return respondSuccess(); }
 
-            if (!downloadUri) {
-                console.warn('[ONLYOFFICE] CẢNH BÁO: Không tìm thấy URL tải file trong callback!');
-                return respondSuccess();
-            }
-
-            console.log(`[ONLYOFFICE] Đang tải & lưu file bản ghi mới nhất... (${status === 2 ? 'Save' : 'Forcesave'})`);
-
-            const filePath = path.join(UPLOADS_DIR, fileName);
-
-            // Sử dụng stream tải file an toàn & tối ưu bộ nhớ
-            const response = await axios({
-                method: 'GET',
-                url: downloadUri,
-                responseType: 'stream'
-            });
-
+            console.log(`[ONLYOFFICE] Đang lưu file... (${status === 2 ? 'Save' : 'Forcesave'})`);
+            const filePath = path.join(targetDir, fileName);
+            const response = await axios({ method: 'GET', url: downloadUri, responseType: 'stream' });
             const writer = fs.createWriteStream(filePath);
             response.data.pipe(writer);
-
-            await new Promise((resolve, reject) => {
-                writer.on('finish', resolve);
-                writer.on('error', reject);
-            });
-
-            console.log(`[ONLYOFFICE] ✅ Đã lưu file thành công: ${fileName}`);
+            await new Promise((resolve, reject) => { writer.on('finish', resolve); writer.on('error', reject); });
+            console.log(`[ONLYOFFICE] ✅ Đã lưu: ${fileName} vào ${isTemplate ? 'samples' : 'uploads'}`);
         }
-
-        // Báo cho OnlyOffice biết server đã xử lý callback
         return respondSuccess();
-
     } catch (error) {
-        console.error('[ONLYOFFICE] ❌ Lỗi nghiêm trọng khi xử lý Callback:', error.message);
-        // Ngay cả khi xảy ra lỗi code server, vẫn trả về {error: 0} để ngắt vòng lặp gửi liên tục từ OnlyOffice
+        console.error('[ONLYOFFICE] ❌ Lỗi Callback:', error.message);
         return respondSuccess();
     }
 });
 
+
 // ==========================================
-// ROOT ENDPOINT
+// ROOT
 // ==========================================
 app.get('/', (req, res) => {
     res.json({
         service: 'Wedding Banquet Document API',
         status: '✅ Running smoothly',
         endpoints: {
-            list: 'GET /api/documents',
-            create: 'POST /api/documents/create',
-            delete: 'DELETE /api/documents/:fileName',
+            list:     'GET /api/documents',
+            generate: 'POST /api/documents/generate',
+            delete:   'DELETE /api/documents/:fileName',
             callback: 'POST /api/documents/callback'
         }
     });
@@ -293,11 +379,11 @@ app.get('/', (req, res) => {
 // ==========================================
 app.listen(PORT, '0.0.0.0', () => {
     console.log('=======================================================');
-    console.log('       ✨ BACKEND SERVER - WEDDING BANQUET MANGEMENT    ');
+    console.log('       ✨ BACKEND SERVER - WEDDING BANQUET MANAGEMENT   ');
     console.log('=======================================================');
-    console.log(`[🚀] Server đang chạy tại : http://localhost:${PORT}`);
-    console.log(`[📁] Thư mục lưu tài liệu : ${UPLOADS_DIR}`);
-    console.log(`[📁] Thư mục lưu mẫu (tpl): ${SAMPLES_DIR}`);
-    console.log(`[🔗] ONLYOFFICE Callback  : http://localhost:${PORT}/api/documents/callback`);
+    console.log(`[🚀] Server : http://localhost:${PORT}`);
+    console.log(`[📁] Uploads: ${UPLOADS_DIR}`);
+    console.log(`[📁] Samples: ${SAMPLES_DIR}`);
+    console.log(`[🔗] SQL API: ${SQL_API_BASE}`);
     console.log('=======================================================');
 });

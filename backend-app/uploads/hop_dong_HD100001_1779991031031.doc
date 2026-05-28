@@ -1,0 +1,120 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<style>
+/* ============================================================
+   TEMPLATE: HỢP ĐỒNG ĐẶT TIỆC
+   Sửa trực tiếp file này để thay đổi layout.
+   Biến  sẽ được server thay bằng dữ liệu thật.
+   Tên biến = cột [name] từ: EXEC API_LayCacTruongGiaoDien @FormName='frmHopDong'
+   ============================================================ */
+body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #1A1A2E; line-height: 1.6; margin: 2cm 2.5cm; }
+
+.header-company { text-align: center; font-size: 11pt; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+.header-slogan  { text-align: center; font-size: 10pt; color: #B8860B; font-style: italic; font-weight: bold; }
+hr.gold  { border: none; border-top: 2px solid #B8860B; margin: 8pt 0; }
+hr.light { border: none; border-top: 1px solid #C8A951; margin: 6pt 0; }
+
+h1 { text-align: center; font-size: 22pt; font-weight: bold; color: #B8860B; margin: 10pt 0 4pt 0; text-transform: uppercase; }
+.doc-numbers { text-align: center; font-size: 11pt; margin-bottom: 12pt; }
+.doc-numbers b { color: #8B0000; text-decoration: underline; }
+
+h2 { font-size: 12pt; font-weight: bold; color: #2C2C54; margin: 14pt 0 6pt 0; text-transform: uppercase; }
+
+.party-name { font-weight: bold; color: #B8860B; }
+.info-line  { font-size: 11pt; color: #444; margin: 2pt 0; }
+.lbl        { color: #555; }
+
+table { width: 100%; border-collapse: collapse; margin: 6pt 0 12pt 0; font-size: 11pt; }
+thead tr    { background: #2C2C54; color: #fff; }
+thead th    { padding: 7pt 10pt; text-align: center; font-weight: bold; font-size: 10pt; text-transform: uppercase; border: 1px solid #C8A951; }
+tbody td    { padding: 6pt 10pt; border: 1px solid #C8A951; vertical-align: middle; }
+tbody tr:nth-child(even) { background: #F9F8F3; }
+.cell-label { font-weight: bold; }
+.cell-value { color: #8B0000; font-weight: bold; }
+tr.total-row td { background: #8B0000; color: #fff; font-weight: bold; font-size: 13pt; }
+
+ul.clause { margin: 4pt 0; padding-left: 16pt; }
+ul.clause li { margin: 4pt 0; font-size: 11pt; color: #444; }
+
+.sign-date { text-align: right; font-style: italic; color: #555; margin: 8pt 0 4pt 0; }
+table.sign-tbl td { width: 50%; text-align: center; padding: 6pt; border: none; }
+.sign-role  { font-weight: bold; color: #2C2C54; text-transform: uppercase; }
+.sign-space { height: 50pt; display: block; }
+.footer-note { text-align: center; font-size: 9pt; color: #888; border-top: 1px solid #ddd; padding-top: 6pt; margin-top: 10pt; }
+</style>
+</head>
+<body>
+
+<div class="header-company">NHÀ HÀNG TIỆC CƯỚI</div>
+<div class="header-slogan">★ LUXURY WEDDING & EVENTS ★</div>
+<hr class="gold">
+
+<h1>Hợp Đồng Đặt Tiệc</h1>
+
+<div class="doc-numbers">
+  Số Hợp Đồng: <b>HD100001</b>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  Số Biên Nhận: <b>BN10223/001</b>
+</div>
+
+<hr class="light">
+
+<h2>I. Thông Tin Các Bên</h2>
+
+<p class="info-line"><b>Bên A (Nhà hàng):</b> <span class="party-name">NHÀ HÀNG TIỆC CƯỚI</span></p>
+<p class="info-line"><span class="lbl">Địa chỉ:</span> </p>
+<p class="info-line"><span class="lbl">Điện thoại:</span>  &nbsp;|&nbsp; <span class="lbl">Hotline:</span> </p>
+
+<hr class="light">
+
+<p class="info-line"><b>Bên B (Khách hàng):</b> <span style="color:#8B0000;font-weight:bold;">Chí Phèo & Thị Nở</span></p>
+<p class="info-line"><span class="lbl">Điện thoại:</span> Đt : 0982.42.33.88 – Hotline: 0982.42.33.88</p>
+
+<h2>II. Nội Dung Hợp Đồng</h2>
+
+<table>
+  <thead><tr><th style="width:40%">Chỉ Tiêu</th><th style="width:60%">Nội Dung</th></tr></thead>
+  <tbody>
+    <tr><td class="cell-label">Ngày Tổ Chức</td><td class="cell-value">11/03/2023</td></tr>
+    <tr><td class="cell-label">Sảnh Đặt</td><td class="cell-value">QUEEN 1</td></tr>
+    <tr><td class="cell-label">Số Bàn</td><td class="cell-value">30 bàn</td></tr>
+    <tr><td class="cell-label">Trạng Thái</td><td class="cell-value">Đã Ký</td></tr>
+    <tr class="total-row"><td>Tổng Giá Trị Hợp Đồng</td><td>158.400.000 VNĐ</td></tr>
+  </tbody>
+</table>
+
+<h2>III. Điều Khoản Chung</h2>
+<ul class="clause">
+  <li>Thanh toán tiền cọc trước khi ký hợp đồng. Tiền cọc không được hoàn trả nếu Bên B hủy.</li>
+  <li>Thanh toán số dư còn lại trước ngày tổ chức ít nhất <b>03 ngày làm việc</b>.</li>
+  <li>Mọi thay đổi số bàn, thực đơn phải thông báo trước ít nhất <b>07 ngày</b>.</li>
+  <li>Hợp đồng có hiệu lực kể từ khi cả hai bên ký tên và đóng dấu.</li>
+</ul>
+
+<hr class="gold">
+
+<h2>IV. Ký Kết</h2>
+<div class="sign-date">Ngày ký: 29/05/2026</div>
+
+<table class="sign-tbl">
+  <tr>
+    <td>
+      <div class="sign-role">Đại Diện Bên A</div>
+      <small>(Ký, ghi rõ họ tên)</small>
+      <span class="sign-space"></span>
+      <b></b>
+    </td>
+    <td>
+      <div class="sign-role">Đại Diện Bên B</div>
+      <small>(Ký, ghi rõ họ tên)</small>
+      <span class="sign-space"></span>
+      <b>Chí Phèo & Thị Nở</b>
+    </td>
+  </tr>
+</table>
+
+<div class="footer-note">NHÀ HÀNG TIỆC CƯỚI ·  · ĐT: </div>
+
+</body>
+</html>
