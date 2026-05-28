@@ -30,6 +30,38 @@ const server = http.createServer((req, res) => {
 
     console.log(`[Proxy] ${req.method} ${req.url}`);
 
+    // --- ONLYOFFICE CALLBACK INTERCEPTOR ---
+    // Bắt sự kiện khi người dùng bấm Lưu trên ONLYOFFICE
+    if (req.method === 'POST' && req.url.startsWith('/api/documents/callback')) {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            try {
+                const data = JSON.parse(body);
+                // Status 2 = Đã lưu xong, Status 3 = Lưu lỗi/Lưu khẩn cấp
+                if (data.status === 2 || data.status === 3) {
+                    const downloadUri = data.url; // URL chứa file Word mới nhất do ONLYOFFICE nhả ra
+                    const docId = new URL(req.url, `http://${req.headers.host}`).searchParams.get('docId');
+                    
+                    console.log(`[ONLYOFFICE] Đã nhận sự kiện Lưu file cho DocID: ${docId}`);
+                    console.log(`[ONLYOFFICE] Link tải file gốc mới nhất: ${downloadUri}`);
+                    
+                    // TODO: Tại đây anh có thể dùng thư viện 'http' để tải cái downloadUri kia về 
+                    // đè lên thư mục /src/uploads/ của anh.
+                }
+                // BẮT BUỘC trả về {"error": 0} để báo ONLYOFFICE biết là Server anh đã nhận được file
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ "error": 0 }));
+            } catch (e) {
+                console.error("[ONLYOFFICE Error]", e);
+                res.writeHead(500);
+                res.end("Lỗi Callback");
+            }
+        });
+        return;
+    }
+    // ---------------------------------------
+
     // 3. Chu\u1ea9n b\u1ecb g\u00f3i tin th\u1ef1c t\u1ebf g\u1eedi cho Backend \u1edf \u0111\u1eb1ng sau
     const options = {
         hostname: BACKEND_HOST,

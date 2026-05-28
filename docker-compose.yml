@@ -1,0 +1,11 @@
+version: '3'
+services:
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: onlyoffice_server
+    ports:
+      - "82:80"
+    environment:
+      # Tắt JWT đi để anh dễ test trên Localhost không bị lỗi chặn Token
+      - JWT_ENABLED=false
+    restart: always

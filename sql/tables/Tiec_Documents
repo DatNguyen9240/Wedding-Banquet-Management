@@ -1,0 +1,10 @@
+CREATE TABLE Tiec_Documents (
+    DocID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    TiecID VARCHAR(50) NOT NULL, -- Mã tiệc/Mã booking
+    TemplateID VARCHAR(50), -- Sinh ra từ mẫu nào
+    DocType VARCHAR(50) NOT NULL, -- Phân loại: HOP_DONG, BIEN_COC, QUYET_TOAN
+    FileName NVARCHAR(255) NOT NULL, -- VD: HopDong_NguyenVanA.docx
+    FilePath NVARCHAR(500) NOT NULL, -- Đường dẫn file thực tế (VD: /uploads/documents/2026/05/Tiec001_HopDong.docx)
+    Status VARCHAR(20) DEFAULT 'DRAFT', -- DRAFT (Nháp), SIGNED (Đã ký), VOID (Hủy)
+    LastModified DATETIME DEFAULT GETDATE()
+);
