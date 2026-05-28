@@ -218,6 +218,36 @@ var UITable = (function () {
             e.preventDefault();
         });
         
+        // Tự động điều chỉnh độ rộng cột khi double click vào viền
+        resizer.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            var maxWidth = spanTxt.scrollWidth + 36; // Căn chỉnh cho icon sort và padding header
+            
+            var rows = tbody.querySelectorAll('tr');
+            for (var i = 0; i < rows.length; i++) {
+                var cell = rows[i].children[idx];
+                if (cell) {
+                    var originalWs = cell.style.whiteSpace;
+                    cell.style.whiteSpace = 'nowrap';
+                    var cellWidth = cell.scrollWidth;
+                    
+                    // Thêm khoảng đệm tương ứng (khoảng 20px - padding td: 6px 10px)
+                    if (cellWidth + 20 > maxWidth) {
+                        maxWidth = cellWidth + 20;
+                    }
+                    cell.style.whiteSpace = originalWs;
+                }
+            }
+            
+            maxWidth = Math.min(maxWidth, 800); // Giới hạn không cho cột bị giãn to vô lý
+            
+            th.style.width = maxWidth + 'px';
+            th.style.minWidth = maxWidth + 'px';
+            h.width = maxWidth + 'px'; // Cập nhật config để giữ lại kích thước
+        });
+        
         th.appendChild(resizer);
 
         // Nếu header có sortable
