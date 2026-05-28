@@ -53,10 +53,10 @@ var DocumentManagerPage = (function () {
       style.textContent = [
         '/* Ghi đè padding của .app-content để document-manager full màn hình */',
         'body[data-page="document-manager"] .app-content { padding: 0 !important; }',
-        '.docmgr-wrap{display:flex;height:calc(100vh - var(--navbar-height, 56px));overflow:hidden;background:var(--color-bg-base,#0f172a);}',
-        '.docmgr-sidebar{width:300px;flex-shrink:0;display:flex;flex-direction:column;background:var(--color-surface,rgba(15,23,42,.95));border-right:1px solid var(--color-border,rgba(255,255,255,.08));box-shadow:4px 0 24px rgba(0,0,0,.2);z-index:10;}',
-        '.docmgr-sidebar-hd{padding:1.25rem 1rem;border-bottom:1px solid var(--color-border,rgba(255,255,255,.08));background:rgba(0,0,0,.15);}',
-        '.docmgr-brand{font-size:1.05rem;font-weight:700;background:linear-gradient(135deg,#a855f7,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;}',
+        '.docmgr-wrap{display:flex;height:calc(100vh - var(--navbar-height, 56px));overflow:hidden;background:var(--color-background,#0f172a);}',
+        '.docmgr-sidebar{width:300px;flex-shrink:0;display:flex;flex-direction:column;background:var(--color-surface,rgba(15,23,42,.95));border-right:1px solid var(--color-border,rgba(255,255,255,.08));z-index:10;}',
+        '.docmgr-sidebar-hd{padding:1.25rem 1rem;border-bottom:1px solid var(--color-border,rgba(255,255,255,.08));background:transparent;}',
+        '.docmgr-brand{font-size:1.05rem;font-weight:700;background:linear-gradient(135deg,#a855f7,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;justify-content:center;gap:.5rem;}',
         '.docmgr-list{flex:1;overflow-y:auto;padding:.75rem;}',
         '.docmgr-list::-webkit-scrollbar{width:5px;}',
         '.docmgr-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:10px;}',
@@ -64,7 +64,7 @@ var DocumentManagerPage = (function () {
         '.docmgr-item:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);transform:translateX(3px);}',
         '.docmgr-item.active{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.35);}',
         '.docmgr-item.active::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--color-primary,#4f46e5);border-radius:4px 0 0 4px;}',
-        '.docmgr-item-title{font-weight:500;font-size:.9rem;display:flex;align-items:center;gap:.4rem;color:var(--color-text-primary,#e2e8f0);margin-bottom:.25rem;}',
+        '.docmgr-item-title{font-weight:500;font-size:.9rem;display:flex;align-items:center;gap:.4rem;color:var(--color-text,#e2e8f0);margin-bottom:.25rem;}',
         '.docmgr-item-meta{font-size:.75rem;color:var(--color-text-secondary,#94a3b8);display:flex;justify-content:space-between;margin-bottom:.3rem;}',
         '.docmgr-item-actions{display:flex;gap:.35rem;opacity:0;transition:opacity .18s ease;}',
         '.docmgr-item:hover .docmgr-item-actions{opacity:1;}',
@@ -73,9 +73,9 @@ var DocumentManagerPage = (function () {
         '.docmgr-del{background:rgba(239,68,68,.15);color:#ef4444;border:none;width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s ease;padding:0;}',
         '.docmgr-del:hover{background:#ef4444;color:#fff;}',
         '.docmgr-workspace{flex:1;position:relative;display:flex;flex-direction:column;background:#f1f5f9;}',
-        '.docmgr-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--color-bg-base,#0f172a);color:var(--color-text-secondary,#94a3b8);z-index:5;}',
+        '.docmgr-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--color-background,#0f172a);color:var(--color-text-secondary,#94a3b8);z-index:5;}',
         '.docmgr-empty-icon{width:90px;height:90px;background:rgba(99,102,241,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;}',
-        '.docmgr-empty h2{color:var(--color-text-primary,#f8fafc);font-weight:500;margin-bottom:.4rem;font-size:1.3rem;}',
+        '.docmgr-empty h2{color:var(--color-text,#f8fafc);font-weight:500;margin-bottom:.4rem;font-size:1.3rem;}',
         '#docmgr-editor-area{flex:1;width:100%;height:100%;}',
         '.docmgr-onerror{display:flex;align-items:center;justify-content:center;height:100%;font-size:1rem;color:#ef4444;padding:2rem;text-align:center;}'
       ].join('');
@@ -202,20 +202,20 @@ var DocumentManagerPage = (function () {
       '<div style="display:flex;flex-direction:column;height:100%;">' +
         // Toolbar nhỏ phía trên
         '<div style="display:flex;align-items:center;justify-content:space-between;' +
-                    'padding:.6rem 1rem;background:#1e293b;border-bottom:1px solid rgba(255,255,255,.08);">' +
-          '<span style="color:#94a3b8;font-size:.82rem;font-family:monospace;">' +
+                    'padding:.6rem 1rem;background:var(--color-surface, #ffffff);border-bottom:1px solid var(--color-border, #e2e8f0);">' +
+          '<span style="color:var(--color-text-secondary, #64748b);font-size:.82rem;font-family:monospace;">' +
             '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">description</span> ' +
             fileName +
           '</span>' +
           '<div style="display:flex;gap:.5rem;">' +
             '<a href="' + fileUrl + '" download="' + fileName + '" ' +
                'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
-                      'background:rgba(99,102,241,.2);color:#818cf8;text-decoration:none;font-size:.8rem;">' +
+                      'background:var(--color-primary-light, rgba(79,70,229,0.1));color:var(--color-primary, #4f46e5);text-decoration:none;font-size:.8rem;">' +
               '<span class="material-symbols-outlined" style="font-size:14px;">download</span> Tải về' +
             '</a>' +
             '<button id="docmgr-btn-edit-tpl" ' +
                     'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
-                           'background:rgba(255,255,255,.06);color:#94a3b8;border:none;cursor:pointer;font-size:.8rem;">' +
+                           'background:var(--color-surface-elevated, #f1f5f9);color:var(--color-text, #1e293b);border:1px solid var(--color-border, #e2e8f0);cursor:pointer;font-size:.8rem;">' +
               '<span class="material-symbols-outlined" style="font-size:14px;">edit</span> Chỉnh sửa template' +
             '</button>' +
           '</div>' +
