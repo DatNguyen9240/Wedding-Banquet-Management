@@ -7785,16 +7785,21 @@ var UICalendar = (function () {
       header.appendChild(controls);
       wrapper.appendChild(header);
 
-      // Days Header
-      var grid = document.createElement('div');
-      grid.className = 'calendar-grid';
+      var daysHeader = document.createElement('div');
+      daysHeader.className = 'calendar-days-header';
 
-      ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].forEach(function(d) {
+      ['TH 2', 'TH 3', 'TH 4', 'TH 5', 'TH 6', 'TH 7', 'CN'].forEach(function(d) {
         var dDiv = document.createElement('div');
         dDiv.className = 'calendar-day-header';
+        if (d === 'CN') dDiv.classList.add('sunday');
         dDiv.innerText = d;
-        grid.appendChild(dDiv);
+        daysHeader.appendChild(dDiv);
       });
+      wrapper.appendChild(daysHeader);
+
+      // Days Header -> Days Grid
+      var grid = document.createElement('div');
+      grid.className = 'calendar-grid';
 
       // Date calculations
       var jsFirstDay = new Date(year, month, 1).getDay();

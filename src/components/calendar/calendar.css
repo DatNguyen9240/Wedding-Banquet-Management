@@ -153,18 +153,31 @@ body.dark-theme .calendar-dropdown-month-btn {
   overflow: hidden;
 }
 
+.calendar-days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--color-surface-hover, #f3f4f6);
+  border-radius: var(--radius-md);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+body.dark-theme .calendar-days-header {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 .calendar-day-header {
   text-align: center;
-  font-size: 13px;
-  font-weight: 700;
-  color: white;
-  background: var(--color-primary);
-  border-bottom: 1px solid var(--color-border);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 10px 0;
+  padding: 12px 0;
   user-select: none;
+}
+
+.calendar-day-header.sunday {
+  color: var(--color-danger);
 }
 
 /* Individual Schedule Card Slots */
@@ -348,7 +361,8 @@ body.dark-theme .calendar-dropdown-month-btn {
 
 /* ════ MOBILE RESPONSIVE ADAPTATION ════ */
 @media (max-width: 1024px) {
-  .calendar-grid {
+  .calendar-grid,
+  .calendar-days-header {
     gap: 6px;
   }
   .calendar-day {
@@ -393,7 +407,8 @@ body.dark-theme .calendar-dropdown-month-btn {
     gap: 4px;
     white-space: nowrap;
   }
-  .calendar-grid {
+  .calendar-grid,
+  .calendar-days-header {
     gap: 0;
   }
   .calendar-day-header {
