@@ -190,6 +190,38 @@ var DashboardPage = (function () {
     ctx.fill();
   }
 
+  // ── Warning Banner ─────────────────────────────────────────────
+  function _buildWarningBanner(container) {
+    // Mock data for warnings (e.g. from API)
+    var overdue = 3;
+    var upcoming = 2;
+    if (overdue === 0 && upcoming === 0) return;
+
+    var banner = document.createElement('div');
+    banner.className = 'db-warning-banner';
+    
+    var icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined db-warning-icon';
+    icon.textContent = 'notification_important';
+
+    var text = document.createElement('div');
+    text.className = 'db-warning-text';
+    text.innerHTML = '<strong>Lưu ý:</strong> Hệ thống ghi nhận có <span class="text-danger font-semibold">' + overdue + ' hợp đồng quá hạn</span> và <span class="text-warning font-semibold">' + upcoming + ' hợp đồng sắp đến hạn thanh toán</span> trong 7 ngày tới.';
+
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-outline db-warning-btn';
+    btn.innerHTML = 'Xem chi tiết <span class="material-symbols-outlined" style="font-size:16px;">arrow_forward</span>';
+    btn.onclick = function() {
+      window.location.hash = '#/hop-dong';
+    };
+
+    banner.appendChild(icon);
+    banner.appendChild(text);
+    banner.appendChild(btn);
+
+    container.appendChild(banner);
+  }
+
   // ── Section builders ───────────────────────────────────────────
   function _buildToday(container) {
     var d = _todayData();
@@ -534,6 +566,7 @@ var DashboardPage = (function () {
         window.DashboardController = { refresh: _refreshToday };
 
         setTimeout(function(){
+          _buildWarningBanner(inner);
           _buildToday(inner);
           _buildRevenue(inner);
           _buildBottom(inner);

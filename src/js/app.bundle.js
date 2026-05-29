@@ -4054,6 +4054,7 @@ UIControls.createDataComboBox = function (options) {
 
   input.addEventListener('kb:open', function () { dropdown.classList.contains('active') ? hideDropdown() : showDropdown(); });
   input.addEventListener('kb:new', function () { if (options.onF2) options.onF2(); });
+  input.addEventListener('kb:lookup', function () { if (options.onF3) options.onF3(); });
   input.addEventListener('kb:close', function () { hideDropdown(); });
 
   container.appendChild(input);
