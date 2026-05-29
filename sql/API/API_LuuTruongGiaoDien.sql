@@ -20,7 +20,8 @@ CREATE PROCEDURE API_LuuTruongGiaoDien
     @VisibleRule    nvarchar(500)    = NULL,
     @OrderNo        int              = NULL,
     @ShowInFilter   bit              = 0,
-    @NoResult       bit              = 0
+    @NoResult       bit              = 0,
+    @ShowInGrid     bit              = 1
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -43,7 +44,8 @@ BEGIN
             DependsOn     = ISNULL(@DependsOn,     DependsOn),
             VisibleRule   = ISNULL(@VisibleRule,   VisibleRule),
             OrderNo       = ISNULL(@OrderNo,       OrderNo),
-            ShowInFilter  = ISNULL(@ShowInFilter,  ShowInFilter)
+            ShowInFilter  = ISNULL(@ShowInFilter,  ShowInFilter),
+            ShowInGrid    = ISNULL(@ShowInGrid,    ShowInGrid)
         WHERE FieldName = @FieldName AND FormName = @FormName;
     END
     ELSE
@@ -51,11 +53,11 @@ BEGIN
         INSERT INTO SY_FormatFields
             (FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource,
              IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd,
-             ValidateRule, DependsOn, VisibleRule, OrderNo, ShowInFilter)
+             ValidateRule, DependsOn, VisibleRule, OrderNo, ShowInFilter, ShowInGrid)
         VALUES
             (@FormName, @FieldName, @CaptionVN, @FormatID, @CaptionEN, @DataSource,
              @IsRequired, @FormPosition, @ShowInAdd, @ShowInEdit, @IsReadOnlyEdit, @IsReadOnlyAdd,
-             @ValidateRule, @DependsOn, @VisibleRule, ISNULL(@OrderNo, 0), ISNULL(@ShowInFilter, 0));
+             @ValidateRule, @DependsOn, @VisibleRule, ISNULL(@OrderNo, 0), ISNULL(@ShowInFilter, 0), ISNULL(@ShowInGrid, 1));
     END
 
     -- Trả về dữ liệu vừa lưu
@@ -63,7 +65,7 @@ BEGIN
     BEGIN
         SELECT FormName, FieldName, CaptionVN, FormatID, CaptionEN, DataSource,
                IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd,
-               ValidateRule, DependsOn, VisibleRule, OrderNo, ShowInFilter
+               ValidateRule, DependsOn, VisibleRule, OrderNo, ShowInFilter, ShowInGrid
         FROM SY_FormatFields
         WHERE FieldName = @FieldName AND FormName = @FormName;
     END

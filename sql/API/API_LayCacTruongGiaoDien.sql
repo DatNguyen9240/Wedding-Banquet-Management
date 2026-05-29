@@ -25,7 +25,8 @@ BEGIN
         ISNULL(ff.ValidateRule, '') AS [validateRule],
         ISNULL(ff.DependsOn, '') AS [dependsOn],
         ISNULL(ff.VisibleRule, '') AS [visibleRule],
-        ISNULL(ff.ShowInFilter, 0) AS [showInFilter]
+        ISNULL(ff.ShowInFilter, 0) AS [showInFilter],
+        ISNULL(ff.ShowInGrid, 1) AS [showInGrid]
     FROM SY_FormatFields ff
     LEFT JOIN SY_FrmLstTbl l ON ff.FormName = l.FormID
     WHERE (@FormName IS NULL OR ff.FormName = @FormName)
