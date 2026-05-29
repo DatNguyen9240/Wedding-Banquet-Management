@@ -116,13 +116,7 @@ var DocumentManagerPage = (function () {
     ].join('');
 
     _container.innerHTML = html;
-    _bindEvents();
     _loadDocuments();
-  }
-
-  // ── Bind events ───────────────────────────────────────────────────────
-  function _bindEvents() {
-    // (Không còn nút Tạo tài liệu — tài liệu được xuất từ trang Hợp Đồng / Đặt Cọc)
   }
 
 
@@ -322,60 +316,6 @@ var DocumentManagerPage = (function () {
       })
       .catch(function (err) {
         if (area) area.innerHTML = '<div class="docmgr-onerror">⚠️ Lỗi OnlyOffice: ' + err.message + '</div>';
-      });
-  }
-
-  // ── Tạo tài liệu ──────────────────────────────────────────────────────
-  function _createDocument() {
-    var nameInput = _qs('#docmgr-filename');
-    var tplInput  = _qs('#docmgr-tpl');
-    if (!nameInput) return;
-
-    var name = nameInput.value.trim();
-    var templateType = tplInput ? tplInput.value : 'hop_dong';
-    if (!name) {
-      if (typeof Toast !== 'undefined') {
-        Toast.show({ message: 'Vui lòng nhập tên tài liệu!', type: 'warning' });
-      } else {
-        alert('Vui lòng nhập tên tài liệu!');
-      }
-      return;
-    }
-
-    var btnConfirm = _qs('#docmgr-modal-confirm');
-    if (btnConfirm) { btnConfirm.disabled = true; btnConfirm.textContent = 'Đang tạo...'; }
-
-    fetch(API_BASE + '/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileName: name, templateType: templateType })
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (json) {
-        if (json.success) {
-          _closeModal();
-          _loadDocuments();
-          _openEditor(json.fileName);
-          if (typeof Toast !== 'undefined') {
-            Toast.show({ message: 'Tạo tài liệu thành công!', type: 'success' });
-          }
-        } else {
-          if (typeof Toast !== 'undefined') {
-            Toast.show({ message: 'Lỗi: ' + (json.message || 'Không xác định'), type: 'error' });
-          } else {
-            alert('Lỗi: ' + json.message);
-          }
-        }
-      })
-      .catch(function () {
-        if (typeof Toast !== 'undefined') {
-          Toast.show({ message: 'Lỗi kết nối tới server!', type: 'error' });
-        } else {
-          alert('Lỗi kết nối tới server!');
-        }
-      })
-      .finally(function () {
-        if (btnConfirm) { btnConfirm.disabled = false; btnConfirm.textContent = 'Tạo ngay'; }
       });
   }
 
