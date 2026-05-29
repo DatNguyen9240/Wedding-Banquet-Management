@@ -211,11 +211,7 @@ window.DynamicFormEngine = (function () {
     globalRenderers = {};
 
     // API defaults: FormBuilder dùng API chuyên biệt, các form khác dùng generic No-Code API
-    _setDefaults(MODULE_CONFIG, _isFormBuilder() ? {
-      ApiSearch: '/api/API_DanhSachTruongGiaoDien',
-      ApiSave: '/api/API_LuuTruongGiaoDien',
-      ApiDelete: '/api/API_XoaTruongGiaoDien'
-    } : {
+    _setDefaults(MODULE_CONFIG, {
       ApiSearch: '/api/API_Gateway_Router',
       ApiSave: '/api/API_Gateway_Router',
       ApiDelete: '/api/API_Gateway_Router'
@@ -676,7 +672,8 @@ window.DynamicFormEngine = (function () {
         Page: currentPage,
         Limit: currentLimit,
         SortColumn: currentSortCol || '',
-        SortDir: currentSortDir || ''
+        SortDir: currentSortDir || '',
+        Keyword: currentKeyword || ''
       };
 
       if (Object.keys(activeFilters).length > 0) {

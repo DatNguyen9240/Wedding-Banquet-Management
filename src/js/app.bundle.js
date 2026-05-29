@@ -4713,6 +4713,12 @@ var FilterComponent = (function () {
             this.style.borderColor = 'var(--color-border, #cbd5e1)';
             this.style.boxShadow = 'none';
         });
+        inp.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                btnSearch.click();
+            }
+        });
 
         inputs[f.id] = inp;
       }
