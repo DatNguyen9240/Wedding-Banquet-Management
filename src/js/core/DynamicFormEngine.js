@@ -294,10 +294,6 @@ window.DynamicFormEngine = (function () {
           // Xây Dictionary cho Table
           globalDictionary[item.name] = item.label;
 
-          // Nếu có cấu hình ShowInGrid = false (hoặc 0) từ Database, thêm vào danh sách ẩn
-          if (item.showInGrid === 0 || item.showInGrid === false || item.showInGrid === '0') {
-            globalHiddenColumns.push(item.name);
-          }
 
           // Xây dựng Custom Renderers Động từ cấu hình DB
           if (item.renderRule) {
@@ -343,7 +339,6 @@ window.DynamicFormEngine = (function () {
             showInAdd: _bool(item.showInAdd, item.ShowInAdd),
             showInEdit: _bool(item.showInEdit, item.ShowInEdit),
             showInFilter: _bool(item.showInFilter, item.ShowInFilter),
-            showInGrid: item.hasOwnProperty('ShowInGrid') ? _bool(item.showInGrid, item.ShowInGrid) : (item.hasOwnProperty('showInGrid') ? _bool(item.showInGrid, item.showInGrid) : null),
             isReadOnlyEdit: _bool(item.isReadOnlyEdit, item.IsReadOnlyEdit),
             isReadOnlyAdd: _bool(item.isReadOnlyAdd, item.IsReadOnlyAdd),
             position: item.FormPosition || item.formPosition || item.position || 'grid',
@@ -727,11 +722,6 @@ window.DynamicFormEngine = (function () {
       // Render các cột tùy chỉnh (Sinh ra tự động từ RenderRule trong DB)
       var customRenderers = globalRenderers;
 
-      var hiddenCols = globalFormSchema.filter(function (f) {
-        if (f.showInGrid !== null) return f.showInGrid === false;
-        return f.position !== 'grid' && f.position !== ''; // Backward compatibility
-      }).map(function (f) { return f.name; });
-
       // Gọi UITable.createDynamic siêu cấp
       var tableEl = UITable.createDynamic(gridData, dictionary, {
         currentSort: { field: currentSortCol, dir: currentSortDir },
@@ -743,8 +733,7 @@ window.DynamicFormEngine = (function () {
           _updateSelectionCounter();
           _loadData();
         },
-        actionRenderers: customRenderers,
-        hiddenColumns: hiddenCols
+        actionRenderers: customRenderers
       });
 
       var actualTable = tableEl.querySelector('table');
@@ -1915,10 +1904,26 @@ window.DynamicFormEngine = (function () {
 
             var searchApiCall = function (q, page) {
               var payload = Object.assign({}, fetchPayload);
+              var isGateway = finalUrl.indexOf('API_Gateway_Router') > -1;
+              var dynamicFilters = {};
+
               if (typeof currentModalFormState !== 'undefined') {
-                payload = Object.assign(payload, currentModalFormState);
+                if (isGateway) {
+                  dynamicFilters = Object.assign({}, currentModalFormState);
+                } else {
+                  payload = Object.assign(payload, currentModalFormState);
+                }
               }
-              if (q) payload.Keyword = q;
+              
+              if (q) {
+                payload.Keyword = q;
+                if (isGateway) dynamicFilters.Keyword = q; // Nhét thêm Keyword vào JsonData dự phòng cho Gateway dễ truy vấn
+              }
+
+              if (isGateway && Object.keys(dynamicFilters).length > 0) {
+                payload.JsonData = JSON.stringify(dynamicFilters);
+              }
+
               return ApiClient.post(finalUrl, payload).then(function (res) {
                 var comboData = [];
                 var dataList = res.list || res.records;

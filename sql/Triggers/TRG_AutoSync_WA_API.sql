@@ -21,7 +21,7 @@ BEGIN
     -- Chỉ kích hoạt với các Stored Procedure có tiền tố 'API_'
     IF @ObjectName LIKE 'API_%' AND @ObjectName <> 'API_Gateway_Router'
     BEGIN
-        DECLARE @ParaTemplate NVARCHAR(500) = '';
+        DECLARE @ParaTemplate NVARCHAR(MAX) = '';
         
         -- Quét bảng hệ thống sys.parameters để tự động sinh bản đồ tham số
         SELECT @ParaTemplate = @ParaTemplate + 

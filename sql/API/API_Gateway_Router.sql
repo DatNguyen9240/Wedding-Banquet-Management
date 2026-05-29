@@ -25,7 +25,7 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @TargetStore NVARCHAR(200);
-    DECLARE @ParaTemplate NVARCHAR(500);
+    DECLARE @ParaTemplate NVARCHAR(MAX);
     
     -- 1. Tra cứu cấu hình từ bảng WA_API
     SELECT @TargetStore = LTRIM(RTRIM([SQL])), 
@@ -82,13 +82,29 @@ BEGIN
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{Keyword}', REPLACE(ISNULL(@Keyword, ''), '''', ''''''));
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{SortColumn}', ISNULL(@SortColumn, ''));
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{SortDir}', ISNULL(@SortDir, ''));
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{Page}', CAST(@Page AS VARCHAR));
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{Limit}', CAST(@Limit AS VARCHAR));
+    SET @ParaTemplate = REPLACE(@ParaTemplate, '{Page}', ISNULL(CAST(@Page AS VARCHAR), ''));
+    SET @ParaTemplate = REPLACE(@ParaTemplate, '{Limit}', ISNULL(CAST(@Limit AS VARCHAR), ''));
     
     -- Cuối cùng, Replace chính cái cục JsonData nếu API đích cần đọc cả cục
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{JsonData}', REPLACE(ISNULL(@JsonData, ''), '''', ''''''));
 
-    -- 4. Chạy câu lệnh hoàn chỉnh
+    -- 4. DỌN DẸP CÁC BIẾN KHÔNG ĐƯỢC TRUYỀN (GIÁ TRỊ VẪN LÀ '{TenBien}')
+    IF OBJECT_ID(@TargetStore) IS NOT NULL
+    BEGIN
+        SELECT @ParaTemplate = REPLACE(@ParaTemplate, name + '=''{' + SUBSTRING(name, 2, LEN(name)) + '}''', '')
+        FROM sys.parameters WHERE object_id = OBJECT_ID(@TargetStore);
+        
+        -- Dọn dẹp với tiền tố N (nếu có)
+        SELECT @ParaTemplate = REPLACE(@ParaTemplate, name + '=N''{' + SUBSTRING(name, 2, LEN(name)) + '}''', '')
+        FROM sys.parameters WHERE object_id = OBJECT_ID(@TargetStore);
+    END
+    
+    -- Xóa rác (dấu phẩy thừa)
+    WHILE CHARINDEX(', ,', @ParaTemplate) > 0 SET @ParaTemplate = REPLACE(@ParaTemplate, ', ,', ',');
+    IF LEFT(LTRIM(@ParaTemplate), 1) = ',' SET @ParaTemplate = LTRIM(SUBSTRING(LTRIM(@ParaTemplate), 2, LEN(@ParaTemplate)));
+    IF RIGHT(RTRIM(@ParaTemplate), 1) = ',' SET @ParaTemplate = RTRIM(SUBSTRING(RTRIM(@ParaTemplate), 1, LEN(RTRIM(@ParaTemplate)) - 1));
+
+    -- 5. Chạy câu lệnh hoàn chỉnh
     DECLARE @FinalSQL NVARCHAR(MAX);
     
     -- Ráp lệnh EXEC
