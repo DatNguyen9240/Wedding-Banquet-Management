@@ -1,4 +1,4 @@
-CREATE OR ALTER PROCEDURE [dbo].[API_TimKiemKhachHang]
+CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachKhachHang]
     @Keyword NVARCHAR(100) = NULL,
     
     -- Khai báo hứng các biến từ giao diện gửi xuống (Tên biến phải khớp với FieldName trong DB)
@@ -52,14 +52,14 @@ GO
 ================================================
 
 -- 1. Test không truyền gì (Lấy tất cả)
-EXEC [dbo].[API_TimKiemKhachHang];
+EXEC [dbo].[API_DanhSachKhachHang];
 
 -- 2. Test truyền Parameter tĩnh (VD: Tìm theo Tên khách hàng)
-EXEC [dbo].[API_TimKiemKhachHang] 
+EXEC [dbo].[API_DanhSachKhachHang] 
     @Tenkh = N'Nguyễn';
 
 -- 3. Test truyền nhiều Parameter cùng lúc
-EXEC [dbo].[API_TimKiemKhachHang] 
+EXEC [dbo].[API_DanhSachKhachHang] 
     @Tenkh = N'Nguyễn',
     @DTcodau = '098';
 */
