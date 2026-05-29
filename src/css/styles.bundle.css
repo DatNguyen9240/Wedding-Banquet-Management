@@ -6160,3 +6160,4 @@ body.dark-theme .data-table tbody tr:hover {
 }
 
 
+.flatpickr-day.today.selected { color: #ffffff !important; }
