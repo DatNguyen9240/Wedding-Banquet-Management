@@ -4,12 +4,7 @@ GO
 
 CREATE PROCEDURE API_DanhSachTruongGiaoDien
     @Keyword nvarchar(100) = NULL,
-    @FormName nvarchar(100) = NULL,
-    @UserName nvarchar(100) = NULL,
-    @SortColumn nvarchar(100) = NULL,
-    @SortDir nvarchar(10) = NULL,
-    @Page int = 1,
-    @Limit int = 15
+    @FormName nvarchar(100) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -42,8 +37,6 @@ BEGIN
            OR ff.CaptionVN LIKE N'%' + @Keyword + '%'
            OR l.CaptionVN LIKE N'%' + @Keyword + '%')
       AND (@FormName IS NULL OR @FormName = '' OR @FormName = 'frmFormBuilder' OR ff.FormName = @FormName)
-    ORDER BY ff.FormName ASC, ff.FieldName ASC
-    OFFSET (ISNULL(@Page, 1) - 1) * ISNULL(@Limit, 15) ROWS
-    FETCH NEXT ISNULL(@Limit, 15) ROWS ONLY;
+    ORDER BY ff.FormName ASC, ff.FieldName ASC;
 END
 GO

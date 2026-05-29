@@ -37,7 +37,7 @@ window.API_CONFIG = {
             CANCEL: '/api/API_HuyPhieuCoc',
         },
         CUSTOMER: {
-            SEARCH: '/api/API_TimKiemKhachHang',
+            SEARCH: '/api/API_DanhSachKhachHang',
             SAVE: '/api/API_LuuKhachHang',
         },
         SYSTEM: {

@@ -3,9 +3,7 @@ IF OBJECT_ID('API_DanhSachTaiKhoan', 'P') IS NOT NULL
 GO
 
 CREATE PROCEDURE API_DanhSachTaiKhoan
-    @Keyword nvarchar(100) = NULL,
-    @Page int = 1,
-    @Limit int = 15
+    @Keyword nvarchar(100) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -20,8 +18,6 @@ BEGIN
     FROM SY_User
     WHERE (@Keyword IS NULL OR @Keyword = '' 
            OR UserName LIKE '%' + @Keyword + '%')
-    ORDER BY UserName ASC
-    OFFSET (ISNULL(@Page, 1) - 1) * ISNULL(@Limit, 15) ROWS
-    FETCH NEXT ISNULL(@Limit, 15) ROWS ONLY;
+    ORDER BY UserName ASC;
 END
 GO

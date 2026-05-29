@@ -410,7 +410,7 @@ window.DynamicFormEngine = (function () {
                 payload = {
                   List: MODULE_CONFIG.FormName,
                   Func: 'Delete',
-                  IDs: payload.IDs
+                  JsonData: JSON.stringify({ IDs: payload.IDs })
                 };
               }
 

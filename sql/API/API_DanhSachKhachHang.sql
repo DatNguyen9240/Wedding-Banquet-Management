@@ -5,15 +5,7 @@ CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachKhachHang]
     @Makh NVARCHAR(50) = NULL,
     @Tenkh NVARCHAR(100) = NULL,
     @DTcodau NVARCHAR(20) = NULL,
-    @DienthoaiChung NVARCHAR(20) = NULL,
-
-    -- (Các tham số hệ thống mặc định)
-    @FormName VARCHAR(50) = NULL,
-    @UserName VARCHAR(50) = NULL,
-    @SortColumn VARCHAR(50) = NULL,
-    @SortDir VARCHAR(10) = NULL,
-    @Page INT = 1,
-    @Limit INT = 15
+    @DienthoaiChung NVARCHAR(20) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -25,7 +17,10 @@ BEGIN
         Tencodau,
         DTcodau,
         Tenkh,
+        Dienthoai,
         ISNULL(NULLIF(Dienthoai, ''), ISNULL(DTchure, DTcodau)) AS DienthoaiChung,
+        Dienthoai AS DienThoaiDaiDien,
+        Nguoigd,
         Mail,
         Diachi,
         (SELECT COUNT(1) FROM tbmk_Khachthamquan WHERE Makh = dmkhachhang.Makh) AS SoLanThamQuan,
