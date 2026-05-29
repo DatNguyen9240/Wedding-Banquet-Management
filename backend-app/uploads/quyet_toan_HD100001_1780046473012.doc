@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+        body { font-family: 'Times New Roman', Times, serif; font-size: 13pt; line-height: 1.5; color: #000; padding: 20pt; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 20pt; }
+        .header-table td { vertical-align: top; border: none; }
+        .company-info { text-align: left; width: 45%; }
+        .company-name { font-weight: bold; font-size: 14pt; color: #003366; text-transform: uppercase; }
+        .company-slogan { font-style: italic; font-size: 11pt; color: #666; margin-bottom: 5pt; }
+        .national-motto { text-align: center; width: 55%; font-weight: bold; }
+        .motto-line1 { font-size: 13pt; }
+        .motto-line2 { font-size: 14pt; text-decoration: underline; margin-top: 5pt; }
+        
+        .title { text-align: center; font-size: 20pt; font-weight: bold; color: #b8860b; margin: 30pt 0 10pt 0; text-transform: uppercase; }
+        .subtitle { text-align: center; font-size: 12pt; font-style: italic; margin-bottom: 30pt; }
+        
+        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20pt; }
+        .info-table td { padding: 5pt; vertical-align: top; border: none; font-size: 13pt; }
+        .label { font-weight: bold; width: 150px; }
+        
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 30pt; border: 1px solid #000; }
+        .data-table th { background-color: #f2f2f2; font-weight: bold; text-align: center; border: 1px solid #000; padding: 10pt; color: #003366; }
+        .data-table td { border: 1px solid #000; padding: 10pt; }
+        
+        .total-row { font-weight: bold; background-color: #fff9e6; color: #8b0000; }
+        
+        .signature-table { width: 100%; border-collapse: collapse; margin-top: 40pt; text-align: center; }
+        .signature-table td { border: none; vertical-align: top; width: 50%; }
+        .sig-title { font-weight: bold; font-size: 13pt; text-transform: uppercase; }
+        .sig-note { font-style: italic; font-size: 11pt; color: #555; }
+        .sig-space { height: 80pt; }
+        .sig-name { font-weight: bold; font-size: 13pt; }
+        
+        .footer { text-align: center; font-size: 10pt; color: #888; border-top: 1px solid #ddd; padding-top: 10pt; margin-top: 50pt; }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <table class="header-table">
+        <tr>
+            <td class="company-info">
+                <div class="company-name">NHÀ HÀNG TIỆC CƯỚI</div>
+                <div class="company-slogan">★ LUXURY WEDDING & EVENTS ★</div>
+                <div style="font-size: 11pt;">ĐC: </div>
+                <div style="font-size: 11pt;">ĐT: </div>
+            </td>
+            <td class="national-motto">
+                <div class="motto-line1">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+                <div class="motto-line2">Độc lập - Tự do - Hạnh phúc</div>
+                <div style="margin-top: 15pt; font-weight: normal; font-style: italic; text-align: right;">Ngày quyết toán: </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="title">BẢNG QUYẾT TOÁN TIỆC CƯỚI</div>
+    <div class="subtitle">Số HĐ: <b>HD100001</b> - Trạng thái: <b>Đã Ký</b></div>
+
+    <!-- Customer & Banquet Info -->
+    <table class="info-table">
+        <tr>
+            <td class="label">Khách hàng đại diện:</td>
+            <td style="font-weight: bold; color: #8b0000;">Chí Phèo & Thị Nở</td>
+            <td class="label">Điện thoại:</td>
+            <td>Đt : 0982.42.33.88 – Hotline: 0982.42.33.88</td>
+        </tr>
+        <tr>
+            <td class="label">Ngày tổ chức tiệc:</td>
+            <td><b>11/03/2023</b></td>
+            <td class="label">Sảnh tổ chức:</td>
+            <td><b>QUEEN 1</b></td>
+        </tr>
+        <tr>
+            <td class="label">Số bàn chính thức:</td>
+            <td><b>30 bàn</b></td>
+            <td class="label">Số biên nhận:</td>
+            <td>BN10223/001</td>
+        </tr>
+    </table>
+
+    <!-- Financial Summary -->
+    <table class="data-table">
+        <tr>
+            <th>STT</th>
+            <th>Hạng Mục Quyết Toán</th>
+            <th>ĐVT</th>
+            <th>Thành Tiền (VNĐ)</th>
+            <th>Ghi Chú</th>
+        </tr>
+        <tr>
+            <td style="text-align: center;">1</td>
+            <td>Tổng chi phí bàn tiệc (Tạm tính)</td>
+            <td style="text-align: center;">Bàn</td>
+            <td style="text-align: right;">158400000</td>
+            <td>Thực tế theo số bàn</td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">2</td>
+            <td>Các dịch vụ phát sinh khác</td>
+            <td style="text-align: center;">Gói</td>
+            <td style="text-align: right;">0</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td style="text-align: center;">3</td>
+            <td>Tiền đặt cọc (Đã thanh toán)</td>
+            <td style="text-align: center;">VND</td>
+            <td style="text-align: right;">0</td>
+            <td>Trừ vào tổng hóa đơn</td>
+        </tr>
+        <tr class="total-row">
+            <td colspan="3" style="text-align: right; text-transform: uppercase;">TỔNG SỐ TIỀN CÒN PHẢI THANH TOÁN:</td>
+            <td style="text-align: right; font-size: 14pt;">158400000</td>
+            <td>VNĐ</td>
+        </tr>
+    </table>
+
+    <div style="font-style: italic; margin-bottom: 20pt;">
+        <b>Bằng chữ:</b> .........................................................................................................................................<br/><br/>
+        <i>(Lưu ý: Bảng quyết toán này là cơ sở để hai bên tiến hành thanh lý hợp đồng và xuất hóa đơn nếu có yêu cầu.)</i>
+    </div>
+
+    <!-- Signatures -->
+    <table class="signature-table">
+        <tr>
+            <td>
+                <div class="sig-title">ĐẠI DIỆN KHÁCH HÀNG</div>
+                <div class="sig-note">(Ký và ghi rõ họ tên)</div>
+                <div class="sig-space"></div>
+                <div class="sig-name">Chí Phèo & Thị Nở</div>
+            </td>
+            <td>
+                <div class="sig-title">ĐẠI DIỆN NHÀ HÀNG</div>
+                <div class="sig-note">(Ký, đóng dấu và ghi rõ họ tên)</div>
+                <div class="sig-space"></div>
+                <div class="sig-name">...........................................</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        NHÀ HÀNG TIỆC CƯỚI ·  · Hotline: 
+    </div>
+
+</body>
+</html>
