@@ -14,6 +14,8 @@ window.DynamicFormEngine = (function () {
   var currentPage = 1;
   var currentLimit = 15;
   var totalRecords = 0;
+  var totalPagesFromApi = 0;
+  var lastTimestamp = '';
 
   // Lưu trữ state (page, sort, filter) theo từng FormName để giữ vết khi chuyển lại
   var moduleStates = {};
@@ -367,8 +369,8 @@ window.DynamicFormEngine = (function () {
           </div>
         </div>
         <div id="dynamic-btn-container" style="margin-bottom:16px;"></div>
-        <div class="card dynamic-grid-card" style="border: none; box-shadow: none; margin-bottom: 0;">
-          <div class="card-body" style="padding: 0 8px;">
+        <div class="card dynamic-grid-card" style="border: none; box-shadow: none; margin-bottom: 0; border-radius: var(--radius-sm); background: var(--color-surface); overflow: hidden;">
+          <div class="card-body" style="padding: 0;">
             <div id="dynamic-filter-container" style="margin-bottom:16px;"></div>
             <div id="dynamic-grid-container"></div>
           </div>
@@ -407,19 +409,15 @@ window.DynamicFormEngine = (function () {
               payload.IDs = ids.join(',');
 
               var finalUrl = MODULE_CONFIG.ApiDelete;
-            if (finalUrl === '/api/API_Gateway_Router') {
-              payload = {
-                List: MODULE_CONFIG.FormName,
-                Func: 'Delete',
-                UserName: _currentUser(),
-                Keyword: '',
-                Page: 1,
-                Limit: 1,
-                JsonData: JSON.stringify(payload)
-              };
-            }
+              if (finalUrl === '/api/API_Gateway_Router') {
+                payload = {
+                  List: MODULE_CONFIG.FormName,
+                  Func: 'Delete',
+                  IDs: payload.IDs
+                };
+              }
 
-            ApiClient.post(finalUrl, payload).then(function (res) {
+              ApiClient.post(finalUrl, payload).then(function (res) {
                 if (res && res.code === 0) {
                   if (typeof Toast !== 'undefined') Toast.success(MODULE_CONFIG.ToastDelete);
                   selectedRows = [];
@@ -512,7 +510,7 @@ window.DynamicFormEngine = (function () {
             text: 'Đồng bộ từ DB',
             icon: 'sync',
             type: 'tool',
-            onClick: function() {
+            onClick: function () {
               var body = document.createElement('div');
               body.className = 'p-3';
               body.innerHTML = `
@@ -533,14 +531,14 @@ window.DynamicFormEngine = (function () {
                 width: 500,
                 content: body,
                 footer: UIButton.createHTML({ text: 'Hủy bỏ', className: 'btn-outline', onclick: 'this.closest(\'.modal-overlay\').remove()' }) +
-                        UIButton.createHTML({ text: 'Chạy Đồng Bộ', type: 'primary', className: 'btn-run-sync', icon: 'play_arrow' })
+                  UIButton.createHTML({ text: 'Chạy Đồng Bộ', type: 'primary', className: 'btn-run-sync', icon: 'play_arrow' })
               });
 
               var btnRun = modal.querySelector('.btn-run-sync');
-              btnRun.onclick = function() {
+              btnRun.onclick = function () {
                 var fName = document.getElementById('syncFormName').value.trim();
                 var tName = document.getElementById('syncTableName').value.trim();
-                
+
                 if (!fName || !tName) {
                   return Alert.warning('Thiếu thông tin', 'Vui lòng nhập đầy đủ tên Form và tên Bảng!');
                 }
@@ -553,7 +551,7 @@ window.DynamicFormEngine = (function () {
                   JsonData: JSON.stringify({ FormName: fName, ObjectName: tName })
                 };
 
-                ApiClient.post('/api/API_Gateway_Router', payload).then(function(res) {
+                ApiClient.post('/api/API_Gateway_Router', payload).then(function (res) {
                   if (res && res.code === 0) {
                     Alert.success('Thành công', 'Đồng bộ trường giao diện hoàn tất!');
                     modal.remove();
@@ -562,7 +560,7 @@ window.DynamicFormEngine = (function () {
                     Alert.error('Lỗi', res.msg || 'Đồng bộ thất bại');
                     _setBtnLoading(btnRun, false);
                   }
-                }).catch(function(err) {
+                }).catch(function (err) {
                   Alert.error('Lỗi mạng', err.message || 'Không thể kết nối đến server');
                   _setBtnLoading(btnRun, false);
                 });
@@ -628,6 +626,8 @@ window.DynamicFormEngine = (function () {
           window.currentFilters = values;
           currentKeyword = values.keyword || '';
           currentPage = 1; // Reset về trang 1 khi lọc mới
+          selectedRows = [];
+          _updateSelectionCounter();
           _loadData();
         });
         filterContainer.appendChild(filterNode);
@@ -656,16 +656,7 @@ window.DynamicFormEngine = (function () {
     }
 
     if (MODULE_CONFIG.ApiSearch) {
-      var query = {
-        List: MODULE_CONFIG.FormName,
-        Func: 'View',
-        UserName: _currentUser(),
-        Keyword: currentKeyword,
-        Page: currentPage,
-        Limit: currentLimit
-      };
-
-      // Cập nhật chuẩn No-code: Lọc bỏ các trường rỗng và đóng gói thành JSON
+      // Gom các bộ lọc đang active (bỏ các trường rỗng)
       var activeFilters = {};
       if (window.currentFilters) {
         for (var k in window.currentFilters) {
@@ -674,29 +665,44 @@ window.DynamicFormEngine = (function () {
           }
         }
       }
-      // Nhét Sort vào JSON luôn vì Backend C# chặn tham số lạ
-      if (currentSortCol) {
-        activeFilters['_SortColumn'] = currentSortCol;
-        activeFilters['_SortDir'] = currentSortDir;
-      }
-      
+      // Thêm Keyword vào filter JSON
+      if (currentKeyword) activeFilters['Keyword'] = currentKeyword;
+
+      var query = {
+        List: MODULE_CONFIG.FormName,
+        Func: 'View',
+        UserName: _currentUser(),
+        User: _currentUser(),
+        Page: currentPage,
+        Limit: currentLimit,
+        SortColumn: currentSortCol || '',
+        SortDir: currentSortDir || ''
+      };
+
       if (Object.keys(activeFilters).length > 0) {
         query.JsonData = JSON.stringify(activeFilters);
       }
       ApiClient.post(MODULE_CONFIG.ApiSearch, query).then(function (result) {
+        // Trả lại quyền sinh sát (tính phân trang) cho C# Backend
         totalRecords = result._recordtotal || 0;
+        totalPagesFromApi = result._pagetotal || 0;
+
+        lastTimestamp = result._timestamp || '';
         var dataList = result.list || result.records || [];
         gridData = dataList.map(function (item) {
           // Gắn ID tạm để Table hoạt động
           item.id = item[MODULE_CONFIG.PrimaryKey] || item.Id || item.AutoID || Math.random();
           return item;
         });
+
         _renderTable();
       }).catch(function (err) {
         console.error('Lỗi tải danh sách:', err);
         if (typeof Alert !== 'undefined') Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertNetworkError);
         gridData = [];
         totalRecords = 0;
+        totalPagesFromApi = 0;
+        lastTimestamp = '';
         selectedRows = [];
         _updateSelectionCounter();
         _renderTable();
@@ -718,7 +724,6 @@ window.DynamicFormEngine = (function () {
       // Render các cột tùy chỉnh (Sinh ra tự động từ RenderRule trong DB)
       var customRenderers = globalRenderers;
 
-      // Lọc ra các cột cần ẩn khỏi Lưới (Grid)
       var hiddenCols = globalFormSchema.filter(function (f) { return f.position !== 'grid'; }).map(function (f) { return f.name; });
 
       // Gọi UITable.createDynamic siêu cấp
@@ -728,6 +733,8 @@ window.DynamicFormEngine = (function () {
           currentSortCol = field;
           currentSortDir = dir;
           currentPage = 1;
+          selectedRows = [];
+          _updateSelectionCounter();
           _loadData();
         },
         actionRenderers: customRenderers,
@@ -746,6 +753,8 @@ window.DynamicFormEngine = (function () {
       if (typeof Pagination !== 'undefined') {
         var paginationEl = Pagination.create({
           totalItems: totalRecords,
+          totalPages: totalPagesFromApi,
+          timestamp: lastTimestamp,
           itemsPerPage: currentLimit,
           currentPage: currentPage,
           onPageChange: function (page) {
@@ -755,9 +764,13 @@ window.DynamicFormEngine = (function () {
           onLimitChange: function (newLimit) {
             currentLimit = newLimit;
             currentPage = 1;
+            selectedRows = [];
+            _updateSelectionCounter();
             _loadData();
           },
           onRefresh: function () {
+            selectedRows = [];
+            _updateSelectionCounter();
             _loadData();
           }
         });
@@ -835,7 +848,7 @@ window.DynamicFormEngine = (function () {
         tbody.addEventListener('dblclick', function (e) {
           var tr = e.target.closest('tr');
           if (!tr) return;
-          
+
           var idx = Array.from(tbody.children).indexOf(tr);
           var rData = gridData[idx];
           if (!rData) return;
@@ -1677,14 +1690,14 @@ window.DynamicFormEngine = (function () {
           btnWrapper.innerHTML = UIButton.createHTML({ text: '', type: 'secondary', icon: 'settings', className: 'btn-icon-only' });
           var btn = btnWrapper.firstElementChild;
           btn.style.height = '100%';
-          btn.onclick = function(e) {
+          btn.onclick = function (e) {
             e.preventDefault();
             if (typeof RuleBuilderDialog !== 'undefined') {
               var formNameVal = row.FormName || row.formName || row.FORMNAME || '';
               RuleBuilderDialog.open({
                 currentRule: input.value,
                 targetFormName: formNameVal,
-                onSave: function(newRule) {
+                onSave: function (newRule) {
                   input.value = newRule;
                   input.dispatchEvent(new Event('change', { bubbles: true }));
                 }
@@ -2031,7 +2044,7 @@ window.DynamicFormEngine = (function () {
         var btnWrapper = document.createElement('div');
         btnWrapper.innerHTML = UIButton.createHTML({ text: 'Thiết lập', type: 'secondary', icon: 'settings' });
         var btn = btnWrapper.firstElementChild;
-        btn.onclick = function(e) {
+        btn.onclick = function (e) {
           e.preventDefault();
           if (typeof RuleBuilderDialog !== 'undefined') {
             var formNameVal = row ? (row.FormName || row.formName || row.FORMNAME) : '';
@@ -2044,7 +2057,7 @@ window.DynamicFormEngine = (function () {
             RuleBuilderDialog.open({
               currentRule: input.value,
               targetFormName: formNameVal,
-              onSave: function(newRule) {
+              onSave: function (newRule) {
                 input.value = newRule;
                 input.dispatchEvent(new Event('change', { bubbles: true }));
               }
@@ -2196,14 +2209,10 @@ window.DynamicFormEngine = (function () {
     // Gọi API tuần tự
     var finalPayloads = payloads;
     if (endpoint === '/api/API_Gateway_Router') {
-      finalPayloads = payloads.map(function(p) {
+      finalPayloads = payloads.map(function (p) {
         return {
           List: MODULE_CONFIG.FormName,
           Func: 'Save',
-          UserName: _currentUser(),
-          Keyword: '',
-          Page: 1,
-          Limit: 1,
           JsonData: JSON.stringify(p)
         };
       });
@@ -2318,10 +2327,6 @@ window.DynamicFormEngine = (function () {
       finalPayload = {
         List: MODULE_CONFIG.FormName,
         Func: 'Save',
-        UserName: _currentUser(),
-        Keyword: '',
-        Page: 1,
-        Limit: 1,
         JsonData: JSON.stringify(payloads[0])
       };
     }

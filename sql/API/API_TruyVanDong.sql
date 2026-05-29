@@ -38,20 +38,90 @@ BEGIN
     DECLARE @whereClause NVARCHAR(MAX) = ' WHERE 1=1';
 
     -- =========================================================================
-    -- MAGIC: RÃ JSON RA ĐỂ GHÉP ĐIỀU KIỆN TÌM KIẾM ĐỘNG
+    -- MAGIC: RÃ JSON VÀ XỬ LÝ TOÁN TỬ NÂNG CAO THEO CHUẨN API.MD ($gt, $in, $bt...)
     -- =========================================================================
     IF ISNULL(@FilterJSON, '') <> ''
     BEGIN
-        SELECT @whereClause = @whereClause + 
-            CASE 
-                -- Nếu tên cột là Mã/ID thì dùng '='
-                WHEN [key] LIKE 'Ma%' OR [key] LIKE '%ID' THEN ' AND ' + QUOTENAME([key]) + ' = N''' + REPLACE(CAST([value] AS NVARCHAR(MAX)), '''', '''''') + ''''
-                -- Còn lại dùng LIKE
-                ELSE ' AND ' + QUOTENAME([key]) + ' LIKE N''%' + REPLACE(CAST([value] AS NVARCHAR(MAX)), '''', '''''') + '%'''
-            END
+        DECLARE @Key NVARCHAR(MAX), @Val NVARCHAR(MAX);
+        DECLARE @ColName NVARCHAR(MAX), @Operator NVARCHAR(50);
+        
+        DECLARE cur CURSOR FOR 
+        SELECT [key], CAST([value] AS NVARCHAR(MAX))
         FROM OPENJSON(@FilterJSON)
-        WHERE CAST([value] AS NVARCHAR(MAX)) <> '' -- Bỏ qua các key có value rỗng
-          AND [key] NOT LIKE '\_%' ESCAPE '\'; -- Bỏ qua các key hệ thống (VD: _SortColumn)
+        WHERE CAST([value] AS NVARCHAR(MAX)) <> '' 
+          AND [key] NOT LIKE '\_%' ESCAPE '\' -- Bỏ qua các biến hệ thống có dấu _
+          AND [key] NOT IN ('Page', 'Limit', 'SortColumn', 'SortDir', 'Keyword'); -- Bỏ qua các biến phân trang cứng
+          
+        OPEN cur;
+        FETCH NEXT FROM cur INTO @Key, @Val;
+        
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            -- Phân tách Column Name và Operator từ Key (VD: DocumentDate$gte -> ColName, gte)
+            DECLARE @DollarPos INT = CHARINDEX('$', @Key);
+            IF @DollarPos > 0
+            BEGIN
+                SET @ColName = SUBSTRING(@Key, 1, @DollarPos - 1);
+                SET @Operator = SUBSTRING(@Key, @DollarPos + 1, LEN(@Key) - @DollarPos);
+            END
+            ELSE
+            BEGIN
+                SET @ColName = @Key;
+                SET @Operator = 'default';
+            END
+            
+            SET @Val = REPLACE(@Val, '''', ''''''); -- Chống SQL Injection
+            DECLARE @Condition NVARCHAR(MAX) = '';
+            DECLARE @LogicOp NVARCHAR(10) = ' AND ';
+            
+            IF @Operator = 'gt'  SET @Condition = ' > N''' + @Val + '''';
+            ELSE IF @Operator = 'gte' SET @Condition = ' >= N''' + @Val + '''';
+            ELSE IF @Operator = 'lt'  SET @Condition = ' < N''' + @Val + '''';
+            ELSE IF @Operator = 'lte' SET @Condition = ' <= N''' + @Val + '''';
+            ELSE IF @Operator = 'eq'  SET @Condition = ' = N''' + @Val + '''';
+            ELSE IF @Operator = 'ne'  SET @Condition = ' <> N''' + @Val + '''';
+            ELSE IF @Operator = 'lk'  SET @Condition = ' LIKE N''%' + @Val + '%''';
+            ELSE IF @Operator = 'or'  
+            BEGIN
+                SET @LogicOp = ' OR ';
+                SET @Condition = ' = N''' + @Val + '''';
+            END
+            ELSE IF @Operator = 'bt'
+            BEGIN
+                -- $bt: So sánh trong khoảng (Val1;Val2)
+                DECLARE @SemiPos INT = CHARINDEX(';', @Val);
+                IF @SemiPos > 0
+                    SET @Condition = ' BETWEEN N''' + SUBSTRING(@Val, 1, @SemiPos - 1) + ''' AND N''' + SUBSTRING(@Val, @SemiPos + 1, LEN(@Val)) + '''';
+                ELSE 
+                    SET @Condition = ' = N''' + @Val + '''';
+            END
+            ELSE IF @Operator = 'in'
+            BEGIN
+                -- $in: Mảng giá trị A;B;C
+                DECLARE @InList NVARCHAR(MAX) = REPLACE(@Val, ';', ''',''');
+                SET @Condition = ' IN (N''' + @InList + ''')';
+            END
+            ELSE IF @Operator = 'ud'
+            BEGIN
+                -- $ud: User define (ví dụ: is null)
+                SET @Condition = ' ' + @Val;
+            END
+            ELSE
+            BEGIN
+                -- Default behavior
+                IF @ColName LIKE 'Ma%' OR @ColName LIKE '%ID'
+                    SET @Condition = ' = N''' + @Val + '''';
+                ELSE
+                    SET @Condition = ' LIKE N''%' + @Val + '%''';
+            END
+            
+            SET @whereClause = @whereClause + @LogicOp + QUOTENAME(@ColName) + @Condition;
+            
+            FETCH NEXT FROM cur INTO @Key, @Val;
+        END
+        
+        CLOSE cur;
+        DEALLOCATE cur;
     END
 
     -- Thêm điều kiện tìm kiếm nếu có Keyword (Tìm kiếm toàn cục)
@@ -93,11 +163,10 @@ BEGIN
     IF @ColumnList IS NULL OR @ColumnList = ''
         SET @ColumnList = '*';
 
-    -- Sinh câu SQL động query dữ liệu có phân trang
+    -- Sinh câu SQL động (Trả toàn bộ dữ liệu để C# Backend tự phân trang)
     SET @sql = 'SELECT ' + @ColumnList + ' ' +
                ' FROM ' + QUOTENAME(@TableName) + @whereClause +
-               @OrderByClause +
-               ' OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY;';
+               @OrderByClause + ';';
     
     -- Chạy lệnh
     EXEC sp_executesql @sql, N'@Offset INT, @Limit INT, @kw NVARCHAR(200)', @Offset = @Offset, @Limit = @Limit, @kw = @Keyword;

@@ -71,30 +71,22 @@ BEGIN
     -- 3.2. Thay thế các biến Request từ Frontend
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{List}', ISNULL(@List, ''));
     
-    -- Lấy Sort từ JsonData (Vì Backend C# không cho truyền tham số mới)
+    -- BƯỚC ĐỘT PHÁ MỚI: ƯU TIÊN 1 - TỰ ĐỘNG MAP TẤT CẢ TỪ JSON
     IF ISNULL(@JsonData, '') <> '' AND ISJSON(@JsonData) = 1
     BEGIN
-        SET @SortColumn = ISNULL(JSON_VALUE(@JsonData, '$._SortColumn'), '');
-        SET @SortDir = ISNULL(JSON_VALUE(@JsonData, '$._SortDir'), '');
+        SELECT @ParaTemplate = REPLACE(@ParaTemplate, '{' + [key] + '}', REPLACE(ISNULL(CAST([value] AS NVARCHAR(MAX)), ''), '''', ''''''))
+        FROM OPENJSON(@JsonData);
     END
     
-    -- Replace {Keyword} an toàn, bọc gấp đôi nháy đơn để tránh lỗi SQL Injection (nếu có nháy đơn trong chữ)
+    -- ƯU TIÊN 2: FALLBACK (DỰ PHÒNG CÁC BIẾN CỨNG TỪ C# NẾU CHƯA ĐƯỢC MAP BỞI JSON)
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{Keyword}', REPLACE(ISNULL(@Keyword, ''), '''', ''''''));
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{SortColumn}', ISNULL(@SortColumn, ''));
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{SortDir}', ISNULL(@SortDir, ''));
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{Page}', CAST(@Page AS VARCHAR));
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{Limit}', CAST(@Limit AS VARCHAR));
     
-    -- Replace JSON Data (Dành cho chức năng Lưu)
+    -- Cuối cùng, Replace chính cái cục JsonData nếu API đích cần đọc cả cục
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{JsonData}', REPLACE(ISNULL(@JsonData, ''), '''', ''''''));
-
-    -- BƯỚC ĐỘT PHÁ: TỰ ĐỘNG MAP BẤT KỲ BIẾN NÀO TỪ JSON VÀO CHUỖI PARA
-    -- Nhờ câu lệnh này, anh có thể khai báo tham số tự do như {TuNgay}, {DenNgay} trong WA_API
-    IF ISNULL(@JsonData, '') <> '' AND ISJSON(@JsonData) = 1
-    BEGIN
-        SELECT @ParaTemplate = REPLACE(@ParaTemplate, '{' + [key] + '}', REPLACE(ISNULL(CAST([value] AS NVARCHAR(MAX)), ''), '''', ''''''))
-        FROM OPENJSON(@JsonData);
-    END
 
     -- 4. Chạy câu lệnh hoàn chỉnh
     DECLARE @FinalSQL NVARCHAR(MAX);

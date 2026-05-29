@@ -1,4 +1,4 @@
-﻿/* --- design-tokens.css --- */
+/* --- design-tokens.css --- */
 /* ═══════════════════════════════════════════
    Design Tokens — TailAdmin Style
    Dành cho Quản lý Tiệc Cưới
@@ -4982,12 +4982,13 @@ body.dark-theme .calendar-dropdown-month-btn {
 
 .data-table {
   width: 100%;
+  min-width: max-content;
   border-collapse: collapse;
   text-align: left;
 }
 
 .data-table th {
-  background: var(--color-background);
+  background: var(--color-surface);
   padding: 16px 24px;
   font-size: 13px;
   text-transform: uppercase;
@@ -5047,7 +5048,7 @@ body.dark-theme .data-table {
   background-color: var(--color-surface);
 }
 body.dark-theme .data-table th {
-  background-color: var(--color-background); /* Nền tối hơn card một chút */
+  background-color: var(--color-surface); /* Đồng bộ với body của table và card */
   border-bottom-color: var(--color-border);
   color: var(--color-text-secondary);
 }
@@ -6138,6 +6139,24 @@ body.dark-theme .data-table tbody tr:hover {
 
 .screen-capture-toolbar button .material-symbols-outlined {
   font-size: 18px;
+}
+
+/* Custom mobile pagination centering */
+@media (max-width: 768px) {
+  .datagrid-pager {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .pagination-control-block {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    order: 2; /* Move it to the second row visually */
+  }
+  .datagrid-pager > select, .datagrid-pager > .pagination-info {
+    order: 1; /* Keep dropdown and info on the first row */
+  }
 }
 
 
