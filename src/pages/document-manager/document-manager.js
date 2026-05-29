@@ -315,6 +315,9 @@ var DocumentManagerPage = (function () {
         if (placeholder) {
           _docEditor = new DocsAPI.DocEditor('docmgr-oo-placeholder', config);
           if (typeof Toast !== 'undefined') Toast.show({ message: 'Đang mở trình chỉnh sửa Template...', type: 'info' });
+          
+          // Inject Floating UI cho Drag & Drop Field
+          _injectDragDropUI(type, area);
         }
       })
       .catch(function (err) {
@@ -429,6 +432,89 @@ var DocumentManagerPage = (function () {
     } else {
       if (confirm(msg)) _doDelete();
     }
+  }
+
+  // ── Drag & Drop Template Fields ─────────────────────────────────────────
+  function _injectDragDropUI(type, area) {
+    if (document.getElementById('docmgr-fields-panel')) return;
+
+    fetch('http://' + (typeof HOST_IP !== 'undefined' ? HOST_IP : '127.0.0.1') + ':5000/api/documents/fields/' + type)
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (!data.success) {
+          console.error('Lỗi lấy biến:', data.message);
+          return;
+        }
+        var fields = data.fields || [];
+
+    // Hàm tạo thông báo nổi nhỏ (Toast) thay vì dùng alert() làm gián đoạn drag
+    var showToast = function(msg) {
+      var t = document.createElement('div');
+      t.innerHTML = msg;
+      t.style.cssText = 'position:fixed; bottom:30px; right:30px; background:#10b981; color:white; padding:10px 20px; border-radius:6px; box-shadow:0 4px 10px rgba(0,0,0,0.2); z-index:10000; font-size:13px; font-weight:500; transition:all 0.3s; transform:translateY(20px); opacity:0;';
+      document.body.appendChild(t);
+      setTimeout(function() { t.style.transform = 'translateY(0)'; t.style.opacity = '1'; }, 10);
+      setTimeout(function() { t.style.transform = 'translateY(20px)'; t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 300); }, 2500);
+    };
+
+    // Gắn hàm showToast vào window để inline onclick gọi được
+    window._docMgrShowToast = showToast;
+
+    var fieldsHtml = fields.map(function(f) {
+      var clickHandler = "navigator.clipboard.writeText('" + f + "').then(function(){ window._docMgrShowToast('Đã copy <b>" + f + "</b>. Nhấn Ctrl+V để dán!'); });";
+      
+      return '<div onclick="' + clickHandler + '" ' +
+             'title="Click để Copy" ' +
+             'style="padding:6px 10px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:4px; ' +
+             'font-size:12px; cursor:pointer; user-select:none; color:#334155; font-family:monospace; transition:all 0.2s;" ' +
+             'onmouseover="this.style.background=\'#e2e8f0\';this.style.borderColor=\'#4f46e5\';this.style.color=\'#4f46e5\';this.style.transform=\'translateY(-1px)\'" ' +
+             'onmouseout="this.style.background=\'#f8fafc\';this.style.borderColor=\'#cbd5e1\';this.style.color=\'#334155\';this.style.transform=\'translateY(0)\'">' + 
+             f + '</div>';
+    }).join('');
+
+    var btn = document.createElement('button');
+    btn.id = 'docmgr-btn-toggle-fields';
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">extension</span> Chèn Biến Dữ Liệu';
+    btn.style.cssText = 'position:absolute; top:20px; right:20px; z-index:9998; display:flex; align-items:center; gap:6px; ' +
+                        'padding:8px 14px; background:var(--color-primary, #4f46e5); color:white; border:none; ' +
+                        'border-radius:8px; box-shadow:0 4px 6px rgba(0,0,0,0.1); cursor:pointer; font-weight:500; font-size:13px; transition:all 0.2s;';
+    btn.onmouseover = function() { this.style.transform = 'translateY(-2px)'; this.style.boxShadow = '0 6px 12px rgba(0,0,0,0.15)'; };
+    btn.onmouseout = function() { this.style.transform = 'translateY(0)'; this.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)'; };
+
+    var panel = document.createElement('div');
+    panel.id = 'docmgr-fields-panel';
+    panel.style.cssText = 'position:absolute; top:70px; right:20px; width:300px; background:rgba(255,255,255,0.95); ' +
+                          'border:1px solid #e2e8f0; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.15); ' +
+                          'z-index:9999; display:none; flex-direction:column; max-height:80vh; backdrop-filter:blur(8px);';
+    
+    panel.innerHTML = 
+      '<div style="padding:12px 16px; background:var(--color-primary, #4f46e5); color:white; border-radius:8px 8px 0 0; display:flex; justify-content:space-between; align-items:center;">' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<span class="material-symbols-outlined" style="font-size:18px;">content_copy</span>' +
+          '<span style="font-weight:600; font-size:14px; letter-spacing:0.3px;">Click để Copy</span>' +
+        '</div>' +
+        '<span id="docmgr-fields-close" style="cursor:pointer; opacity:0.8; transition:opacity 0.2s;" class="material-symbols-outlined" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.8\'">close</span>' +
+      '</div>' +
+      '<div style="padding:14px; overflow-y:auto; display:flex; flex-wrap:wrap; gap:8px; align-content:flex-start;">' +
+        fieldsHtml +
+      '</div>';
+
+    area.style.position = 'relative';
+    area.appendChild(btn);
+    area.appendChild(panel);
+
+    btn.addEventListener('click', function() {
+      var isHidden = panel.style.display === 'none';
+      panel.style.display = isHidden ? 'flex' : 'none';
+    });
+    
+    document.getElementById('docmgr-fields-close').addEventListener('click', function() {
+      panel.style.display = 'none';
+    });
+      })
+      .catch(function(err) {
+        console.error('Lỗi khi fetch fields:', err);
+      });
   }
 
   // ── Utils ──────────────────────────────────────────────────────────────

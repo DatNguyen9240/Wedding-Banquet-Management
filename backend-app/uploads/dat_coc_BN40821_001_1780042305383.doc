@@ -54,7 +54,7 @@ table.sign-tbl td { width: 50%; text-align: center; padding: 6pt; border: none; 
 
 <h1>Biên Nhận Đặt Cọc</h1>
 
-<div class="doc-numbers">Số Phiếu: <b>BN10223/001</b></div>
+<div class="doc-numbers">Số Phiếu: <b>BN40821/001</b></div>
 
 <hr class="light">
 
@@ -63,8 +63,8 @@ table.sign-tbl td { width: 50%; text-align: center; padding: 6pt; border: none; 
 <table>
   <thead><tr><th style="width:40%">Thông Tin</th><th style="width:60%">Nội Dung</th></tr></thead>
   <tbody>
-    <tr><td class="cell-label">Họ và Tên</td><td class="cell-value">Chí Phèo & Thị Nở</td></tr>
-    <tr><td class="cell-label">Điện Thoại</td><td>Đt : 0982.42.33.88 – Hotline: 0982.42.33.88</td></tr>
+    <tr><td class="cell-label">Họ và Tên</td><td class="cell-value">VĂN MINH & THU HẰNG</td></tr>
+    <tr><td class="cell-label">Điện Thoại</td><td>0911123123</td></tr>
   </tbody>
 </table>
 
@@ -73,21 +73,21 @@ table.sign-tbl td { width: 50%; text-align: center; padding: 6pt; border: none; 
 <table>
   <thead><tr><th style="width:40%">Chỉ Tiêu</th><th style="width:60%">Nội Dung</th></tr></thead>
   <tbody>
-    <tr><td class="cell-label">Ngày Tổ Chức</td><td class="cell-value">11/03/2023</td></tr>
-    <tr><td class="cell-label">Sảnh Đặt</td><td class="cell-value">QUEEN 1</td></tr>
-    <tr><td class="cell-label">Số Bàn</td><td class="cell-value">30 bàn</td></tr>
+    <tr><td class="cell-label">Ngày Tổ Chức</td><td class="cell-value">21/10/2021</td></tr>
+    <tr><td class="cell-label">Sảnh Đặt</td><td class="cell-value"></td></tr>
+    <tr><td class="cell-label">Số Bàn</td><td class="cell-value">41 bàn</td></tr>
     <tr><td class="cell-label">Trạng Thái</td><td>Đã cọc lần 1</td></tr>
   </tbody>
 </table>
 
 <h2>III. Số Tiền Đặt Cọc</h2>
 
-<p class="info-line">Chúng tôi đã nhận từ ông/bà <b style="color:#8B0000;">Chí Phèo & Thị Nở</b> số tiền cọc:</p>
+<p class="info-line">Chúng tôi đã nhận từ ông/bà <b style="color:#8B0000;">VĂN MINH & THU HẰNG</b> số tiền cọc:</p>
 
 <div class="money-box">
   <b>Số Tiền Cọc</b>
-  <span class="money-amount">135.000.000 VNĐ</span>
-  <div class="money-words">Bằng chữ: 135 triệu đồng chẵn</div>
+  <span class="money-amount">0 VNĐ</span>
+  <div class="money-words">Bằng chữ: Không đồng</div>
 </div>
 
 <h2>Ghi Chú</h2>
@@ -113,7 +113,7 @@ table.sign-tbl td { width: 50%; text-align: center; padding: 6pt; border: none; 
       <div class="sign-role">Khách Hàng</div>
       <small>(Ký, ghi rõ họ tên)</small>
       <span class="sign-space"></span>
-      <b>Chí Phèo & Thị Nở</b>
+      <b>VĂN MINH & THU HẰNG</b>
     </td>
   </tr>
 </table>

@@ -26,13 +26,13 @@ const SAMPLES_DIR = path.join(__dirname, 'samples');
 // ==========================================
 app.use(cors({ origin: '*' }));
 
-app.use('/uploads', function(req, res, next) {
+app.use('/uploads', function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', '*');
     next();
 }, express.static(UPLOADS_DIR));
 
-app.use('/samples', function(req, res, next) {
+app.use('/samples', function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', '*');
     next();
@@ -94,11 +94,11 @@ function mapBenA(setup) {
     // 'Com1' = Tên công ty theo bảng SY_Setup
     const tenNhaHang = setup['Com1'] || setup.Com1 || setup.TenNhaHang || setup.TenCongTy || 'NHÀ HÀNG TIỆC CƯỚI';
     return {
-        TenNhaHang:        tenNhaHang,
-        SlogenNhaHang:     setup.Slogan || setup.SlogenNhaHang || '★ LUXURY WEDDING & EVENTS ★',
-        DiaChiNhaHang:     setup.DiaChi || setup.DiaChiNhaHang || setup.Com2 || '',
-        DienThoaiNhaHang:  setup.DienThoai || setup.DienThoaiNhaHang || setup.Com3 || '',
-        HotlineNhaHang:    setup.Hotline || setup.HotlineNhaHang || setup.Com4 || '',
+        TenNhaHang: tenNhaHang,
+        SlogenNhaHang: setup.Slogan || setup.SlogenNhaHang || '★ LUXURY WEDDING & EVENTS ★',
+        DiaChiNhaHang: setup.DiaChi || setup.DiaChiNhaHang || setup.Com2 || '',
+        DienThoaiNhaHang: setup.DienThoai || setup.DienThoaiNhaHang || setup.Com3 || '',
+        HotlineNhaHang: setup.Hotline || setup.HotlineNhaHang || setup.Com4 || '',
     };
 }
 
@@ -121,24 +121,24 @@ async function fetchFromSQLAPI(listName, keyword) {
 /** Map HopDong API row → docx placeholder object */
 function mapHopDong(row, setup) {
     const now = new Date();
-    const d = String(now.getDate()).padStart(2,'0');
-    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const m = String(now.getMonth() + 1).padStart(2, '0');
     const y = now.getFullYear();
     return {
         // Bên A — từ setup
         ...mapBenA(setup),
         // Bên B + tiệc — từ API hợp đồng
-        Sohopdong:        row.Sohopdong    || row.sohopdong    || '',
-        Sobiennhan:       row.Sobiennhan   || row.sobiennhan   || '',
-        TenKhachHang:     row.TenKhachHang || row.tenkh        || '',
-        DienThoai:        row.DienThoai    || row.dienthoai    || '',
-        NgayToChuc:       row.NgayToChuc   || row.ngaytochuc   || '',
-        SoBan:            row.SoBan        || row.soban        || '',
-        SanhDat:          row.SanhDat      || row.sanhdat      || '',
-        TongTien:         _formatMoney(row.TongTien || row.tongtien || '0'),
-        TrangThai:        row.TrangThai    || row.trangthai    || '',
-        NgayKy:           `${d}/${m}/${y}`,
-        NhanVienPhuTrach: row.NhanVien     || row.nhanvien     || '',
+        Sohopdong: row.Sohopdong || row.sohopdong || '',
+        Sobiennhan: row.Sobiennhan || row.sobiennhan || '',
+        TenKhachHang: row.TenKhachHang || row.tenkh || '',
+        DienThoai: row.DienThoai || row.dienthoai || '',
+        NgayToChuc: row.NgayToChuc || row.ngaytochuc || '',
+        SoBan: row.SoBan || row.soban || '',
+        SanhDat: row.SanhDat || row.sanhdat || '',
+        TongTien: _formatMoney(row.TongTien || row.tongtien || '0'),
+        TrangThai: row.TrangThai || row.trangthai || '',
+        NgayKy: `${d}/${m}/${y}`,
+        NhanVienPhuTrach: row.NhanVien || row.nhanvien || '',
     };
 }
 
@@ -149,8 +149,8 @@ function mapHopDong(row, setup) {
  */
 function mapDatCoc(row, setup) {
     const now = new Date();
-    const d = String(now.getDate()).padStart(2,'0');
-    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const m = String(now.getMonth() + 1).padStart(2, '0');
     const y = now.getFullYear();
     // Field thực tế trong SQL là DaCocVND (xem API_DanhSachPhieuCoc.sql dòng 65)
     const soTien = row.DaCocVND || row.dacoc || row.SoTienCoc || row.Tongtien || row.tongtien || '0';
@@ -158,18 +158,18 @@ function mapDatCoc(row, setup) {
         // Bên A — từ setup
         ...mapBenA(setup),
         // Thông tin phiếu cọc — field name CHÍNH XÁC theo SQL
-        MaChungTu:    row.MaChungTu  || row.DocumentID || row.SoPhieu || '',
-        SoPhieu:      row.SoPhieu    || row.SoBN       || '',
+        MaChungTu: row.MaChungTu || row.DocumentID || row.SoPhieu || '',
+        SoPhieu: row.SoPhieu || row.SoBN || '',
         TenKhachHang: row.TenKhachHang || '',
-        DienThoai:    row.DienThoai  || '',
-        NgayToChuc:   row.NgayToChuc || '',
-        SanhDat:      row.SanhDat    || '',
-        SoBan:        row.SoBan      || String(row.SobanManchinhthuc || ''),
-        SoTienCoc:    _formatMoney(soTien),
+        DienThoai: row.DienThoai || '',
+        NgayToChuc: row.NgayToChuc || '',
+        SanhDat: row.SanhDat || '',
+        SoBan: row.SoBan || String(row.SobanManchinhthuc || ''),
+        SoTienCoc: _formatMoney(soTien),
         SoTienCocChu: _numberToWords(soTien),
-        NgayLap:      row.NgayLap    || `${d}/${m}/${y}`,
-        NhanVienLap:  row.NhanVien   || '',
-        TrangThai:    row.TrangThai  || '',
+        NgayLap: row.NgayLap || `${d}/${m}/${y}`,
+        NhanVienLap: row.NhanVien || '',
+        TrangThai: row.TrangThai || '',
     };
 }
 
@@ -182,8 +182,8 @@ function _formatMoney(val) {
 function _numberToWords(val) {
     const n = parseInt(String(val).replace(/[^0-9]/g, ''), 10);
     if (isNaN(n) || n === 0) return 'Không đồng';
-    const units  = ['','một','hai','ba','bốn','năm','sáu','bảy','tám','chín'];
-    const levels = [{v:1e9,n:'tỷ'},{v:1e6,n:'triệu'},{v:1e3,n:'nghìn'},{v:1,n:''}];
+    const units = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+    const levels = [{ v: 1e9, n: 'tỷ' }, { v: 1e6, n: 'triệu' }, { v: 1e3, n: 'nghìn' }, { v: 1, n: '' }];
     let result = '', rem = n;
     for (const lv of levels) {
         if (rem >= lv.v) {
@@ -192,7 +192,7 @@ function _numberToWords(val) {
             result += (q < 10 ? units[q] : q) + (lv.n ? ' ' + lv.n + ' ' : '');
         }
     }
-    return result.trim().replace(/\s+/g,' ') + ' đồng chẵn';
+    return result.trim().replace(/\s+/g, ' ') + ' đồng chẵn';
 }
 
 // ==========================================
@@ -237,6 +237,33 @@ app.get('/api/documents', (req, res) => {
  *   EXEC API_LayCacTruongGiaoDien @FormName = 'frmHopDong'
  *   → cột [name] = tên biến,  cột [label] = nhãn tiếng Việt
  */
+
+/**
+ * 1.5 Lấy danh sách các biến dữ liệu cho một loại mẫu
+ */
+app.get('/api/documents/fields/:type', (req, res) => {
+    try {
+        const type = req.params.type;
+        let fields = [];
+        const dummyRow = {};
+        const dummySetup = {};
+        
+        if (type === 'hop_dong' || type === 'quyet_toan') {
+            fields = Object.keys(mapHopDong(dummyRow, dummySetup));
+        } else if (type === 'dat_coc') {
+            fields = Object.keys(mapDatCoc(dummyRow, dummySetup));
+        } else {
+            return res.status(400).json({ success: false, message: 'Invalid type' });
+        }
+        
+        const formattedFields = fields.map(f => `{${f}}`);
+        res.json({ success: true, fields: formattedFields });
+    } catch (error) {
+        console.error('[API] Lỗi lấy danh sách biến:', error);
+        res.status(500).json({ success: false, message: 'Lỗi server: ' + error.message });
+    }
+});
+
 app.post('/api/documents/generate', async (req, res) => {
     try {
         let { outputFileName, templateType, customerId, rowData } = req.body;
@@ -250,7 +277,7 @@ app.post('/api/documents/generate', async (req, res) => {
         // ── 2. Map data từ rowData (frontend) hoặc fallback SQL API ─────────
         const API_MAP = {
             'hop_dong': { list: 'frmHopDong', mapFn: mapHopDong },
-            'dat_coc':  { list: 'frmDatCoc',  mapFn: mapDatCoc  },
+            'dat_coc': { list: 'frmDatCoc', mapFn: mapDatCoc },
         };
         const apiCfg = API_MAP[templateType];
         let dataMap = mapBenA(setup);  // Luôn có thông tin nhà hàng
@@ -287,6 +314,14 @@ app.post('/api/documents/generate', async (req, res) => {
             const val = dataMap[key];
             return (val !== undefined && val !== null) ? String(val) : '';
         });
+
+        // [FIX] Khắc phục lỗi OnlyOffice xuất file với line-height: 0.1pt gây đè dòng
+        html = html.replace(/line-height:\s*0\.1pt;?/gi, 'line-height: 1.5;');
+        html = html.replace(/margin-top:\s*56\.7pt;?/gi, 'margin-top: 10pt;');
+        html = html.replace(/margin-bottom:\s*56\.7pt;?/gi, 'margin-bottom: 10pt;');
+
+        // [FIX] Khắc phục lỗi chữ trắng trên nền trắng trong bảng
+        html = html.replace(/color:#ffffff;mso-style-textfill-fill-color:#ffffff/gi, 'color:#8b0000;mso-style-textfill-fill-color:#8b0000');
 
         // ── 5. Lưu file .doc (template đã có sẵn xmlns header) ──────────────
         // Template HỢP LỆ: mở được trong Word và OnlyOffice
@@ -329,9 +364,9 @@ app.post('/api/documents/callback', async (req, res) => {
     const respondSuccess = () => res.json({ error: 0 });
     try {
         const data = req.body;
-        const docId    = req.query.docId    || 'unknown';
+        const docId = req.query.docId || 'unknown';
         const fileName = req.query.fileName || `${docId}.docx`;
-        const status   = data.status;
+        const status = data.status;
 
         console.log(`[ONLYOFFICE] Callback — DocID: ${docId}, File: ${fileName}, Status: ${status}`);
 
@@ -366,9 +401,9 @@ app.get('/', (req, res) => {
         service: 'Wedding Banquet Document API',
         status: '✅ Running smoothly',
         endpoints: {
-            list:     'GET /api/documents',
+            list: 'GET /api/documents',
             generate: 'POST /api/documents/generate',
-            delete:   'DELETE /api/documents/:fileName',
+            delete: 'DELETE /api/documents/:fileName',
             callback: 'POST /api/documents/callback'
         }
     });
