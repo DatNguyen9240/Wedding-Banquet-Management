@@ -4,7 +4,7 @@
  */
 var ReportRevenuePage = (function () {
   var $container;
-  var revenueData = window.MockData ? window.MockData.demoRevenue : [];
+  var revenueData = [];
   var charts = {};
 
   function render(containerElement) {
@@ -16,13 +16,43 @@ var ReportRevenuePage = (function () {
       .then(function(html) {
         $container.innerHTML = html;
         _renderFilter();
-        _renderChartTabs();
-        _renderTable();
+        
+        // Gọi API lần đầu (mặc định lấy tháng hiện tại hoặc lấy tất cả tuỳ logic, ở đây lấy tháng này)
+        var today = new Date();
+        var firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+        
+        _loadData(firstDay, lastDay);
         _bindEvents();
       })
       .catch(function(err) {
         $container.innerHTML = '<div class="card"><div class="card-body text-danger">Lỗi tải template: ' + err.message + '</div></div>';
       });
+  }
+
+  function _loadData(from, to) {
+    if (typeof ReportService !== 'undefined') {
+      ReportService.getRevenue(from, to).then(function(data) {
+        revenueData = data;
+        
+        var chartTitle = $container.querySelector('#chart-title');
+        if (chartTitle) {
+          if (from && to) {
+            chartTitle.innerText = 'Biểu đồ Doanh thu từ ' + new Date(from).toLocaleDateString('vi-VN') + ' đến ' + new Date(to).toLocaleDateString('vi-VN');
+          } else {
+            chartTitle.innerText = 'Biểu đồ Doanh thu';
+          }
+        }
+        
+        _renderChartTabs();
+        _renderTable();
+      }).catch(function(err) {
+        UIToast.show('Lỗi tải dữ liệu báo cáo!', 'error');
+        revenueData = [];
+        _renderChartTabs();
+        _renderTable();
+      });
+    }
   }
 
   function _renderFilter() {
@@ -32,25 +62,10 @@ var ReportRevenuePage = (function () {
       { id: 'f-to', label: 'Đến ngày', type: 'date' }
     ], function(values) {
       if (values['f-from'] && values['f-to']) {
-        var d1 = new Date(values['f-from']);
-        var d2 = new Date(values['f-to']);
-        revenueData = [];
-        for (var d = new Date(d1); d <= d2; d.setDate(d.getDate() + 1)) {
-          var dateStr = d.getDate().toString().padStart(2, '0') + '/' + (d.getMonth() + 1).toString().padStart(2, '0');
-          var rev = Math.floor(Math.random() * 200000000) + 50000000;
-          var count = Math.floor(Math.random() * 5) + 1;
-          revenueData.push({ month: dateStr, revenue: rev, count: count });
-        }
-        var chartTitle = $container.querySelector('#chart-title');
-        if (chartTitle) chartTitle.innerText = 'Biểu đồ Doanh thu từ ' + d1.toLocaleDateString('vi-VN') + ' đến ' + d2.toLocaleDateString('vi-VN');
+        _loadData(values['f-from'], values['f-to']);
       } else {
-        revenueData = window.MockData ? window.MockData.demoRevenue : [];
-        var chartTitle = $container.querySelector('#chart-title');
-        if (chartTitle) chartTitle.innerText = 'Biểu đồ Doanh thu';
+        _loadData(null, null);
       }
-      _renderChartTabs();
-      _renderTable();
-      Alert.success('Đã làm mới dữ liệu!');
     });
 
     var cardFilter = document.createElement('div');
@@ -86,8 +101,20 @@ var ReportRevenuePage = (function () {
 
   function _initChart(canvasId, type) {
     var ctx = $container.querySelector('#' + canvasId).getContext('2d');
-    var labels = revenueData.map(function(item) { return item.month; });
-    var data = revenueData.map(function(item) { return item.revenue; });
+    
+    // Gom nhóm dữ liệu
+    var groupMap = {};
+    var isDonut = type === 'doughnut';
+    
+    revenueData.forEach(function(r) {
+      // Biểu đồ tròn -> Phân tích Tỷ trọng Doanh thu theo Sảnh
+      // Các biểu đồ còn lại -> Phân tích Xu hướng Doanh thu theo Ngày
+      var key = isDonut ? (r.hall || 'Chưa xếp sảnh') : r.date; 
+      if (!groupMap[key]) groupMap[key] = 0;
+      groupMap[key] += (r.revenue || 0);
+    });
+    var labels = Object.keys(groupMap);
+    var data = Object.values(groupMap);
 
     var rootStyles = getComputedStyle(document.documentElement);
     var primaryColor = rootStyles.getPropertyValue('--color-primary').trim() || '#4F46E5';
@@ -104,7 +131,7 @@ var ReportRevenuePage = (function () {
     var borderWidth = type === 'line' ? 2 : 0;
     
     if (isDonut) {
-      bgColors = ['#4F46E5', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16', '#06B6D4'];
+      bgColors = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#0EA5E9', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1'];
       borderColors = surfaceColor;
       borderWidth = 2;
     }
@@ -174,15 +201,19 @@ var ReportRevenuePage = (function () {
     var totalRev = 0;
     var totalCount = 0;
 
-    revenueData.forEach(function(item) {
-      totalRev += item.revenue;
-      totalCount += item.count;
+    revenueData.forEach(function(item, idx) {
+      totalRev += (item.revenue || 0);
+      totalCount += 1;
 
       var tr = document.createElement('tr');
       tr.innerHTML = `
-        <td class="text-center fw-medium">${item.month}</td>
-        <td class="text-center">${item.count} tiệc</td>
-        <td class="text-end fw-medium" style="color: var(--color-primary);">${item.revenue.toLocaleString('vi-VN')}</td>
+        <td class="text-center">${idx + 1}</td>
+        <td class="fw-semibold" style="color: var(--color-primary);">${item.id}</td>
+        <td class="fw-medium">${item.customer}</td>
+        <td class="text-center">${item.date}</td>
+        <td class="text-center"><span class="badge" style="background:rgba(79, 70, 229, 0.1); color:var(--color-primary); padding:4px 8px; border-radius:6px;">${item.hall || 'Chưa xếp sảnh'}</span></td>
+        <td class="text-end">${item.tables || 0} bàn</td>
+        <td class="text-end fw-semibold" style="color: var(--color-danger);">${(item.revenue || 0).toLocaleString('vi-VN')} đ</td>
       `;
       tbody.appendChild(tr);
     });
@@ -201,8 +232,8 @@ var ReportRevenuePage = (function () {
     });
 
     $container.querySelector('#btn-export').addEventListener('click', function() {
-      var revData = window.MockData ? window.MockData.demoRevenue : [];
-      var cData = window.MockData ? window.MockData.demoCost : [];
+      var revData = revenueData || [];
+      var cData = []; // Báo cáo doanh thu chỉ quan tâm doanh thu
       
       // Calculate totals
       var totalRev = 0;
@@ -242,21 +273,28 @@ var ReportRevenuePage = (function () {
       html += '<thead>';
       html += '<tr><th colspan="3" style="font-size: 16px; font-weight: bold; text-align: left; background-color: #10B981; color: white; padding: 12px;">1. CHI TIẾT DOANH THU (' + totalCount + ' tiệc)</th></tr>';
       html += '<tr>';
-      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 120px; padding: 10px;">Thời gian</th>';
-      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 150px; padding: 10px;">Số lượng tiệc</th>';
-      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 200px; padding: 10px;">Doanh thu (VNĐ)</th>';
+      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 60px; padding: 10px;">STT</th>';
+      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 120px; padding: 10px;">Mã HĐ</th>';
+      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 200px; padding: 10px;">Khách Hàng</th>';
+      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 120px; padding: 10px;">Ngày Tổ Chức</th>';
+      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 150px; padding: 10px;">Sảnh Tiệc</th>';
+      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 100px; padding: 10px;">Số Bàn</th>';
+      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 150px; padding: 10px;">Doanh Thu (VNĐ)</th>';
       html += '</tr></thead><tbody>';
       
-      revData.forEach(function(item) {
+      revData.forEach(function(item, idx) {
         html += '<tr>';
-        html += '<td style="text-align: center; padding: 8px;">' + item.month + '</td>';
-        html += '<td style="text-align: center; padding: 8px;">' + item.count + '</td>';
-        html += '<td style="text-align: right; padding: 8px;">' + item.revenue.toLocaleString('vi-VN') + '</td>';
+        html += '<td style="text-align: center; padding: 8px;">' + (idx + 1) + '</td>';
+        html += '<td style="padding: 8px;">' + item.id + '</td>';
+        html += '<td style="padding: 8px;">' + item.customer + '</td>';
+        html += '<td style="text-align: center; padding: 8px;">' + item.date + '</td>';
+        html += '<td style="text-align: center; padding: 8px;">' + (item.hall || 'Chưa xếp sảnh') + '</td>';
+        html += '<td style="text-align: center; padding: 8px;">' + (item.tables || 0) + '</td>';
+        html += '<td style="text-align: right; padding: 8px;">' + (item.revenue || 0).toLocaleString('vi-VN') + '</td>';
         html += '</tr>';
       });
       html += '</tbody><tfoot><tr>';
-      html += '<td style="font-weight: bold; text-align: center; background-color: #e2e8f0; padding: 10px;">TỔNG CỘNG</td>';
-      html += '<td style="font-weight: bold; text-align: center; background-color: #e2e8f0; padding: 10px;">' + totalCount + '</td>';
+      html += '<td colspan="6" style="font-weight: bold; text-align: center; background-color: #e2e8f0; padding: 10px;">TỔNG CỘNG (' + totalCount + ' tiệc)</td>';
       html += '<td style="font-weight: bold; color: #10B981; text-align: right; background-color: #e2e8f0; padding: 10px;">' + totalRev.toLocaleString('vi-VN') + '</td>';
       html += '</tr></tfoot></table><br><br>';
 

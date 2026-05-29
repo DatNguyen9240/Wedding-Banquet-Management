@@ -4,7 +4,8 @@
  */
 var ReportCostPage = (function () {
   var $container;
-  var costData = window.MockData ? window.MockData.demoCost : [];
+  var costData = [];
+  var revenueDataCache = []; // Để tính lợi nhuận gộp
 
   function render(containerElement) {
     $container = containerElement;
@@ -14,12 +15,42 @@ var ReportCostPage = (function () {
       .then(function(html) {
         $container.innerHTML = html;
         _renderFilter();
-        _renderTable();
+        
+        // Mặc định load tháng hiện tại
+        var today = new Date();
+        var firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        var lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+        
+        _loadData(firstDay, lastDay, '');
         _bindEvents();
       })
       .catch(function(err) {
         $container.innerHTML = '<div class="card"><div class="card-body text-danger">Lỗi tải template: ' + err.message + '</div></div>';
       });
+  }
+
+  function _loadData(from, to, keyword) {
+    if (typeof ReportService !== 'undefined') {
+      // Tải chi phí
+      ReportService.getCost(from, to).then(function(data) {
+        // Lọc thêm theo keyword nếu có (nếu API không support thì lọc ở JS)
+        if (keyword) {
+          keyword = keyword.toLowerCase();
+          data = data.filter(function(x) { return x.id.toLowerCase().includes(keyword); });
+        }
+        costData = data;
+        _renderTable();
+      }).catch(function(err) {
+        UIToast.show('Lỗi tải dữ liệu chi phí!', 'error');
+        costData = [];
+        _renderTable();
+      });
+
+      // Tiện thể tải luôn doanh thu để lát xuất Excel có cái mà đối chiếu tính Lợi Nhuận
+      ReportService.getRevenue(from, to).then(function(data) {
+        revenueDataCache = data;
+      });
+    }
   }
 
   function _renderFilter() {
@@ -29,7 +60,7 @@ var ReportCostPage = (function () {
       { id: 'fc-to', label: 'Đến ngày', type: 'date' },
       { id: 'fc-code', label: 'Mã HĐ', type: 'text', placeholder: 'Nhập mã HĐ...' }
     ], function(values) {
-      Alert.success('Đã tải lại báo cáo chi phí!');
+      _loadData(values['fc-from'], values['fc-to'], values['fc-code']);
     });
 
     var cardFilter = document.createElement('div');
@@ -80,23 +111,23 @@ var ReportCostPage = (function () {
     });
 
     $container.querySelector('#btn-export-cost').addEventListener('click', function() {
-      var revData = window.MockData ? window.MockData.demoRevenue : [];
-      var cData = window.MockData ? window.MockData.demoCost : [];
+      var revData = revenueDataCache || [];
+      var cData = costData || [];
       
       // Calculate totals
       var totalRev = 0;
       var totalCount = 0;
       revData.forEach(function(item) {
-        totalRev += item.revenue;
-        totalCount += item.count;
+        totalRev += (item.revenue || 0);
+        totalCount += 1;
       });
       
       var sumFood = 0, sumService = 0, sumStaff = 0, totalCost = 0;
       cData.forEach(function(item) {
-        sumFood += item.foodCost;
-        sumService += item.serviceCost;
-        sumStaff += item.staffCost;
-        totalCost += item.totalCost;
+        sumFood += (item.foodCost || 0);
+        sumService += (item.serviceCost || 0);
+        sumStaff += (item.staffCost || 0);
+        totalCost += (item.totalCost || 0);
       });
       
       var profit = totalRev - totalCost;
@@ -121,16 +152,16 @@ var ReportCostPage = (function () {
       html += '<thead>';
       html += '<tr><th colspan="3" style="font-size: 16px; font-weight: bold; text-align: left; background-color: #10B981; color: white; padding: 12px;">1. CHI TIẾT DOANH THU (' + totalCount + ' tiệc)</th></tr>';
       html += '<tr>';
-      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 120px; padding: 10px;">Thời gian</th>';
-      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 150px; padding: 10px;">Số lượng tiệc</th>';
+      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 60px; padding: 10px;">STT</th>';
+      html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 150px; padding: 10px;">Mã Hợp Đồng</th>';
       html += '<th style="background-color: #f1f5f9; font-weight: bold; width: 200px; padding: 10px;">Doanh thu (VNĐ)</th>';
       html += '</tr></thead><tbody>';
       
-      revData.forEach(function(item) {
+      revData.forEach(function(item, idx) {
         html += '<tr>';
-        html += '<td style="text-align: center; padding: 8px;">' + item.month + '</td>';
-        html += '<td style="text-align: center; padding: 8px;">' + item.count + '</td>';
-        html += '<td style="text-align: right; padding: 8px;">' + item.revenue.toLocaleString('vi-VN') + '</td>';
+        html += '<td style="text-align: center; padding: 8px;">' + (idx + 1) + '</td>';
+        html += '<td style="text-align: center; padding: 8px;">' + item.id + '</td>';
+        html += '<td style="text-align: right; padding: 8px;">' + (item.revenue || 0).toLocaleString('vi-VN') + '</td>';
         html += '</tr>';
       });
       html += '</tbody><tfoot><tr>';
