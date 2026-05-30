@@ -26,7 +26,7 @@ BEGIN
         -- Quét bảng hệ thống sys.parameters để tự động sinh bản đồ tham số
         SELECT @ParaTemplate = @ParaTemplate + 
             CASE WHEN @ParaTemplate = '' THEN '' ELSE ', ' END + 
-            name + '=''{' + 
+            name + '=N''{' + 
             CASE 
                 WHEN name = '@UserName' THEN 'User'
                 WHEN name = '@Keyword' THEN 'Keyword'
@@ -34,7 +34,7 @@ BEGIN
                 WHEN name = '@Limit' THEN 'Limit'
                 -- Khai báo thông minh cho các biến Framework:
                 WHEN name = '@JsonData' OR name = '@Data' OR name = '@FilterJSON' THEN 'JsonData'
-                WHEN name = '@FormName' OR name = '@List' THEN 'List'
+                WHEN name = '@List' THEN 'List'
                 WHEN name = '@SortColumn' THEN 'SortColumn'
                 WHEN name = '@SortDir' THEN 'SortDir'
                 -- Biến lạ thì lấy luôn tên (bỏ dấu @)
