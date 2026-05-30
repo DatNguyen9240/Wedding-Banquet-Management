@@ -693,13 +693,20 @@ var ContractPage = (function () {
     var $dichVuContainer = document.createElement('div');
     $dichVuContainer.id = 'thuc-don-dich-vu-tab-container';
 
+    var $uuDaiContainer = document.createElement('div');
+    $uuDaiContainer.id = 'uu-dai-tab-container';
+
     var tabs = UITabs.create([
-      { title: 'Bàn Tiệc', content: '<div class="p-4"><p>Giao diện chọn Gói Ưu Đãi và thiết lập Giá bàn.</p></div>' },
+      { title: 'Bàn Tiệc', content: '<div class="p-4"><p>Giao diện thiết lập Giá bàn, chia bàn, và các loại bàn phát sinh.</p></div>' },
+      { title: 'Sảnh', content: '<div class="p-4"><p>Giao diện Sảnh, sơ đồ bàn và chi phí sảnh.</p></div>' },
       { title: 'Thực đơn Mặn', content: $thucDonManContainer },
       { title: 'Thực đơn Chay', content: $thucDonChayContainer },
       { title: 'Thức uống', content: $thucUongContainer },
-      { title: 'Dịch vụ & Ưu đãi', content: $dichVuContainer },
-      { title: 'Ghi chú & Pháp lý', content: '<div class="p-4"><p>Điều khoản bổ sung in vào hợp đồng giấy.</p></div>' }
+      { title: 'Dịch vụ', content: $dichVuContainer },
+      { title: 'Ưu đãi', content: $uuDaiContainer },
+      { title: 'Ghi chú', content: '<div class="p-4"><p>Các điều khoản bổ sung in vào hợp đồng giấy.</p></div>' },
+      { title: 'Setup Print', content: '<div class="p-4"><p>Tùy chỉnh thông tin in ấn và thiết kế bảng tên.</p></div>' },
+      { title: 'Dời / Hủy', content: '<div class="p-4"><p>Logic xử lý dời ngày, hủy hợp đồng và tính phí phạt.</p></div>' }
     ]);
     document.getElementById('contract-tabs-container').appendChild(tabs);
 
