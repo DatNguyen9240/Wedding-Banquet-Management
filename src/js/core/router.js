@@ -9,10 +9,22 @@ var Router = (function () {
 
   // ── Route definitions ──────────────────────────────────────────────────
   var ROUTES = [
-    { path: '/dashboard',         template: 'src/pages/dashboard/dashboard.html',                 script: 'src/pages/dashboard/dashboard.js',                 perm: 'tongquan',        title: 'Tổng quan',             pageFn: 'DashboardPage' },
-    { path: '/components-demo',   template: 'src/pages/components-demo/components-demo.html',     script: 'src/pages/components-demo/components-demo.js',     perm: 'uidemo',          title: 'Bản test Component',    pageFn: 'ComponentsDemoPage' },
-    { path: '/appearance',        template: 'src/pages/appearance/appearance.html',               script: 'src/pages/appearance/appearance.js',               perm: '',                title: 'Cấu hình Giao diện',    pageFn: 'AppearancePage' },
-    { path: '/document-manager',  template: 'src/pages/document-manager/document-manager.html',   script: 'src/pages/document-manager/document-manager.js',   perm: '',                title: 'Workspace Tài Liệu',    pageFn: 'DocumentManagerPage' }
+    { path: '/dashboard', template: 'src/pages/dashboard/dashboard.html', script: 'src/pages/dashboard/dashboard.js', perm: 'tongquan', title: 'Tổng quan', pageFn: 'DashboardPage', hideHeader: true },
+    { path: '/components-demo', template: 'src/pages/components-demo/components-demo.html', script: 'src/pages/components-demo/components-demo.js', perm: 'uidemo', title: 'Bản test Component', pageFn: 'ComponentsDemoPage' },
+    { path: '/appearance', template: 'src/pages/appearance/appearance.html', script: 'src/pages/appearance/appearance.js', perm: '', title: 'Cấu hình Giao diện', pageFn: 'AppearancePage' },
+    { path: '/document-manager', template: 'src/pages/document-manager/document-manager.html', script: 'src/pages/document-manager/document-manager.js', perm: '', title: 'Workspace Tài Liệu', pageFn: 'DocumentManagerPage', hideHeader: true },
+    { path: '/event-setup', template: 'src/pages/event-setup/event-setup.html', script: 'src/pages/event-setup/event-setup.js', perm: '', title: '', pageFn: 'EventSetupPage' },
+    { path: '/categories', template: 'src/pages/categories/categories.html', script: 'src/pages/categories/categories.js', perm: '', title: '', pageFn: 'CategoriesPage' },
+    { path: '/calendar', template: 'src/pages/calendar/calendar.html', script: 'src/pages/calendar/calendar.js', perm: '', title: '', pageFn: 'CalendarPage' },
+    { path: '/menus', template: 'src/pages/menus/menus.html', script: 'src/pages/menus/menus.js', perm: '', title: '', pageFn: 'MenusPage' },
+    { path: '/promotions', template: 'src/pages/promotions/promotions.html', script: 'src/pages/promotions/promotions.js', perm: '', title: '', pageFn: 'PromotionsPage' },
+    { path: '/report-revenue', template: 'src/pages/report-revenue/report-revenue.html', script: 'src/pages/report-revenue/report-revenue.js', perm: '', title: '', pageFn: 'ReportRevenuePage' },
+    { path: '/report-cost', template: 'src/pages/report-cost/report-cost.html', script: 'src/pages/report-cost/report-cost.js', perm: '', title: '', pageFn: 'ReportCostPage' },
+    { path: '/report-other', template: 'src/pages/report-other/report-other.html', script: 'src/pages/report-other/report-other.js', perm: '', title: '', pageFn: 'ReportOtherPage' },
+    { path: '/survey', template: 'src/pages/survey/survey.html', script: 'src/pages/survey/survey.js', perm: '', title: '', pageFn: 'SurveyPage' },
+    { path: '/hall-status', template: 'src/pages/hall-status/hall-status.html', script: 'src/pages/hall-status/hall-status.js', perm: '', title: '', pageFn: 'HallStatusPage' },
+    { path: '/settings', template: 'src/pages/settings/settings.html', script: 'src/pages/settings/settings.js', perm: '', title: '', pageFn: 'SettingsPage' },
+    { path: '/permissions', template: 'src/pages/permissions/permissions.html', script: 'src/pages/permissions/permissions.js', perm: '', title: '', pageFn: 'PermissionsPage' }
   ];
 
   function addDynamicRoutes(menus) {
@@ -32,20 +44,33 @@ var Router = (function () {
 
       var path = '/' + url;
 
-      // Bỏ qua nếu đã tồn tại
-      if (ROUTES.find(function (r) { return r.path === path; })) return;
+      var existingRoute = ROUTES.find(function (r) { return r.path === path; });
+
+      if (existingRoute) {
+        // Cập nhật thông tin từ database nếu route custom đã được định nghĩa cứng
+        existingRoute.perm = m.FormName || m.formName || existingRoute.perm;
+        existingRoute.title = m.MenuName || m.VN || m.label || existingRoute.title || '';
+        existingRoute.subTitle = m.SubTitle || m.subTitle || existingRoute.subTitle || '';
+        if (m.HideHeader || m.hideHeader) existingRoute.hideHeader = true;
+        
+        _routeMap[path] = existingRoute;
+        if (path === currentHash) needsReload = true;
+        return;
+      }
 
       var route = {
         path: path,
         perm: m.FormName || m.formName,
-        title: m.MenuName || m.VN || m.label || ''
+        title: m.MenuName || m.VN || m.label || '',
+        subTitle: m.SubTitle || m.subTitle || '',
+        hideHeader: m.HideHeader || m.hideHeader || false
       };
 
       var formKey = m.FormKey || m.formKey;
       var formName = m.FormName || m.formName || '';
 
       var existingConfig = null;
-      
+
       // 1. Tìm config dựa vào FormKey hoặc FormName
       if (window.APP_MODULES) {
         if (formKey && window.APP_MODULES[formKey]) {
@@ -60,7 +85,7 @@ var Router = (function () {
             }
           }
         }
-        
+
         // 2. Fallback: tự suy luận từ urlPara (vd: form-builder -> FORM_BUILDER)
         if (!existingConfig) {
           var deducedKey = url.trim().replace(/-/g, '_').toUpperCase();
@@ -71,26 +96,11 @@ var Router = (function () {
         }
       }
 
-      // Quyết định dùng DynamicFormEngine:
-      // - Nếu tìm thấy config trong APP_MODULES
-      // - HOẶC nếu FormName bắt đầu bằng chữ "frm"
-      if (existingConfig || formName.toLowerCase().indexOf('frm') === 0) {
-        // Dùng DynamicFormEngine
-        route.script = 'src/js/core/DynamicFormEngine.js';
-        route.pageFn = 'DynamicFormEngine';
-        route.config = existingConfig || { FormName: formName, PageTitle: route.title };
-      } else {
-        // Convention: template và script nằm trong thư mục trùng tên URLPara
-        var folder = url.trim();
-        route.template = 'src/pages/' + folder + '/' + folder + '.html';
-        route.script = 'src/pages/' + folder + '/' + folder + '.js';
-
-        // Convert urlPara to PascalCase (vd: hall-status -> HallStatusPage)
-        var camel = folder.split('-').map(function (s) {
-          return s.charAt(0).toUpperCase() + s.slice(1);
-        }).join('');
-        route.pageFn = camel + 'Page';
-      }
+      // Đã loại bỏ nhánh custom vì toàn bộ custom đã nằm trong ROUTES
+      // Mặc định những route mới từ DB không nằm trong ROUTES sẽ dùng DynamicFormEngine
+      route.script = 'src/js/core/DynamicFormEngine.js';
+      route.pageFn = 'DynamicFormEngine';
+      route.config = Object.assign({ FormName: formName, PageTitle: route.title, PageSubtitle: route.subTitle }, existingConfig || {});
 
       ROUTES.push(route);
       _routeMap[path] = route; // Update Map
@@ -103,7 +113,7 @@ var Router = (function () {
     if (needsReload) {
       if (!_currentRoute || _currentRoute.path !== currentHash) {
         // Delay slightly to allow Navbar to finish rendering before we trigger routing
-        setTimeout(function() {
+        setTimeout(function () {
           _handleRoute();
         }, 50);
       }
@@ -283,11 +293,28 @@ var Router = (function () {
             if (currentNav !== _navId) throw new Error('ABORTED');
             var mod = window[route.pageFn];
             if (mod && typeof mod.render === 'function') {
-              // Xóa sạch nội dung cũ, cấp wrapper mới để các hàm fetch async không ghi đè lên trang khác
+              // Xóa sạch nội dung cũ
               $content.innerHTML = '';
+              
+              // 1. Dựng Global Header (Lấy Title/Subtitle từ Router/Menu)
+              if (!route.hideHeader) {
+                var headerHtml = 
+                  '<div class="page-title-bar" id="global-header">' +
+                    '<div class="page-title-info">' +
+                      '<h1 class="page-title-heading">' + (route.title || 'Quản lý Dữ liệu') + '</h1>' +
+                      (route.subTitle ? '<span class="page-title-sub">' + route.subTitle + '</span>' : '') +
+                    '</div>' +
+                    '<div class="page-title-actions" id="global-page-actions"></div>' +
+                  '</div>';
+                $content.insertAdjacentHTML('beforeend', headerHtml);
+              }
+
+              // 2. Dựng wrapper
               var wrapper = document.createElement('div');
               wrapper.className = 'page-wrapper';
               $content.appendChild(wrapper);
+              
+              // 3. Render trang vào wrapper
               mod.render(wrapper, route.config || null);
             } else {
               _renderError($content, 'Không tìm thấy module: ' + route.pageFn);
@@ -346,6 +373,7 @@ var Router = (function () {
         return ApiClient.post(API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MY_PERMISSIONS, { Username: userObj.UserName }, { silent: true }).then(function (permRes) {
           var permMap = {};
           var permList = permRes.list || permRes.records || [];
+          if (permList.length > 0) { localStorage.setItem('debug_perm_row', JSON.stringify(permList[0])); }
           function _isTrue(v) { return v === 1 || v === '1' || v === true || v === 'true' || String(v).toLowerCase() === 'true'; }
           permList.forEach(function (p) {
             var fname = p.FormName || p.formName || p.formname || p.FORMNAME;
@@ -375,43 +403,12 @@ var Router = (function () {
     window.addEventListener('hashchange', _handleRoute);
 
     // BẢO MẬT: Kiểm tra Version Quyền 1 lần duy nhất lúc F5 tải lại màn hình
-    if (typeof ApiClient !== 'undefined' && typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS.PERMISSIONS.GET_VERSION) {
-      ApiClient.get(API_CONFIG.ENDPOINTS.PERMISSIONS.GET_VERSION, { silent: true }).then(function (res) {
-        var localVer = localStorage.getItem('pmql_permission_ver');
-        var records = res.list || res.records || [];
-        var svVersion = records.length > 0 ? records[0].version : (res.version || '');
-
-        if (svVersion && svVersion !== localVer) {
-          // Vân tay bị lệch -> Tải quyền mới
-          var userJson = localStorage.getItem('pmql_user');
-          var userObj = userJson ? JSON.parse(userJson) : {};
-          ApiClient.post(API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MY_PERMISSIONS, { Username: userObj.UserName }, { silent: true }).then(function (permRes) {
-            var permMap = {};
-            var permList = permRes.list || permRes.records || [];
-            if (permList.length > 0) { localStorage.setItem('debug_perm_row', JSON.stringify(permList[0])); }
-            function _isTrue(v) { return v === 1 || v === '1' || v === true || v === 'true' || String(v).toLowerCase() === 'true'; }
-            permList.forEach(function (p) {
-              var fname = p.FormName || p.formName || p.formname || p.FORMNAME;
-              if (fname) {
-                permMap[fname] = {
-                  CanView: _isTrue(p.CanView) || _isTrue(p.canView) || _isTrue(p.canview) || _isTrue(p.CANVIEW),
-                  CanAdd: _isTrue(p.CanAdd) || _isTrue(p.canAdd) || _isTrue(p.canadd) || _isTrue(p.CANADD),
-                  CanEdit: _isTrue(p.CanEdit) || _isTrue(p.canEdit) || _isTrue(p.canedit) || _isTrue(p.CANEDIT),
-                  CanDelete: _isTrue(p.CanDelete) || _isTrue(p.canDelete) || _isTrue(p.candelete) || _isTrue(p.CANDELETE)
-                };
-              }
-            });
-            localStorage.setItem('pmql_permissions', JSON.stringify(permMap));
-            localStorage.setItem('pmql_permission_ver', svVersion);
-            _finishInit();
-          }).catch(_finishInit);
-        } else {
-          _finishInit();
-        }
-      }).catch(_finishInit);
-    } else {
+    _syncPermissionsIfNeeded().then(function () {
       _finishInit();
-    }
+    }).catch(function (e) {
+      console.error(e);
+      _finishInit();
+    });
   }
 
   function _finishInit() {

@@ -7,9 +7,11 @@
 var DocumentManagerPage = (function () {
 
   // ── Config ────────────────────────────────────────────────────────────
-  var API_BASE       = 'http://127.0.0.1:5000/api/documents';
-  var HOST_IP        = '127.0.0.1';          // Backend Node.js local
-  var ONLYOFFICE_API = 'http://127.0.0.1:82/web-apps/apps/api/documents/api.js';
+  var DOC_CONFIG = window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER;
+
+  var API_BASE       = DOC_CONFIG.BASE_API;
+  var HOST_IP        = DOC_CONFIG.NODE_IP;
+  var ONLYOFFICE_API = DOC_CONFIG.ONLYOFFICE_API;
 
   // ── State ─────────────────────────────────────────────────────────────
   var _container   = null;   // page-wrapper div từ Router
@@ -146,7 +148,7 @@ var DocumentManagerPage = (function () {
               '<span>' + dateStr + '</span>' +
             '</div>' +
             '<div class="docmgr-item-actions">' +
-              '<a class="docmgr-download" href="http://' + HOST_IP + ':5000/uploads/' + encodeURIComponent(doc.fileName) + '" download="' + _escHtml(doc.fileName) + '" title="Tải xuống" onclick="event.stopPropagation()">' +
+              '<a class="docmgr-download" href="' + DOC_CONFIG.UPLOADS_URL + encodeURIComponent(doc.fileName) + '" download="' + _escHtml(doc.fileName) + '" title="Tải xuống" onclick="event.stopPropagation()">' +
                 '<span class="material-symbols-outlined" style="font-size:16px;">download</span>' +
               '</a>' +
               '<button class="docmgr-del" title="Xóa tài liệu">' +
@@ -188,7 +190,7 @@ var DocumentManagerPage = (function () {
       _docEditor = null;
     }
 
-    var fileUrl = 'http://' + HOST_IP + ':5000/uploads/' + encodeURIComponent(fileName);
+    var fileUrl = DOC_CONFIG.UPLOADS_URL + encodeURIComponent(fileName);
 
     // File .doc của hệ thống là HTML-based → dùng iframe render trực tiếp
     // Không cần OnlyOffice, không cần Docker
@@ -267,12 +269,10 @@ var DocumentManagerPage = (function () {
 
     _ensureOnlyOfficeApi()
       .then(function () {
-        // [QUAN TRỌNG] OnlyOffice chạy trong Docker. Nếu truyền 127.0.0.1 thì OnlyOffice sẽ tìm file trong chính container của nó (báo lỗi không tải được).
-        // Cần dùng 'host.docker.internal' để Docker container có thể giao tiếp ngược ra Backend Node.js trên máy Host.
-        var dockerHost = 'host.docker.internal'; 
-        var fileUrl = 'http://' + dockerHost + ':5000/samples/' + templateName;
-        // Callback URL trỏ tới server với isTemplate=1 để backend lưu đè vào thư mục samples
-        var callbackUrl = 'http://' + dockerHost + ':5000/api/documents/callback?isTemplate=1&fileName=' + templateName;
+        // [QUAN TRỌNG] Trỏ tới Node.js Backend từ OnlyOffice (Document Server).
+        // Trên production có thể sử dụng trực tiếp IP Server thay vì host.docker.internal.
+        var fileUrl = DOC_CONFIG.SAMPLES_URL + templateName;
+        var callbackUrl = DOC_CONFIG.BASE_API + '/callback?isTemplate=1&fileName=' + templateName;
         
         var config  = {
           document: {
@@ -378,7 +378,7 @@ var DocumentManagerPage = (function () {
   function _injectDragDropUI(type, area) {
     if (document.getElementById('docmgr-fields-panel')) return;
 
-    fetch('http://' + (typeof HOST_IP !== 'undefined' ? HOST_IP : '127.0.0.1') + ':5000/api/documents/fields/' + type)
+    fetch(DOC_CONFIG.BASE_API + '/fields/' + type)
       .then(function(res) { return res.json(); })
       .then(function(data) {
         if (!data.success) {

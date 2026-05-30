@@ -14,6 +14,7 @@ ALTER PROCEDURE [dbo].[API_LuuMenu]
     @ParentID NVARCHAR(50) = '',
     @Label NVARCHAR(250),
     @EN NVARCHAR(250) = '',
+    @SubTitle NVARCHAR(250) = '',
     @FormName NVARCHAR(250) = '',
     @FormKey NVARCHAR(250) = '',
     @URLPara NVARCHAR(250) = '',
@@ -30,8 +31,8 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM WA_Menu WHERE MenuID = @ParentID)
         BEGIN
             -- Tự động tạo một Menu Cha (Root) mới thay vì báo lỗi
-            INSERT INTO WA_Menu (MenuID, Parent, VN, EN, FormName, FormKey, URLPara, IconClass, isDisable)
-            VALUES (@ParentID, '', N'Nhóm Menu ' + @ParentID, '', '', '', '', 'folder', 0);
+            INSERT INTO WA_Menu (MenuID, Parent, VN, EN, SubTitle, FormName, FormKey, URLPara, IconClass, isDisable)
+            VALUES (@ParentID, '', N'Nhóm Menu ' + @ParentID, '', '', '', '', '', 'folder', 0);
         END
 
         IF (@IsEdit = 1 AND @ParentID = @OldMenuID)
@@ -77,6 +78,7 @@ BEGIN
             Parent = @ParentID,
             VN = @Label,
             EN = @EN,
+            SubTitle = @SubTitle,
             FormName = @FormName,
             FormKey = @FormKey,
             URLPara = @URLPara,
@@ -92,8 +94,8 @@ BEGIN
             RETURN;
         END
 
-        INSERT INTO WA_Menu (MenuID, Parent, VN, EN, FormName, FormKey, URLPara, IconClass, isDisable)
-        VALUES (@MenuID, @ParentID, @Label, @EN, @FormName, @FormKey, @URLPara, @Icon, @IsDisable);
+        INSERT INTO WA_Menu (MenuID, Parent, VN, EN, SubTitle, FormName, FormKey, URLPara, IconClass, isDisable)
+        VALUES (@MenuID, @ParentID, @Label, @EN, @SubTitle, @FormName, @FormKey, @URLPara, @Icon, @IsDisable);
     END
 END
 GO

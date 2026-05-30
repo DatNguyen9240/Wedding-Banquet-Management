@@ -32,9 +32,10 @@ var UIContextMenu = (function () {
     var menu = document.createElement('div');
     menu.className = 'ui-context-menu';
     
-    // Position
-    menu.style.top = e.pageY + 'px';
-    menu.style.left = e.pageX + 'px';
+    // Đặt visibility hidden và vị trí 0 để đo kích thước chuẩn, tránh bị trình duyệt ép nhỏ khi đặt ở sát mép phải
+    menu.style.visibility = 'hidden';
+    menu.style.top = '0px';
+    menu.style.left = '0px';
 
     items.forEach(function(item) {
       if (item === '|') {
@@ -46,7 +47,7 @@ var UIContextMenu = (function () {
         btn.className = 'context-menu-item';
         
         var iconHtml = item.icon ? '<span class="material-symbols-outlined">' + item.icon + '</span>' : '';
-        btn.innerHTML = iconHtml + '<span>' + item.label + '</span>';
+        btn.innerHTML = iconHtml + '<span style="white-space: nowrap;">' + item.label + '</span>';
         
         btn.onclick = function() {
           hide();
@@ -65,9 +66,11 @@ var UIContextMenu = (function () {
       var rect = menu.getBoundingClientRect();
       var left, top;
 
-      // Nếu là click chuột phải (contextmenu), luôn mở tại vị trí chuột
-      // Nếu là click chuột trái vào nút (click), mở dưới nút đó
-      if (e && e.type === 'contextmenu') {
+      var isMobile = window.innerWidth <= 768;
+
+      // Nếu là click chuột phải (contextmenu) trên Desktop, luôn mở tại vị trí chuột
+      // Trên Mobile hoặc khi click nút, mở dưới nút/phần tử để không bị ngón tay che khuất
+      if (e && e.type === 'contextmenu' && !isMobile) {
         left = e.pageX;
         top = e.pageY;
       } else if (activeTrigger) {
@@ -105,10 +108,12 @@ var UIContextMenu = (function () {
 
       menu.style.left = left + 'px';
       menu.style.top = top + 'px';
+      menu.style.visibility = 'visible';
     });
 
-    // Nghe sự kiện click ngoài -> Đóng menu
+    // Nghe sự kiện click và pointerdown ngoài -> Đóng menu
     document.addEventListener('click', hideOnOutsideClick);
+    document.addEventListener('pointerdown', hideOnOutsideClick);
   }
 
   function hide() {
@@ -123,6 +128,7 @@ var UIContextMenu = (function () {
     if (currentMenu && !currentMenu.contains(e.target)) {
       hide();
       document.removeEventListener('click', hideOnOutsideClick);
+      document.removeEventListener('pointerdown', hideOnOutsideClick);
     }
   }
 

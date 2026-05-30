@@ -1,7 +1,7 @@
 USE [QLTiec]
 GO
 
-CREATE PROCEDURE [dbo].[API_LayMenuTheoNhomQuyen]
+ALTER PROCEDURE [dbo].[API_LayMenuTheoNhomQuyen]
     @NhomNguoiDangThaoTac NVARCHAR(50), -- BẮT BUỘC THÊM: ID Nhóm của người gọi API
     @UserGroupID NVARCHAR(50)           -- ID Nhóm mà người đó CẦN XEM Menu
 AS
@@ -25,6 +25,7 @@ BEGIN
         M.MenuID AS [id],
         M.Parent AS [parent],
         M.VN AS [label],            
+        M.SubTitle AS [subTitle],
         M.IconClass AS [icon],
         M.FormName AS [formName],
         M.URLPara AS [URLPara],
@@ -44,6 +45,7 @@ BEGIN
         M.MenuID AS [id],
         M.Parent AS [parent],
         M.VN AS [label],
+        M.SubTitle AS [subTitle],
         M.IconClass AS [icon],
         M.FormName AS [formName],
         M.URLPara AS [URLPara],

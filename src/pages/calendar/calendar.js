@@ -145,6 +145,7 @@ var CalendarPage = (function () {
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
+        _injectHeaderActions();
         renderLegend();
         var calendarContainer = $container.querySelector('#calendar-component-container');
         if (calendarContainer) {
@@ -276,6 +277,19 @@ var CalendarPage = (function () {
       });
   }
 
+  function _injectHeaderActions() {
+    var globalActions = document.getElementById('global-page-actions');
+    if (!globalActions) return;
+
+    globalActions.innerHTML = '';
+    if (typeof UIActionToolbar !== 'undefined') {
+      globalActions.appendChild(UIActionToolbar.create({
+        onAdd: function() { window.showCreateBanquetModal(); },
+        onEdit: false, onDelete: false, onFilter: false, onPrint: false, onClose: false
+      }));
+    }
+  }
+
   return { render: render };
 })();
 
@@ -358,7 +372,7 @@ window.showCreateBanquetModal = function (prefillDate) {
             </div>
             <div class="col-12 mt-3">
               <label class="form-label" style="font-size: 13px; font-weight: 600;">Sảnh Phụ (Ghép sảnh)</label>
-              <div id="modal-container-sanh-phu" class="d-flex flex-wrap gap-3 mt-1 p-3" style="border: 1px solid var(--color-border); border-radius: 6px; background: #f8fafc; min-height: 60px;">
+              <div id="modal-container-sanh-phu" class="d-flex flex-wrap gap-3 mt-1 p-3" style="border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface); min-height: 60px;">
                 <span class="text-secondary" style="font-size: 12px; margin: auto;">Vui lòng chọn Sảnh Chính trước</span>
               </div>
             </div>

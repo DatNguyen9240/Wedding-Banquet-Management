@@ -1,4 +1,4 @@
-/* --- mockData.js --- */
+﻿/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -495,15 +495,15 @@ var CalendarService = (function () {
 
       var loaiPhieu = row.LoaiPhieu !== undefined ? row.LoaiPhieu : row.loaiPhieu;
       var laSanhChinh = row.LaSanhChinh !== undefined ? row.LaSanhChinh : row.laSanhChinh;
+      if (laSanhChinh === 0) return; // Bỏ qua sảnh phụ
+
       var tenSanh = row.TenSanh || row.tenSanh || '';
       var soBan = row.SoBan || row.soBan || 0;
 
       // LoaiPhieu = 1 -> Xanh (Mới cọc), 2 -> Đỏ (Đã HĐ)
       var type = loaiPhieu === 1 ? 'success' : 'danger';
 
-      // Sảnh chính thì ghi số bàn, sảnh phụ ghi X
-      var suffix = laSanhChinh === 1 ? soBan : 'X';
-      var label = tenSanh + ' (' + suffix + ')';
+      var label = tenSanh + ' (' + soBan + ')';
 
       eventsData[day].push({
         type: type,
@@ -4769,6 +4769,7 @@ var FilterComponent = (function () {
         if (typeof window !== 'undefined' && window.currentFilters && window.currentFilters[f.id] !== undefined) {
           inp.value = window.currentFilters[f.id];
         }
+
         inputs[f.id] = inp;
       }
 
@@ -5449,6 +5450,12 @@ var UIActionToolbar = (function () {
       { text: 'Đóng',  icon: 'close',      type: 'tool', onClick: actions.onClose,  attrs: 'data-tooltip="Đóng trang hiện tại"' }
     ];
 
+    if (actions.extras && Array.isArray(actions.extras)) {
+      actions.extras.forEach(function (btn) {
+        buttons.push(btn);
+      });
+    }
+
     var filteredButtons = [];
     buttons.forEach(function(b) {
       if (b.onClick === false) return; // Hide button
@@ -5986,18 +5993,8 @@ var UITable = (function () {
   (function setupGlobalTableFeatures() {
     if (typeof window === 'undefined') return;
 
-    // 1. GLOBAL CONTEXT MENU
-    document.addEventListener('contextmenu', function(e) {
-      var table = e.target.closest('table');
-      if (!table || table.classList.contains('no-advanced-features')) return;
-
-      var td = e.target.closest('td');
-      var tr = e.target.closest('tr');
-      if (!td && !tr) return;
-      if (td && (td.querySelector('.btn') || td.querySelector('button'))) return;
-
-      e.preventDefault();
-      
+    function showContextMenuForEvent(e, triggerTd, triggerTr) {
+      if (typeof UIContextMenu === 'undefined') return;
       var getRowText = function(rowEl) {
         if (!rowEl) return '';
         var cells = rowEl.querySelectorAll('td');
@@ -6012,49 +6009,68 @@ var UITable = (function () {
         return textArr.join(' | ');
       };
 
-      if (typeof UIContextMenu !== 'undefined') {
-        var tbody = tr ? tr.closest('tbody') : null;
-        var activeRows = tbody ? Array.from(tbody.querySelectorAll('tr.active')) : [];
-        var isMultiple = activeRows.length > 1;
-        
-        var menuItems = [
-          {
-            icon: 'content_copy',
-            label: 'Copy ô (Cell)',
+      var tbody = triggerTr ? triggerTr.closest('tbody') : null;
+      var activeRows = tbody ? Array.from(tbody.querySelectorAll('tr.active')) : [];
+      var isMultiple = activeRows.length > 1;
+      
+      var menuItems = [];
+      
+      if (triggerTd) {
+        menuItems.push({
+          icon: 'content_copy',
+          label: 'Copy ô (Cell)',
+          onClick: function() {
+            navigator.clipboard.writeText(triggerTd.innerText.trim());
+            if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ô', 'success');
+          }
+        });
+      }
+
+      if (isMultiple) {
+          menuItems.push({
+            icon: 'library_books',
+            label: 'Copy ' + activeRows.length + ' dòng đã chọn',
             onClick: function() {
-              if (td) {
-                navigator.clipboard.writeText(td.innerText.trim());
-                if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ô', 'success');
+              var allText = activeRows.map(function(r) { return getRowText(r); }).join('\n');
+              navigator.clipboard.writeText(allText);
+              if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ' + activeRows.length + ' dòng', 'success');
+            }
+          });
+      }
+      
+      if (triggerTr && !isMultiple) {
+          menuItems.push({
+            icon: 'file_copy',
+            label: 'Copy dòng (Row)',
+            onClick: function() {
+              if (triggerTr) {
+                navigator.clipboard.writeText(getRowText(triggerTr));
+                if (typeof UIToast !== 'undefined') UIToast.show('Đã copy dữ liệu dòng', 'success');
               }
             }
-          }
-        ];
-
-        if (isMultiple && activeRows.includes(tr)) {
-            menuItems.push({
-              icon: 'library_books',
-              label: 'Copy ' + activeRows.length + ' dòng đã chọn',
-              onClick: function() {
-                var allText = activeRows.map(function(r) { return getRowText(r); }).join('\n');
-                navigator.clipboard.writeText(allText);
-                if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ' + activeRows.length + ' dòng', 'success');
-              }
-            });
-        } else {
-            menuItems.push({
-              icon: 'file_copy',
-              label: 'Copy dòng (Row)',
-              onClick: function() {
-                if (tr) {
-                  navigator.clipboard.writeText(getRowText(tr));
-                  if (typeof UIToast !== 'undefined') UIToast.show('Đã copy dữ liệu dòng', 'success');
-                }
-              }
-            });
-        }
-
-        UIContextMenu.show(e, menuItems);
+          });
       }
+
+      UIContextMenu.show(e, menuItems);
+    }
+
+    // 1. GLOBAL CONTEXT MENU
+    document.addEventListener('contextmenu', function(e) {
+      if ((typeof isDragSelecting !== 'undefined' && isDragSelecting) || (typeof lastDragEndTime !== 'undefined' && Date.now() - lastDragEndTime < 500)) {
+         e.preventDefault();
+         return;
+      }
+
+      var table = e.target.closest('table');
+      if (!table || table.classList.contains('no-advanced-features')) return;
+
+      var td = e.target.closest('td');
+      var tr = e.target.closest('tr');
+      if (!td && !tr) return;
+      if (td && (td.querySelector('.btn') || td.querySelector('button'))) return;
+
+      e.preventDefault();
+      showContextMenuForEvent(e, td, tr);
     });
 
     // 2. GLOBAL DRAG SELECT
@@ -6066,6 +6082,7 @@ var UITable = (function () {
     var lastPointerY = -1;
     var autoScrollFrame = null;
     var activeTbody = null;
+    var lastDragEndTime = 0;
 
     document.addEventListener('touchmove', function(e) {
       if (isDragSelecting) e.preventDefault();
@@ -6185,6 +6202,7 @@ var UITable = (function () {
          document.removeEventListener('pointercancel', onPointerUp);
          
          if (isDragSelecting) {
+            lastDragEndTime = Date.now();
             var cachedTbody = activeTbody;
             var preventClick = function(evt) {
                evt.stopPropagation();
@@ -6196,6 +6214,27 @@ var UITable = (function () {
                document.removeEventListener('click', preventClick, true);
                if (cachedTbody) cachedTbody.isDragSelectingFlag = false;
             }, 50);
+
+            // Tự động bật menu copy sau khi kéo chọn xong (hoặc nhấn giữ lâu)
+            if (tr) {
+               // Chỉ hiển thị menu copy nếu thao tác vừa rồi không phải là bỏ chọn (hoặc vẫn còn dòng đang được chọn)
+               var hasSelected = activeTbody && activeTbody.querySelectorAll('tr.active').length > 0;
+               if (hasSelected) {
+                 // Fake event type thành contextmenu để UIContextMenu dùng tọa độ thay vì fallback
+                 var finalPageX = ev.pageX || (lastPointerX + window.scrollX);
+                 var finalPageY = ev.pageY || (lastPointerY + window.scrollY);
+                 var fakeEvent = {
+                   type: 'contextmenu',
+                   pageX: finalPageX,
+                   pageY: finalPageY,
+                   target: ev.target,
+                   preventDefault: function(){},
+                   stopPropagation: function(){}
+                 };
+                 showContextMenuForEvent(fakeEvent, tr.querySelector('td') || tr.children[0], tr);
+               }
+            }
+            
             isDragSelecting = false;
          }
        }
@@ -7476,9 +7515,10 @@ var UIContextMenu = (function () {
     var menu = document.createElement('div');
     menu.className = 'ui-context-menu';
     
-    // Position
-    menu.style.top = e.pageY + 'px';
-    menu.style.left = e.pageX + 'px';
+    // Đặt visibility hidden và vị trí 0 để đo kích thước chuẩn, tránh bị trình duyệt ép nhỏ khi đặt ở sát mép phải
+    menu.style.visibility = 'hidden';
+    menu.style.top = '0px';
+    menu.style.left = '0px';
 
     items.forEach(function(item) {
       if (item === '|') {
@@ -7490,7 +7530,7 @@ var UIContextMenu = (function () {
         btn.className = 'context-menu-item';
         
         var iconHtml = item.icon ? '<span class="material-symbols-outlined">' + item.icon + '</span>' : '';
-        btn.innerHTML = iconHtml + '<span>' + item.label + '</span>';
+        btn.innerHTML = iconHtml + '<span style="white-space: nowrap;">' + item.label + '</span>';
         
         btn.onclick = function() {
           hide();
@@ -7509,9 +7549,11 @@ var UIContextMenu = (function () {
       var rect = menu.getBoundingClientRect();
       var left, top;
 
-      // Nếu là click chuột phải (contextmenu), luôn mở tại vị trí chuột
-      // Nếu là click chuột trái vào nút (click), mở dưới nút đó
-      if (e && e.type === 'contextmenu') {
+      var isMobile = window.innerWidth <= 768;
+
+      // Nếu là click chuột phải (contextmenu) trên Desktop, luôn mở tại vị trí chuột
+      // Trên Mobile hoặc khi click nút, mở dưới nút/phần tử để không bị ngón tay che khuất
+      if (e && e.type === 'contextmenu' && !isMobile) {
         left = e.pageX;
         top = e.pageY;
       } else if (activeTrigger) {
@@ -7549,10 +7591,12 @@ var UIContextMenu = (function () {
 
       menu.style.left = left + 'px';
       menu.style.top = top + 'px';
+      menu.style.visibility = 'visible';
     });
 
-    // Nghe sự kiện click ngoài -> Đóng menu
+    // Nghe sự kiện click và pointerdown ngoài -> Đóng menu
     document.addEventListener('click', hideOnOutsideClick);
+    document.addEventListener('pointerdown', hideOnOutsideClick);
   }
 
   function hide() {
@@ -7567,6 +7611,7 @@ var UIContextMenu = (function () {
     if (currentMenu && !currentMenu.contains(e.target)) {
       hide();
       document.removeEventListener('click', hideOnOutsideClick);
+      document.removeEventListener('pointerdown', hideOnOutsideClick);
     }
   }
 

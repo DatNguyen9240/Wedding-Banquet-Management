@@ -267,15 +267,15 @@ window.DynamicFormEngine = (function () {
           var firstRow = dataList[0];
 
           // Map API fields → MODULE_CONFIG (chỉ ghi nếu API trả về giá trị)
-          var _rowMap = { formTitle: 'PageTitle', primaryKey: 'PrimaryKey', formSubtitle: 'PageSubtitle' };
+          var _rowMap = { primaryKey: 'PrimaryKey' }; // Ngừng lấy formTitle và formSubtitle để ưu tiên router
           Object.keys(_rowMap).forEach(function (src) {
             if (firstRow[src]) MODULE_CONFIG[_rowMap[src]] = firstRow[src];
           });
 
           // Sinh nhãn mặc định — caller có thể override từ config
           _setDefaults(MODULE_CONFIG, {
-            TitleAdd: '➕ Thêm ' + (firstRow.formTitle || 'Mới'),
-            TitleEdit: '✏️ Sửa ' + (firstRow.formTitle || ''),
+            TitleAdd: '➕ Thêm ' + (MODULE_CONFIG.PageTitle || firstRow.formTitle || 'Mới'),
+            TitleEdit: '✏️ Sửa ' + (MODULE_CONFIG.PageTitle || firstRow.formTitle || ''),
             BtnSaveAdd: 'Thêm mới',
             BtnSaveEdit: 'Lưu thay đổi',
             BtnSaveAll: 'Lưu Tất Cả',
@@ -371,13 +371,7 @@ window.DynamicFormEngine = (function () {
       }
       // Tự động sinh mã HTML (Không cần file .html rời nữa)
       $container.innerHTML = `
-        <div class="page-title-bar">
-          <div class="page-title-info">
-            <h1 class="page-title-heading">${MODULE_CONFIG.PageTitle || 'Quản lý Dữ liệu'}</h1>
-            <span class="page-title-sub">${MODULE_CONFIG.PageSubtitle || ''}</span>
-          </div>
-        </div>
-        <div id="dynamic-btn-container" style="margin-bottom:16px;"></div>
+        <div id="dynamic-btn-container" style="display:none;"></div>
         <div class="card dynamic-grid-card" style="border: none; box-shadow: none; margin-bottom: 0; border-radius: var(--radius-sm); background: var(--color-surface); overflow: hidden;">
           <div class="card-body" style="padding: 0;">
             <div id="dynamic-filter-container" style="margin-bottom:16px;"></div>
@@ -386,9 +380,30 @@ window.DynamicFormEngine = (function () {
         </div>
       `;
 
-      // Action Toolbar
-      var btnContainer = $container.querySelector('#dynamic-btn-container');
+      // Action Toolbar (Gắn vào Global Header thay vì cục bộ)
+      var globalActions = document.getElementById('global-page-actions');
+      var btnContainer = globalActions || $container.querySelector('#dynamic-btn-container');
+      
+      // Xóa các nút cũ trong global header nếu có để tránh duplicate khi re-render
+      if (globalActions) globalActions.innerHTML = '';
+
       if (btnContainer && typeof UIActionToolbar !== 'undefined') {
+        var extraBtns = [];
+        if (window.FormActionPlugins) {
+          window.FormActionPlugins.forEach(function (plugin) {
+            if (typeof plugin.getExtraButtons === 'function') {
+              var getSelected = function () { return selectedRows; };
+              var onReload = function () {
+                window._uiConfigCache = {};
+                $container.innerHTML = '';
+                render($container, MODULE_CONFIG);
+              };
+              var btns = plugin.getExtraButtons(MODULE_CONFIG.FormName, getSelected, MODULE_CONFIG, onReload);
+              if (btns && btns.length > 0) extraBtns = extraBtns.concat(btns);
+            }
+          });
+        }
+
         var toolbar = UIActionToolbar.create({
           onAdd: _hasPermission('ADD') ? _openAddForm : 'DISABLED',
           onEdit: _hasPermission('EDIT') ? function () {
@@ -474,7 +489,8 @@ window.DynamicFormEngine = (function () {
             }
           },
           onPrint: false,
-          onClose: false
+          onClose: false,
+          extras: extraBtns
         });
         toolbar.style.display = 'inline-flex';
         toolbar.style.width = 'auto';
@@ -501,14 +517,6 @@ window.DynamicFormEngine = (function () {
           toolbar.insertBefore(btnBulkAdd, toolbar.firstChild);
         }
 
-        // HACK: Thiết kế Layout dành riêng cho Form Builder
-        if (_isFormBuilder() && typeof FormBuilderPlugin !== 'undefined') {
-          FormBuilderPlugin.injectButtons(toolbar, MODULE_CONFIG, function() {
-            window._uiConfigCache = {}; // Cache Invalidate
-            $container.innerHTML = '';
-            render($container, MODULE_CONFIG);
-          });
-        }
 
         btnContainer.appendChild(toolbar);
       }
@@ -638,8 +646,8 @@ window.DynamicFormEngine = (function () {
             filterBtn.style.borderColor = 'var(--color-primary, #3b82f6)';
             // Nếu nút chưa có thẻ span chứa dấu chấm đỏ, thì thêm vào để báo hiệu rõ hơn
             if (filterBtn.innerHTML.indexOf('filter-badge') === -1) {
-                filterBtn.style.position = 'relative';
-                filterBtn.innerHTML += '<span class="filter-badge" style="position:absolute; top:-2px; right:-2px; width:10px; height:10px; background:var(--color-danger,#ef4444); border-radius:50%; border:2px solid #fff; pointer-events:none;"></span>';
+              filterBtn.style.position = 'relative';
+              filterBtn.innerHTML += '<span class="filter-badge" style="position:absolute; top:-2px; right:-2px; width:10px; height:10px; background:var(--color-danger,#ef4444); border-radius:50%; border:2px solid #fff; pointer-events:none;"></span>';
             }
           } else {
             filterBtn.style.color = '';
@@ -852,7 +860,8 @@ window.DynamicFormEngine = (function () {
   function _updateSelectionCounter() {
     _saveSelectedRows();
 
-    var btnContainer = $container.querySelector('#dynamic-btn-container');
+    var globalActions = document.getElementById('global-page-actions');
+    var btnContainer = globalActions || $container.querySelector('#dynamic-btn-container');
     if (!btnContainer) return;
 
     var actualToolbar = btnContainer.firstElementChild; // .button-bar
@@ -875,7 +884,8 @@ window.DynamicFormEngine = (function () {
         style.id = 'selection-counter-style';
         style.innerHTML = `
           /* Toolbar gốc: Cho phép rớt dòng để chứa counter ở dưới trên mobile */
-          #dynamic-btn-container .button-bar {
+          #dynamic-btn-container .button-bar,
+          .page-title-actions .button-bar {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
@@ -1619,7 +1629,7 @@ window.DynamicFormEngine = (function () {
                   payload = Object.assign(payload, currentModalFormState);
                 }
               }
-              
+
               if (q) {
                 payload.Keyword = q;
                 if (isGateway) dynamicFilters.Keyword = q; // Nhét thêm Keyword vào JsonData dự phòng cho Gateway dễ truy vấn

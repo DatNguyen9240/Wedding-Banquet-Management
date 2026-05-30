@@ -15,6 +15,7 @@ var ReportRevenuePage = (function () {
       .then(function(res) { return res.text(); })
       .then(function(html) {
         $container.innerHTML = html;
+        _injectHeaderActions();
         _renderFilter();
         
         // Gọi API lần đầu (mặc định lấy tháng hiện tại hoặc lấy tất cả tuỳ logic, ở đây lấy tháng này)
@@ -226,12 +227,31 @@ var ReportRevenuePage = (function () {
     }
   }
 
-      function _bindEvents() {
-    $container.querySelector('#btn-print').addEventListener('click', function() {
+  function _injectHeaderActions() {
+    var globalActions = document.getElementById('global-page-actions');
+    if (!globalActions) return;
+
+    globalActions.innerHTML = '';
+    if (typeof UIActionToolbar !== 'undefined') {
+      var toolbar = UIActionToolbar.create({
+        onAdd: false, onEdit: false, onDelete: false, onFilter: false, onPrint: false, onClose: false,
+        extras: [
+          { id: 'btn-export', text: 'Xuất Excel', icon: 'download', type: 'tool' },
+          { id: 'btn-print', text: 'In Báo Cáo', icon: 'print', type: 'tool' }
+        ]
+      });
+      globalActions.appendChild(toolbar);
+    }
+  }
+
+  function _bindEvents() {
+    var btnPrint = document.getElementById('btn-print');
+    if (btnPrint) btnPrint.addEventListener('click', function() {
       window.print();
     });
 
-    $container.querySelector('#btn-export').addEventListener('click', function() {
+    var btnExport = document.getElementById('btn-export');
+    if (btnExport) btnExport.addEventListener('click', function() {
       var revData = revenueData || [];
       var cData = []; // Báo cáo doanh thu chỉ quan tâm doanh thu
       

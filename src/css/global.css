@@ -1,4 +1,4 @@
-﻿/* ═══════════════════════════════════════════
+/* ═══════════════════════════════════════════
    Global Styles — Reset & Core Layout (TailAdmin Clone)
    ═══════════════════════════════════════════ */
 
@@ -30,19 +30,24 @@ body {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
+
 body.dark-theme ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
 }
+
 body.dark-theme ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.4);
 }
@@ -146,7 +151,22 @@ img {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.page-title-actions::-webkit-scrollbar {
+  display: none;
+}
+
+.page-title-actions .button-bar {
+  width: 100%;
+  border: none;
+  padding: 0;
+  box-shadow: none;
 }
 
 
@@ -190,8 +210,9 @@ img {
     padding: 16px;
   }
 
-  /* Tràn lề 2 bên (Full-bleed) cho các thanh công cụ trên Mobile */
-  .page-title-bar, .button-bar, .dynamic-grid-card {
+  /* Tràn lề 2 bên (Full-bleed) cho các khối độc lập trên Mobile */
+  .app-content>.button-bar,
+  .dynamic-grid-card {
     margin-left: -16px !important;
     margin-right: -16px !important;
     width: calc(100% + 32px) !important;
@@ -199,6 +220,51 @@ img {
     border-radius: 0 !important;
     border-left: none !important;
     border-right: none !important;
+  }
+
+  /* Trên mobile, tách hẳn Title ra khỏi hộp: Bỏ nền, viền của khung bọc ngoài */
+  .page-title-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* Biến phần tiêu đề thành một khối (card) riêng */
+  .page-title-info {
+    background: var(--color-surface);
+    width: calc(100% + 32px) !important;
+    margin-left: -16px !important;
+    margin-right: -16px !important;
+    padding: 16px;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* Biến toolbar thành một thanh riêng biệt, tràn lề trên mobile */
+  .page-title-actions {
+    min-width: 0;
+    width: calc(100% + 32px) !important;
+    margin-left: -16px !important;
+    margin-right: -16px !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    padding: 12px 16px;
+  }
+
+  .page-title-actions .button-bar {
+    width: auto !important;
+    margin: 0 !important;
+    border: none !important;
+    padding: 0 !important;
   }
 
   .header-left {
@@ -209,7 +275,8 @@ img {
     gap: 14px;
   }
 
-  .btn-hamburger, .navbar-hamburger {
+  .btn-hamburger,
+  .navbar-hamburger {
     width: 36px;
     height: 36px;
     border-radius: var(--radius-sm);
@@ -301,7 +368,8 @@ img {
     --spacing-xl: 16px;
   }
 
-  .btn-hamburger, .navbar-hamburger {
+  .btn-hamburger,
+  .navbar-hamburger {
     width: 34px;
     height: 34px;
     border-radius: 6px;
@@ -396,13 +464,17 @@ img {
 /* ════ GLOBAL COMPONENTS ════ */
 .panel-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   z-index: 10004;
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
 }
+
 .panel-overlay.active {
   opacity: 1;
   visibility: visible;
@@ -426,26 +498,33 @@ img {
   width: 260px !important;
   font-size: 13px !important;
 }
-.flatpickr-days, .flatpickr-weeks {
+
+.flatpickr-days,
+.flatpickr-weeks {
   width: 260px !important;
 }
+
 .dayContainer {
   width: 260px !important;
   min-width: 260px !important;
   max-width: 260px !important;
 }
+
 .flatpickr-day {
   max-width: 34px !important;
   height: 34px !important;
   line-height: 34px !important;
 }
+
 .flatpickr-month {
   height: 44px !important;
 }
+
 .flatpickr-current-month {
   font-size: 110% !important;
   padding-top: 6px !important;
 }
+
 span.flatpickr-weekday {
   font-size: 12px !important;
   color: var(--color-text-secondary) !important;
@@ -453,8 +532,8 @@ span.flatpickr-weekday {
 }
 
 /* ════ FLATPICKR COLORS (Màu sắc) ════ */
-.flatpickr-day.selected, 
-.flatpickr-day.startRange, 
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
 .flatpickr-day.endRange,
 .flatpickr-day.selected:hover,
 .flatpickr-day.selected:focus {
@@ -466,7 +545,10 @@ span.flatpickr-weekday {
   box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3) !important;
 }
 
-.flatpickr-day.today.selected { color: #ffffff !important; }
+.flatpickr-day.today.selected {
+  color: #ffffff !important;
+}
+
 .flatpickr-day.today {
   border: 1px solid var(--color-primary) !important;
   border-bottom: 2px solid var(--color-primary) !important;
@@ -482,7 +564,7 @@ span.flatpickr-weekday {
   border-bottom: none !important;
 }
 
-.flatpickr-months .flatpickr-prev-month:hover svg, 
+.flatpickr-months .flatpickr-prev-month:hover svg,
 .flatpickr-months .flatpickr-next-month:hover svg {
   fill: var(--color-primary) !important;
 }
@@ -491,27 +573,69 @@ span.flatpickr-weekday {
   color: var(--color-primary) !important;
   font-weight: 800 !important;
 }
+
 /* ---- LOGO THEME SWITCHING ---- */
-body.dark-theme .app-logo-light { display: none !important; }
-body:not(.dark-theme) .app-logo-dark { display: none !important; }
+body.dark-theme .app-logo-light {
+  display: none !important;
+}
+
+body:not(.dark-theme) .app-logo-dark {
+  display: none !important;
+}
+
 /* Sidebar Text Brightness for Dark Theme */
-body.dark-theme .nav-item { color: #f8fafc; }
-body.dark-theme .nav-item span.icon { color: #f8fafc; opacity: 0.9; }
-body.dark-theme .nav-group-title { color: #94a3b8; font-weight: 600; }
-body.dark-theme .nav-item:hover { color: #ffffff; background: rgba(255,255,255,0.05); }
-body.dark-theme .nav-item:hover span.icon { opacity: 1; }
+body.dark-theme .nav-item {
+  color: #f8fafc;
+}
+
+body.dark-theme .nav-item span.icon {
+  color: #f8fafc;
+  opacity: 0.9;
+}
+
+body.dark-theme .nav-group-title {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+body.dark-theme .nav-item:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-theme .nav-item:hover span.icon {
+  opacity: 1;
+}
+
 @media (max-width: 768px) {
-  .app-navbar .navbar-brand { display: none !important; }
+  .app-navbar .navbar-brand {
+    display: none !important;
+  }
 }
 
 /* ════ DYNAMIC FORM GRID SYSTEM ════ */
-.df-col-12 { width: 100% !important; }
-.df-col-8 { width: calc(66.666% - 3px) !important; }
-.df-col-6 { width: calc(50% - 5px) !important; }
-.df-col-4 { width: calc(33.333% - 7px) !important; }
-.df-col-3 { width: calc(25% - 8px) !important; }
+.df-col-12 {
+  width: 100% !important;
+}
+
+.df-col-8 {
+  width: calc(66.666% - 3px) !important;
+}
+
+.df-col-6 {
+  width: calc(50% - 5px) !important;
+}
+
+.df-col-4 {
+  width: calc(33.333% - 7px) !important;
+}
+
+.df-col-3 {
+  width: calc(25% - 8px) !important;
+}
 
 @media (max-width: 768px) {
+
   /* Trên Mobile: 
      - Mặc định 100% (df-col-12) vẫn giữ 100%.
      - Các ô 50% (df-col-6) vẫn giữ nguyên 50% để cho phép xếp 2 ô 1 hàng.
@@ -524,4 +648,3 @@ body.dark-theme .nav-item:hover span.icon { opacity: 1; }
     width: calc(50% - 5px) !important;
   }
 }
-

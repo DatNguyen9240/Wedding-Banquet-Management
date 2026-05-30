@@ -9,6 +9,7 @@ var ComponentsDemoPage = (function () {
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
+        _injectHeaderActions();
         _mountAll();
       });
   }
@@ -44,6 +45,15 @@ var ComponentsDemoPage = (function () {
     _mountActionToolbar();
     _mountTotalBar();
     _mountFilter();
+  }
+
+  function _injectHeaderActions() {
+    var globalActions = document.getElementById('global-page-actions');
+    if (!globalActions) return;
+
+    globalActions.innerHTML = `
+      <span class="status-badge primary" style="white-space: nowrap;">34 Components</span>
+    `;
   }
 
   // ── 1. CHECKBOX ──

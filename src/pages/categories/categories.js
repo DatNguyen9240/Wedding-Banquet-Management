@@ -271,6 +271,7 @@ var CategoriesPage = (function () {
       .then(function(res) { return res.text(); })
       .then(function(html) {
         $container.innerHTML = html;
+        _injectHeaderActions();
         _injectCategoriesStyles();
         _renderTree();
       });
@@ -292,6 +293,39 @@ var CategoriesPage = (function () {
       '.categories-layout .row-selected td{border-bottom:1px solid var(--color-primary) !important;}'
     ].join('');
     document.head.appendChild(style);
+  }
+
+  function _injectHeaderActions() {
+    var globalActions = document.getElementById('global-page-actions');
+    if (!globalActions) return;
+
+    globalActions.innerHTML = '';
+    if (typeof UIActionToolbar !== 'undefined') {
+      var toolbar = UIActionToolbar.create({
+        onAdd: true, onEdit: true, onDelete: true, onFilter: true, onPrint: true, onClose: true,
+        extras: []
+      });
+      globalActions.appendChild(toolbar);
+
+      // Attach events to standard toolbar buttons
+      var addBtn = globalActions.querySelector('.btn-tool-add');
+      if (addBtn) addBtn.onclick = function() { CategoriesPage.add(); };
+      
+      var editBtn = globalActions.querySelector('.btn-tool-edit');
+      if (editBtn) editBtn.onclick = function() { CategoriesPage.edit(); };
+      
+      var deleteBtn = globalActions.querySelector('.btn-tool-delete');
+      if (deleteBtn) deleteBtn.onclick = function() { CategoriesPage.remove(); };
+      
+      var filterBtn = globalActions.querySelector('.btn-tool-filter');
+      if (filterBtn) filterBtn.onclick = function() { UIToast.show('Mở form Lọc chi tiết'); };
+      
+      var printBtn = globalActions.querySelector('.btn-tool-print');
+      if (printBtn) printBtn.onclick = function() { UIToast.show('In dữ liệu danh mục hiện hành'); };
+      
+      var closeBtn = globalActions.querySelector('.btn-tool-close');
+      if (closeBtn) closeBtn.onclick = function() { window.location.hash='#/dashboard'; };
+    }
   }
 
   // --- TREE VIEW ---

@@ -20,6 +20,12 @@ var UIActionToolbar = (function () {
       { text: 'Đóng',  icon: 'close',      type: 'tool', onClick: actions.onClose,  attrs: 'data-tooltip="Đóng trang hiện tại"' }
     ];
 
+    if (actions.extras && Array.isArray(actions.extras)) {
+      actions.extras.forEach(function (btn) {
+        buttons.push(btn);
+      });
+    }
+
     var filteredButtons = [];
     buttons.forEach(function(b) {
       if (b.onClick === false) return; // Hide button

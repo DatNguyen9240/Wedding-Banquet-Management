@@ -2,29 +2,9 @@
    QUẢN LÝ DANH MỤC (MASTER DATA) - HTML Template
    ═══════════════════════════════════════════ -->
 
-<div class="page-title-bar">
-  <div class="page-title-info">
-    <h1 class="page-title-heading">Danh Mục Nghiệp Vụ</h1>
-    <span class="page-title-sub">Quản lý cơ sở dữ liệu hàng hóa, dịch vụ và khu vực</span>
-  </div>
-</div>
-
 <div class="card" style="animation: slideUp 0.3s ease forwards; display: flex; flex-direction: column; height: calc(100vh - var(--header-height) - 100px);">
   
-  <!-- THANH CÔNG CỤ -->
-  <div class="card-header" style="background: var(--color-background); border-bottom: 1px solid var(--color-border); padding: 12px 24px;">
-    <div class="button-bar" style="border: none; padding: 0; box-shadow: none; background: transparent;">
-      <button class="btn btn-tool" onclick="CategoriesPage.add()"><span class="material-symbols-outlined">add</span> Thêm mới</button>
-      <button class="btn btn-tool" onclick="CategoriesPage.edit()"><span class="material-symbols-outlined">edit</span> Sửa</button>
-      <div class="divider"></div>
-      <button class="btn btn-tool text-danger" onclick="CategoriesPage.remove()"><span class="material-symbols-outlined">delete</span> Xóa</button>
-      <div class="divider"></div>
-      <button class="btn btn-tool" onclick="UIToast.show('Mở form Lọc chi tiết')"><span class="material-symbols-outlined">filter_list</span> Lọc</button>
-      <button class="btn btn-tool" onclick="UIToast.show('In dữ liệu danh mục hiện hành')"><span class="material-symbols-outlined">print</span> In</button>
-      <div style="flex:1"></div>
-      <button class="btn btn-tool" onclick="window.location.hash='#/dashboard'"><span class="material-symbols-outlined">close</span> Đóng</button>
-    </div>
-  </div>
+
 
   <div style="display: flex; flex: 1; flex-wrap: wrap; overflow: hidden; position: relative;" class="categories-layout">
 

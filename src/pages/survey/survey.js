@@ -10,9 +10,23 @@ var SurveyPage = (function () {
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
+        _injectHeaderActions();
         _bindEvents();
         _initStarRating();
       });
+  }
+
+  function _injectHeaderActions() {
+    var globalActions = document.getElementById('global-page-actions');
+    if (!globalActions) return;
+
+    globalActions.innerHTML = '';
+    if (typeof UIActionToolbar !== 'undefined') {
+      globalActions.appendChild(UIActionToolbar.create({
+        onAdd: _openPanel,
+        onEdit: false, onDelete: false, onFilter: false, onPrint: false, onClose: false
+      }));
+    }
   }
 
   // ── Mở / Đóng Panel ──────────────────────────────────────────────────
@@ -78,6 +92,7 @@ var SurveyPage = (function () {
   // ── Bind Events ───────────────────────────────────────────────────────
   function _bindEvents() {
     var overlay      = document.getElementById('survey-form-overlay');
+    // Truy xuất nút thêm từ Global Header
     var btnAdd       = document.getElementById('btn-add-survey');
     var btnClose     = document.getElementById('btn-close-survey-form');
     var btnCancel    = document.getElementById('btn-cancel-survey-form');

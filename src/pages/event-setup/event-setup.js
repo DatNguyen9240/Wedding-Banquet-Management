@@ -9,34 +9,30 @@ var EventSetupPage = (function () {
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
+        _injectHeaderActions();
         _bindEvents();
       });
   }
 
+  function _injectHeaderActions() {
+    var globalActions = document.getElementById('global-page-actions');
+    if (!globalActions) return;
+
+    globalActions.innerHTML = '';
+    if (typeof UIActionToolbar !== 'undefined') {
+      var toolbar = UIActionToolbar.create({
+        onAdd: false, onEdit: false, onDelete: false, onFilter: false, onPrint: false, onClose: false,
+        extras: [
+          { id: 'btn-select-contract', text: 'Tìm Hợp Đồng...', icon: 'search', type: 'tool', onClick: function() { _showSearchModal(); } },
+          { id: 'btn-print-beo', text: 'In Lệnh BEO (A4)', icon: 'print', type: 'tool', onClick: function() { window.print(); } }
+        ]
+      });
+      globalActions.appendChild(toolbar);
+    }
+  }
+
   function _bindEvents() {
-    var btnPrint = document.getElementById('btn-print-beo');
-    var btnSelect = document.getElementById('btn-select-contract');
-
-    // Sự kiện In BEO
-    if (btnPrint) {
-      btnPrint.addEventListener('click', function () {
-        window.print();
-      });
-    }
-
-    // Sự kiện Tìm hợp đồng
-    if (btnSelect) {
-      btnSelect.addEventListener('click', function () {
-        if (typeof UIModal !== 'undefined') {
-          _showSearchModal();
-        } else if (typeof Modal !== 'undefined') {
-          // Fallback if Modal is the old name
-          _showSearchModal();
-        } else {
-          alert('Thiếu thư viện UIModal để hiển thị popup.');
-        }
-      });
-    }
+    // Không cần bind lại sự kiện ở đây nữa, vì UIActionToolbar đã tự động gắn `onClick` khi khởi tạo nút.
   }
 
   function _showSearchModal() {

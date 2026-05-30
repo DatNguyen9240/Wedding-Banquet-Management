@@ -2,24 +2,6 @@
    QUẢN LÝ DANH MỤC MENU — menus.html
    ═══════════════════════════════════════ -->
 
-<div class="page-title-bar">
-  <div class="page-title-info">
-    <h1 class="page-title-heading">Quản Lý Menu</h1>
-    <span class="page-title-sub">Quản lý danh mục thực đơn và combo tiệc</span>
-  </div>
-  <div class="page-title-actions">
-    <button class="btn btn-outline d-flex align-items-center gap-1" id="btn-refresh-menus" style="height: 40px;">
-      <span class="material-symbols-outlined" style="font-size:18px;">refresh</span>
-      <span class="d-none d-sm-inline">Làm mới</span>
-    </button>
-    <button class="btn btn-primary d-flex align-items-center gap-1 rounded-pill" id="btn-add-menu" style="height: 40px; font-weight: 700;">
-      <span class="material-symbols-outlined" style="font-size:18px;">add</span>
-      <span class="d-none d-sm-inline">Thêm Menu</span>
-      <span class="d-inline d-sm-none">Thêm</span>
-    </button>
-  </div>
-</div>
-
 <!-- ══ BODY: 2 cột ══════════════════════════════════════════ -->
 <div class="row g-4" style="animation: slideUp 0.3s ease forwards; align-items: flex-start;">
 
@@ -95,6 +77,12 @@
               <input type="text" id="menu-en" class="ui-input" placeholder="VD: Report">
             </div>
           </div>
+        </div>
+
+        <!-- Phụ đề (SubTitle) -->
+        <div class="form-group mb-3">
+          <label class="form-label">Phụ đề (SubTitle)</label>
+          <input type="text" id="menu-subtitle" class="ui-input" placeholder="VD: Quản lý danh sách nhân sự">
         </div>
 
         <!-- Tên Form & Form Key -->

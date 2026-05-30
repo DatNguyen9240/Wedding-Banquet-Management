@@ -460,18 +460,8 @@ var UITable = (function () {
   (function setupGlobalTableFeatures() {
     if (typeof window === 'undefined') return;
 
-    // 1. GLOBAL CONTEXT MENU
-    document.addEventListener('contextmenu', function(e) {
-      var table = e.target.closest('table');
-      if (!table || table.classList.contains('no-advanced-features')) return;
-
-      var td = e.target.closest('td');
-      var tr = e.target.closest('tr');
-      if (!td && !tr) return;
-      if (td && (td.querySelector('.btn') || td.querySelector('button'))) return;
-
-      e.preventDefault();
-      
+    function showContextMenuForEvent(e, triggerTd, triggerTr) {
+      if (typeof UIContextMenu === 'undefined') return;
       var getRowText = function(rowEl) {
         if (!rowEl) return '';
         var cells = rowEl.querySelectorAll('td');
@@ -486,49 +476,68 @@ var UITable = (function () {
         return textArr.join(' | ');
       };
 
-      if (typeof UIContextMenu !== 'undefined') {
-        var tbody = tr ? tr.closest('tbody') : null;
-        var activeRows = tbody ? Array.from(tbody.querySelectorAll('tr.active')) : [];
-        var isMultiple = activeRows.length > 1;
-        
-        var menuItems = [
-          {
-            icon: 'content_copy',
-            label: 'Copy ô (Cell)',
+      var tbody = triggerTr ? triggerTr.closest('tbody') : null;
+      var activeRows = tbody ? Array.from(tbody.querySelectorAll('tr.active')) : [];
+      var isMultiple = activeRows.length > 1;
+      
+      var menuItems = [];
+      
+      if (triggerTd) {
+        menuItems.push({
+          icon: 'content_copy',
+          label: 'Copy ô (Cell)',
+          onClick: function() {
+            navigator.clipboard.writeText(triggerTd.innerText.trim());
+            if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ô', 'success');
+          }
+        });
+      }
+
+      if (isMultiple) {
+          menuItems.push({
+            icon: 'library_books',
+            label: 'Copy ' + activeRows.length + ' dòng đã chọn',
             onClick: function() {
-              if (td) {
-                navigator.clipboard.writeText(td.innerText.trim());
-                if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ô', 'success');
+              var allText = activeRows.map(function(r) { return getRowText(r); }).join('\n');
+              navigator.clipboard.writeText(allText);
+              if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ' + activeRows.length + ' dòng', 'success');
+            }
+          });
+      }
+      
+      if (triggerTr && !isMultiple) {
+          menuItems.push({
+            icon: 'file_copy',
+            label: 'Copy dòng (Row)',
+            onClick: function() {
+              if (triggerTr) {
+                navigator.clipboard.writeText(getRowText(triggerTr));
+                if (typeof UIToast !== 'undefined') UIToast.show('Đã copy dữ liệu dòng', 'success');
               }
             }
-          }
-        ];
-
-        if (isMultiple && activeRows.includes(tr)) {
-            menuItems.push({
-              icon: 'library_books',
-              label: 'Copy ' + activeRows.length + ' dòng đã chọn',
-              onClick: function() {
-                var allText = activeRows.map(function(r) { return getRowText(r); }).join('\n');
-                navigator.clipboard.writeText(allText);
-                if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ' + activeRows.length + ' dòng', 'success');
-              }
-            });
-        } else {
-            menuItems.push({
-              icon: 'file_copy',
-              label: 'Copy dòng (Row)',
-              onClick: function() {
-                if (tr) {
-                  navigator.clipboard.writeText(getRowText(tr));
-                  if (typeof UIToast !== 'undefined') UIToast.show('Đã copy dữ liệu dòng', 'success');
-                }
-              }
-            });
-        }
-
-        UIContextMenu.show(e, menuItems);
+          });
       }
+
+      UIContextMenu.show(e, menuItems);
+    }
+
+    // 1. GLOBAL CONTEXT MENU
+    document.addEventListener('contextmenu', function(e) {
+      if ((typeof isDragSelecting !== 'undefined' && isDragSelecting) || (typeof lastDragEndTime !== 'undefined' && Date.now() - lastDragEndTime < 500)) {
+         e.preventDefault();
+         return;
+      }
+
+      var table = e.target.closest('table');
+      if (!table || table.classList.contains('no-advanced-features')) return;
+
+      var td = e.target.closest('td');
+      var tr = e.target.closest('tr');
+      if (!td && !tr) return;
+      if (td && (td.querySelector('.btn') || td.querySelector('button'))) return;
+
+      e.preventDefault();
+      showContextMenuForEvent(e, td, tr);
     });
 
     // 2. GLOBAL DRAG SELECT
@@ -540,6 +549,7 @@ var UITable = (function () {
     var lastPointerY = -1;
     var autoScrollFrame = null;
     var activeTbody = null;
+    var lastDragEndTime = 0;
 
     document.addEventListener('touchmove', function(e) {
       if (isDragSelecting) e.preventDefault();
@@ -659,6 +669,7 @@ var UITable = (function () {
          document.removeEventListener('pointercancel', onPointerUp);
          
          if (isDragSelecting) {
+            lastDragEndTime = Date.now();
             var cachedTbody = activeTbody;
             var preventClick = function(evt) {
                evt.stopPropagation();
@@ -670,6 +681,27 @@ var UITable = (function () {
                document.removeEventListener('click', preventClick, true);
                if (cachedTbody) cachedTbody.isDragSelectingFlag = false;
             }, 50);
+
+            // Tự động bật menu copy sau khi kéo chọn xong (hoặc nhấn giữ lâu)
+            if (tr) {
+               // Chỉ hiển thị menu copy nếu thao tác vừa rồi không phải là bỏ chọn (hoặc vẫn còn dòng đang được chọn)
+               var hasSelected = activeTbody && activeTbody.querySelectorAll('tr.active').length > 0;
+               if (hasSelected) {
+                 // Fake event type thành contextmenu để UIContextMenu dùng tọa độ thay vì fallback
+                 var finalPageX = ev.pageX || (lastPointerX + window.scrollX);
+                 var finalPageY = ev.pageY || (lastPointerY + window.scrollY);
+                 var fakeEvent = {
+                   type: 'contextmenu',
+                   pageX: finalPageX,
+                   pageY: finalPageY,
+                   target: ev.target,
+                   preventDefault: function(){},
+                   stopPropagation: function(){}
+                 };
+                 showContextMenuForEvent(fakeEvent, tr.querySelector('td') || tr.children[0], tr);
+               }
+            }
+            
             isDragSelecting = false;
          }
        }

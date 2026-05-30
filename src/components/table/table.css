@@ -15,14 +15,14 @@
 }
 
 .data-table th {
-  background: #f8fafc;
+  background: var(--color-surface);
   padding: 16px 24px;
   font-size: 13px;
   text-transform: uppercase;
-  color: #475569;
+  color: var(--color-text-secondary);
   font-weight: 600;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
 
@@ -75,9 +75,9 @@ body.dark-theme .data-table {
   background-color: var(--color-surface);
 }
 body.dark-theme .data-table th {
-  background-color: #1e293b;
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background-color: var(--color-surface);
+  border-bottom-color: var(--color-border);
+  color: var(--color-text-secondary);
 }
 body.dark-theme .data-table td {
   border-bottom-color: var(--color-border);

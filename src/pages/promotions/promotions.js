@@ -12,6 +12,7 @@ var PromotionsPage = (function () {
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
+        _injectHeaderActions();
         _bindEvents();
       });
   }
@@ -67,6 +68,19 @@ var PromotionsPage = (function () {
   }
 
   // ── Bind Events ───────────────────────────────────────────────────────
+  function _injectHeaderActions() {
+    var globalActions = document.getElementById('global-page-actions');
+    if (!globalActions) return;
+
+    globalActions.innerHTML = '';
+    if (typeof UIActionToolbar !== 'undefined') {
+      globalActions.appendChild(UIActionToolbar.create({
+        onAdd: _openPanel,
+        onEdit: false, onDelete: false, onFilter: false, onPrint: false, onClose: false
+      }));
+    }
+  }
+
   function _bindEvents() {
     var overlay    = document.getElementById('promo-form-overlay');
     var btnAdd     = document.getElementById('btn-add-promotion');

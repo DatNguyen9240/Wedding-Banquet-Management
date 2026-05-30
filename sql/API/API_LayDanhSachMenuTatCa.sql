@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 /****** Object:  StoredProcedure [dbo].[API_LayDanhSachMenuTatCa] ******/
@@ -17,6 +17,7 @@ BEGIN
         MenuID AS [id],
         COALESCE(Parent, '') AS [parent],
         COALESCE(VN, '') AS [label],
+        COALESCE(SubTitle, '') AS [subTitle],
         COALESCE(EN, '') AS [en],
         COALESCE(FormName, '') AS [formName],
         COALESCE(FormKey, '') AS [formKey],

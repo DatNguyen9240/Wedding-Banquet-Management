@@ -14,6 +14,7 @@ var ReportCostPage = (function () {
       .then(function(res) { return res.text(); })
       .then(function(html) {
         $container.innerHTML = html;
+        _injectHeaderActions();
         _renderFilter();
         
         // Mặc định load tháng hiện tại
@@ -105,12 +106,31 @@ var ReportCostPage = (function () {
     }
   }
 
-    function _bindEvents() {
-    $container.querySelector('#btn-print-cost').addEventListener('click', function() {
+  function _injectHeaderActions() {
+    var globalActions = document.getElementById('global-page-actions');
+    if (!globalActions) return;
+
+    globalActions.innerHTML = '';
+    if (typeof UIActionToolbar !== 'undefined') {
+      var toolbar = UIActionToolbar.create({
+        onAdd: false, onEdit: false, onDelete: false, onFilter: false, onPrint: false, onClose: false,
+        extras: [
+          { id: 'btn-export-cost', text: 'Xuất Excel', icon: 'download', type: 'tool' },
+          { id: 'btn-print-cost', text: 'In Báo Cáo', icon: 'print', type: 'tool' }
+        ]
+      });
+      globalActions.appendChild(toolbar);
+    }
+  }
+
+  function _bindEvents() {
+    var btnPrint = document.getElementById('btn-print-cost');
+    if (btnPrint) btnPrint.addEventListener('click', function() {
       window.print();
     });
 
-    $container.querySelector('#btn-export-cost').addEventListener('click', function() {
+    var btnExport = document.getElementById('btn-export-cost');
+    if (btnExport) btnExport.addEventListener('click', function() {
       var revData = revenueDataCache || [];
       var cData = costData || [];
       

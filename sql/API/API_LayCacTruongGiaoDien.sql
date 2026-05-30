@@ -10,8 +10,6 @@ BEGIN
         ISNULL(ff.FormPosition, 'grid') AS [position],
         
         -- Trả về thêm cấu hình cấp độ Form để loại bỏ hoàn toàn AppModules.js
-        ISNULL(l.CaptionVN, '') AS [formTitle],
-        ISNULL(l.SubTitle, '') AS [formSubtitle],
         ISNULL(l.PrimaryKey, '') AS [primaryKey],
         
         ISNULL(ff.ShowInAdd,      1) AS [showInAdd],

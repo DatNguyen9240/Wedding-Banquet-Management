@@ -24,29 +24,28 @@ var FormBuilderPlugin = (function () {
     }
   }
 
-  // ── Inject Nút vào Toolbar ───────────────────────────────────────────────
-  function injectButtons(toolbar, moduleConfig, onReloadFormEngine) {
-    var divider = document.createElement('div');
-    divider.className = 'divider';
-    toolbar.appendChild(divider);
+  // ── Lấy Nút Cấu Hình Toolbar ──────────────────────────────────────────────
+  function getExtraButtons(formName, getSelectedRows, moduleConfig, onReloadFormEngine) {
+    if ((window.location.hash || '').indexOf('/system/form-builder') === -1) return [];
 
-    var btnLayout = UIButton.create({
-      text: 'Thiết kế Layout',
-      icon: 'design_services',
-      type: 'tool',
-      onClick: function() { _promptLayoutBuilder(moduleConfig, onReloadFormEngine); }
-    });
-    toolbar.appendChild(btnLayout);
-
-    var btnSyncDB = UIButton.create({
-      text: 'Đồng bộ từ DB',
-      icon: 'sync',
-      type: 'tool',
-      onClick: function () {
-        _openSyncModal(moduleConfig, onReloadFormEngine);
+    return [
+      {
+        id: 'btn-form-builder-layout',
+        text: 'Thiết kế Layout',
+        icon: 'design_services',
+        type: 'tool',
+        onClick: function() { _promptLayoutBuilder(moduleConfig, onReloadFormEngine); }
+      },
+      {
+        id: 'btn-form-builder-sync',
+        text: 'Đồng bộ từ DB',
+        icon: 'sync',
+        type: 'tool',
+        onClick: function () {
+          _openSyncModal(moduleConfig, onReloadFormEngine);
+        }
       }
-    });
-    toolbar.appendChild(btnSyncDB);
+    ];
   }
 
   // ── Logic Đồng Bộ DB ─────────────────────────────────────────────────────
@@ -429,8 +428,12 @@ var FormBuilderPlugin = (function () {
     }, Promise.resolve());
   }
 
+  // Đăng ký Plugin vào hệ thống
+  window.FormActionPlugins = window.FormActionPlugins || [];
+  window.FormActionPlugins.push({ getExtraButtons: getExtraButtons });
+
   return {
-    injectButtons: injectButtons
+    getExtraButtons: getExtraButtons
   };
 
 })();

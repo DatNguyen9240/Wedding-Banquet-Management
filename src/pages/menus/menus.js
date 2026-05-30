@@ -30,26 +30,59 @@ var MenusPage = (function () {
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
+        _injectHeaderActions();
         _bindStaticEvents();
         _loadMenus();
       });
   }
 
   // ════════════════════════════════════════════════════════
+  //  PLUGIN HÀNH ĐỘNG (Bơm nút bấm lên Global Header)
+  // ════════════════════════════════════════════════════════
+  function _injectHeaderActions() {
+    var globalActions = document.getElementById('global-page-actions');
+    if (!globalActions) return;
+
+    globalActions.innerHTML = '';
+    
+    if (typeof UIActionToolbar !== 'undefined') {
+      var permKey = _getPermKey();
+      var hasAdd = Permission.canAdd(permKey);
+      
+      var toolbar = UIActionToolbar.create({
+        onAdd: hasAdd ? function () { _openModal(false); } : 'DISABLED',
+        onEdit: false,
+        onDelete: false,
+        onFilter: false,
+        onPrint: false,
+        onClose: false,
+        extras: [
+          {
+            id: 'btn-refresh-menus',
+            text: 'Làm mới',
+            icon: 'refresh',
+            type: 'tool',
+            onClick: function () { _loadMenus(); }
+          }
+        ]
+      });
+      
+      // Override text for "Thêm"
+      var btnAdd = toolbar.querySelector('.btn-primary, [title*="Thêm"]');
+      if (btnAdd) {
+        btnAdd.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">add</span><span class="d-none d-sm-inline">Thêm Nhóm Cha</span>';
+      }
+      
+      globalActions.appendChild(toolbar);
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
   //  EVENTS
   // ════════════════════════════════════════════════════════
   function _bindStaticEvents() {
-    $container.querySelector('#btn-refresh-menus').addEventListener('click', _loadMenus);
+    // Lưu ý: Các nút bấm giờ nằm ở global-page-actions và được tạo bởi UIActionToolbar.
 
-    var btnAdd = $container.querySelector('#btn-add-menu');
-    var permKey = _getPermKey();
-    if (!Permission.canAdd(permKey)) {
-      btnAdd.style.display = 'none';
-    } else {
-      btnAdd.addEventListener('click', function () {
-        _openModal(false);
-      });
-    }
 
     $container.querySelector('#btn-close-modal').addEventListener('click', _closeModal);
     $container.querySelector('#btn-cancel-modal').addEventListener('click', _closeModal);
@@ -106,6 +139,7 @@ var MenusPage = (function () {
         parent: safeParent,
         label: m.label || '(Không tên)',
         labelEN: m.en || '',
+        subTitle: m.subTitle || '',
         icon: m.icon || '',
         formName: m.formName || '',
         isDisable: m.isDisable
@@ -234,6 +268,7 @@ var MenusPage = (function () {
       + '<td class="editable-cell" data-field="icon" data-val="' + (rawParentItem.icon || '') + '" title="Nhấp đúp để chọn Icon" style="cursor:text;text-align:center;padding:5px 2px;">' + UIIcon.renderHtml(rawParentItem.icon || 'horizontal_rule', 'font-size:15px;color:var(--color-primary);vertical-align:middle;user-select:none;-webkit-user-select:none;') + '</td>'
       + '<td class="editable-cell" data-field="label" data-val="' + rawParentItem.label + '" title="Nhấp đúp để sửa" style="cursor:text;color:var(--color-primary);padding:5px 4px;"><b>' + rawParentItem.label + '</b></td>'
       + '<td class="editable-cell" data-field="en" data-val="' + (rawParentItem.en || '') + '" title="Nhấp đúp để sửa tên EN" style="cursor:text;color:var(--color-text-secondary);padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (rawParentItem.en || '') + '</td>'
+      + '<td class="editable-cell" data-field="subTitle" data-val="' + (rawParentItem.subTitle || '') + '" title="Nhấp đúp để sửa Phụ đề" style="cursor:text;color:var(--color-text-secondary);padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (rawParentItem.subTitle || '') + '</td>'
       + '<td class="editable-cell" data-field="formName" data-val="' + (rawParentItem.formName || '') + '" style="color:var(--color-text-secondary);cursor:text;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Nhấp đúp để sửa">' + (rawParentItem.formName || '') + '</td>'
       + '<td class="editable-cell" data-field="formKey" data-val="' + (rawParentItem.formKey || '') + '" style="color:var(--color-text-secondary);cursor:text;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Nhấp đúp để sửa">' + (rawParentItem.formKey || '') + '</td>'
       + '<td class="editable-cell" data-field="urlPara" data-val="' + (rawParentItem.urlPara || '') + '" style="color:var(--color-text-secondary);cursor:text;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Nhấp đúp để sửa">' + (rawParentItem.urlPara || '') + '</td>'
@@ -243,7 +278,7 @@ var MenusPage = (function () {
       + '</td>'
       + '</tr>';
 
-    var COL_P = '<colgroup><col style="width:4%"><col style="width:8%"><col style="width:8%"><col style="width:4%"><col style="width:24%"><col style="width:10%"><col style="width:16%"><col style="width:9%"><col style="width:7%"><col style="width:10%"></colgroup>';
+    var COL_P = '<colgroup><col style="width:4%"><col style="width:8%"><col style="width:8%"><col style="width:4%"><col style="width:16%"><col style="width:10%"><col style="width:10%"><col style="width:14%"><col style="width:9%"><col style="width:7%"><col style="width:10%"></colgroup>';
     var parentTableHTML = '<div style="margin-bottom:20px;">'
       + '<div style="font-weight:700; color:var(--color-text-primary); margin-bottom:8px; font-size:13px; text-transform:uppercase;">' + UIIcon.renderHtml('folder_open', 'vertical-align:bottom;font-size:16px;') + ' Thông tin Thư mục hiện tại (Nhấp đúp để sửa)</div>'
       + '<div class="table-wrapper" style="border-radius:10px;border:1px solid var(--color-primary); overflow-x: auto; -webkit-overflow-scrolling: touch;">'
@@ -257,6 +292,7 @@ var MenusPage = (function () {
       + '<th style="text-align:center;padding:5px 3px;white-space:nowrap;overflow:hidden;">Icon</th>'
       + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">Tên Menu</th>'
       + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">Tên EN</th>'
+      + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">Phụ đề</th>'
       + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">Tên Form</th>'
       + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">Form Key</th>'
       + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">URL</th>'
@@ -295,6 +331,7 @@ var MenusPage = (function () {
           + '<td class="editable-cell" data-field="icon" data-val="' + (c.icon || '') + '" title="Nhấp đúp để chọn Icon" style="cursor:text;text-align:center;padding:5px 2px;">' + UIIcon.renderHtml(c.icon || 'horizontal_rule', 'font-size:15px;color:var(--color-primary);vertical-align:middle;user-select:none;-webkit-user-select:none;') + '</td>'
           + '<td class="editable-cell" data-field="label" data-val="' + c.label + '" title="Nhấp đúp để sửa" style="cursor:text;padding:5px 4px;"><b>' + c.label + '</b></td>'
           + '<td class="editable-cell" data-field="en" data-val="' + (c.labelEN || '') + '" title="Nhấp đúp để sửa tên EN" style="cursor:text;color:var(--color-text-secondary);padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (c.labelEN || '') + '</td>'
+          + '<td class="editable-cell" data-field="subTitle" data-val="' + (c.subTitle || '') + '" title="Nhấp đúp để sửa Phụ đề" style="cursor:text;color:var(--color-text-secondary);padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (c.subTitle || '') + '</td>'
           + '<td class="editable-cell" data-field="formName" data-val="' + (c.formName || '') + '" style="color:var(--color-text-secondary);cursor:text;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Nhấp đúp để sửa">' + (c.formName || '') + '</td>'
           + '<td class="editable-cell" data-field="formKey" data-val="' + (c.formKey || '') + '" style="color:var(--color-text-secondary);cursor:text;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Nhấp đúp để sửa">' + (c.formKey || '') + '</td>'
           + '<td class="editable-cell" data-field="urlPara" data-val="' + (c.urlPara || '') + '" style="color:var(--color-text-secondary);cursor:text;padding:5px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="Nhấp đúp để sửa">' + (c.urlPara || '') + '</td>'
@@ -305,7 +342,7 @@ var MenusPage = (function () {
           + '</tr>';
       }).join('');
 
-      var COL_C = '<colgroup><col style="width:6%"><col style="width:8%"><col style="width:8%"><col style="width:4%"><col style="width:22%"><col style="width:10%"><col style="width:16%"><col style="width:9%"><col style="width:7%"><col style="width:10%"></colgroup>';
+      var COL_C = '<colgroup><col style="width:6%"><col style="width:8%"><col style="width:8%"><col style="width:4%"><col style="width:14%"><col style="width:10%"><col style="width:10%"><col style="width:14%"><col style="width:9%"><col style="width:7%"><col style="width:10%"></colgroup>';
       var table = '<div class="table-wrapper" style="border-radius:10px;border:1px solid var(--color-border); overflow-x: auto; -webkit-overflow-scrolling: touch;">'
         + '<table class="data-table child-drag-table no-mobile-stack" style="margin:0; table-layout:fixed; min-width:950px; font-size:11px;">'
         + COL_C
@@ -316,6 +353,7 @@ var MenusPage = (function () {
         + '<th style="text-align:center;padding:5px 3px;white-space:nowrap;overflow:hidden;">Icon</th>'
         + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">Tên Menu</th>'
         + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">Tên EN</th>'
+        + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">Phụ đề</th>'
         + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">Tên Form</th>'
         + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">Form Key</th>'
         + '<th style="padding:5px 4px;white-space:nowrap;overflow:hidden;">URL</th>'
@@ -382,6 +420,7 @@ var MenusPage = (function () {
           + '<td><input type="text" class="form-control inline-new-icon" value="horizontal_rule" style="width:32px; height:32px; padding:0; font-size:20px; font-family:\'Material Symbols Outlined\'; margin:0 auto; text-align:center; border-radius:6px; border:1px solid var(--color-border); outline:none; display:block; color:var(--color-primary); background:#fff;" title="Gõ tên Icon"></td>'
           + '<td><input type="text" class="form-control inline-new-label" placeholder="VD: Báo cáo mới..." style="' + focusInputStyle + '"></td>'
           + '<td><input type="text" class="form-control inline-new-en" placeholder="VD: New Report" style="' + baseInputStyle + '"></td>'
+          + '<td><input type="text" class="form-control inline-new-subtitle" placeholder="Phụ đề" style="' + baseInputStyle + '"></td>'
           + '<td><input type="text" class="form-control inline-new-formname" placeholder="Tên Form" style="' + baseInputStyle + '"></td>'
           + '<td><input type="text" class="form-control inline-new-formkey" placeholder="Key" style="' + baseInputStyle + '"></td>'
           + '<td><input type="text" class="form-control inline-new-urlpara" placeholder="?url=" style="' + baseInputStyle + '"></td>'
@@ -471,6 +510,7 @@ var MenusPage = (function () {
             ParentID: parentItem.id,
             Label: label,
             EN: tr.querySelector('.inline-new-en').value.trim(),
+            SubTitle: tr.querySelector('.inline-new-subtitle').value.trim(),
             FormName: tr.querySelector('.inline-new-formname').value.trim(),
             FormKey: tr.querySelector('.inline-new-formkey').value.trim(),
             URLPara: tr.querySelector('.inline-new-urlpara').value.trim(),
@@ -690,6 +730,7 @@ var MenusPage = (function () {
             ParentID: field === 'parent' ? newVal : (menu.parent || ''),
             Label: field === 'label' ? newVal : menu.label,
             EN: field === 'en' ? newVal : (menu.en || ''),
+            SubTitle: field === 'subTitle' ? newVal : (menu.subTitle || ''),
             FormName: field === 'formName' ? newVal : menu.formName,
             FormKey: field === 'formKey' ? newVal : (menu.formKey || ''),
             URLPara: field === 'urlPara' ? newVal : (menu.urlPara || ''),
@@ -771,6 +812,14 @@ var MenusPage = (function () {
       className: 'mb-4'
     });
     formBody.appendChild(inputLabel);
+
+    var inputSubTitle = UIInput.createText({
+      label: 'Phụ đề trang',
+      value: item.subTitle || '',
+      placeholder: 'VD: Quản lý danh sách...',
+      className: 'mb-4'
+    });
+    formBody.appendChild(inputSubTitle);
 
     // Grid cho ID và Form
     var grid2 = document.createElement('div');
@@ -857,6 +906,7 @@ var MenusPage = (function () {
         id: inputId.querySelector('input').value,
         label: inputLabel.querySelector('input').value,
         en: item.labelEN || item.en || '',
+        subTitle: inputSubTitle.querySelector('input').value,
         formName: inputForm.querySelector('input').value,
         formKey: inputFormKey.querySelector('input').value,
         urlPara: inputUrlPara.querySelector('input').value,
@@ -897,6 +947,7 @@ var MenusPage = (function () {
       MenuID: data.id,
       OldMenuID: data.oldId,
       Label: data.label,
+      SubTitle: data.subTitle,
       FormName: data.formName,
       Icon: data.icon,
       IsDisable: data.isDisable ? 1 : 0,
@@ -970,6 +1021,7 @@ var MenusPage = (function () {
       $container.querySelector('#menu-parent').value = menu.parent || '';
       $container.querySelector('#menu-label').value = menu.label || '';
       $container.querySelector('#menu-en').value = menu.en || '';
+      $container.querySelector('#menu-subtitle').value = menu.subTitle || '';
       $container.querySelector('#menu-formname').value = menu.formName || '';
       $container.querySelector('#menu-formkey').value = menu.formKey || '';
       $container.querySelector('#menu-urlpara').value = menu.urlPara || '';
@@ -984,6 +1036,7 @@ var MenusPage = (function () {
       $container.querySelector('#menu-parent').value = '';
       $container.querySelector('#menu-label').value = '';
       $container.querySelector('#menu-en').value = '';
+      $container.querySelector('#menu-subtitle').value = '';
       $container.querySelector('#menu-formname').value = '';
       $container.querySelector('#menu-formkey').value = '';
       $container.querySelector('#menu-urlpara').value = '';
@@ -1007,6 +1060,7 @@ var MenusPage = (function () {
     var id = $container.querySelector('#menu-id').value.trim();
     var label = $container.querySelector('#menu-label').value.trim();
     var en = $container.querySelector('#menu-en').value.trim();
+    var subtitle = $container.querySelector('#menu-subtitle').value.trim();
     var parent = $container.querySelector('#menu-parent').value;
     var formName = $container.querySelector('#menu-formname').value.trim();
     var formKey = $container.querySelector('#menu-formkey').value.trim();
@@ -1028,6 +1082,7 @@ var MenusPage = (function () {
       ParentID: parent,
       Label: label,
       EN: en,
+      SubTitle: subtitle,
       FormName: formName,
       FormKey: formKey,
       URLPara: urlPara,

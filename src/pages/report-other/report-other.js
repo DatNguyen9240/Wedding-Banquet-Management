@@ -14,6 +14,7 @@ var ReportOtherPage = (function () {
       .then(function(res) { return res.text(); })
       .then(function(html) {
         $container.innerHTML = html;
+        _injectHeaderActions();
         _renderFilter();
         _renderTabs();
         _bindEvents();
@@ -186,13 +187,36 @@ var ReportOtherPage = (function () {
     _loadSalesStats(currentYear + '-01-01', currentYear + '-12-31');
   }
 
+  function _injectHeaderActions() {
+    var globalActions = document.getElementById('global-page-actions');
+    if (!globalActions) return;
+
+    globalActions.innerHTML = '';
+    if (typeof UIActionToolbar !== 'undefined') {
+      var toolbar = UIActionToolbar.create({
+        onAdd: false, onEdit: false, onDelete: false, onFilter: false, onPrint: false, onClose: false,
+        extras: [
+          { id: 'btn-export-other', text: 'Xuất Excel', icon: 'download', type: 'tool' },
+          { id: 'btn-print-other', text: 'In Báo Cáo', icon: 'print', type: 'tool' }
+        ]
+      });
+      globalActions.appendChild(toolbar);
+    }
+  }
+
   function _bindEvents() {
-    $container.querySelector('#btn-print-other').addEventListener('click', function() {
+    var btnPrint = document.getElementById('btn-print-other');
+    if (btnPrint) btnPrint.addEventListener('click', function() {
       window.print();
     });
 
-    $container.querySelector('#btn-export-other').addEventListener('click', function() {
-      Alert.success('Đã xuất báo cáo ra Excel (Mock)');
+    var btnExport = document.getElementById('btn-export-other');
+    if (btnExport) btnExport.addEventListener('click', function() {
+      if (typeof Alert !== 'undefined') {
+        Alert.success('Đã xuất báo cáo ra Excel (Mock)');
+      } else if (typeof UIToast !== 'undefined') {
+        UIToast.show('Đã xuất báo cáo ra Excel (Mock)', 'success');
+      }
     });
   }
 
