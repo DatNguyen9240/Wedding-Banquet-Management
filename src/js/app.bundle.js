@@ -3108,10 +3108,18 @@ var Navbar = (function () {
           <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 150px; height: auto; margin-left: 16px;">
         </div>
 
-        <!-- Desktop Menu -->
-        <ul class="navbar-menu" id="navbar-menu">
-          ${_buildMenuHTML()}
-        </ul>
+        <!-- Desktop Menu with scroll arrows -->
+        <div class="navbar-menu-wrapper" id="navbar-menu-wrapper">
+          <button class="navbar-scroll-arrow navbar-scroll-left" id="navbar-scroll-left" title="Cuộn trái">
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+          <ul class="navbar-menu" id="navbar-menu">
+            ${_buildMenuHTML()}
+          </ul>
+          <button class="navbar-scroll-arrow navbar-scroll-right" id="navbar-scroll-right" title="Cuộn phải">
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
 
         <!-- Right Actions -->
         <div class="navbar-right">
@@ -3483,6 +3491,32 @@ var Navbar = (function () {
     document.querySelectorAll('.mobile-nav-item').forEach(function (item) {
       item.addEventListener('click', function () { setTimeout(closeDrawer, 150); });
     });
+
+    // ── Scroll arrows cho navbar-menu ──
+    var $menu = document.getElementById('navbar-menu');
+    var $scrollLeft = document.getElementById('navbar-scroll-left');
+    var $scrollRight = document.getElementById('navbar-scroll-right');
+
+    function updateScrollArrows() {
+      if (!$menu || !$scrollLeft || !$scrollRight) return;
+      var scrollable = $menu.scrollWidth > $menu.clientWidth + 2;
+      $scrollLeft.style.display = (scrollable && $menu.scrollLeft > 5) ? 'flex' : 'none';
+      $scrollRight.style.display = (scrollable && $menu.scrollLeft < $menu.scrollWidth - $menu.clientWidth - 5) ? 'flex' : 'none';
+    }
+
+    if ($menu && $scrollLeft && $scrollRight) {
+      $scrollLeft.addEventListener('click', function(e) {
+        e.stopPropagation();
+        $menu.scrollBy({ left: -200, behavior: 'smooth' });
+      });
+      $scrollRight.addEventListener('click', function(e) {
+        e.stopPropagation();
+        $menu.scrollBy({ left: 200, behavior: 'smooth' });
+      });
+      $menu.addEventListener('scroll', updateScrollArrows);
+      window.addEventListener('resize', updateScrollArrows);
+      setTimeout(updateScrollArrows, 100);
+    }
 
     _highlightActive();
     window.addEventListener('hashchange', _highlightActive);

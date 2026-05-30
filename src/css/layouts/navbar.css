@@ -51,9 +51,54 @@
   align-items: center;
   gap: 2px;
   flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
   list-style: none;
   margin: 0;
   padding: 0;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.navbar-menu::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* ════ SCROLL ARROWS WRAPPER ════ */
+.navbar-menu-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.navbar-scroll-arrow {
+  display: none; /* JS controls visibility */
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--color-sidebar);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: opacity 0.2s, background 0.2s;
+  z-index: 2;
+  padding: 0;
+}
+
+.navbar-scroll-arrow .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.navbar-scroll-arrow:hover {
+  opacity: 1;
+  background: var(--color-background);
 }
 
 /* ── Nav Group Item (with dropdown) ── */
@@ -597,7 +642,7 @@ body.dark-theme .navbar-user:hover {
 
 /* ════ RESPONSIVE ════ */
 @media (max-width: 1024px) {
-  .navbar-menu {
+  .navbar-menu-wrapper {
     display: none;
   }
 
