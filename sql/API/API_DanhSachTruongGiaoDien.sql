@@ -4,11 +4,33 @@ GO
 
 CREATE PROCEDURE API_DanhSachTruongGiaoDien
     @Keyword nvarchar(100) = NULL,
-    @FormName nvarchar(100) = NULL
+    @FormName nvarchar(100) = NULL,
+    @SortColumn VARCHAR(50) = '',
+    @SortDir VARCHAR(10) = ''
 AS
 BEGIN
     SET NOCOUNT ON;
     
+    DECLARE @sql NVARCHAR(MAX);
+    DECLARE @OrderByClause NVARCHAR(MAX);
+
+    -- Xử lý ORDER BY
+    IF ISNULL(@SortColumn, '') <> ''
+    BEGIN
+        IF ISNULL(@SortDir, '') NOT IN ('ASC', 'DESC', 'asc', 'desc')
+            SET @SortDir = 'ASC';
+            
+        -- Thêm bí danh 'ff.' nếu cột nằm trong SY_FormatFields để tránh ambiguous
+        -- Trong trường hợp này các cột lấy ra đều thuộc ff trừ một số cột đặc biệt,
+        -- tạm thời cứ truyền thẳng tên cột vào QUOTENAME
+        SET @OrderByClause = ' ORDER BY ' + QUOTENAME(@SortColumn) + ' ' + @SortDir;
+    END
+    ELSE
+    BEGIN
+        SET @OrderByClause = ' ORDER BY ff.FormName ASC, ff.FieldName ASC';
+    END
+    
+    SET @sql = N'
     SELECT 
         ff.AutoID, 
         ff.FormName, 
@@ -31,12 +53,18 @@ BEGIN
 
     FROM SY_FormatFields ff
     LEFT JOIN SY_FrmLstTbl l ON ff.FormName = l.FormID
-    WHERE (@Keyword IS NULL OR @Keyword = '' 
-           OR ff.FormName LIKE '%' + @Keyword + '%' 
-           OR ff.FieldName LIKE '%' + @Keyword + '%'
-           OR ff.CaptionVN LIKE N'%' + @Keyword + '%'
-           OR l.CaptionVN LIKE N'%' + @Keyword + '%')
-      AND (@FormName IS NULL OR @FormName = '' OR @FormName = 'frmFormBuilder' OR ff.FormName = @FormName)
-    ORDER BY ff.FormName ASC, ff.FieldName ASC;
+    WHERE (@Keyword IS NULL OR @Keyword = '''' 
+           OR ff.FormName LIKE ''%'' + @Keyword + ''%'' 
+           OR ff.FieldName LIKE ''%'' + @Keyword + ''%''
+           OR ff.CaptionVN LIKE N''%'' + @Keyword + ''%''
+           OR l.CaptionVN LIKE N''%'' + @Keyword + ''%'')
+      AND (@FormName IS NULL OR @FormName = '''' OR @FormName = ''frmFormBuilder'' OR ff.FormName = @FormName)
+    ' + @OrderByClause;
+
+    EXEC sp_executesql @sql, 
+        N'@Keyword nvarchar(100), @FormName nvarchar(100)', 
+        @Keyword = @Keyword, 
+        @FormName = @FormName;
+
 END
 GO

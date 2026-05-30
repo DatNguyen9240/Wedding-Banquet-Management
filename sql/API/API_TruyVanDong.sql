@@ -1,6 +1,8 @@
 CREATE OR ALTER PROCEDURE [dbo].[API_TruyVanDong]
     @FormName VARCHAR(50),
-    @Keyword NVARCHAR(200) = ''
+    @Keyword NVARCHAR(200) = '',
+    @SortColumn VARCHAR(50) = '',
+    @SortDir VARCHAR(10) = ''
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -49,10 +51,25 @@ BEGIN
 
     -- Xử lý ORDER BY
     DECLARE @OrderByClause NVARCHAR(MAX);
-    IF @PrimaryKey IS NOT NULL AND @PrimaryKey <> ''
+    
+    -- Nếu frontend truyền SortColumn thì ưu tiên dùng
+    IF ISNULL(@SortColumn, '') <> ''
+    BEGIN
+        -- Mặc định ASC nếu không truyền SortDir hợp lệ
+        IF ISNULL(@SortDir, '') NOT IN ('ASC', 'DESC', 'asc', 'desc')
+            SET @SortDir = 'ASC';
+            
+        SET @OrderByClause = ' ORDER BY ' + QUOTENAME(@SortColumn) + ' ' + @SortDir;
+    END
+    -- Nếu không có SortColumn thì fallback về PrimaryKey
+    ELSE IF @PrimaryKey IS NOT NULL AND @PrimaryKey <> ''
+    BEGIN
         SET @OrderByClause = ' ORDER BY ' + QUOTENAME(@PrimaryKey) + ' DESC ';
+    END
     ELSE
+    BEGIN
         SET @OrderByClause = ' ORDER BY (SELECT 1) ';
+    END
 
     -- Lấy danh sách cột
     DECLARE @ColumnList NVARCHAR(MAX);
