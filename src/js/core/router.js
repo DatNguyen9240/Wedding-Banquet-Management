@@ -13,6 +13,7 @@ var Router = (function () {
     { path: '/components-demo', template: 'src/pages/components-demo/components-demo.html', script: 'src/pages/components-demo/components-demo.js', perm: 'uidemo', title: 'Bản test Component', pageFn: 'ComponentsDemoPage' },
     { path: '/appearance', template: 'src/pages/appearance/appearance.html', script: 'src/pages/appearance/appearance.js', perm: '', title: 'Cấu hình Giao diện', pageFn: 'AppearancePage' },
     { path: '/document-manager', template: 'src/pages/document-manager/document-manager.html', script: 'src/pages/document-manager/document-manager.js', perm: '', title: 'Workspace Tài Liệu', pageFn: 'DocumentManagerPage', hideHeader: true },
+    { path: '/contract', template: 'src/pages/contract/contract.html', script: 'src/pages/contract/contract.js', perm: 'frmHopDong', title: 'Hợp Đồng Tiệc', pageFn: 'ContractPage' },
     { path: '/event-setup', template: 'src/pages/event-setup/event-setup.html', script: 'src/pages/event-setup/event-setup.js', perm: '', title: '', pageFn: 'EventSetupPage' },
     { path: '/categories', template: 'src/pages/categories/categories.html', script: 'src/pages/categories/categories.js', perm: '', title: '', pageFn: 'CategoriesPage' },
     { path: '/calendar', template: 'src/pages/calendar/calendar.html', script: 'src/pages/calendar/calendar.js', perm: '', title: '', pageFn: 'CalendarPage' },

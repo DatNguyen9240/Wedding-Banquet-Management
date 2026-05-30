@@ -20,18 +20,56 @@ var ContractPage = (function () {
     contractData = [];
     _isFromBooking = false;
 
-    fetch('./src/pages/contract/contract.html')
+    // Đảm bảo DynamicFormEngine được tải (Fix lỗi F5 tải lại trang bị mất bảng)
+    if (typeof DynamicFormEngine === 'undefined') {
+      var script = document.createElement('script');
+      script.src = './src/js/core/DynamicFormEngine.js?v=' + Date.now();
+      script.onload = function() {
+        _doRender();
+      };
+      document.body.appendChild(script);
+    } else {
+      _doRender();
+    }
+  }
+
+  function _doRender() {
+    fetch('./src/pages/contract/contract.html?v=' + new Date().getTime())
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
+        var listContainer = $container.querySelector('#contract-list-view');
+
+        var btnClose = document.getElementById('btn-close-detail');
+        if (btnClose) btnClose.addEventListener('click', closeDetail);
+
+        // Bắt sự kiện chuyển tab custom
+        var tabListBtn = document.getElementById('tab-list-btn');
+        var tabDetailBtn = document.getElementById('tab-detail-btn');
+        if (tabListBtn) {
+          tabListBtn.addEventListener('click', function() {
+            closeDetail();
+          });
+        }
+        if (tabDetailBtn) {
+          tabDetailBtn.addEventListener('click', function() {
+            var detailView = document.getElementById('contract-detail-view');
+            if (!detailView || detailView.innerHTML.trim() === '') {
+              _showDetailView(true);
+            } else {
+              _switchTabUI('detail');
+            }
+          });
+        }
 
         // Bắt tham số date hoặc id từ URL (ví dụ: ?date=2023-03-03 hoặc ?id=HD123)
         var hashParts = window.location.hash.split('?');
+        var bookingIdParam = null;
         if (hashParts.length > 1) {
           var params = new URLSearchParams(hashParts[1]);
           var dateParam = params.get('date');
           var idParam = params.get('id');
-          var bookingIdParam = params.get('bookingId');
+          bookingIdParam = params.get('bookingId');
           
           if (dateParam) {
             filterParams.TuNgay = dateParam;
@@ -39,141 +77,107 @@ var ContractPage = (function () {
           }
           if (idParam) {
             filterParams.Keyword = idParam;
-            // Xóa bộ lọc ngày nếu đang tìm theo ID cụ thể
             filterParams.TuNgay = "";
             filterParams.DenNgay = "";
           }
-          _bindEvents();
-          
-          if (bookingIdParam) {
-            _isFromBooking = true;
-            _showDetailView(true, bookingIdParam);
-          } else {
-            _loadData();
+        }
+        
+        // Cấu hình Plugin Button "Lập Hợp Đồng Mới"
+        if (!window.FormActionPlugins) window.FormActionPlugins = [];
+        window.FormActionPlugins = window.FormActionPlugins.filter(function(p) { return p.id !== 'contract_plugin'; });
+        window.FormActionPlugins.push({
+          id: 'contract_plugin',
+          getExtraButtons: function(formName, getSelected) {
+            if (formName !== 'frmHopDong') return [];
+            return [
+              {
+                text: 'Lập Hợp Đồng',
+                icon: 'add_circle',
+                type: 'primary',
+                onClick: function() {
+                  _showDetailView(true);
+                }
+              },
+              {
+                text: 'Xem / Sửa',
+                icon: 'edit',
+                type: 'tool',
+                onClick: function() {
+                  var selected = getSelected();
+                  if (!selected || selected.length === 0) {
+                    if (typeof UIToast !== 'undefined') UIToast.show('Vui lòng chọn 1 Hợp Đồng để xem/sửa!', 'warning');
+                    return;
+                  }
+                  _showDetailView(false);
+                }
+              }
+            ];
           }
-        } else {
-          _bindEvents();
-          _loadData();
+        });
+
+        // Render DynamicFormEngine in the list container
+        if (typeof DynamicFormEngine !== 'undefined') {
+          DynamicFormEngine.render(listContainer, {
+            FormName: 'frmHopDong',
+            PageTitle: 'Hợp Đồng Tiệc',
+            PageSubtitle: 'Quản lý và lập hợp đồng tiệc cưới, hội nghị',
+            HideAddBtn: true, // Ẩn nút Thêm mặc định vì đã dùng PluginButtons ở trên
+            HideEditBtn: true // Ẩn nút Sửa mặc định
+          });
+        }
+        
+        if (bookingIdParam) {
+          _isFromBooking = true;
+          _showDetailView(true, bookingIdParam);
         }
       });
-  }
-
-  function _loadData() {
-    var tbody = $container.querySelector('#contract-table tbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4" style="color: var(--color-text-secondary);">Đang tải dữ liệu...</td></tr>';
-
-    ContractService.getList(filterParams)
-      .then(function (data) {
-        contractData = data;
-        _renderTable();
-      })
-      .catch(function (err) {
-        console.error('Lỗi tải dữ liệu Hợp Đồng:', err);
-        contractData = [];
-        _renderTable();
-      });
-  }
-
-  function _renderTable() {
-    var tbody = $container.querySelector('#contract-table tbody');
-    tbody.innerHTML = '';
-    
-    if (!contractData || contractData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4" style="color: var(--color-text-secondary);">Không có dữ liệu hợp đồng</td></tr>';
-      return;
-    }
-
-    contractData.forEach((row, idx) => {
-      var currentStatus = row.TrangThai || row.status || '';
-      var statusClass = currentStatus.includes('Ký') ? 'status-badge primary' : 'status-badge secondary';
-      var hdId = row.Sohopdong || row.id;
-      var customer = row.TenKhachHang || row.customerName;
-      var eventDate = row.NgayToChuc || row.eventDate || '';
-      var tables = row.SoBan || row.totalTables || 0;
-      var amount = row.TongTien || row.totalAmount || 0;
-      
-      var formattedAmount = typeof amount === 'string' && amount.includes(',') ? amount + ' đ' : new Intl.NumberFormat('vi-VN').format(parseFloat(amount || 0)) + ' đ';
-
-      var tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="text-center">${idx + 1}</td>
-        <td class="fw-semibold" style="color: var(--color-primary);">${hdId}</td>
-        <td class="fw-medium">${customer}</td>
-        <td><span style="background: rgba(148, 163, 184, 0.1); padding:2px 8px; border-radius:4px; font-weight:500; border:1px solid var(--color-border);">${eventDate}</span></td>
-        <td class="text-end">${tables} bàn</td>
-        <td class="text-end fw-semibold" style="color: var(--color-danger);">${formattedAmount}</td>
-        <td class="text-center"><span class="${statusClass}">${currentStatus}</span></td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-
   }
 
   function getSelectedRow() {
-    var activeRow = $container.querySelector('#contract-table tbody tr.active');
-    if (!activeRow) return null;
-    var index = Array.from(activeRow.parentNode.children).indexOf(activeRow);
-    return contractData[index];
+    // Trả về dòng đang chọn từ state của DynamicFormEngine (được lưu trong selectedRows cục bộ của DynamicFormEngine)
+    // Hoặc query phần tử tr.selected nếu cần
+    var cached = sessionStorage.getItem('selectedRows_frmHopDong');
+    if (cached) {
+      try {
+        var arr = JSON.parse(cached);
+        if (arr && arr.length > 0) return arr[0];
+      } catch(e) {}
+    }
+    return null;
   }
 
-  function _bindEvents() {
-    var btnAdd = $container.querySelector('#btn-add-contract');
-    if (btnAdd) btnAdd.addEventListener('click', function () { _showDetailView(true); });
+  function _switchTabUI(mode) {
+    var tabListBtn = document.getElementById('tab-list-btn');
+    var tabDetailBtn = document.getElementById('tab-detail-btn');
+    var tabListPane = document.getElementById('tab-list-pane');
+    var tabDetailPane = document.getElementById('tab-detail-pane');
 
-    var btnMore = $container.querySelector('#btn-contract-more');
-    if (btnMore) {
-      btnMore.addEventListener('click', function (e) {
-        if (typeof UIContextMenu !== 'undefined') {
-          var selected = getSelectedRow();
-          UIContextMenu.show(e, [
-            { 
-              label: 'Xem / Sửa', 
-              icon: 'edit', 
-              onClick: function () { 
-                if (!selected) {
-                  UIToast.show('Vui lòng chọn một Hợp Đồng để xem/sửa!', 'warning');
-                  return;
-                }
-                _showDetailView(false); 
-              } 
-            },
-            { label: 'In Hợp Đồng', icon: 'print', onClick: function () { UIToast.show('Chức năng In đang phát triển'); } },
-            '|',
-            { label: '<span class="text-danger">Thanh Lý Hủy</span>', icon: 'delete', onClick: function () { UIToast.show('Xác nhận Thanh Lý Hủy'); } }
-          ]);
-        }
-      });
-    }
+    var globalHeader = document.getElementById('global-header');
 
-    // Row selection and double-click logic
-    var tbody = $container.querySelector('#contract-table tbody');
-    if (tbody) {
-      tbody.addEventListener('click', function (e) {
-        if (typeof tbody.isDragSelecting === 'function' && tbody.isDragSelecting()) return;
-        var tr = e.target.closest('tr');
-        if (!tr) return;
-        // Nếu người dùng đang giữ phím Ctrl/Cmd thì cho phép multi-select (nếu muốn)
-        // Hiện tại giữ nguyên single select cho click thường
-        Array.from(tbody.querySelectorAll('tr')).forEach(r => r.classList.remove('active'));
-        tr.classList.add('active');
-      });
-
-      tbody.addEventListener('dblclick', function (e) {
-        var tr = e.target.closest('tr');
-        if (!tr) return;
-        Array.from(tbody.querySelectorAll('tr')).forEach(r => r.classList.remove('active'));
-        tr.classList.add('active');
-        _showDetailView(false);
-      });
+    if (mode === 'list') {
+      if (tabListBtn) { tabListBtn.classList.add('active'); tabListBtn.style.color = 'var(--color-primary)'; tabListBtn.style.borderBottomColor = 'var(--color-primary)'; }
+      if (tabDetailBtn) { tabDetailBtn.classList.remove('active'); tabDetailBtn.style.color = 'var(--color-text-secondary)'; tabDetailBtn.style.borderBottomColor = 'transparent'; }
+      if (tabListPane) tabListPane.style.display = 'block';
+      if (tabDetailPane) tabDetailPane.style.display = 'none';
+      if (globalHeader) globalHeader.style.display = 'flex';
+    } else {
+      if (tabListBtn) { tabListBtn.classList.remove('active'); tabListBtn.style.color = 'var(--color-text-secondary)'; tabListBtn.style.borderBottomColor = 'transparent'; }
+      if (tabDetailBtn) { tabDetailBtn.classList.add('active'); tabDetailBtn.style.color = 'var(--color-primary)'; tabDetailBtn.style.borderBottomColor = 'var(--color-primary)'; }
+      if (tabListPane) tabListPane.style.display = 'none';
+      if (tabDetailPane) tabDetailPane.style.display = 'block';
+      if (globalHeader) globalHeader.style.display = 'none';
     }
   }
 
   function _showDetailView(isNew, bookingId) {
-    document.getElementById('contract-list-view').style.display = 'none';
-    var dv = document.getElementById('contract-detail-view');
-    dv.style.display = 'block';
-    dv.style.animation = 'slideUp 0.3s ease forwards';
+    _switchTabUI('detail');
+    
+    var detailContainer = document.getElementById('contract-detail-view');
+    if (detailContainer) {
+      detailContainer.style.animation = 'slideUp 0.3s ease forwards';
+    }
+
+    var dv = detailContainer;
     
     var titleText = 'Lập Hợp Đồng Mới';
     var chureVal = '';
@@ -287,7 +291,7 @@ var ContractPage = (function () {
         .form-group label {
           font-size: 13px;
           font-weight: 700;
-          color: #1E293B; /* Slate 800 */
+          color: var(--color-text-secondary); /* Text secondary for dark mode support */
           margin-bottom: 0;
         }
 
@@ -482,7 +486,7 @@ var ContractPage = (function () {
 
       <!-- High-Level Tab Contents -->
       <div id="high-content-info" class="high-tab-content">
-        <div class="card mb-4" style="padding: 24px; background: #FFFFFF; border-radius: 12px; border: 1px solid var(--color-border); overflow: visible !important;">
+        <div class="card mb-4" style="padding: 24px; background: var(--color-surface); border-radius: 12px; border: 1px solid var(--color-border); overflow: visible !important;">
           <!-- 1. Thông tin Khách hàng -->
           <span class="form-section-title">1. Thông tin Khách hàng</span>
           <div class="form-section-divider"></div>
@@ -1194,7 +1198,7 @@ var ContractPage = (function () {
           bottom: 64px;
           left: 16px;
           right: 16px;
-          background: #FFFFFF;
+          background: var(--color-surface);
           border: 1px solid var(--color-border-strong);
           border-radius: 12px 12px 0 0;
           box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.18);
@@ -1241,7 +1245,7 @@ var ContractPage = (function () {
           left: 0;
           right: 0;
           height: 64px;
-          background: #FFFFFF;
+          background: var(--color-surface);
           border-top: 1px solid var(--color-border-strong);
           display: flex;
           justify-content: space-between;
@@ -1274,7 +1278,7 @@ var ContractPage = (function () {
             border-right: none !important;
             border-radius: 0px !important;
             padding: 10px 8px !important;
-            background: #FFFFFF !important;
+            background: var(--color-surface) !important;
           }
           
           .modal-bottom-bar {
@@ -1877,13 +1881,9 @@ var ContractPage = (function () {
       return;
     }
 
-    document.getElementById('contract-detail-view').style.display = 'none';
-    document.getElementById('contract-detail-view').innerHTML = '';
-    document.getElementById('contract-list-view').style.display = 'block';
+    _switchTabUI('list');
     
-    if (!contractData || contractData.length === 0) {
-      _loadData();
-    }
+    _isFromBooking = false;
   }
 
   return { 

@@ -1,4 +1,4 @@
-﻿/* --- mockData.js --- */
+/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -5948,9 +5948,7 @@ var UITable = (function () {
           header.width = '160px';
         } else if (keyLower.indexOf('diachi') >= 0 || keyLower.indexOf('địa chỉ') >= 0) {
           header.width = '200px';
-        } else {
-          header.width = '150px';
-        }
+        } else { /* header.width = 150px */ }
 
         // Heuristic Format
         if (keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0) {

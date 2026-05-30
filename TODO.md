@@ -1,20 +1,34 @@
 # Danh sách Công việc Cần làm (TODO) - Dự án Quản lý Tiệc Cưới
 
-Sau khi hoàn thiện hầu hết các tính năng theo REQUIREMENT, đây là những công việc THỰC SỰ CÒN THIẾU và cần làm tiếp theo:
+Dựa trên tài liệu `REQUIREMENT.md` và tiến độ hiện tại, dưới đây là các hạng mục cốt lõi còn thiếu hoặc chưa hoàn thiện 100% (mới dừng ở mức giao diện mẫu).
 
-## 1. Thông tin Thay đổi – Bổ sung & Sắp đặt tiệc (Mục IV.9 & IV.10)
-- **Tình trạng:** CHƯA LÀM.
-- **Mô tả:** Tài liệu yêu cầu có form riêng để ghi nhận những "Thay đổi - Bổ sung" sau khi hợp đồng đã ký (thay vì sửa trực tiếp vào hợp đồng gốc). Đồng thời cần phiếu "Sắp đặt tiệc" để in ra cho nhà bếp/lễ tân.
-- **Hành động:** 
-  - Hoặc là tạo thêm một Dynamic Form `frmThayDoiBoSung` và `frmSapDatTiec`.
-  - Hoặc là thống nhất chỉ cần Edit trực tiếp trên `frmHopDong` để tiết kiệm thời gian (cần chốt lại với khách hàng).
+## 1. Các Module Nghiệp vụ Lớn (Cần áp dụng DynamicFormEngine & Xử lý Logic)
+- [ ] **Hợp đồng tiệc (`#/contract`)**: 
+  - Hoàn thiện xử lý 10 Tabs phức tạp (Bàn Tiệc, Sảnh, Thực đơn Mặn/Chay, Ưu đãi, Thức uống, Dịch vụ, Ghi chú, Setup Print, Dời/Hủy).
+- [ ] **Quyết toán tiệc (`#/checkout`)**: 
+  - Hoàn thiện các Tab: Phát sinh, Giảm giá 3 cách, Tính toán doanh thu thực tế.
+  - Xử lý logic **Giải phóng sảnh** (đổi trạng thái sảnh trống) sau khi lưu quyết toán.
+- [ ] **Trạng thái Sảnh (`#/hall-status`)**: 
+  - Kết nối dữ liệu thực tế từ bảng `SanhTiec` và `HopDongTiec`.
+  - Hiển thị đúng logic màu sắc: Xanh (Trống), Vàng (Đã cọc), Đỏ (Đã ký HĐ), Xám (Bảo trì).
+- [ ] **Thông tin Thay đổi – Bổ sung & Sắp đặt tiệc**:
+  - Tạo form hoặc cơ chế ghi nhận các thay đổi sau khi ký hợp đồng và in phiếu Sắp đặt tiệc cho các bộ phận.
 
-## 2. Ghép API thật (Tích hợp Dữ liệu)
-- **Tình trạng:** ĐANG DÙNG MOCK DATA (Dữ liệu giả).
-- **Hành động:** Cần nối các form giao diện vào các API viết trong SQL (`API_LuuHopDong`, `API_LuuKhachHang`...) qua tầng backend.
+## 2. Liên thông & Tự động hóa Dữ liệu (Workflow)
+- [ ] **Luồng dữ liệu tự động điền**: Khách tham quan -> Tự fill data sang Biên nhận cọc chỗ -> Tự fill data sang Hợp đồng.
+- [ ] **Quản lý Tiền cọc**: Tính toán hiển thị số tiền còn thiếu để đủ 40% giá trị hợp đồng (cọc lần 2).
 
-## 3. Liên thông dữ liệu các bước
-- **Tình trạng:** Giao diện đã có nhưng chưa truyền dữ liệu qua lại.
-- **Hành động:** Viết logic JS để: Khách tham quan -> Tự fill data sang Biên nhận cọc -> Tự fill data sang Hợp đồng -> Quyết toán xong thì đổi trạng thái sảnh.
+## 3. Trải nghiệm Người dùng & Phím tắt (Keyboard Shortcuts)
+- [x] Bắt sự kiện phím `Space` để check/uncheck checkbox trong lưới.
+- [x] Bắt sự kiện phím `F4` để mở danh sách dropdown/combobox.
+- [x] Bắt sự kiện phím `F3` để mở danh sách tra cứu.
+- [x] Bắt sự kiện phím `F2` để mở form thêm mới danh mục nhanh.
 
-*(Ghi chú: Các tính năng Tạo Ngày Tháng, Khóa Kỳ Kế Toán, Sao lưu dữ liệu đã được code xong và tích hợp rất khéo léo vào trong `categories.js` và `settings.js`, vượt mức mong đợi ban đầu!)*
+## 4. Quản trị Hệ thống & Cấu hình
+- [x] **Sao lưu dữ liệu**: Xử lý logic tạo file backup tự động với format `[TênDB]_YYYY_MM_DD_HH_mm_ss`.
+- [ ] **Khóa/Mở kỳ sử dụng**: Áp dụng logic chặn chặt chẽ (không cho lập phiếu Nhập/Xuất/Hợp đồng nếu kỳ đã bị khóa).
+- [ ] **Thiết lập Logo**: Cho phép cập nhật file ảnh `Qplaza\Logo\logo.jpg` vào hệ thống.
+
+## 5. Cảnh báo & Thống kê (Dashboard)
+- [x] **Widget Cảnh báo thanh toán**: Hiển thị trên Dashboard danh sách các hợp đồng sắp đến hạn thanh toán (trong vòng 7 ngày) hoặc đã quá hạn (cảnh báo đỏ).
+- [ ] **Báo cáo động**: Cập nhật logic để các biểu đồ và báo cáo (Doanh thu, Chi phí, Khảo sát) lấy đúng dữ liệu thật từ Backend thay vì Mock Data.

@@ -2,43 +2,33 @@
    HỢP ĐỒNG TIỆC - HTML Template
    ═══════════════════════════════════════════ -->
 
-<div id="contract-list-view">
-  <div class="page-title-bar">
-    <div class="page-title-info">
-      <h1 class="page-title-heading">Hợp Đồng Tiệc</h1>
-      <span class="page-title-sub">Quản lý và lập hợp đồng tiệc cưới, hội nghị</span>
-    </div>
-    <div class="page-title-actions">
-      <button class="btn btn-primary d-flex align-items-center gap-2 rounded-pill" id="btn-add-contract" style="height: 40px; font-weight: 700;">
-        <span class="material-symbols-outlined" style="font-size: 20px;">add</span>
-        <span class="d-none d-sm-inline">Lập Hợp Đồng Mới</span>
-        <span class="d-inline d-sm-none">Tạo Mới</span>
-      </button>
-      <button class="btn btn-outline d-flex align-items-center justify-content-center" id="btn-contract-more" style="width: 40px; height: 40px; padding: 0; border-radius: 50%;" title="Tùy chọn khác">
-        <span class="material-symbols-outlined">more_vert</span>
-      </button>
-    </div>
+<div class="contract-module-container" style="display:flex; flex-direction:column; min-height: 80vh; width: 100%;">
+  <!-- Tabs Navigation Custom -->
+  <div class="contract-tabs-header" style="background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 24px; display: flex; gap: 16px; width: 100%;">
+    <button id="tab-list-btn" class="custom-tab-btn active" style="padding: 12px 16px; font-weight: 500; font-size: 14px; color: var(--color-primary); background: transparent; border: none; border-bottom: 2px solid var(--color-primary); cursor: pointer;">
+      Danh sách Hợp đồng
+    </button>
+    <button id="tab-detail-btn" class="custom-tab-btn" style="padding: 12px 16px; font-weight: 500; font-size: 14px; color: var(--color-text-secondary); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer;">
+      Lập / Chi tiết Hợp đồng
+    </button>
   </div>
 
-  <div class="card" style="animation: slideUp 0.4s ease forwards;">
-    <div class="table-wrapper" style="overflow-x: auto; width: 100%;">
-      <table class="data-table selectable" id="contract-table">
-        <thead>
-          <tr>
-            <th class="text-center" style="width: 50px;">STT</th>
-            <th>Số Hợp Đồng</th>
-            <th>Tên Khách Hàng (Cặp Đôi)</th>
-            <th>Ngày Tổ Chức</th>
-            <th>Số Bàn</th>
-            <th class="text-end">Tổng Tiền (Dự Kiến)</th>
-            <th class="text-center">Trạng thái</th>
-          </tr>
-        </thead>
-        <tbody>
-        </tbody>
-      </table>
+  <style>
+    .custom-tab-btn:hover { color: var(--color-primary) !important; }
+    .custom-tab-btn.active { color: var(--color-primary) !important; border-bottom-color: var(--color-primary) !important; }
+  </style>
+
+  <!-- Tabs Content -->
+  <div class="tab-content" style="flex:1; width: 100%;" id="contractTabsContent">
+    
+    <!-- PANE 1: LIST -->
+    <div id="tab-list-pane" style="display: block; padding: 0; width: 100%;">
+      <div id="contract-list-view" style="width: 100%;"></div>
+    </div>
+    
+    <!-- PANE 2: DETAIL -->
+    <div id="tab-detail-pane" style="display: none; padding: 24px 0; width: 100%;">
+      <div id="contract-detail-view" style="width: 100%;"></div>
     </div>
   </div>
 </div>
-
-<div id="contract-detail-view" style="display: none;"></div>

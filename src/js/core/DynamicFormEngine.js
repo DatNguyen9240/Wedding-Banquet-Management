@@ -405,15 +405,15 @@ window.DynamicFormEngine = (function () {
         }
 
         var toolbar = UIActionToolbar.create({
-          onAdd: _hasPermission('ADD') ? _openAddForm : 'DISABLED',
-          onEdit: _hasPermission('EDIT') ? function () {
+          onAdd: MODULE_CONFIG.HideAddBtn ? false : (_hasPermission('ADD') ? _openAddForm : 'DISABLED'),
+          onEdit: MODULE_CONFIG.HideEditBtn ? false : (_hasPermission('EDIT') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectEdit);
             if (selectedRows.length > 1) {
               _openBulkEditForm();
             } else {
               _openEditForm(selectedRows[0]);
             }
-          } : 'DISABLED',
+          } : 'DISABLED'),
           onDelete: _hasPermission('DELETE') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectDelete);
 
