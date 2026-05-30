@@ -95,4 +95,9 @@ document.addEventListener('DOMContentLoaded', function () {
   if (typeof DocumentExportPlugin !== 'undefined') {
     DocumentExportPlugin.init();
   }
+
+  // 6. Khởi tạo Plugin luồng nghiệp vụ
+  if (typeof WorkflowTransferPlugin !== 'undefined') {
+    WorkflowTransferPlugin.init();
+  }
 });
