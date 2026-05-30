@@ -86,6 +86,10 @@ var FilterComponent = (function () {
             this.style.boxShadow = 'none';
         });
 
+        if (typeof window !== 'undefined' && window.currentFilters && window.currentFilters[f.id] !== undefined) {
+          inp.value = window.currentFilters[f.id];
+        }
+
         inputs[f.id] = inp;
       }
 

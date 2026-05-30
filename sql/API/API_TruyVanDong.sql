@@ -2,7 +2,8 @@ CREATE OR ALTER PROCEDURE [dbo].[API_TruyVanDong]
     @List VARCHAR(50),
     @Keyword NVARCHAR(200) = '',
     @SortColumn VARCHAR(50) = '',
-    @SortDir VARCHAR(10) = ''
+    @SortDir VARCHAR(10) = '',
+    @Data NVARCHAR(MAX) = '' -- Dùng @Data thay vì @FilterJSON để nhất quán với Gateway
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -25,6 +26,29 @@ BEGIN
     -- Biến chứa SQL động
     DECLARE @sql NVARCHAR(MAX);
     DECLARE @whereClause NVARCHAR(MAX) = ' WHERE 1=1';
+
+    -- XỬ LÝ LỌC TỪ JSON (JsonData từ UI)
+    IF ISNULL(@Data, '') <> '' AND ISJSON(@Data) > 0
+    BEGIN
+        DECLARE @jsonFilter NVARCHAR(MAX);
+        SELECT @jsonFilter = STUFF((
+            SELECT ' AND ' + QUOTENAME([key]) + ' LIKE N''%'' + ' + 
+                   'REPLACE(N''' + REPLACE([value], '''', '''''') + ''', ''\t'', '''')' + ' + ''%'''
+            FROM OPENJSON(@Data)
+            WHERE [value] IS NOT NULL AND CAST([value] AS NVARCHAR(MAX)) <> ''
+              AND [key] COLLATE DATABASE_DEFAULT <> 'Keyword'
+              AND EXISTS (
+                  SELECT 1 FROM sys.columns 
+                  WHERE object_id = OBJECT_ID(@TableName) AND name = [key] COLLATE DATABASE_DEFAULT
+              )
+            FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 0, '');
+
+        IF @jsonFilter IS NOT NULL
+        BEGIN
+            SET @whereClause = @whereClause + @jsonFilter;
+        END
+    END
+
 
 
 

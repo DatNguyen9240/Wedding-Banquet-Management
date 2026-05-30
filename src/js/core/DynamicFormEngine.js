@@ -26,6 +26,18 @@ window.DynamicFormEngine = (function () {
   var globalFormSchema = [];
   var globalRenderers = {};
 
+  // Khôi phục moduleStates từ sessionStorage nếu có (để giữ filter khi F5)
+  try {
+    var cachedStates = sessionStorage.getItem('DynamicFormEngine_States');
+    if (cachedStates) moduleStates = JSON.parse(cachedStates);
+  } catch (e) { }
+
+  function _saveModuleStates() {
+    try {
+      sessionStorage.setItem('DynamicFormEngine_States', JSON.stringify(moduleStates));
+    } catch (e) { }
+  }
+
   var MODULE_CONFIG = {};
 
   // ── Helpers ──────────────────────────────────────────────
@@ -552,7 +564,9 @@ window.DynamicFormEngine = (function () {
                   if (res && res.code === 0) {
                     Alert.success('Thành công', 'Đồng bộ trường giao diện hoàn tất!');
                     modal.remove();
-                    _loadData();
+                    window._uiConfigCache = {}; // Xóa cache cấu hình cũ
+                    $container.innerHTML = ''; // Dọn dẹp DOM cũ trước khi vẽ lại
+                    render($container, MODULE_CONFIG); // Vẽ lại toàn bộ giao diện
                   } else {
                     Alert.error('Lỗi', res.msg || 'Đồng bộ thất bại');
                     _setBtnLoading(btnRun, false);
@@ -642,6 +656,18 @@ window.DynamicFormEngine = (function () {
   var savedScrollY = 0; // Lưu vị trí scroll
 
   function _loadData() {
+    // Đồng bộ state hiện tại vào cache để tránh mất filter khi F5
+    if (currentFormName) {
+      moduleStates[currentFormName] = {
+        keyword: currentKeyword,
+        sortCol: currentSortCol,
+        sortDir: currentSortDir,
+        page: currentPage,
+        filters: window.currentFilters
+      };
+      _saveModuleStates();
+    }
+
     var gridContainer = $container ? $container.querySelector('#dynamic-grid-container') : null;
     var existingTable = gridContainer ? gridContainer.querySelector('.table-wrapper') : null;
 
@@ -664,6 +690,38 @@ window.DynamicFormEngine = (function () {
       }
       // Thêm Keyword vào filter JSON
       if (currentKeyword) activeFilters['Keyword'] = currentKeyword;
+
+      // Đổi màu nút Lọc nếu có dữ liệu lọc
+      if ($container) {
+        var btns = $container.querySelectorAll('button');
+        var filterBtn = null;
+        for (var i = 0; i < btns.length; i++) {
+          if (btns[i].innerHTML.indexOf('filter_alt') !== -1 || btns[i].innerText === 'Lọc' || btns[i].getAttribute('data-tooltip') === 'Lọc / Tìm kiếm dữ liệu') {
+            filterBtn = btns[i];
+            break;
+          }
+        }
+        if (filterBtn) {
+          var hasFilter = Object.keys(activeFilters).length > 0;
+          if (hasFilter) {
+            filterBtn.style.color = '#fff';
+            filterBtn.style.backgroundColor = 'var(--color-primary, #3b82f6)';
+            filterBtn.style.borderColor = 'var(--color-primary, #3b82f6)';
+            // Nếu nút chưa có thẻ span chứa dấu chấm đỏ, thì thêm vào để báo hiệu rõ hơn
+            if (filterBtn.innerHTML.indexOf('filter-badge') === -1) {
+                filterBtn.style.position = 'relative';
+                filterBtn.innerHTML += '<span class="filter-badge" style="position:absolute; top:-2px; right:-2px; width:10px; height:10px; background:var(--color-danger,#ef4444); border-radius:50%; border:2px solid #fff; pointer-events:none;"></span>';
+            }
+          } else {
+            filterBtn.style.color = '';
+            filterBtn.style.backgroundColor = '';
+            filterBtn.style.borderColor = '';
+            // Xóa dấu chấm đỏ nếu có
+            var badge = filterBtn.querySelector('.filter-badge');
+            if (badge) badge.remove();
+          }
+        }
+      }
 
       var query = {
         List: MODULE_CONFIG.FormName,
@@ -2236,9 +2294,14 @@ window.DynamicFormEngine = (function () {
         modal.closeNow();
         Alert.success('Thành công', 'Đã lưu xong ' + count + ' dòng!');
         if (!isAdd) selectedRows = [];
-        if (_isFormBuilder()) window._uiConfigCache = {};
-        _updateSelectionCounter();
-        _loadData();
+        if (_isFormBuilder()) {
+          window._uiConfigCache = {};
+          $container.innerHTML = '';
+          render($container, MODULE_CONFIG);
+        } else {
+          _updateSelectionCounter();
+          _loadData();
+        }
       },
       function (err) {               // onError → tiếp tục
         console.error('Grid Edit Error', err);
@@ -2346,10 +2409,16 @@ window.DynamicFormEngine = (function () {
         if (res && res.code === 0) {
           UIToast.show(isEdit ? MODULE_CONFIG.ToastEdit : MODULE_CONFIG.ToastAdd, 'success');
           modal.closeNow();
-          if (_isFormBuilder()) window._uiConfigCache = {}; // Cache Invalidate
-          selectedRows = [];
-          _updateSelectionCounter();
-          _loadData();
+          if (_isFormBuilder()) {
+            window._uiConfigCache = {}; // Cache Invalidate
+            selectedRows = [];
+            $container.innerHTML = '';
+            render($container, MODULE_CONFIG);
+          } else {
+            selectedRows = [];
+            _updateSelectionCounter();
+            _loadData();
+          }
         } else {
           Alert.error(MODULE_CONFIG.AlertTitleError, res && res.msg ? res.msg : MODULE_CONFIG.AlertSaveFailed);
           _restoreSaveBtn();

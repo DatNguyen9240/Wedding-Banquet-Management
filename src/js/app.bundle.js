@@ -1,4 +1,4 @@
-﻿/* --- mockData.js --- */
+/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -4766,6 +4766,9 @@ var FilterComponent = (function () {
             this.style.boxShadow = 'none';
         });
 
+        if (typeof window !== 'undefined' && window.currentFilters && window.currentFilters[f.id] !== undefined) {
+          inp.value = window.currentFilters[f.id];
+        }
         inputs[f.id] = inp;
       }
 
