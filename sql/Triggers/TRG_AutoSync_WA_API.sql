@@ -34,7 +34,7 @@ BEGIN
                 WHEN name = '@Limit' THEN 'Limit'
                 -- Khai báo thông minh cho các biến Framework:
                 WHEN name = '@JsonData' OR name = '@Data' OR name = '@FilterJSON' THEN 'JsonData'
-                WHEN name = '@List' THEN 'List'
+                WHEN name = '@List' OR name = '@FormName' THEN 'List'
                 WHEN name = '@SortColumn' THEN 'SortColumn'
                 WHEN name = '@SortDir' THEN 'SortDir'
                 -- Biến lạ thì lấy luôn tên (bỏ dấu @)

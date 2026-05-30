@@ -1,5 +1,5 @@
 CREATE OR ALTER PROCEDURE [dbo].[API_TruyVanDong]
-    @FormName VARCHAR(50),
+    @List VARCHAR(50),
     @Keyword NVARCHAR(200) = '',
     @SortColumn VARCHAR(50) = '',
     @SortDir VARCHAR(10) = ''
@@ -14,11 +14,11 @@ BEGIN
         @TableName = LTRIM(RTRIM(TableName)),
         @PrimaryKey = LTRIM(RTRIM(PrimaryKey))
     FROM SY_FrmLstTbl 
-    WHERE FormID = @FormName;
+    WHERE FormID = @List;
 
     IF @TableName IS NULL OR @TableName = ''
     BEGIN
-        SELECT -1 AS code, N'Chưa cấu hình TableName cho form ' + @FormName AS msg;
+        SELECT -1 AS code, N'Chưa cấu hình TableName cho form ' + @List AS msg;
         RETURN;
     END
     
@@ -76,7 +76,7 @@ BEGIN
     SELECT @ColumnList = STUFF((
         SELECT ', ' + QUOTENAME(FieldName)
         FROM SY_FormatFields
-        WHERE FormName = @FormName
+        WHERE FormName = @List
         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
         
     IF @ColumnList IS NULL OR @ColumnList = ''

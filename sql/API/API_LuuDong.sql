@@ -3,7 +3,7 @@ IF OBJECT_ID('API_LuuDong', 'P') IS NOT NULL
 GO
 
 CREATE PROCEDURE [dbo].[API_LuuDong]
-    @FormName VARCHAR(50),
+    @List VARCHAR(50),
     @Data NVARCHAR(MAX) -- Chuỗi JSON chứa dữ liệu cần lưu
 AS
 BEGIN
@@ -17,11 +17,11 @@ BEGIN
         @TableName = COALESCE(SaveTableName, TableName),
         @PrimaryKey = PrimaryKey
     FROM SY_FrmLstTbl 
-    WHERE FormID = @FormName;
+    WHERE FormID = @List;
 
     IF @TableName IS NULL OR @TableName = ''
     BEGIN
-        SELECT -1 AS code, N'Chưa cấu hình TableName cho form ' + @FormName AS msg;
+        SELECT -1 AS code, N'Chưa cấu hình TableName cho form ' + @List AS msg;
         RETURN;
     END
 
@@ -33,10 +33,9 @@ BEGIN
         SELECT [key] COLLATE DATABASE_DEFAULT AS ColumnName, CAST([value] AS NVARCHAR(MAX)) AS ColumnValue
         INTO #JsonData
         FROM OPENJSON(@Data)
-        WHERE [key] COLLATE DATABASE_DEFAULT NOT IN ('IsEdit', 'UserName', 'UserCreate', 'List', 'Func', 'Keyword', 'Page', 'Limit', 'JsonData')
-          AND [key] COLLATE DATABASE_DEFAULT NOT LIKE '\_%' ESCAPE '\' -- Bỏ qua các key hệ thống (VD: _SortColumn)
-          -- BƯỚC ĐỘT PHÁ 2: Chỉ lấy những cột thực sự tồn tại trong bảng vật lý!
-          -- Giúp loại bỏ tự động các cột tính toán (derived) như SoHopDong, SoLanThamQuan từ UI đẩy xuống
+        WHERE [key] COLLATE DATABASE_DEFAULT NOT LIKE '\_%' ESCAPE '\' -- Bỏ qua các key hệ thống bắt đầu bằng dấu _ (VD: _SortColumn)
+          -- Chỉ lấy những cột thực sự tồn tại trong bảng vật lý!
+          -- Chặn đứng tự động các cột rác (IsEdit, UserCreate...) hoặc cột ảo từ Grid UI đẩy xuống
           AND EXISTS (
               SELECT 1 
               FROM sys.columns 

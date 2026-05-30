@@ -3,7 +3,7 @@ IF OBJECT_ID('API_XoaDong', 'P') IS NOT NULL
 GO
 
 CREATE PROCEDURE [dbo].[API_XoaDong]
-    @FormName VARCHAR(50),
+    @List VARCHAR(50),
     @Ids NVARCHAR(MAX) -- Chuỗi danh sách các ID cần xoá, ví dụ: 'ID1,ID2,ID3'
 AS
 BEGIN
@@ -17,17 +17,17 @@ BEGIN
         @TableName = COALESCE(SaveTableName, TableName),
         @PrimaryKey = PrimaryKey
     FROM SY_FrmLstTbl 
-    WHERE FormID = @FormName;
+    WHERE FormID = @List;
 
     IF @TableName IS NULL OR @TableName = ''
     BEGIN
-        SELECT -1 AS code, N'Chưa cấu hình TableName cho form ' + @FormName AS msg;
+        SELECT -1 AS code, N'Chưa cấu hình TableName cho form ' + @List AS msg;
         RETURN;
     END
 
     IF @PrimaryKey IS NULL OR @PrimaryKey = ''
     BEGIN
-        SELECT -1 AS code, N'Chưa cấu hình PrimaryKey cho form ' + @FormName AS msg;
+        SELECT -1 AS code, N'Chưa cấu hình PrimaryKey cho form ' + @List AS msg;
         RETURN;
     END
 
