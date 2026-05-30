@@ -117,8 +117,11 @@ var UIInput = (function () {
     inputWrap.style.display = 'flex';
     inputWrap.style.alignItems = 'center';
 
-    // Chuyển input vào wrapper
-    input.style.paddingRight = '40px'; // Chừa chỗ cho nút mắt
+    // Thay thế input bằng inputWrap TRƯỚC (input vẫn còn là child của wrapper)
+    obj.wrapper.replaceChild(inputWrap, input);
+
+    // Rồi mới chuyển input vào inputWrap
+    input.style.paddingRight = '40px';
     inputWrap.appendChild(input);
 
     // Nút mắt
@@ -144,11 +147,6 @@ var UIInput = (function () {
     eyeBtn.addEventListener('mouseleave', function() { this.style.color = 'var(--color-text-secondary)'; });
 
     inputWrap.appendChild(eyeBtn);
-
-    // Thay input bằng inputWrap trong wrapper
-    obj.wrapper.replaceChild(inputWrap, obj.wrapper.querySelector('.ui-input'));
-    // Phải appendChild lại input vì replaceChild xóa nó
-    // Không cần — input đã nằm trong inputWrap rồi
 
     return obj.wrapper;
   }
