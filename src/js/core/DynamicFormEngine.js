@@ -629,8 +629,9 @@ window.DynamicFormEngine = (function () {
       if (currentKeyword) activeFilters['Keyword'] = currentKeyword;
 
       // Đổi màu nút Lọc nếu có dữ liệu lọc
-      if ($container) {
-        var btns = $container.querySelectorAll('button');
+      var actionsContainer = document.getElementById('global-page-actions') || $container;
+      if (actionsContainer) {
+        var btns = actionsContainer.querySelectorAll('button');
         var filterBtn = null;
         for (var i = 0; i < btns.length; i++) {
           if (btns[i].innerHTML.indexOf('filter_alt') !== -1 || btns[i].innerText === 'Lọc' || btns[i].getAttribute('data-tooltip') === 'Lọc / Tìm kiếm dữ liệu') {
@@ -641,15 +642,20 @@ window.DynamicFormEngine = (function () {
         if (filterBtn) {
           var hasFilter = Object.keys(activeFilters).length > 0;
           if (hasFilter) {
-            filterBtn.style.color = '#fff';
-            filterBtn.style.backgroundColor = 'var(--color-primary, #3b82f6)';
-            filterBtn.style.borderColor = 'var(--color-primary, #3b82f6)';
-            // Nếu nút chưa có thẻ span chứa dấu chấm đỏ, thì thêm vào để báo hiệu rõ hơn
-            if (filterBtn.innerHTML.indexOf('filter-badge') === -1) {
-              filterBtn.style.position = 'relative';
-              filterBtn.innerHTML += '<span class="filter-badge" style="position:absolute; top:-2px; right:-2px; width:10px; height:10px; background:var(--color-danger,#ef4444); border-radius:50%; border:2px solid #fff; pointer-events:none;"></span>';
-            }
+            filterBtn.classList.remove('btn-outline-secondary');
+            filterBtn.classList.remove('text-dark');
+            filterBtn.classList.add('btn-primary');
+            filterBtn.classList.add('text-white');
+            
+            filterBtn.style.setProperty('color', '#fff', 'important');
+            filterBtn.style.setProperty('background-color', 'var(--color-primary, #3b82f6)', 'important');
+            filterBtn.style.setProperty('border-color', 'var(--color-primary, #3b82f6)', 'important');
           } else {
+            filterBtn.classList.remove('btn-primary');
+            filterBtn.classList.remove('text-white');
+            if (filterBtn.className.indexOf('btn-') === -1) {
+              filterBtn.classList.add('btn-outline-secondary');
+            }
             filterBtn.style.color = '';
             filterBtn.style.backgroundColor = '';
             filterBtn.style.borderColor = '';

@@ -681,6 +681,12 @@ var ContractPage = (function () {
 
     _resetSelections();
 
+    var $banTiecContainer = document.createElement('div');
+    $banTiecContainer.id = 'ban-tiec-tab-container';
+
+    var $sanhContainer = document.createElement('div');
+    $sanhContainer.id = 'sanh-tab-container';
+
     var $thucDonManContainer = document.createElement('div');
     $thucDonManContainer.id = 'thuc-don-man-tab-container';
     
@@ -697,8 +703,8 @@ var ContractPage = (function () {
     $uuDaiContainer.id = 'uu-dai-tab-container';
 
     var tabs = UITabs.create([
-      { title: 'Bàn Tiệc', content: '<div class="p-4"><p>Giao diện thiết lập Giá bàn, chia bàn, và các loại bàn phát sinh.</p></div>' },
-      { title: 'Sảnh', content: '<div class="p-4"><p>Giao diện Sảnh, sơ đồ bàn và chi phí sảnh.</p></div>' },
+      { title: 'Bàn Tiệc', content: $banTiecContainer },
+      { title: 'Sảnh', content: $sanhContainer },
       { title: 'Thực đơn Mặn', content: $thucDonManContainer },
       { title: 'Thực đơn Chay', content: $thucDonChayContainer },
       { title: 'Thức uống', content: $thucUongContainer },
@@ -710,6 +716,8 @@ var ContractPage = (function () {
     ]);
     document.getElementById('contract-tabs-container').appendChild(tabs);
 
+    _renderBanTiec();
+    _renderSanh();
     _renderThucDonMan();
     _renderThucDonChay();
     _renderThucUong();
@@ -788,6 +796,58 @@ var ContractPage = (function () {
       _renderThucUong();
       _renderDichVu();
     }
+  }
+
+  function _renderBanTiec() {
+    var container = document.getElementById('ban-tiec-tab-container');
+    if(!container) return;
+    container.innerHTML = '<div class="p-4">' +
+      '<h5 class="mb-3" style="color: var(--color-primary); font-weight: 600;">Thiết lập Bàn Tiệc</h5>' +
+      '<div class="row g-3">' +
+        '<div class="col-md-6">' +
+          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Gói Bàn Mặn</label>' +
+          '<select class="ui-input w-100" id="sel-goi-ban-man">' +
+             '<option value="0">-- Chọn Gói --</option>' +
+             '<option value="1">Gói Tiêu chuẩn</option>' +
+             '<option value="2">Gói Cao cấp</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="col-md-6">' +
+          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Đơn giá Bàn Mặn (VNĐ)</label>' +
+          '<input type="text" class="ui-input w-100" id="inp-gia-ban-man" value="0" style="text-align:right; font-weight:bold; color:var(--color-danger);">' +
+        '</div>' +
+        '<div class="col-md-6 mt-3">' +
+          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Gói Bàn Chay</label>' +
+          '<select class="ui-input w-100" id="sel-goi-ban-chay">' +
+             '<option value="0">-- Chọn Gói --</option>' +
+             '<option value="1">Chay Tiêu chuẩn</option>' +
+             '<option value="2">Chay Đặc biệt</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="col-md-6 mt-3">' +
+          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Đơn giá Bàn Chay (VNĐ)</label>' +
+          '<input type="text" class="ui-input w-100" id="inp-gia-ban-chay" value="0" style="text-align:right; font-weight:bold; color:var(--color-danger);">' +
+        '</div>' +
+      '</div>' +
+      '</div>';
+  }
+
+  function _renderSanh() {
+    var container = document.getElementById('sanh-tab-container');
+    if(!container) return;
+    container.innerHTML = '<div class="p-4">' +
+      '<h5 class="mb-3" style="color: var(--color-primary); font-weight: 600;">Thông tin Sảnh Tiệc</h5>' +
+      '<div class="row g-3">' +
+        '<div class="col-md-6">' +
+          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Sảnh Đặt</label>' +
+          '<input type="text" class="ui-input w-100 bg-light" id="inp-sanh-hien-tai" readonly placeholder="Chưa chọn sảnh...">' +
+        '</div>' +
+        '<div class="col-md-6">' +
+          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Phí Thuê Sảnh (VNĐ)</label>' +
+          '<input type="text" class="ui-input w-100" id="inp-phi-sanh" value="0" style="text-align:right; font-weight:bold;">' +
+        '</div>' +
+      '</div>' +
+      '</div>';
   }
 
   function _renderThucDonMan() {
