@@ -37,3 +37,10 @@
   color: var(--color-text-secondary);
   cursor: not-allowed;
 }
+
+/* Ẩn nút reveal/clear mặc định của trình duyệt cho input password */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}

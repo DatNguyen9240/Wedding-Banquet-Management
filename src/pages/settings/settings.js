@@ -66,7 +66,48 @@ var SettingsPage = (function () {
 
   function _buildSecurityTab() {
     var wrapper = document.createElement('div');
-    wrapper.innerHTML = '<div class="p-4"><div class="row g-5"><div class="col-md-6"><div style="font-size:var(--font-size-lg); font-weight:600; margin-bottom:24px;">Đổi Mật Khẩu (Admin)</div><div class="form-group mb-3"><label>Mật khẩu hiện tại</label><input type="password" class="ui-input w-100" placeholder="***"></div><div class="form-group mb-3"><label>Mật khẩu mới</label><input type="password" class="ui-input w-100" placeholder="***"></div><div class="form-group mb-4"><label>Nhập lại mật khẩu mới</label><input type="password" class="ui-input w-100" placeholder="***"></div>' + UIButton.createHTML({ text: 'Lưu Thay Đổi', type: 'primary', onClick: "UIToast.show('Đã cập nhật mật khẩu mới thành công.')" }) + '</div><div class="col-md-6" style="border-left:1px solid var(--color-border); padding-left:32px;"><div class="d-flex align-items-center gap-2 mb-3" style="font-size:var(--font-size-lg); font-weight:600;">' + UIIcon.createHTML('cloud_download', 'color:var(--color-primary)') + 'Sao lưu Dữ liệu Hệ thống</div><p style="font-size:14px; color:var(--color-text-secondary); margin-bottom:24px; line-height:1.5;">Hệ thống sẽ nén toàn bộ CSDL hiện tại thành file .bak hoặc .sql để tải xuống.<br>Tên file mặc định: <code style="background: rgba(148, 163, 184, 0.1); padding:2px 6px; border-radius:4px;">PMQLTiec_2026_10_25.bak</code></p>' + UIButton.createHTML({ text: 'Tải File Sao Lưu Ngay', icon: 'save', type: 'secondary', className: 'w-100 d-flex justify-content-center gap-2', onClick: "Alert.success('Backup thành công!')" }) + '</div></div></div>';
+    var container = document.createElement('div');
+    container.className = 'p-4';
+    
+    var row = document.createElement('div');
+    row.className = 'row g-5';
+
+    // --- Cột trái: Đổi mật khẩu ---
+    var colLeft = document.createElement('div');
+    colLeft.className = 'col-md-6';
+
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:var(--font-size-lg); font-weight:600; margin-bottom:24px;';
+    title.textContent = 'Đổi Mật Khẩu (Admin)';
+    colLeft.appendChild(title);
+
+    var pw1 = UIInput.createPassword({ label: 'Mật khẩu hiện tại', placeholder: '***' });
+    pw1.classList.add('mb-3');
+    colLeft.appendChild(pw1);
+
+    var pw2 = UIInput.createPassword({ label: 'Mật khẩu mới', placeholder: '***' });
+    pw2.classList.add('mb-3');
+    colLeft.appendChild(pw2);
+
+    var pw3 = UIInput.createPassword({ label: 'Nhập lại mật khẩu mới', placeholder: '***' });
+    pw3.classList.add('mb-4');
+    colLeft.appendChild(pw3);
+
+    var saveBtn = document.createElement('div');
+    saveBtn.innerHTML = UIButton.createHTML({ text: 'Lưu Thay Đổi', type: 'primary', onClick: "UIToast.show('Đã cập nhật mật khẩu mới thành công.')" });
+    colLeft.appendChild(saveBtn.firstElementChild);
+
+    row.appendChild(colLeft);
+
+    // --- Cột phải: Sao lưu ---
+    var colRight = document.createElement('div');
+    colRight.className = 'col-md-6';
+    colRight.style.cssText = 'border-left:1px solid var(--color-border); padding-left:32px;';
+    colRight.innerHTML = '<div class="d-flex align-items-center gap-2 mb-3" style="font-size:var(--font-size-lg); font-weight:600;">' + UIIcon.createHTML('cloud_download', 'color:var(--color-primary)') + 'Sao lưu Dữ liệu Hệ thống</div><p style="font-size:14px; color:var(--color-text-secondary); margin-bottom:24px; line-height:1.5;">Hệ thống sẽ nén toàn bộ CSDL hiện tại thành file .bak hoặc .sql để tải xuống.<br>Tên file mặc định: <code style="background: rgba(148, 163, 184, 0.1); padding:2px 6px; border-radius:4px;">PMQLTiec_2026_10_25.bak</code></p>' + UIButton.createHTML({ text: 'Tải File Sao Lưu Ngay', icon: 'save', type: 'secondary', className: 'w-100 d-flex justify-content-center gap-2', onClick: "Alert.success('Backup thành công!')" });
+    row.appendChild(colRight);
+
+    container.appendChild(row);
+    wrapper.appendChild(container);
     return wrapper;
   }
 

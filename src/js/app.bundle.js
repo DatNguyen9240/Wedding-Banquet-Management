@@ -4991,6 +4991,55 @@ var UIInput = (function () {
   }
 
   /**
+   * Ô nhập Mật Khẩu (có nút mắt ẩn/hiện)
+   */
+  function createPassword(config) {
+    var obj = _createBaseWrapper(config, 'password');
+    var input = obj.input;
+
+    // Wrapper cho input + nút mắt
+    var inputWrap = document.createElement('div');
+    inputWrap.style.position = 'relative';
+    inputWrap.style.display = 'flex';
+    inputWrap.style.alignItems = 'center';
+
+    // Chuyển input vào wrapper
+    input.style.paddingRight = '40px'; // Chừa chỗ cho nút mắt
+    inputWrap.appendChild(input);
+
+    // Nút mắt
+    var eyeBtn = document.createElement('button');
+    eyeBtn.type = 'button';
+    eyeBtn.tabIndex = -1;
+    eyeBtn.className = 'password-eye-btn';
+    eyeBtn.style.cssText = 'position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center; color:var(--color-text-secondary); border-radius:4px; transition: color 0.2s;';
+    eyeBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:20px;">visibility_off</span>';
+    eyeBtn.title = 'Hiện mật khẩu';
+
+    var isVisible = false;
+    eyeBtn.addEventListener('click', function() {
+      isVisible = !isVisible;
+      input.type = isVisible ? 'text' : 'password';
+      eyeBtn.querySelector('.material-symbols-outlined').textContent = isVisible ? 'visibility' : 'visibility_off';
+      eyeBtn.title = isVisible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu';
+      input.focus();
+    });
+
+    // Hover effect
+    eyeBtn.addEventListener('mouseenter', function() { this.style.color = 'var(--color-text)'; });
+    eyeBtn.addEventListener('mouseleave', function() { this.style.color = 'var(--color-text-secondary)'; });
+
+    inputWrap.appendChild(eyeBtn);
+
+    // Thay input bằng inputWrap trong wrapper
+    obj.wrapper.replaceChild(inputWrap, obj.wrapper.querySelector('.ui-input'));
+    // Phải appendChild lại input vì replaceChild xóa nó
+    // Không cần — input đã nằm trong inputWrap rồi
+
+    return obj.wrapper;
+  }
+
+  /**
    * Ô Select (Combobox thả xuống)
    */
   function createSelect(config, options) {
@@ -5135,6 +5184,7 @@ var UIInput = (function () {
     createText: createText,
     createNumber: createNumber,
     createDate: createDate,
+    createPassword: createPassword,
     createSwitch: createSwitch,
     createSelect: createSelect,
     createQuantityHTML: createQuantityHTML,

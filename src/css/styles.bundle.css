@@ -4366,6 +4366,13 @@ body.dark-theme .calendar-days-header {
   cursor: not-allowed;
 }
 
+/* Ẩn nút reveal/clear mặc định của trình duyệt cho input password */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
 
 /* --- grid-dropdown.css --- */
 /* Grid Cell Input wrapper */
