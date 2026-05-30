@@ -26,9 +26,10 @@ var ReportOtherPage = (function () {
   function _renderFilter() {
     var filterContainer = $container.querySelector('#filter-wrapper-other');
     var filterEl = FilterComponent.create([
-      { id: 'fo-year', label: 'Năm', type: 'number', placeholder: 'Năm...' }
+      { id: 'fo-year', label: 'Năm', type: 'number', placeholder: 'Năm hiện tại...' }
     ], function(values) {
-      Alert.success('Đã tải lại báo cáo!');
+      var year = values['fo-year'] || new Date().getFullYear();
+      _loadSalesStats(year + '-01-01', year + '-12-31');
     });
 
     var cardFilter = document.createElement('div');
@@ -40,6 +41,44 @@ var ReportOtherPage = (function () {
     filterContainer.appendChild(cardFilter);
   }
 
+  function _loadSalesStats(tuNgay, denNgay) {
+    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS.REPORTS && window.API_CONFIG.ENDPOINTS.REPORTS.SALES_STATS) 
+                    ? window.API_CONFIG.ENDPOINTS.REPORTS.SALES_STATS : '/api/API_Report_SalesStats';
+    
+    var tbody = $container.querySelector('#table-sales-stats tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center">Đang tải dữ liệu...</td></tr>';
+
+    var payload = {};
+    if (tuNgay) payload.TuNgay = tuNgay;
+    if (denNgay) payload.DenNgay = denNgay;
+
+    var url = endpoint;
+    if (Object.keys(payload).length > 0) {
+        url += '?q=' + encodeURIComponent(JSON.stringify(payload));
+    }
+
+    ApiClient.get(url)
+      .then(function(res) {
+        var records = res.records || res.data || res || [];
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if(records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center">Không có dữ liệu</td></tr>';
+            return;
+        }
+        records.forEach(function(row) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = '<td>' + (row.SalesName || 'Chưa rõ') + '</td>' +
+                           '<td class="text-center">' + FormatUtils.number(row.TotalTables) + '</td>' +
+                           '<td class="text-end fw-bold text-primary">' + FormatUtils.currency(row.EstimatedRevenue) + '</td>';
+            tbody.appendChild(tr);
+        });
+      })
+      .catch(function(err) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>';
+      });
+  }
+
   function _renderTabs() {
     var wrapper = $container.querySelector('#tabs-wrapper-other');
 
@@ -49,23 +88,46 @@ var ReportOtherPage = (function () {
       <div class="card mb-4">
         <div class="card-header">Lũy kế nhận tiệc trong năm theo Sales</div>
         <div class="table-wrapper">
-          <table class="data-table">
+          <table class="data-table" id="table-sales-stats">
             <thead>
               <tr>
                 <th>Nhân viên Sales</th>
                 <th class="text-center">Số lượng Bàn</th>
-                <th class="text-end">Doanh thu ước tính</th>
+                <th class="text-end">Doanh thu dự kiến</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td>Trương Du Kỳ</td><td class="text-center">150</td><td class="text-end">650,000,000</td></tr>
-              <tr><td>Triệu Minh</td><td class="text-center">85</td><td class="text-end">320,000,000</td></tr>
-              <tr><td>Châu Chỉ Nhược</td><td class="text-center">210</td><td class="text-end">945,000,000</td></tr>
+               <tr><td colspan="3" class="text-center">Đang tải dữ liệu...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
     `;
+
+    // Load dynamic data
+    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS.REPORTS && window.API_CONFIG.ENDPOINTS.REPORTS.SALES_STATS) 
+                    ? window.API_CONFIG.ENDPOINTS.REPORTS.SALES_STATS : '/api/API_Report_SalesStats';
+    
+    ApiClient.get(endpoint)
+      .then(function(res) {
+        var records = res.records || res.data || res || [];
+        var tbody = tabContent1.querySelector('tbody');
+        tbody.innerHTML = '';
+        if(records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center">Không có dữ liệu</td></tr>';
+            return;
+        }
+        records.forEach(function(row) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = '<td>' + (row.SalesName || 'Chưa rõ') + '</td>' +
+                           '<td class="text-center">' + FormatUtils.number(row.TotalTables) + '</td>' +
+                           '<td class="text-end fw-bold text-primary">' + FormatUtils.currency(row.EstimatedRevenue) + '</td>';
+            tbody.appendChild(tr);
+        });
+      })
+      .catch(function(err) {
+        tabContent1.querySelector('tbody').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>';
+      });
 
     // ── Tab 2: Biểu đồ Khảo sát — dùng UIChart component ────────────────
     // Lấy màu từ Design Tokens
@@ -118,6 +180,10 @@ var ReportOtherPage = (function () {
     ]);
 
     wrapper.appendChild(tabsEl);
+    
+    // Khởi tạo dữ liệu lần đầu cho báo cáo Thống Kê
+    var currentYear = new Date().getFullYear();
+    _loadSalesStats(currentYear + '-01-01', currentYear + '-12-31');
   }
 
   function _bindEvents() {

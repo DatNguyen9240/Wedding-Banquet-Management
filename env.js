@@ -58,8 +58,11 @@ window.API_CONFIG = {
         },
         CALENDAR: {
             LIST: '/api/API_DanhSachLich',
-            SAVE: '/api/API_LuuPhieuCoc',
+            SAVE: '/api/API_LuuLich',
             LEGEND: '/api/API_LayChuThichLich'
+        },
+        REPORTS: {
+            SALES_STATS: '/api/API_Report_SalesStats',
         },
         VISITOR: {
             LIST: '/api/API_DanhSachKhachDen',
