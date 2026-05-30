@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -27,12 +27,6 @@ BEGIN
     FROM tbmk_Hopdong 
     WHERE ISNULL(IsHuy, 0) = 0;
 
-    -- 3. Đếm số lượng tiệc có sử dụng sảnh phụ từ bảng tbmk_Hopdongsanhtiec
-    DECLARE @SanhPhuCount INT = 0;
-    SELECT @SanhPhuCount = COUNT(DISTINCT Sohopdong) 
-    FROM tbmk_Hopdongsanhtiec 
-    WHERE ISNULL(IsSanhchinh, 1) = 0;
-
     -- Trả về kết quả legend động hoàn toàn dựa vào DB thực tế
     SELECT 
         1 AS Id, 
@@ -47,12 +41,5 @@ BEGIN
         'danger' AS Color, 
         'dot' AS Type, 
         '' AS Icon
-    UNION ALL
-    SELECT 
-        3 AS Id, 
-        N'Sảnh Phụ (' + CAST(@SanhPhuCount AS NVARCHAR(10)) + N')' AS Label, 
-        'secondary' AS Color, 
-        'icon' AS Type, 
-        'close' AS Icon
 END
 GO

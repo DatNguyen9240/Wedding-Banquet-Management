@@ -55,15 +55,15 @@ var CalendarService = (function () {
 
       var loaiPhieu = row.LoaiPhieu !== undefined ? row.LoaiPhieu : row.loaiPhieu;
       var laSanhChinh = row.LaSanhChinh !== undefined ? row.LaSanhChinh : row.laSanhChinh;
+      if (laSanhChinh === 0) return; // Bỏ qua sảnh phụ
+
       var tenSanh = row.TenSanh || row.tenSanh || '';
       var soBan = row.SoBan || row.soBan || 0;
 
       // LoaiPhieu = 1 -> Xanh (Mới cọc), 2 -> Đỏ (Đã HĐ)
-      var type = loaiPhieu === 1 ? 'success' : 'primary';
+      var type = loaiPhieu === 1 ? 'success' : 'danger';
 
-      // Sảnh chính thì ghi số bàn, sảnh phụ ghi X
-      var suffix = laSanhChinh === 1 ? soBan : 'X';
-      var label = tenSanh + ' (' + suffix + ')';
+      var label = tenSanh + ' (' + soBan + ')';
 
       eventsData[day].push({
         type: type,
