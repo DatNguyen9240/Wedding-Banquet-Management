@@ -3436,6 +3436,24 @@ var Navbar = (function () {
   ───────────────────────────────────────── */
   function _attachHorizontalEvents() {
     var groups = document.querySelectorAll('.nav-group[data-group]');
+
+    function _positionDropdown(group) {
+      var btn = group.querySelector('.nav-group-btn');
+      var dropdown = group.querySelector('.nav-dropdown');
+      if (!btn || !dropdown) return;
+      var rect = btn.getBoundingClientRect();
+      var left = rect.left;
+      var top = rect.bottom + 8;
+      // Đảm bảo không tràn phải
+      var dropW = dropdown.offsetWidth || 220;
+      if (left + dropW > window.innerWidth - 10) {
+        left = window.innerWidth - dropW - 10;
+      }
+      if (left < 5) left = 5;
+      dropdown.style.left = left + 'px';
+      dropdown.style.top = top + 'px';
+    }
+
     groups.forEach(function (group) {
       var btn = group.querySelector('.nav-group-btn');
       if (btn) {
@@ -3444,7 +3462,10 @@ var Navbar = (function () {
           var isOpen = group.classList.contains('open');
           groups.forEach(function (g) { g.classList.remove('open'); });
           _closeUserDropdown();
-          if (!isOpen) group.classList.add('open');
+          if (!isOpen) {
+            group.classList.add('open');
+            _positionDropdown(group);
+          }
         });
       }
     });
