@@ -83,11 +83,12 @@ var UIContextMenu = (function () {
         top = 10;
       }
 
-      // Tràn lề phải
-      if (left < 10) {
-        left = 10;
-      } else if (left + rect.width > window.innerWidth) {
-        left = window.innerWidth - rect.width - 10;
+      // Tràn lề phải (dùng viewport-relative để check)
+      var viewLeft = left - window.scrollX;
+      if (viewLeft < 10) {
+        left = window.scrollX + 10;
+      } else if (viewLeft + rect.width > window.innerWidth) {
+        left = window.scrollX + window.innerWidth - rect.width - 10;
       }
 
       // Tràn lề dưới (trừ khi trang rất dài, thì tính theo scroll)

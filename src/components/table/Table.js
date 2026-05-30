@@ -34,11 +34,22 @@ var UITable = (function () {
     // Ép style thu gọn khoảng cách (Compact Density)
     var styleDensity = document.createElement('style');
     styleDensity.innerHTML = `
-      .table-wrapper .data-table th, 
+      .table-wrapper .data-table th,
       .table-wrapper .data-table td {
          padding: 6px 10px !important;
-         height: 36px !important; /* Dòng thấp hơn */
-         font-size: 13px !important; /* Chữ nhỏ một xíu để nhìn gọn hơn */
+         height: 36px !important;
+         font-size: 13px !important;
+      }
+      @media (max-width: 768px) {
+        .dynamic-grid-card .table-wrapper {
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          width: 100% !important;
+        }
+        .table-wrapper .data-table th:first-child,
+        .table-wrapper .data-table td:first-child {
+          padding-left: 16px !important;
+        }
       }
     `;
     wrapper.appendChild(styleDensity);

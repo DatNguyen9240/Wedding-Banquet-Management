@@ -1,4 +1,4 @@
-/* --- mockData.js --- */
+﻿/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -4605,11 +4605,7 @@ var Pagination = (function () {
     // 3. Cụm Info
     var info = document.createElement('div');
     info.className = 'pager-info';
-    var text = `Hiển thị <span style="font-weight:600">${startItem} - ${endItem}</span> / ${options.totalItems}`;
-    if (options.timestamp) {
-      text += ` <span style="margin-left: 12px; font-size: 12px; font-weight: normal; color: var(--color-text-tertiary); border-left: 1px solid var(--color-border); padding-left: 12px; white-space: nowrap;"><span class="material-symbols-outlined" style="font-size: 14px; vertical-align: text-bottom; margin-right: 4px;">update</span><span class="d-none d-md-inline">Cập nhật: </span>${options.timestamp}</span>`;
-    }
-    info.innerHTML = text;
+    info.innerText = `Hiển thị ${startItem} - ${endItem} / ${options.totalItems} dòng`;
 
     // Lắp ráp
     wrapper.appendChild(sizeSelector);
@@ -4713,12 +4709,6 @@ var FilterComponent = (function () {
         inp.addEventListener('blur', function() {
             this.style.borderColor = 'var(--color-border, #cbd5e1)';
             this.style.boxShadow = 'none';
-        });
-        inp.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                btnSearch.click();
-            }
         });
 
         inputs[f.id] = inp;
@@ -5442,6 +5432,8 @@ var UITable = (function () {
     var wrapper = document.createElement('div');
     wrapper.className = 'table-wrapper ' + (config.className || '');
     // Bỏ viền 2 bên
+    wrapper.style.borderRadius = '0';
+    wrapper.style.borderTop = '1px solid var(--color-border, #e2e8f0)';
     wrapper.style.borderBottom = '1px solid var(--color-border, #e2e8f0)';
     wrapper.style.borderLeft = 'none';
     wrapper.style.borderRight = 'none';
@@ -5449,6 +5441,7 @@ var UITable = (function () {
 
     var table = document.createElement('table');
     table.className = 'data-table';
+    table.style.width = 'max-content'; // Chống kéo giãn, các cột sẽ nằm gần nhau
     table.style.whiteSpace = 'nowrap'; // Đảm bảo nội dung không bị rớt dòng làm cột bị giãn
     table.style.tableLayout = 'auto';
 
@@ -5461,11 +5454,22 @@ var UITable = (function () {
     // Ép style thu gọn khoảng cách (Compact Density)
     var styleDensity = document.createElement('style');
     styleDensity.innerHTML = `
-      .table-wrapper .data-table th, 
+      .table-wrapper .data-table th,
       .table-wrapper .data-table td {
          padding: 6px 10px !important;
-         height: 36px !important; /* Dòng thấp hơn */
-         font-size: 13px !important; /* Chữ nhỏ một xíu để nhìn gọn hơn */
+         height: 36px !important;
+         font-size: 13px !important;
+      }
+      @media (max-width: 768px) {
+        .dynamic-grid-card .table-wrapper {
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          width: 100% !important;
+        }
+        .table-wrapper .data-table th:first-child,
+        .table-wrapper .data-table td:first-child {
+          padding-left: 16px !important;
+        }
       }
     `;
     wrapper.appendChild(styleDensity);
@@ -7417,11 +7421,12 @@ var UIContextMenu = (function () {
         top = 10;
       }
 
-      // Tràn lề phải
-      if (left < 10) {
-        left = 10;
-      } else if (left + rect.width > window.innerWidth) {
-        left = window.innerWidth - rect.width - 10;
+      // Tràn lề phải (dùng viewport-relative để check)
+      var viewLeft = left - window.scrollX;
+      if (viewLeft < 10) {
+        left = window.scrollX + 10;
+      } else if (viewLeft + rect.width > window.innerWidth) {
+        left = window.scrollX + window.innerWidth - rect.width - 10;
       }
 
       // Tràn lề dưới (trừ khi trang rất dài, thì tính theo scroll)
@@ -8996,4 +9001,5 @@ var ScreenCapture = (function () {
     start: start
   };
 })();
+
 
