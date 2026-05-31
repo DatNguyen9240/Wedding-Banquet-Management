@@ -726,6 +726,9 @@ var ContractPage = (function () {
     var $doiHuyContainer = document.createElement('div');
     $doiHuyContainer.id = 'doi-huy-tab-container';
 
+    var $phuLucContainer = document.createElement('div');
+    $phuLucContainer.id = 'phu-luc-tab-container';
+
     var tabs = UITabs.create([
       { title: 'Bàn Tiệc', content: $banTiecContainer },
       { title: 'Sảnh', content: $sanhContainer },
@@ -736,6 +739,7 @@ var ContractPage = (function () {
       { title: 'Ưu đãi', content: $uuDaiContainer },
       { title: 'Ghi chú', content: $ghiChuContainer },
       { title: 'Setup Print', content: $setupPrintContainer },
+      { title: 'Phụ lục', content: $phuLucContainer },
       { title: 'Dời / Hủy', content: $doiHuyContainer }
     ]);
     document.getElementById('contract-tabs-container').appendChild(tabs);
@@ -749,6 +753,7 @@ var ContractPage = (function () {
     _renderUuDai();
     _renderGhiChu();
     _renderSetupPrint();
+    _renderPhuLuc();
     _renderDoiHuy();
 
     // Bind real-time total update event listeners
@@ -1183,48 +1188,43 @@ var ContractPage = (function () {
     
     container.innerHTML = `
       <div class="p-4">
-        <h5 class="fw-bold mb-4" style="color: var(--color-primary);">Chương trình Ưu đãi Áp dụng</h5>
-        <div class="row g-3">
-          <div class="col-md-4">
-            <div class="card" style="border:1px solid var(--color-border); cursor:pointer;" onclick="this.querySelector('input').click()">
-              <div class="card-body d-flex align-items-center gap-3">
-                <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
-                <div>
-                  <div class="fw-bold">Tặng Bánh kem 3 tầng</div>
-                  <small class="text-muted">Áp dụng cho tiệc > 20 bàn</small>
-                </div>
+        <span class="form-section-title">Chương trình Ưu đãi Áp dụng</span>
+        <div class="form-section-divider"></div>
+        <div class="contract-grid-3">
+          <div class="card" style="border:1px solid var(--color-border); border-radius: 12px; cursor:pointer; background: var(--color-surface); box-shadow: none;" onclick="this.querySelector('input').click()">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+              <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
+              <div>
+                <div style="font-weight: 600; color: var(--color-text);">Tặng Bánh kem 3 tầng</div>
+                <div style="font-size: 12px; color: var(--color-text-secondary);">Áp dụng cho tiệc > 20 bàn</div>
               </div>
             </div>
           </div>
-          <div class="col-md-4">
-            <div class="card" style="border:1px solid var(--color-border); cursor:pointer;" onclick="this.querySelector('input').click()">
-              <div class="card-body d-flex align-items-center gap-3">
-                <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
-                <div>
-                  <div class="fw-bold">Tặng Tháp Champagne</div>
-                  <small class="text-muted">Kèm 2 chai Champagne</small>
-                </div>
+          <div class="card" style="border:1px solid var(--color-border); border-radius: 12px; cursor:pointer; background: var(--color-surface); box-shadow: none;" onclick="this.querySelector('input').click()">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+              <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
+              <div>
+                <div style="font-weight: 600; color: var(--color-text);">Tặng Tháp Champagne</div>
+                <div style="font-size: 12px; color: var(--color-text-secondary);">Kèm 2 chai Champagne</div>
               </div>
             </div>
           </div>
-          <div class="col-md-4">
-            <div class="card" style="border:1px solid var(--color-border); cursor:pointer;" onclick="this.querySelector('input').click()">
-              <div class="card-body d-flex align-items-center gap-3">
-                <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
-                <div>
-                  <div class="fw-bold">Giảm 5% Tổng bill</div>
-                  <small class="text-muted">Khách đặt cọc trước 6 tháng</small>
-                </div>
+          <div class="card" style="border:1px solid var(--color-border); border-radius: 12px; cursor:pointer; background: var(--color-surface); box-shadow: none;" onclick="this.querySelector('input').click()">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+              <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
+              <div>
+                <div style="font-weight: 600; color: var(--color-text);">Giảm 5% Tổng bill</div>
+                <div style="font-size: 12px; color: var(--color-text-secondary);">Khách đặt cọc trước 6 tháng</div>
               </div>
             </div>
           </div>
         </div>
         
-        <div class="mt-4">
-          <label class="form-label fw-bold">Chiết khấu thủ công (nếu có)</label>
-          <div class="input-group" style="max-width: 300px;">
-            <input type="text" class="form-control" placeholder="Nhập số tiền..." id="inp-discount">
-            <span class="input-group-text">VNĐ</span>
+        <div class="form-group mt-4" style="max-width: 300px;">
+          <label>Chiết khấu thủ công (nếu có)</label>
+          <div class="d-flex align-items-center">
+            <input type="text" class="ui-input text-end" placeholder="Nhập số tiền..." id="inp-discount" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+            <div style="background: var(--color-background); border: 1px solid var(--color-border-strong); border-left: none; padding: 0 12px; height: 38px; display: flex; align-items: center; border-top-right-radius: 8px; border-bottom-right-radius: 8px; font-weight: 600; color: var(--color-text-secondary);">VNĐ</div>
           </div>
         </div>
       </div>
@@ -1236,20 +1236,21 @@ var ContractPage = (function () {
     if (!container) return;
     container.innerHTML = `
       <div class="p-4">
-        <h5 class="fw-bold mb-4" style="color: var(--color-primary);">Ghi chú Hợp đồng</h5>
-        <div class="row g-4">
-          <div class="col-md-6">
-            <label class="form-label fw-bold">Ghi chú cho Bếp</label>
-            <textarea class="form-control" rows="4" placeholder="Khách dị ứng hải sản, không ăn cay..."></textarea>
+        <span class="form-section-title">Ghi chú Hợp đồng</span>
+        <div class="form-section-divider"></div>
+        <div class="contract-grid-3" style="grid-template-columns: 1fr 1fr;">
+          <div class="form-group">
+            <label>Ghi chú cho Bếp</label>
+            <textarea class="ui-input" style="height: 100px; resize: none;" placeholder="Khách dị ứng hải sản, không ăn cay..."></textarea>
           </div>
-          <div class="col-md-6">
-            <label class="form-label fw-bold">Ghi chú cho Quản lý Sảnh</label>
-            <textarea class="form-control" rows="4" placeholder="Chuẩn bị thêm 2 ghế trẻ em, lối đi rộng..."></textarea>
+          <div class="form-group">
+            <label>Ghi chú cho Quản lý Sảnh</label>
+            <textarea class="ui-input" style="height: 100px; resize: none;" placeholder="Chuẩn bị thêm 2 ghế trẻ em, lối đi rộng..."></textarea>
           </div>
-          <div class="col-12">
-            <label class="form-label fw-bold">Ghi chú chung (In lên Hợp đồng)</label>
-            <textarea class="form-control" rows="6" placeholder="Các điều khoản cam kết thêm..."></textarea>
-          </div>
+        </div>
+        <div class="form-group">
+          <label>Ghi chú chung (In lên Hợp đồng)</label>
+          <textarea class="ui-input" style="height: 120px; resize: none;" placeholder="Các điều khoản cam kết thêm..."></textarea>
         </div>
       </div>
     `;
@@ -1260,31 +1261,34 @@ var ContractPage = (function () {
     if (!container) return;
     container.innerHTML = `
       <div class="p-4">
-        <h5 class="fw-bold mb-4" style="color: var(--color-primary);">Thiết lập Bảng Tên & In Ấn</h5>
-        <div class="row g-4">
-          <div class="col-md-6">
-            <label class="form-label fw-bold">Tên Cô Dâu (Trái)</label>
-            <input type="text" class="form-control" placeholder="Tên cô dâu hiển thị trên bảng...">
+        <span class="form-section-title">Thiết lập Bảng Tên & In Ấn</span>
+        <div class="form-section-divider"></div>
+        <div class="contract-grid-3" style="grid-template-columns: 1fr 1fr;">
+          <div class="form-group">
+            <label>Tên Cô Dâu (Trái)</label>
+            <input type="text" class="ui-input" placeholder="Tên cô dâu hiển thị trên bảng...">
           </div>
-          <div class="col-md-6">
-            <label class="form-label fw-bold">Tên Chú Rể (Phải)</label>
-            <input type="text" class="form-control" placeholder="Tên chú rể hiển thị trên bảng...">
+          <div class="form-group">
+            <label>Tên Chú Rể (Phải)</label>
+            <input type="text" class="ui-input" placeholder="Tên chú rể hiển thị trên bảng...">
           </div>
-          <div class="col-md-12">
-            <label class="form-label fw-bold">Dòng chữ Chào mừng</label>
-            <input type="text" class="form-control" value="LỄ THÀNH HÔN">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-bold">Nhạc đón khách</label>
-            <select class="form-select">
+        </div>
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label>Dòng chữ Chào mừng</label>
+          <input type="text" class="ui-input" value="LỄ THÀNH HÔN">
+        </div>
+        <div class="contract-grid-3" style="grid-template-columns: 1fr 1fr;">
+          <div class="form-group">
+            <label>Nhạc đón khách</label>
+            <select class="ui-input">
               <option>Nhạc Cổ điển hòa tấu</option>
               <option>Nhạc Trẻ lãng mạn</option>
               <option>Theo USB của khách</option>
             </select>
           </div>
-          <div class="col-md-6">
-            <label class="form-label fw-bold">Kịch bản MC</label>
-            <select class="form-select">
+          <div class="form-group">
+            <label>Kịch bản MC</label>
+            <select class="ui-input">
               <option>Truyền thống trang trọng</option>
               <option>Hiện đại, sôi động</option>
             </select>
@@ -1299,36 +1303,39 @@ var ContractPage = (function () {
     if (!container) return;
     container.innerHTML = `
       <div class="p-4">
-        <h5 class="fw-bold mb-4" style="color: var(--color-danger);">Dời ngày / Hủy hợp đồng</h5>
+        <span class="form-section-title" style="color: var(--color-danger);">Dời ngày / Hủy hợp đồng</span>
+        <div class="form-section-divider"></div>
         
-        <div class="alert alert-warning mb-4">
-          <i class="material-symbols-outlined align-middle me-2">warning</i>
-          <strong>Lưu ý:</strong> Việc dời ngày hoặc hủy tiệc sẽ phải tính phí phạt theo quy định. Sảnh hiện tại sẽ được giải phóng!
+        <div class="alert alert-warning mb-4 d-flex align-items-center gap-2">
+          <i class="material-symbols-outlined align-middle" style="font-size: 20px;">warning</i>
+          <span><strong>Lưu ý:</strong> Việc dời ngày hoặc hủy tiệc sẽ phải tính phí phạt theo quy định. Sảnh hiện tại sẽ được giải phóng!</span>
         </div>
 
-        <div class="row g-4">
-          <div class="col-md-4">
-            <label class="form-label fw-bold">Hình thức</label>
-            <select class="form-select" onchange="document.getElementById('doi-ngay-wrapper').style.display = this.value === 'doi' ? 'block' : 'none'">
+        <div class="contract-grid-3">
+          <div class="form-group">
+            <label>Hình thức</label>
+            <select class="ui-input" onchange="document.getElementById('doi-ngay-wrapper').style.display = this.value === 'doi' ? 'flex' : 'none'">
               <option value="doi">Dời ngày tiệc</option>
               <option value="huy">Hủy hợp đồng</option>
             </select>
           </div>
-          <div class="col-md-4" id="doi-ngay-wrapper">
-            <label class="form-label fw-bold">Ngày tiệc mới</label>
-            <input type="date" class="form-control">
+          <div class="form-group" id="doi-ngay-wrapper">
+            <label>Ngày tiệc mới</label>
+            <input type="date" class="ui-input">
           </div>
-          <div class="col-md-4">
-            <label class="form-label fw-bold text-danger">Phí phạt (VNĐ)</label>
-            <input type="text" class="form-control" placeholder="0">
+          <div class="form-group">
+            <label style="color: var(--color-danger);">Phí phạt (VNĐ)</label>
+            <input type="text" class="ui-input text-end" placeholder="0">
           </div>
-          <div class="col-12">
-            <label class="form-label fw-bold">Lý do</label>
-            <textarea class="form-control" rows="3" placeholder="Ghi chú lý do dời/hủy..."></textarea>
-          </div>
-          <div class="col-12 text-end">
-            <button class="btn btn-danger px-4">Thực hiện Ghi nhận</button>
-          </div>
+        </div>
+        <div class="form-group mb-4">
+          <label>Lý do</label>
+          <textarea class="ui-input" style="height: 80px; resize: none;" placeholder="Ghi chú lý do dời/hủy..."></textarea>
+        </div>
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-danger px-4 py-2 d-flex align-items-center gap-2" style="border-radius: 8px; font-weight: 600;">
+            <i class="material-symbols-outlined" style="font-size: 18px;">save</i> Thực hiện Ghi nhận
+          </button>
         </div>
       </div>
     `;
@@ -2164,6 +2171,100 @@ var ContractPage = (function () {
     _isFromBooking = false;
   }
 
+  function _renderPhuLuc() {
+    var container = document.getElementById('phu-luc-tab-container');
+    if (!container) return;
+    
+    var contract = getSelectedRow();
+    var isNew = (!contract || !contract.Sohopdong);
+    
+    container.innerHTML = `
+      <div class="card p-4 mt-3 mx-auto" style="max-width: 1200px; background: var(--color-surface); border-radius: 12px; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3" style="border-bottom: 1px solid var(--color-border);">
+          <div class="d-flex align-items-center gap-2">
+            <i class="material-symbols-outlined text-primary" style="font-size: 24px;">history</i>
+            <h5 class="m-0" style="color: var(--color-text); font-weight: 600;">Lịch sử Thay đổi / Bổ sung</h5>
+          </div>
+          <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-create-phuluc" ${isNew ? 'disabled' : ''}>
+            <i class="material-symbols-outlined" style="font-size: 18px;">add</i> Tạo Phụ Lục Mới
+          </button>
+        </div>
+        <div id="phuluc-list-container">
+          <div class="text-center p-4">
+            <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+            <div class="mt-2 text-muted" style="font-size: 14px;">Đang tải dữ liệu...</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (isNew) {
+      container.querySelector('#phuluc-list-container').innerHTML = `
+        <div class="alert alert-warning d-flex align-items-center gap-2">
+          <i class="material-symbols-outlined">info</i>
+          <span>Vui lòng lưu Hợp đồng lần đầu trước khi tạo Phụ lục thay đổi.</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.querySelector('#btn-create-phuluc').onclick = function() {
+      _showThayDoiBoSungModal(contract);
+    };
+
+    _loadPhuLucHistory(contract.Sohopdong);
+  }
+
+  function _loadPhuLucHistory(sohopdong) {
+    var listContainer = document.getElementById('phuluc-list-container');
+    if (!listContainer) return;
+
+    if (typeof ApiClient !== 'undefined' && API_CONFIG.ENDPOINTS.ROUTER) {
+      ApiClient.post(API_CONFIG.ENDPOINTS.ROUTER, {
+        List: 'tbmk_Thaydoi',
+        Func: 'View',
+        Keyword: sohopdong
+      }).then(function(res) {
+        var records = res.records || res.data || [];
+        var html = '';
+        if (records.length === 0) {
+          html = `
+            <div class="text-center p-5 rounded" style="background: var(--color-background); border: 1px dashed var(--color-border-strong);">
+              <i class="material-symbols-outlined text-muted mb-2" style="font-size: 32px;">receipt_long</i>
+              <div class="text-muted fw-medium">Chưa có phụ lục thay đổi nào</div>
+              <div class="text-muted small mt-1">Các yêu cầu thay đổi bàn tiệc, thực đơn sẽ hiển thị ở đây</div>
+            </div>
+          `;
+        } else {
+          html = '<div class="table-responsive"><table class="table table-hover align-middle m-0" style="background: var(--color-surface);">' +
+                 '<thead style="background: var(--color-background);">' +
+                 '<tr>' +
+                 '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px;">Số Phụ Lục</th>' +
+                 '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px;">Ngày Lập</th>' +
+                 '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px;">Chi Tiết Thay Đổi</th>' +
+                 '<th class="text-end" style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px;">Phụ Thu</th>' +
+                 '</tr>' +
+                 '</thead><tbody>';
+          records.forEach(function(r) {
+            var date = new Date(r.Ngaythaydoi || r.DateCreate).toLocaleDateString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+            var ghichu = (r.Ghichu || '').replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
+            var tien = (r.TongtienHopdongTD || 0).toLocaleString('vi-VN') + ' đ';
+            html += `<tr>
+              <td style="font-weight: 600; color: var(--color-primary);">${r.Sothaydoi}</td>
+              <td style="font-size: 14px;">${date}</td>
+              <td style="max-width: 350px; font-size: 14px; white-space: pre-wrap; line-height: 1.5;">${ghichu}</td>
+              <td class="text-end" style="font-weight: 600; color: #10B981;">+${tien}</td>
+            </tr>`;
+          });
+          html += '</tbody></table></div>';
+        }
+        listContainer.innerHTML = html;
+      }).catch(function(err) {
+        listContainer.innerHTML = `<div class="alert alert-danger">Lỗi tải dữ liệu: ${err.message}</div>`;
+      });
+    }
+  }
+
   function _showThayDoiBoSungModal(contract) {
     if (typeof UIModal === 'undefined') {
       console.warn('UIModal is not defined.');
@@ -2180,50 +2281,50 @@ var ContractPage = (function () {
       
       <div class="row g-4">
         <div class="col-md-6">
-          <label class="form-label fw-bold">Người yêu cầu (Khách hàng)</label>
-          <input type="text" class="form-control" value="` + (contract.Tenkh || contract.Tencodau || '') + `">
+          <label style="font-weight: 500; font-size: 13px; margin-bottom: 6px; display: block; color: var(--color-text-secondary);">Người yêu cầu (Khách hàng)</label>
+          <input type="text" class="ui-input w-100" value="` + (contract.Tenkh || contract.Tencodau || '') + `">
         </div>
         <div class="col-md-6">
-          <label class="form-label fw-bold">Ngày yêu cầu</label>
-          <input type="date" class="form-control" value="` + new Date().toISOString().split('T')[0] + `">
+          <label style="font-weight: 500; font-size: 13px; margin-bottom: 6px; display: block; color: var(--color-text-secondary);">Ngày yêu cầu</label>
+          <input type="date" class="ui-input w-100" value="` + new Date().toISOString().split('T')[0] + `">
         </div>
         
         <div class="col-12">
-          <label class="form-label fw-bold">Nội dung thay đổi</label>
-          <div class="card p-3 border" style="background: var(--color-surface);">
-            <div class="form-check mb-2">
-              <input class="form-check-input" type="checkbox" id="chkChangeBan">
-              <label class="form-check-label" for="chkChangeBan">Thay đổi số lượng bàn tiệc</label>
+          <label style="font-weight: 500; font-size: 13px; margin-bottom: 6px; display: block; color: var(--color-text-secondary);">Nội dung thay đổi</label>
+          <div style="background: var(--color-background); padding: 16px; border-radius: 8px; border: 1px dashed var(--color-border-strong);">
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+              <input type="checkbox" id="chkChangeBan" style="width: 16px; height: 16px; accent-color: var(--color-primary);">
+              <label for="chkChangeBan" style="cursor: pointer; margin: 0;">Thay đổi số lượng bàn tiệc</label>
             </div>
-            <div class="form-check mb-2">
-              <input class="form-check-input" type="checkbox" id="chkChangeMenu">
-              <label class="form-check-label" for="chkChangeMenu">Đổi món ăn / Thức uống</label>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+              <input type="checkbox" id="chkChangeMenu" style="width: 16px; height: 16px; accent-color: var(--color-primary);">
+              <label for="chkChangeMenu" style="cursor: pointer; margin: 0;">Đổi món ăn / Thức uống</label>
             </div>
-            <div class="form-check mb-2">
-              <input class="form-check-input" type="checkbox" id="chkChangeService">
-              <label class="form-check-label" for="chkChangeService">Thêm / Bớt Dịch vụ, Setup</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <input type="checkbox" id="chkChangeService" style="width: 16px; height: 16px; accent-color: var(--color-primary);">
+              <label for="chkChangeService" style="cursor: pointer; margin: 0;">Thêm / Bớt Dịch vụ, Setup</label>
             </div>
           </div>
         </div>
 
         <div class="col-12">
-          <label class="form-label fw-bold">Chi tiết mô tả bổ sung</label>
-          <textarea class="form-control" rows="4" placeholder="Ví dụ: Tăng thêm 2 bàn chay, đổi súp cua thành súp bào ngư..."></textarea>
+          <label style="font-weight: 500; font-size: 13px; margin-bottom: 6px; display: block; color: var(--color-text-secondary);">Chi tiết mô tả bổ sung</label>
+          <textarea id="amd-ghichu" class="ui-input w-100" style="min-height: 100px; resize: vertical;" placeholder="Ví dụ: Tăng thêm 2 bàn chay, đổi súp cua thành súp bào ngư..."></textarea>
         </div>
         
         <div class="col-md-6">
-          <label class="form-label fw-bold">Ký duyệt của Bếp / Sảnh</label>
-          <select class="form-select">
+          <label style="font-weight: 500; font-size: 13px; margin-bottom: 6px; display: block; color: var(--color-text-secondary);">Ký duyệt của Bếp / Sảnh</label>
+          <select id="amd-status" class="ui-input w-100">
             <option>Chờ duyệt</option>
             <option>Đã xác nhận</option>
             <option>Không thể đáp ứng</option>
           </select>
         </div>
         <div class="col-md-6">
-          <label class="form-label fw-bold">Phụ thu (Nếu có)</label>
-          <div class="input-group">
-            <input type="text" class="form-control" placeholder="0">
-            <span class="input-group-text">VNĐ</span>
+          <label style="font-weight: 500; font-size: 13px; margin-bottom: 6px; display: block; color: var(--color-text-secondary);">Phụ thu (Nếu có)</label>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input id="amd-phuthu" type="text" class="ui-input w-100" placeholder="0" style="flex: 1;">
+            <span style="font-weight: 600; color: var(--color-text);">VNĐ</span>
           </div>
         </div>
       </div>
@@ -2233,18 +2334,69 @@ var ContractPage = (function () {
       title: 'Phiếu Thay đổi - Bổ sung',
       width: '700px',
       content: content,
-      footer: '<button class="btn btn-outline-secondary btn-close-modal">Hủy</button>' +
-              '<button class="btn btn-outline-primary ms-2" onclick="window.print()"><i class="material-symbols-outlined align-middle" style="font-size:18px;">print</i> In Phiếu</button>' +
+      footer: '<button class="btn btn-outline-secondary" id="btn-cancel-change">Hủy</button>' +
+              '<button class="btn btn-outline-primary ms-2 d-inline-flex align-items-center gap-1" onclick="window.print()"><i class="material-symbols-outlined align-middle" style="font-size:18px;">print</i> In Phiếu</button>' +
               '<button class="btn btn-primary ms-2" id="btn-save-change">Lưu Yêu Cầu</button>'
     });
 
-    m.node.querySelector('.btn-close-modal').onclick = function() {
+    m.node.querySelector('#btn-cancel-change').onclick = function() {
       m.closeNow();
     };
 
     m.node.querySelector('#btn-save-change').onclick = function() {
-      if (typeof Alert !== 'undefined') Alert.success('Thành công', 'Đã lưu Phiếu Thay đổi - Bổ sung!');
-      m.closeNow();
+      var btn = this;
+      var originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang xử lý...';
+      btn.disabled = true;
+
+      var ghichu = m.node.querySelector('#amd-ghichu').value || '';
+      var phuthu = m.node.querySelector('#amd-phuthu').value || '0';
+      var chkBan = m.node.querySelector('#chkChangeBan').checked ? '- Đổi bàn tiệc\\n' : '';
+      var chkMenu = m.node.querySelector('#chkChangeMenu').checked ? '- Đổi thực đơn\\n' : '';
+      var chkDv = m.node.querySelector('#chkChangeService').checked ? '- Đổi dịch vụ\\n' : '';
+
+      var finalGhichu = chkBan + chkMenu + chkDv + '\\nChi tiết: ' + ghichu;
+
+      var now = new Date();
+      var soThayDoi = 'TD' + now.getFullYear().toString().slice(-2) +
+                      ('0' + (now.getMonth() + 1)).slice(-2) +
+                      ('0' + now.getDate()).slice(-2) +
+                      ('0' + now.getHours()).slice(-2) +
+                      ('0' + now.getMinutes()).slice(-2) +
+                      ('0' + now.getSeconds()).slice(-2);
+
+      var payload = {
+        List: 'tbmk_Thaydoi',
+        Func: 'Add',
+        JsonData: JSON.stringify({
+          Sothaydoi: soThayDoi,
+          Sohopdong: contract.Sohopdong,
+          Ngaythaydoi: now.toISOString(),
+          Ghichu: finalGhichu,
+          TongtienHopdongTD: phuthu.replace(/,/g, '')
+        })
+      };
+
+      if (typeof ApiClient !== 'undefined') {
+        ApiClient.post(API_CONFIG.ENDPOINTS.ROUTER, payload)
+          .then(function(res) {
+            if (res && res.code === 0) {
+              if (typeof Alert !== 'undefined') Alert.success('Thành công', 'Đã lưu Phiếu Thay đổi vào hệ thống!');
+              m.closeNow();
+              _loadPhuLucHistory(contract.Sohopdong);
+            } else {
+              throw new Error(res.msg || 'Không thể lưu phiếu bổ sung');
+            }
+          })
+          .catch(function(err) {
+            if (typeof Alert !== 'undefined') Alert.error('Lỗi', err.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          });
+      } else {
+        if (typeof Alert !== 'undefined') Alert.success('Mock', 'Chưa có ApiClient, lưu giả lập thành công!');
+        m.closeNow();
+      }
     };
   }
 

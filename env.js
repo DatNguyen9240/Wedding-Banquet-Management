@@ -16,6 +16,7 @@ window.API_CONFIG = {
     BASE_URL: ENV_VARS.API_BASE,
 
     ENDPOINTS: {
+        ROUTER: '/api/API_Gateway_Router',
         AUTH: {
             LOGIN: '/api/login',
             LOGOUT: '/logout',

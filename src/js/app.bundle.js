@@ -5628,7 +5628,9 @@ var UIModal = (function () {
     }
 
     var footerWrapper = overlay.querySelector('.modal-footer');
-    if (config.footer instanceof Node) {
+    if (typeof config.footer === 'string') {
+      footerWrapper.innerHTML = config.footer;
+    } else if (config.footer instanceof Node) {
       footerWrapper.appendChild(config.footer);
     } else {
       footerWrapper.style.display = 'none';
