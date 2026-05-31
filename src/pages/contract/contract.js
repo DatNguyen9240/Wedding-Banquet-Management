@@ -348,29 +348,6 @@ var ContractPage = (function () {
           padding: 14px 8px !important;
         }
 
-        /* High Level Tab Styles */
-        .high-tab-btn {
-          background: none;
-          border: none;
-          border-bottom: 3px solid transparent;
-          padding: 10px 24px 14px 24px;
-          font-size: 16px;
-          font-weight: 700;
-          color: var(--color-text-secondary);
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-        }
-        .high-tab-btn:hover {
-          color: var(--color-primary);
-        }
-        .high-tab-btn.active {
-          color: var(--color-primary);
-          border-bottom-color: var(--color-primary);
-        }
-
         @media (max-width: 992px) {
           .contract-grid-3, .contract-grid-4 {
             grid-template-columns: repeat(2, 1fr);
@@ -390,14 +367,6 @@ var ContractPage = (function () {
         }
 
         @media (max-width: 600px) {
-          .high-tab-btn {
-            padding: 8px 8px 10px 8px !important;
-            font-size: 12px !important;
-            gap: 4px !important;
-          }
-          .high-tab-btn span.material-symbols-outlined {
-            font-size: 16px !important;
-          }
           
           /* Remove spacing on the two sides of tables */
           .p-4.mx-auto {
@@ -486,12 +455,12 @@ var ContractPage = (function () {
       </div>
 
       <!-- High-Level Tab Bar Switcher -->
-      <div class="d-flex mb-4" style="border-bottom: 2px solid var(--color-border); padding-left: 8px;">
-        <button class="high-tab-btn active" id="high-tab-info" onclick="ContractPage.switchHighLevelTab('info')">
+      <div class="ui-tabs-header mb-4">
+        <button class="ui-tab-btn active d-flex align-items-center gap-2" id="high-tab-info" onclick="ContractPage.switchHighLevelTab('info')">
           ${UIIcon.createHTML('description', 'font-size: 20px;')}
           <span>1. Thông tin Hợp đồng</span>
         </button>
-        <button class="high-tab-btn" id="high-tab-menu" onclick="ContractPage.switchHighLevelTab('menu')">
+        <button class="ui-tab-btn d-flex align-items-center gap-2" id="high-tab-menu" onclick="ContractPage.switchHighLevelTab('menu')">
           ${UIIcon.createHTML('restaurant_menu', 'font-size: 20px;')}
           <span>2. Thực đơn & Dịch vụ</span>
         </button>
@@ -574,8 +543,8 @@ var ContractPage = (function () {
         </div>
       </div>
 
-      <div id="high-content-menu" class="high-tab-content d-none">
-        <div class="card" id="contract-tabs-container"></div>
+      <div id="high-content-menu" class="high-tab-content d-none" style="min-width: 0;">
+        <div class="card" id="contract-tabs-container" style="overflow: hidden; min-width: 0;"></div>
       </div>
     `;
 
@@ -2179,8 +2148,8 @@ var ContractPage = (function () {
     var isNew = (!contract || !contract.Sohopdong);
     
     container.innerHTML = `
-      <div class="card p-4 mt-3 mx-auto" style="max-width: 1200px; background: var(--color-surface); border-radius: 12px; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
-        <div class="d-flex justify-content-between align-items-center mb-4 pb-3" style="border-bottom: 1px solid var(--color-border);">
+      <div class="card p-3 p-md-4 mt-3 mx-auto" style="width: 100%; max-width: 1200px; background: var(--color-surface); border-radius: 12px; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); overflow: hidden;">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 gap-3" style="border-bottom: 1px solid var(--color-border);">
           <div class="d-flex align-items-center gap-2">
             <i class="material-symbols-outlined text-primary" style="font-size: 24px;">history</i>
             <h5 class="m-0" style="color: var(--color-text); font-weight: 600;">Lịch sử Thay đổi / Bổ sung</h5>

@@ -18,7 +18,7 @@ var UITabs = (function () {
     var body = document.createElement('div');
     body.className = 'ui-tabs-body';
 
-    tabsConfig.forEach(function(tab, index) {
+    tabsConfig.forEach(function (tab, index) {
       // Header Button
       var btn = document.createElement('button');
       btn.className = 'ui-tab-btn' + (index === 0 ? ' active' : '');
@@ -30,21 +30,21 @@ var UITabs = (function () {
       var panel = document.createElement('div');
       panel.className = 'ui-tab-panel' + (index === 0 ? ' active' : '');
       panel.id = 'panel-' + tab.id;
-      
+
       if (typeof tab.content === 'string') {
         panel.innerHTML = tab.content;
       } else if (tab.content instanceof Node) {
         panel.appendChild(tab.content);
       }
-      
+
       body.appendChild(panel);
 
       // Event listener
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function () {
         // Gỡ active toàn bộ
         var allBtns = header.querySelectorAll('.ui-tab-btn');
         var allPanels = body.querySelectorAll('.ui-tab-panel');
-        
+
         allBtns.forEach(b => b.classList.remove('active'));
         allPanels.forEach(p => p.classList.remove('active'));
 

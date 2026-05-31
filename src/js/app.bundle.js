@@ -7419,7 +7419,7 @@ var UITabs = (function () {
     var body = document.createElement('div');
     body.className = 'ui-tabs-body';
 
-    tabsConfig.forEach(function(tab, index) {
+    tabsConfig.forEach(function (tab, index) {
       // Header Button
       var btn = document.createElement('button');
       btn.className = 'ui-tab-btn' + (index === 0 ? ' active' : '');
@@ -7431,21 +7431,21 @@ var UITabs = (function () {
       var panel = document.createElement('div');
       panel.className = 'ui-tab-panel' + (index === 0 ? ' active' : '');
       panel.id = 'panel-' + tab.id;
-      
+
       if (typeof tab.content === 'string') {
         panel.innerHTML = tab.content;
       } else if (tab.content instanceof Node) {
         panel.appendChild(tab.content);
       }
-      
+
       body.appendChild(panel);
 
       // Event listener
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function () {
         // Gỡ active toàn bộ
         var allBtns = header.querySelectorAll('.ui-tab-btn');
         var allPanels = body.querySelectorAll('.ui-tab-panel');
-        
+
         allBtns.forEach(b => b.classList.remove('active'));
         allPanels.forEach(p => p.classList.remove('active'));
 
@@ -9573,12 +9573,134 @@ var Header = (function () {
 /**
  * Sidebar Component
  * Cấu trúc thanh điều hướng bên trái
+ * Đã được nâng cấp để lấy Menu động từ Database giống Navbar
  */
 var Sidebar = (function () {
+
+  var CACHE_KEY = 'pmql_nav_cache';
+  var NAV_CONFIG = [];
+
+  function _buildConfigFromDB(dbMenus) {
+    var config = [];
+    var parents = dbMenus.filter(function (m) { return !m.parent || String(m.parent).trim() === ''; });
+    parents.sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
+
+    parents.forEach(function (p) {
+      var children = dbMenus.filter(function (m) { return m.parent === p.id; });
+      if (children.length > 0) {
+        children.sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
+        var items = children.map(function (c) {
+          return {
+            href: c.URLPara || c.urlPara || c.FormKey || '',
+            icon: c.icon || c.IconClass || 'circle',
+            label: c.label || c.TenMenu || c.VN || ''
+          };
+        });
+        config.push({
+          type: 'group',
+          icon: p.icon || p.IconClass || 'folder',
+          label: p.label || p.TenMenu || p.VN || '',
+          items: items
+        });
+      } else {
+        config.push({
+          type: 'link',
+          href: p.URLPara || p.urlPara || p.FormKey || '',
+          icon: p.icon || p.IconClass || 'link',
+          label: p.label || p.TenMenu || p.VN || ''
+        });
+      }
+    });
+    return config;
+  }
+
+  function _buildSidebarNavHTML() {
+    var html = '';
+    NAV_CONFIG.forEach(function (item) {
+      if (item.type === 'link') {
+        html += `
+          <a href="${item.href}" class="nav-item">
+            <span class="material-symbols-outlined icon">${item.icon}</span>
+            ${item.label}
+          </a>`;
+        return;
+      }
+      html += `<div class="nav-group-title">${item.label}</div>`;
+      item.items.forEach(function (di) {
+        html += `
+          <a href="${di.href}" class="nav-item">
+            <span class="material-symbols-outlined icon">${di.icon}</span>
+            ${di.label}
+          </a>`;
+      });
+    });
+    return html;
+  }
 
   function render(containerId) {
     var container = document.getElementById(containerId);
     if (!container) return;
+
+    var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+    var groupId = u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
+
+    // Thử load từ cache giống Navbar
+    try {
+      var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+      if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
+        NAV_CONFIG = cached.config;
+        _doRender(container);
+        return;
+      }
+    } catch (e) {}
+
+    // Nếu không có cache, gọi API fetch
+    _fetchAndRender(container, groupId);
+  }
+
+  function _fetchAndRender(container, groupId) {
+    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.PERMISSIONS)
+      ? window.API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MENU_BY_GROUP : null;
+
+    if (endpoint && window.ApiClient) {
+      ApiClient.post(endpoint, {
+        NhomNguoiDangThaoTac: groupId,
+        UserGroupID: groupId
+      }).then(function (res) {
+        var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
+        if (records && records.length > 0) {
+          NAV_CONFIG = _buildConfigFromDB(records);
+          try {
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+              groupId: groupId,
+              config: NAV_CONFIG,
+              rawRecords: records
+            }));
+          } catch (e) { }
+        }
+        _doRender(container);
+      }).catch(function (err) {
+        console.error('[Sidebar] Lỗi tải menu từ DB:', err);
+        _doRender(container); // Fallback render empty
+      });
+    } else {
+      _doRender(container);
+    }
+  }
+
+  function _doRender(container) {
+    var navHtml = _buildSidebarNavHTML();
+
+    // Fallback HTML nếu DB rỗng
+    if (!navHtml) {
+      navHtml = `
+        <div class="nav-group-title">Hệ Thống</div>
+        <a href="#/dashboard" class="nav-item active">
+          <span class="material-symbols-outlined icon">dashboard</span>
+          Tổng quan
+        </a>
+      `;
+    }
 
     var html = `
       <aside class="app-sidebar" id="app-sidebar">
@@ -9594,91 +9716,7 @@ var Sidebar = (function () {
         </div>
 
         <nav class="sidebar-nav" id="sidebar-nav">
-          <!-- Nhóm Hệ thống -->
-          <div class="nav-group-title">Hệ Thống</div>
-          <a href="#/dashboard" class="nav-item">
-            <span class="material-symbols-outlined icon">dashboard</span>
-            Tổng quan
-          </a>
-          <a href="#/users" class="nav-item">
-            <span class="material-symbols-outlined icon">group</span>
-            Người dùng
-          </a>
-          <a href="#/permissions" class="nav-item">
-            <span class="material-symbols-outlined icon">admin_panel_settings</span>
-            Phân quyền
-          </a>
-          <a href="#/settings" class="nav-item">
-            <span class="material-symbols-outlined icon">settings_applications</span>
-            Thiết lập chung
-          </a>
-
-          <!-- Nhóm Quản lý tiệc -->
-          <div class="nav-group-title">Quản lý tiệc</div>
-          <a href="#/customers" class="nav-item">
-            <span class="material-symbols-outlined icon">manage_accounts</span>
-            Hồ sơ khách hàng
-          </a>
-          <a href="#/calendar" class="nav-item">
-            <span class="material-symbols-outlined icon">calendar_month</span>
-            Lịch tiệc
-          </a>
-          <a href="#/hall-status" class="nav-item">
-            <span class="material-symbols-outlined icon">meeting_room</span>
-            Trạng thái sảnh
-          </a>
-          <a href="#/visitor" class="nav-item">
-            <span class="material-symbols-outlined icon">hail</span>
-            Khách tham quan
-          </a>
-          <a href="#/booking" class="nav-item">
-            <span class="material-symbols-outlined icon">edit_document</span>
-            Biên nhận cọc
-          </a>
-          <a href="#/contract" class="nav-item">
-            <span class="material-symbols-outlined icon">contract</span>
-            Hợp đồng tiệc
-          </a>
-          <a href="#/checkout" class="nav-item">
-            <span class="material-symbols-outlined icon">receipt_long</span>
-            Quyết toán
-          </a>
-
-          <!-- Nhóm Nhân sự -->
-          <div class="nav-group-title">Nhân sự</div>
-          <a href="#/staff" class="nav-item">
-            <span class="material-symbols-outlined icon">badge</span>
-            Nhân viên phục vụ
-          </a>
-
-          <!-- Nhóm Danh mục -->
-          <div class="nav-group-title">Danh mục</div>
-          <a href="#/categories" class="nav-item">
-            <span class="material-symbols-outlined icon">category</span>
-            Quản lý Danh mục
-          </a>
-
-          <!-- Nhóm Báo cáo -->
-          <div class="nav-group-title">Báo cáo</div>
-          <a href="#/report-revenue" class="nav-item">
-            <span class="material-symbols-outlined icon">bar_chart</span>
-            Doanh thu tiệc
-          </a>
-          <a href="#/report-cost" class="nav-item">
-            <span class="material-symbols-outlined icon">price_change</span>
-            Chi phí tiệc
-          </a>
-          <a href="#/report-other" class="nav-item">
-            <span class="material-symbols-outlined icon">assessment</span>
-            Báo cáo khác
-          </a>
-
-          <!-- System UI Components -->
-          <div class="nav-group-title">UI Components</div>
-          <a href="#/components-demo" class="nav-item">
-            <span class="material-symbols-outlined icon">integration_instructions</span>
-            Bản test Component
-          </a>
+          ${navHtml}
         </nav>
       </aside>
 
@@ -9687,7 +9725,6 @@ var Sidebar = (function () {
     `;
 
     container.innerHTML = html;
-
     _attachEvents();
   }
 

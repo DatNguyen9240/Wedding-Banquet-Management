@@ -5441,13 +5441,26 @@ body.dark-theme .data-table tbody tr:hover {
 }
 
 @keyframes tabFadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 
-.ui-tabs-header::-webkit-scrollbar { display: none; }
-.ui-tabs-header { -ms-overflow-style: none; scrollbar-width: none; }
+.ui-tabs-header::-webkit-scrollbar {
+  display: none;
+}
+
+.ui-tabs-header {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 
 /* ═══════════════════════════════════════════
@@ -5480,7 +5493,9 @@ body.dark-theme .data-table tbody tr:hover {
   -ms-overflow-style: none;
 }
 
-.ui-nested-tabs__parent-bar::-webkit-scrollbar { display: none; }
+.ui-nested-tabs__parent-bar::-webkit-scrollbar {
+  display: none;
+}
 
 .ui-nested-tab-parent-btn {
   display: flex;
@@ -5521,7 +5536,7 @@ body.dark-theme .data-table tbody tr:hover {
   min-width: 20px;
   height: 20px;
   padding: 0 5px;
-  background: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 10px;
   font-size: 11px;
   font-weight: 700;
@@ -5544,8 +5559,15 @@ body.dark-theme .data-table tbody tr:hover {
 }
 
 @keyframes nestedTabFadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── Tab Con Bar ─────────────────────────── */
@@ -5563,7 +5585,9 @@ body.dark-theme .data-table tbody tr:hover {
   -ms-overflow-style: none;
 }
 
-.ui-nested-tabs__child-bar::-webkit-scrollbar { display: none; }
+.ui-nested-tabs__child-bar::-webkit-scrollbar {
+  display: none;
+}
 
 .ui-nested-tab-child-btn {
   padding: 10px 18px;
@@ -5644,12 +5668,12 @@ body.dark-theme .data-table tbody tr:hover {
 }
 
 .ui-nested-tab-parent-btn:hover .ui-nested-drag-handle,
-.ui-nested-tab-child-btn:hover  .ui-nested-drag-handle {
+.ui-nested-tab-child-btn:hover .ui-nested-drag-handle {
   opacity: 0.5;
 }
 
 .ui-nested-tab-parent-btn:hover .ui-nested-drag-handle:hover,
-.ui-nested-tab-child-btn:hover  .ui-nested-drag-handle:hover {
+.ui-nested-tab-child-btn:hover .ui-nested-drag-handle:hover {
   opacity: 1;
   color: var(--color-primary);
 }
@@ -5689,8 +5713,13 @@ body.dark-theme .data-table tbody tr:hover {
 }
 
 @keyframes placeholderPulse {
-  from { opacity: 0.5; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0.5;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 
@@ -5710,32 +5739,34 @@ body.dark-theme .data-table tbody tr:hover {
 
 /* ── Sidebar (cột trái) ──────────────────── */
 .ui-nested-tabs__sidebar {
-    width: 260px;
-    flex-shrink: 0;
-    border-right: 1px solid var(--color-border);
-    background: var(--color-surface);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
-    position: relative;
-    user-select: none;
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  user-select: none;
 }
 
 /* Thanh kéo Resizer */
 .ui-nested-resizer {
-    position: absolute;
-    top: 0;
-    right: -3px;
-    width: 6px;
-    height: 100%;
-    cursor: col-resize;
-    z-index: 10;
-    transition: background 0.2s;
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 0.2s;
 }
-.ui-nested-resizer:hover, .ui-nested-resizer.is-resizing {
-    background: var(--color-primary);
-    opacity: 0.5;
+
+.ui-nested-resizer:hover,
+.ui-nested-resizer.is-resizing {
+  background: var(--color-primary);
+  opacity: 0.5;
 }
 
 /* ── Parent item trong sidebar ───────────── */
@@ -5777,7 +5808,9 @@ body.dark-theme .data-table tbody tr:hover {
 .ui-nested-tab-parent-btn--v.active::before {
   content: '';
   position: absolute;
-  left: 0; top: 0; bottom: 0;
+  left: 0;
+  top: 0;
+  bottom: 0;
   width: 3px;
   background: var(--color-primary);
   border-radius: 0 3px 3px 0;
@@ -5812,8 +5845,15 @@ body.dark-theme .data-table tbody tr:hover {
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .ui-nested-tab-child-btn--v {
@@ -5850,16 +5890,18 @@ body.dark-theme .data-table tbody tr:hover {
 .ui-nested-tab-child-btn--v.active::before {
   content: '';
   position: absolute;
-  left: 24px; top: 50%;
+  left: 24px;
+  top: 50%;
   transform: translateY(-50%);
-  width: 5px; height: 5px;
+  width: 5px;
+  height: 5px;
   background: var(--color-primary);
   border-radius: 50%;
 }
 
 /* Drag handle trong vertical mode */
 .ui-nested-tab-parent-btn--v .ui-nested-drag-handle,
-.ui-nested-tab-child-btn--v  .ui-nested-drag-handle {
+.ui-nested-tab-child-btn--v .ui-nested-drag-handle {
   margin-left: 0;
   margin-right: 0;
 }
@@ -5898,6 +5940,7 @@ body.dark-theme .data-table tbody tr:hover {
   .ui-nested-tabs--vertical {
     flex-direction: column;
   }
+
   .ui-nested-tabs__sidebar {
     width: 100%;
     max-width: 100%;
@@ -5906,34 +5949,92 @@ body.dark-theme .data-table tbody tr:hover {
     flex-direction: column;
     padding: 0;
   }
+
   .ui-nested-tab-parent-btn--v {
     border-radius: 0;
   }
+
   .ui-nested-tabs__child-list {
     flex-direction: column;
   }
+
   .ui-nested-tabs__vertical-content {
     padding: 16px 0 0;
   }
 }
+
 @media (max-width: 768px) {
+
   /* Cho phép cuộn ngang (Scrollable) khi thu hẹp thay vì phá vỡ layout */
   .ui-nested-tabs__parent-bar {
     padding: 4px 6px;
     /* Vẫn giữ nguyên bo tròn border-radius: 12px; */
   }
+
   .ui-nested-tab-parent-btn {
     padding: 8px 14px;
     font-size: 12px;
   }
+
   .ui-nested-tab-child-btn {
     padding: 8px 14px;
     font-size: 12px;
   }
 }
 
+/* ════ MODULE TABS (Global) ════ */
+.custom-tabs-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 24px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
 
+.custom-tab-btn {
+  padding: 12px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
 
+.custom-tab-btn.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.custom-tab-btn:hover {
+  color: var(--color-primary);
+}
+
+@media (max-width: 768px) {
+  .custom-tabs-header {
+    margin-left: -16px !important;
+    margin-right: -16px !important;
+    width: calc(100% + 32px) !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  .custom-tab-btn {
+    flex: 1;
+    text-align: center;
+    padding: 12px 4px !important;
+    font-size: 13px;
+    white-space: normal;
+  }
+
+  .custom-tab-btn i {
+    font-size: 16px !important;
+  }
+}
 
 /* --- timeline.css --- */
 /* ═══════════════════════════════════════════
