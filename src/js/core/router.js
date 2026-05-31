@@ -16,7 +16,7 @@ var Router = (function () {
     { path: '/booking', template: 'src/pages/booking/booking.html', script: 'src/pages/booking/booking.js', perm: 'frmBiennhancoccho', title: 'Phiếu Cọc', pageFn: 'BookingPage' },
     { path: '/contract', template: 'src/pages/contract/contract.html', script: 'src/pages/contract/contract.js', perm: 'frmHopDong', title: 'Hợp Đồng Tiệc', pageFn: 'ContractPage' },
     { path: '/checkout', template: 'src/pages/checkout/checkout.html', script: 'src/pages/checkout/checkout.js', perm: 'frmQuyetToan', title: 'Quyết Toán Tiệc', pageFn: 'CheckoutPage' },
-    { path: '/event-setup', template: 'src/pages/event-setup/event-setup.html', script: 'src/pages/event-setup/event-setup.js', perm: '', title: '', pageFn: 'EventSetupPage' },
+
     { path: '/categories', template: 'src/pages/categories/categories.html', script: 'src/pages/categories/categories.js', perm: '', title: '', pageFn: 'CategoriesPage' },
     { path: '/inventory', template: 'src/pages/inventory/inventory.html', script: 'src/pages/inventory/inventory.js', perm: '', title: 'Kho & Định lượng', pageFn: 'InventoryPage' },
     { path: '/cash-flow', template: 'src/pages/cash-flow/cash-flow.html', script: 'src/pages/cash-flow/cash-flow.js', perm: '', title: 'Kế toán & Quỹ tiền mặt', pageFn: 'CashFlowPage' },
