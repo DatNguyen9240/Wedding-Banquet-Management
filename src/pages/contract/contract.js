@@ -2236,24 +2236,59 @@ var ContractPage = (function () {
             </div>
           `;
         } else {
-          html = '<div class="table-responsive"><table class="table table-hover align-middle m-0" style="background: var(--color-surface);">' +
-                 '<thead style="background: var(--color-background);">' +
+          html = '<div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">' +
+                 '<table class="table table-hover align-middle m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 700px; background: var(--color-surface);">' +
+                 '<thead style="background: var(--color-background); border-bottom: 2px solid var(--color-border);">' +
                  '<tr>' +
-                 '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px;">Số Phụ Lục</th>' +
-                 '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px;">Ngày Lập</th>' +
-                 '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px;">Chi Tiết Thay Đổi</th>' +
-                 '<th class="text-end" style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px;">Phụ Thu</th>' +
+                 '<th style="width: 160px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Số Phụ Lục</th>' +
+                 '<th style="width: 150px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Ngày Lập</th>' +
+                 '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px; width: auto;">Chi Tiết Thay Đổi</th>' +
+                 '<th class="text-end" style="width: 140px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Phụ Thu</th>' +
                  '</tr>' +
                  '</thead><tbody>';
           records.forEach(function(r) {
-            var date = new Date(r.Ngaythaydoi || r.DateCreate).toLocaleDateString('vi-VN', {hour: '2-digit', minute:'2-digit'});
-            var ghichu = (r.Ghichu || '').replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
-            var tien = (r.TongtienHopdongTD || 0).toLocaleString('vi-VN') + ' đ';
-            html += `<tr>
-              <td style="font-weight: 600; color: var(--color-primary);">${r.Sothaydoi}</td>
-              <td style="font-size: 14px;">${date}</td>
-              <td style="max-width: 350px; font-size: 14px; white-space: pre-wrap; line-height: 1.5;">${ghichu}</td>
-              <td class="text-end" style="font-weight: 600; color: #10B981;">+${tien}</td>
+            // Support case-insensitive property access
+            var getProp = function(obj, keyName) {
+              if (obj[keyName] !== undefined) return obj[keyName];
+              var lowerKey = keyName.toLowerCase();
+              for (var k in obj) {
+                if (k.toLowerCase() === lowerKey) return obj[k];
+              }
+              return undefined;
+            };
+
+            var sothaydoi = getProp(r, 'Sothaydoi') || getProp(r, 'sohopdong') || 'N/A';
+            var rawDate = getProp(r, 'Ngaythaydoi') || getProp(r, 'DateCreate') || getProp(r, 'created_at');
+            var ghichu = getProp(r, 'Ghichu') || getProp(r, 'noidung') || '';
+            var phuthu = getProp(r, 'TongtienHopdongTD') || getProp(r, 'TienPhuThu') || 0;
+
+            if (sothaydoi === 'N/A') {
+              ghichu = ghichu + ' (Data: ' + JSON.stringify(r) + ')';
+            }
+
+            var date = 'N/A';
+            if (rawDate) {
+              // If it's already DD/MM/YYYY formatted from SQL
+              if (typeof rawDate === 'string' && rawDate.indexOf('/') !== -1) {
+                date = rawDate; // Just display it directly
+              } else {
+                var parsedDate = new Date(rawDate);
+                if (!isNaN(parsedDate)) {
+                  date = parsedDate.toLocaleDateString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+                } else {
+                  date = rawDate; // Fallback to raw string
+                }
+              }
+            }
+            
+            ghichu = (ghichu + '').replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
+            var tien = parseFloat(phuthu || 0).toLocaleString('vi-VN') + ' đ';
+
+            html += `<tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="font-weight: 600; color: var(--color-primary); padding: 16px;">${sothaydoi}</td>
+              <td style="font-size: 14px; padding: 16px; color: var(--color-text);">${date}</td>
+              <td style="font-size: 14px; white-space: pre-wrap; line-height: 1.6; padding: 16px; color: var(--color-text-secondary);">${ghichu}</td>
+              <td class="text-end" style="font-weight: 700; color: #10B981; padding: 16px;">+${tien}</td>
             </tr>`;
           });
           html += '</tbody></table></div>';
