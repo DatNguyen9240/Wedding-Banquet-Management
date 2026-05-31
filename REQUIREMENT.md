@@ -213,8 +213,10 @@ Tất cả các form đều có thanh công cụ 6 nút theo thứ tự:
 | **Ngày** | Ngày bắt đầu áp dụng giá — **không sửa ngày cũ**, thêm dòng mới khi đổi giá |
 | **Đơn giá** | Hệ thống tự lấy đơn giá của **ngày gần nhất** khi chọn mã hàng |
 
-#### Định lượng
-- Khai báo nguyên vật liệu cấu thành một món ăn (dùng cho quản lý kho nếu có)
+#### Định lượng & Giá vốn
+- Món ăn (Hàng hóa) được cấu thành từ các **Nguyên vật liệu** (`dmNguyenvatlieu`).
+- **Giá vốn** của món ăn được tính tự động thông qua bảng Định lượng (`dmHanghoadinhluong`), dựa trên tổng chi phí nguyên vật liệu: `Số lượng định lượng × Giá vốn nguyên vật liệu cấu thành`.
+- Dùng để tính toán lợi nhuận trong Báo cáo chi phí tiệc.
 
 ---
 
@@ -367,7 +369,7 @@ Tất cả các form đều có thanh công cụ 6 nút theo thứ tự:
 ---
 
 ### IV.11 Quyết toán Tiệc
-- Thực hiện sau khi tiệc kết thúc
+- Thực hiện sau khi tiệc kết thúc (hoạt động như một **Phiếu thu**)
 - Lấy dữ liệu từ **Hợp đồng** hoặc **Thông tin Thay đổi – Bổ sung**
 
 #### Tab Bàn Tiệc và Dịch vụ
@@ -551,6 +553,15 @@ Bao gồm các báo cáo quản trị tổng hợp:
 
 ---
 
+### VI.8 Quản lý Kho & Kế toán cơ bản
+**Module:** Kho / KeToan
+
+- Tuân thủ nguyên tắc Khóa/Mở kỳ sử dụng: **Không thể** lập phiếu khi kỳ đã khóa.
+- **Phiếu Nhập / Xuất kho:** Quản lý xuất nhập hàng hóa, mặc định lọc dữ liệu theo tháng hiện tại.
+- **Phiếu Thu / Chi:** Quản lý "Quỹ tiền mặt" và thu chi liên quan đến nghiệp vụ (VD: Quyết toán tiệc sinh ra Phiếu thu).
+
+---
+
 ## VII. Bảng Tổng hợp Route & Trạng thái
 
 | Route | Tên Màn hình | Module | Trạng thái |
@@ -569,3 +580,5 @@ Bao gồm các báo cáo quản trị tổng hợp:
 | `#/report-revenue` | Doanh thu Tiệc | BaoCao | ✅ Có giao diện mẫu |
 | `#/report-cost` | Chi phí Tiệc | BaoCao | ✅ Có giao diện mẫu |
 | `#/report-other` | Báo cáo Khác | BaoCao | ✅ Có giao diện mẫu |
+| `#/inventory` | Phiếu Nhập / Xuất kho | Kho | ⏳ Theo thiết kế gốc |
+| `#/cash-flow` | Phiếu Thu / Chi | KeToan | ⏳ Theo thiết kế gốc |
