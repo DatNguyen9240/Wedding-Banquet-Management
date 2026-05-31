@@ -344,23 +344,31 @@ window.DynamicFormEngine = (function () {
           }
 
           // Xây Schema cho Form (Lưu toàn bộ để lấy Khóa chính)
-          globalFormSchema.push({
-            name: item.name || item.FieldName,
-            label: item.label || item.CaptionVN,
-            required: _bool(item.required, item.IsRequired),
-            showInAdd: _bool(item.showInAdd, item.ShowInAdd),
-            showInEdit: _bool(item.showInEdit, item.ShowInEdit),
-            showInFilter: _bool(item.showInFilter, item.ShowInFilter),
-            isReadOnlyEdit: _bool(item.isReadOnlyEdit, item.IsReadOnlyEdit),
-            isReadOnlyAdd: _bool(item.isReadOnlyAdd, item.IsReadOnlyAdd),
-            position: item.FormPosition || item.formPosition || item.position || 'grid',
-            orderNo: item.OrderNo || item.orderNo || 0,
-            renderRule: (item.renderRule || '').toLowerCase().trim(),
-            dataSource: (item.dataSource || item.DataSource || '').trim(),
-            validateRule: (item.validateRule || item.ValidateRule || '').trim(),
-            dependsOn: (item.dependsOn || item.DependsOn || '').trim(),
-            visibleRule: (item.visibleRule || item.VisibleRule || '').trim()
-          });
+            var rawValidate = (item.validateRule || item.ValidateRule || '').trim();
+            var rawVisible = (item.visibleRule || item.VisibleRule || '').trim();
+            
+            var formulaMatch = rawValidate.match(/formula:([^|]+)/i) || rawVisible.match(/formula:([^|]+)/i);
+            var triggerMatch = rawValidate.match(/trigger:([^|]+)/i) || rawVisible.match(/trigger:([^|]+)/i);
+            
+            globalFormSchema.push({
+              name: item.name || item.FieldName,
+              label: item.label || item.CaptionVN,
+              required: _bool(item.required, item.IsRequired),
+              showInAdd: _bool(item.showInAdd, item.ShowInAdd),
+              showInEdit: _bool(item.showInEdit, item.ShowInEdit),
+              showInFilter: _bool(item.showInFilter, item.ShowInFilter),
+              isReadOnlyEdit: _bool(item.isReadOnlyEdit, item.IsReadOnlyEdit),
+              isReadOnlyAdd: _bool(item.isReadOnlyAdd, item.IsReadOnlyAdd),
+              position: item.FormPosition || item.formPosition || item.position || 'grid',
+              orderNo: item.OrderNo || item.orderNo || 0,
+              renderRule: (item.renderRule || '').toLowerCase().trim(),
+              dataSource: (item.dataSource || item.DataSource || '').trim(),
+              validateRule: rawValidate,
+              dependsOn: (item.dependsOn || item.DependsOn || '').trim(),
+              visibleRule: rawVisible,
+              formulaRule: formulaMatch ? formulaMatch[1].trim() : '',
+              triggerApi: triggerMatch ? triggerMatch[1].trim() : ''
+            });
         });
 
         if (Object.keys(globalDictionary).length === 0) {
@@ -1582,26 +1590,48 @@ window.DynamicFormEngine = (function () {
             var staticStr = field.dataSource.substring(7);
             var staticData = staticStr.split(',').map(function (s) {
               var parts = s.split('|');
-              return [parts[0], parts[1] || parts[0]];
+              return [parts[0], parts[1] || parts[0], parts[2] || ''];
             });
 
-            var combo = UIControls.createDataComboBox({
+            var lazyStaticCombo = UIControls.createDataComboBox({
               placeholder: '-- Vui lòng chọn --',
               headers: ['Mã', 'Tên'],
-              data: staticData,
-              colFilterIndex: 1, // Dùng cột Tên để hiển thị lên input
               disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
+              onSearch: function(q, page) {
+                 return new Promise(function(resolve) {
+                    var filtered = staticData;
+                    if (field.dependsOn) {
+                      var parents = field.dependsOn.split(',').map(function(p){ return p.trim(); });
+                      filtered = staticData.filter(function(r) {
+                         if (!r[2]) return true; // Ko cấu hình parent => luôn hiện
+                         var parentValueNow = currentModalFormState[parents[0]] || '';
+                         return String(r[2]) === String(parentValueNow);
+                      });
+                    }
+                    if (q) {
+                       filtered = filtered.filter(function(r) { return r[1].toLowerCase().indexOf(q.toLowerCase()) > -1; });
+                    }
+                    resolve({ headers: ['Mã', 'Tên'], data: filtered, colFilterIndex: 1 });
+                 });
+              },
               onSelect: function (row) {
                 hiddenInput.value = row[0]; // Cập nhật ID
                 hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
               }
             });
 
-            var displayInput = combo.querySelector('input.ui-input');
+            var displayInput = lazyStaticCombo.querySelector('input.ui-input');
             var matched = staticData.find(function (r) { return r[0] == field.value; });
             if (matched && displayInput) displayInput.value = matched[1];
 
-            formGroupWrapper.appendChild(combo);
+            hiddenInput.fetchDataForValue = function () {
+              var displayInp = lazyStaticCombo.querySelector('input.ui-input');
+              var matched = staticData.find(function (r) { return String(r[0]) === String(hiddenInput.value); });
+              if (matched && displayInp) displayInp.value = matched[1];
+              else if (displayInp) displayInp.value = hiddenInput.value || '';
+            };
+
+            formGroupWrapper.appendChild(lazyStaticCombo);
             inputEl = formGroupWrapper;
           } else {
             // Hiển thị tạm lúc đang tải
@@ -1849,23 +1879,98 @@ window.DynamicFormEngine = (function () {
       UIControls.utils.applyVisibleRules(body);
     }
 
+    // Xử lý Disable ban đầu cho các trường có DependsOn nếu BẤT KỲ trường cha nào đang trống
+    globalFormSchema.forEach(function (f) {
+      if (f.dependsOn) {
+        var parents = f.dependsOn.split(',').map(function (p) { return p.trim(); });
+        var hasEmptyParent = parents.some(function (p) { return !currentModalFormState[p]; });
+        if (hasEmptyParent) {
+          var childInput = body.querySelector('input[name="' + f.name + '"]');
+          if (childInput) {
+            var comboWrap = childInput.closest('.form-group') || childInput.closest('.df-col-12, .df-col-6, .df-col-4');
+            if (comboWrap) {
+              var allInps = comboWrap.querySelectorAll('input:not([type="hidden"]), select, textarea, button');
+              allInps.forEach(function(el) { el.disabled = true; });
+              comboWrap.classList.add('ui-input-disabled');
+            }
+          }
+        }
+      }
+    });
+
     // Lắng nghe sự kiện thay đổi để xử lý Phụ thuộc (Dependencies)
     body.addEventListener('change', function (e) {
       var changedName = e.target.name;
       if (changedName) {
         currentModalFormState[changedName] = e.target.value;
-        // Tìm các trường phụ thuộc vào trường vừa đổi
+        
+        // 1. Tính toán giá trị tự động (FormulaRule)
         globalFormSchema.forEach(function (f) {
-          if (f.dependsOn === changedName) {
-            currentModalFormState[f.name] = ''; // Reset state
-            var childInput = body.querySelector('input[name="' + f.name + '"]');
-            if (childInput) {
-              childInput.value = ''; // Xóa value ẩn
-              // Xóa luôn giá trị hiển thị trên màn hình nếu là combobox
-              var comboWrap = childInput.closest('.form-group');
-              if (comboWrap) {
-                var displayInp = comboWrap.querySelector('input.ui-input');
-                if (displayInp) displayInp.value = '';
+           if (f.formulaRule) {
+             var formula = f.formulaRule;
+             for (var key in currentModalFormState) {
+                var v = parseFloat(currentModalFormState[key]) || 0;
+                formula = formula.split('{' + key + '}').join(v);
+             }
+             try {
+                var result = new Function('return ' + formula)();
+                if (!isNaN(result) && isFinite(result)) {
+                   var targetInput = body.querySelector('input[name="' + f.name + '"]');
+                   if (targetInput && targetInput.value != result) {
+                      targetInput.value = result;
+                      currentModalFormState[f.name] = result;
+                      targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+                   }
+                }
+             } catch(e) {}
+           }
+        });
+        
+        // 2. Trigger API (Gọi API ngoài)
+        var changedSchema = globalFormSchema.find(function(s) { return s.name === changedName; });
+        if (changedSchema && changedSchema.triggerApi && e.target.value) {
+            var apiEndpoint = changedSchema.triggerApi;
+            var payload = Object.assign({}, currentModalFormState);
+            ApiClient.post(apiEndpoint, payload).then(function(res) {
+               var dataList = res.list || res.records || [];
+               if (dataList && dataList.length > 0) {
+                 var row = dataList[0];
+                 Object.keys(row).forEach(function (keyName) {
+                   var targetInput = body.querySelector('[name="' + keyName + '" i]');
+                   if (targetInput && targetInput.name !== changedName) {
+                     targetInput.value = row[keyName] || '';
+                     targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+                   }
+                 });
+               }
+            }).catch(function(){});
+        }
+
+        // 3. Tìm các trường phụ thuộc vào trường vừa đổi (DependsOn)
+        globalFormSchema.forEach(function (f) {
+          if (f.dependsOn) {
+            var parents = f.dependsOn.split(',').map(function (p) { return p.trim(); });
+            if (parents.includes(changedName)) {
+              currentModalFormState[f.name] = ''; // Reset state
+              var childInput = body.querySelector('input[name="' + f.name + '"]');
+              if (childInput) {
+                childInput.value = ''; // Xóa value ẩn
+                // Xóa luôn giá trị hiển thị trên màn hình nếu là combobox
+                var comboWrap = childInput.closest('.form-group') || childInput.closest('.df-col-12, .df-col-6, .df-col-4');
+                if (comboWrap) {
+                  var displayInp = comboWrap.querySelector('input.ui-input');
+                  if (displayInp) displayInp.value = '';
+                  
+                  // Khóa/Mở khóa ô con dựa trên việc CÓ BẤT KỲ ô cha nào đang trống hay không
+                  var hasEmptyParent = parents.some(function (p) { return !currentModalFormState[p]; });
+                  var allInps = comboWrap.querySelectorAll('input:not([type="hidden"]), select, textarea, button');
+                  allInps.forEach(function(el) { el.disabled = hasEmptyParent; });
+                  
+                  if (hasEmptyParent) comboWrap.classList.add('ui-input-disabled');
+                  else comboWrap.classList.remove('ui-input-disabled');
+                }
+                // Kích hoạt tiếp sự kiện change của thằng con để trigger chuỗi phụ thuộc (nếu có thằng cháu)
+                childInput.dispatchEvent(new Event('change', { bubbles: true }));
               }
             }
           }
@@ -2010,44 +2115,63 @@ window.DynamicFormEngine = (function () {
         break;
       }
       if (val && field.validateRule) {
-        var rule = field.validateRule.toLowerCase();
-        if (rule.startsWith('min:')) {
-          var min = parseInt(rule.split(':')[1]);
-          if (val.length < min) { Alert.warning('Lỗi nhập liệu', field.label + ' phải có ít nhất ' + min + ' ký tự'); isInvalid = true; break; }
-        } else if (rule.startsWith('max:')) {
-          var max = parseInt(rule.split(':')[1]);
-          if (val.length > max) { Alert.warning('Lỗi nhập liệu', field.label + ' không được vượt quá ' + max + ' ký tự'); isInvalid = true; break; }
-        } else if (rule === 'email') {
-          var emailRe = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-          if (!emailRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng Email'); isInvalid = true; break; }
-        } else if (rule === 'phone') {
-          var phoneRe = /(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})\b/;
-          if (!phoneRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng số điện thoại'); isInvalid = true; break; }
-        } else if (rule === 'number') {
-          var numRe = /^\d+$/;
-          if (!numRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' chỉ được phép nhập số'); isInvalid = true; break; }
-        } else if (rule === 'cccd') {
-          var cccdRe = /^\d{9}(\d{3})?$/;
-          if (!cccdRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' phải là 9 hoặc 12 số (CMND/CCCD)'); isInvalid = true; break; }
-        } else if (rule === 'url') {
-          var urlRe = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
-          if (!urlRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng đường dẫn trang web'); isInvalid = true; break; }
-        } else if (rule === 'taxcode') {
-          var taxRe = /^\d{10}(-\d{3})?$/;
-          if (!taxRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' phải là 10 hoặc 13 số (Mã số thuế)'); isInvalid = true; break; }
-        } else if (rule.startsWith('minval:')) {
-          var minVal = parseFloat(rule.split(':')[1]);
-          if (parseFloat(val) < minVal) { Alert.warning('Lỗi nhập liệu', field.label + ' phải lớn hơn hoặc bằng ' + minVal); isInvalid = true; break; }
-        } else if (rule.startsWith('maxval:')) {
-          var maxVal = parseFloat(rule.split(':')[1]);
-          if (parseFloat(val) > maxVal) { Alert.warning('Lỗi nhập liệu', field.label + ' phải nhỏ hơn hoặc bằng ' + maxVal); isInvalid = true; break; }
-        } else if (rule.startsWith('regex:')) {
-          var reStr = field.validateRule.substring(6);
-          try {
-            var re = new RegExp(reStr);
-            if (!re.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng yêu cầu'); isInvalid = true; break; }
-          } catch (e) { console.error('Lỗi Regex:', e); }
+        var rules = field.validateRule.split('|').map(function(r) { return r.trim(); });
+        for (var j = 0; j < rules.length; j++) {
+          var rawRule = rules[j];
+          var rule = rawRule.toLowerCase();
+          if (!rule || rule.startsWith('formula:') || rule.startsWith('trigger:')) continue;
+          
+          if (rule.startsWith('min:')) {
+            var min = parseInt(rule.split(':')[1]);
+            if (val.length < min) { Alert.warning('Lỗi nhập liệu', field.label + ' phải có ít nhất ' + min + ' ký tự'); isInvalid = true; break; }
+          } else if (rule.startsWith('max:')) {
+            var max = parseInt(rule.split(':')[1]);
+            if (val.length > max) { Alert.warning('Lỗi nhập liệu', field.label + ' không được vượt quá ' + max + ' ký tự'); isInvalid = true; break; }
+          } else if (rule === 'email') {
+            var emailRe = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+            if (!emailRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng Email'); isInvalid = true; break; }
+          } else if (rule === 'phone') {
+            var phoneRe = /(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})\b/;
+            if (!phoneRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng số điện thoại'); isInvalid = true; break; }
+          } else if (rule === 'number') {
+            var numRe = /^\d+$/;
+            if (!numRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' chỉ được phép nhập số'); isInvalid = true; break; }
+          } else if (rule === 'cccd') {
+            var cccdRe = /^\d{9}(\d{3})?$/;
+            if (!cccdRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' phải là 9 hoặc 12 số (CMND/CCCD)'); isInvalid = true; break; }
+          } else if (rule === 'url') {
+            var urlRe = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+            if (!urlRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng đường dẫn trang web'); isInvalid = true; break; }
+          } else if (rule === 'taxcode') {
+            var taxRe = /^\d{10}(-\d{3})?$/;
+            if (!taxRe.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' phải là 10 hoặc 13 số (Mã số thuế)'); isInvalid = true; break; }
+          } else if (rule.startsWith('minval:')) {
+            var minVal = parseFloat(rule.split(':')[1]);
+            if (parseFloat(val) < minVal) { Alert.warning('Lỗi nhập liệu', field.label + ' phải lớn hơn hoặc bằng ' + minVal); isInvalid = true; break; }
+          } else if (rule.startsWith('maxval:')) {
+            var maxVal = parseFloat(rule.split(':')[1]);
+            if (parseFloat(val) > maxVal) { Alert.warning('Lỗi nhập liệu', field.label + ' phải nhỏ hơn hoặc bằng ' + maxVal); isInvalid = true; break; }
+          } else if (rule.startsWith('regex:')) {
+            var reStr = rawRule.substring(6); // Dùng rawRule để không bị mất chữ Hoa/Thường của Regex
+            try {
+              var re = new RegExp(reStr);
+              if (!re.test(val)) { Alert.warning('Lỗi nhập liệu', field.label + ' không đúng định dạng yêu cầu'); isInvalid = true; break; }
+            } catch (e) { console.error('Lỗi Regex:', e); }
+          } else if (rule.startsWith('gt:')) {
+            var tF = rule.split(':')[1];
+            if (formInputData[tF] && parseFloat(val) <= parseFloat(formInputData[tF])) { Alert.warning('Lỗi nhập liệu', field.label + ' phải lớn hơn ô liên quan'); isInvalid = true; break; }
+          } else if (rule.startsWith('lt:')) {
+            var tF = rule.split(':')[1];
+            if (formInputData[tF] && parseFloat(val) >= parseFloat(formInputData[tF])) { Alert.warning('Lỗi nhập liệu', field.label + ' phải nhỏ hơn ô liên quan'); isInvalid = true; break; }
+          } else if (rule.startsWith('gte:')) {
+            var tF = rule.split(':')[1];
+            if (formInputData[tF] && parseFloat(val) < parseFloat(formInputData[tF])) { Alert.warning('Lỗi nhập liệu', field.label + ' phải lớn hơn hoặc bằng ô liên quan'); isInvalid = true; break; }
+          } else if (rule.startsWith('lte:')) {
+            var tF = rule.split(':')[1];
+            if (formInputData[tF] && parseFloat(val) > parseFloat(formInputData[tF])) { Alert.warning('Lỗi nhập liệu', field.label + ' phải nhỏ hơn hoặc bằng ô liên quan'); isInvalid = true; break; }
+          }
         }
+        if (isInvalid) break;
       }
     }
     if (isInvalid) return;
