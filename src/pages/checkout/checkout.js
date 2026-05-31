@@ -449,6 +449,11 @@ window.CheckoutPage = (function () {
       return;
     }
     
+    if (window.PeriodManager && window.PeriodManager.isDateLocked(_selectedContract.NgayToChuc)) {
+      if (typeof UIToast !== 'undefined') UIToast.show('Kỳ kế toán của ngày ' + _selectedContract.NgayToChuc + ' đã bị khóa. Không thể lưu Quyết toán!', 'danger');
+      return;
+    }
+
     if (typeof CheckoutService !== 'undefined') {
       var btn = document.getElementById('btn-save-checkout');
       var oldHtml = btn ? btn.innerHTML : '';

@@ -26,8 +26,8 @@ Dựa trên tài liệu `REQUIREMENT.md` và tiến độ hiện tại, dưới 
 
 ## 4. Quản trị Hệ thống & Cấu hình
 - [x] **Sao lưu dữ liệu**: Xử lý logic tạo file backup tự động với format `[TênDB]_YYYY_MM_DD_HH_mm_ss`.
-- [ ] **Khóa/Mở kỳ sử dụng**: Áp dụng logic chặn chặt chẽ (không cho lập phiếu Nhập/Xuất/Hợp đồng nếu kỳ đã bị khóa).
-- [ ] **Thiết lập Logo**: Cho phép cập nhật file ảnh `Qplaza\Logo\logo.jpg` vào hệ thống.
+- [x] **Khóa/Mở kỳ sử dụng**: Áp dụng logic chặn chặt chẽ (không cho lập phiếu Nhập/Xuất/Hợp đồng nếu kỳ đã bị khóa).
+- [x] **Thiết lập Logo**: Cho phép cập nhật file ảnh `Qplaza\Logo\logo.jpg` vào hệ thống.
 
 ## 5. Cảnh báo & Thống kê (Dashboard)
 - [x] **Widget Cảnh báo thanh toán**: Hiển thị trên Dashboard danh sách các hợp đồng sắp đến hạn thanh toán (trong vòng 7 ngày) hoặc đã quá hạn (cảnh báo đỏ).

@@ -266,6 +266,10 @@ var BookingPage = (function () {
       var dtdaidien = $container.querySelector('#inp-dtdai-dien').value;
       var email = $container.querySelector('#inp-email').value;
       var eventDate = $container.querySelector('#inp-ngaytochuc').value;
+      if (window.PeriodManager && window.PeriodManager.isDateLocked(eventDate)) {
+        if (typeof UIToast !== 'undefined') UIToast.show('Kỳ kế toán của ngày ' + eventDate + ' đã bị khóa. Không thể lưu dữ liệu!', 'danger');
+        return;
+      }
       var caTiec = $container.querySelector('#sel-catiec').value;
       var banMan = parseInt($container.querySelector('#inp-ban-man').value) || 0;
       var banManDp = parseInt($container.querySelector('#inp-ban-man-dp').value) || 0;

@@ -60,7 +60,11 @@ $cssFiles = @(
 # ====== DANH SACH JS ======
 $jsFiles = @(
   "js\data\mockData.js",
+  "js\utils\apiClient.js",
   "js\utils\permission.js",
+  "js\utils\DocumentExportPlugin.js",
+  "js\utils\FormBuilderPlugin.js",
+  "js\utils\WorkflowTransferPlugin.js",
   "js\core\EventBus.js",
   "js\core\KeyboardManager.js",
   "js\utils\FormatUtils.js",
@@ -74,6 +78,8 @@ $jsFiles = @(
   "js\services\CheckoutService.js",
   "js\services\PermissionsService.js",
   "js\services\MenusService.js",
+  "js\services\ReportService.js",
+  "js\services\PeriodManager.js",
   "components\compare-badge\CompareBadge.js",
   "components\metric-card\MetricCard.js",
   "components\sparkline\SparklineChart.js",
@@ -119,7 +125,8 @@ $jsFiles = @(
   "components\sidebar\Sidebar.js",
   "components\search-dropdown\SearchDropdown.js",
   "components\side-panel\SidePanel.js",
-  "components\screen-capture\ScreenCapture.js"
+  "components\screen-capture\ScreenCapture.js",
+  "components\rule-builder\RuleBuilderDialog.js"
 )
 
 # --- Build CSS ---

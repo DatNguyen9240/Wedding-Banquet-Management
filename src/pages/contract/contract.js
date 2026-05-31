@@ -1904,6 +1904,10 @@ var ContractPage = (function () {
     var tencodau = document.getElementById('inp-tencodau') ? document.getElementById('inp-tencodau').value.trim() : '';
     var dienthoai = document.getElementById('inp-dienthoai') ? document.getElementById('inp-dienthoai').value.trim() : '';
     var ngaytochuc = document.getElementById('inp-ngaytochuc') ? document.getElementById('inp-ngaytochuc').value : '';
+    if (window.PeriodManager && window.PeriodManager.isDateLocked(ngaytochuc)) {
+      if (typeof UIToast !== 'undefined') UIToast.show('Kỳ kế toán của ngày ' + ngaytochuc + ' đã bị khóa. Không thể lưu Hợp đồng!', 'danger');
+      return;
+    }
     var banman = parseInt(document.getElementById('inp-ban-man') ? document.getElementById('inp-ban-man').value : 0) || 0;
     var banmanDuPhong = parseInt(document.getElementById('inp-duphong-man') ? document.getElementById('inp-duphong-man').value : 0) || 0;
     var banchay = parseInt(document.getElementById('inp-ban-chay') ? document.getElementById('inp-ban-chay').value : 0) || 0;
