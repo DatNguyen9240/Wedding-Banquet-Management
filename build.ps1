@@ -71,6 +71,7 @@ $jsFiles = @(
   "js\services\BookingService.js",
   "js\services\VisitorService.js",
   "js\services\ContractService.js",
+  "js\services\CheckoutService.js",
   "js\services\PermissionsService.js",
   "js\services\MenusService.js",
   "components\compare-badge\CompareBadge.js",

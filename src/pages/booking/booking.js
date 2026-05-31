@@ -4,51 +4,118 @@
  */
 var BookingPage = (function () {
   var $container;
-
-  var bookingData = [
-    { id: 'BNCC-260101', customerName: 'Trương Tuấn Anh & Trần Thủy Tiên', phone: '0901234567', eventDate: '15/11/2026', totalTables: 30, hall: 'Sảnh Kim Cương (Chính)', deposit: '20,000,000', status: 'Đã cọc lần 1' },
-    { id: 'BNCC-260102', customerName: 'Lê Mai Hoa & Nguyễn Văn Toàn', phone: '0987654321', eventDate: '20/11/2026', totalTables: 45, hall: 'Sảnh Ngọc Trai (Chính)', deposit: '50,000,000', status: 'Đã cọc lần 2' }
-  ];
-
-  // Khai báo Object chung để quản lý bộ lọc dễ dàng dán vào các input Date/Search sau này
-  var filterParams = {
-    Keyword: "",
-    TuNgay: "",
-    DenNgay: ""
-  };
+  var bookingPanel = null;
 
   function render(containerElement) {
     $container = containerElement;
 
-    bookingData = [];
+    if (typeof DynamicFormEngine === 'undefined') {
+      var script = document.createElement('script');
+      script.src = './src/js/core/DynamicFormEngine.js?v=' + Date.now();
+      script.onload = function () { _doRender(); };
+      document.body.appendChild(script);
+    } else {
+      _doRender();
+    }
+  }
 
+  function _doRender() {
     fetch('./src/pages/booking/booking.html')
       .then(function (res) { return res.text(); })
       .then(function (html) {
         $container.innerHTML = html;
+        var listContainer = $container.querySelector('#booking-list-view');
 
-        // Bắt tham số date hoặc id từ URL (ví dụ: ?date=2023-03-03 hoặc ?id=BN123)
-        var hashParts = window.location.hash.split('?');
-        if (hashParts.length > 1) {
-          var params = new URLSearchParams(hashParts[1]);
-          var dateParam = params.get('date');
-          var idParam = params.get('id');
-          
-          if (dateParam) {
-            filterParams.TuNgay = dateParam;
-            filterParams.DenNgay = dateParam;
+        // Đăng ký Plugin Toolbar cho DynamicFormEngine
+        if (!window.FormActionPlugins) window.FormActionPlugins = [];
+        window.FormActionPlugins = window.FormActionPlugins.filter(function (p) { return p.id !== 'booking_plugin'; });
+        window.FormActionPlugins.push({
+          id: 'booking_plugin',
+          getExtraButtons: function (formName, getSelected) {
+            if (formName !== 'frmBiennhancoccho') return [];
+            return [
+              {
+                text: 'Thêm Cọc Lần 1', icon: 'add_circle', type: 'tool',
+                onClick: function () { openForm('add1', null); }
+              },
+              {
+                text: 'Thay đổi Cọc', icon: 'edit', type: 'tool',
+                onClick: function () {
+                  var selected = getSelected();
+                  if (!selected || selected.length === 0) return (typeof UIToast !== 'undefined' ? UIToast.show('Vui lòng chọn 1 Biên nhận!', 'warning') : alert('Vui lòng chọn 1 Biên nhận!'));
+                  openForm('edit', selected[0]);
+                }
+              },
+              {
+                text: 'Cọc Lần 2', icon: 'payments', type: 'tool',
+                onClick: function () {
+                  var selected = getSelected();
+                  if (!selected || selected.length === 0) return (typeof UIToast !== 'undefined' ? UIToast.show('Vui lòng chọn Biên nhận để cọc lần 2!', 'warning') : alert('Chọn Biên nhận!'));
+                  openForm('add2', selected[0]);
+                }
+              },
+              {
+                text: 'Hủy Cọc', icon: 'delete', type: 'tool',
+                onClick: function () {
+                  var selected = getSelected();
+                  if (!selected || selected.length === 0) return (typeof UIToast !== 'undefined' ? UIToast.show('Vui lòng chọn Biên nhận để hủy!', 'warning') : alert('Chọn Biên nhận!'));
+                  var docId = selected[0].MaChungTu || selected[0].id;
+                  if (typeof ConfirmModal !== 'undefined') {
+                    ConfirmModal.show({
+                      title: 'Hủy Phiếu Cọc',
+                      message: 'Bạn có chắc chắn muốn hủy phiếu cọc <b>' + docId + '</b> không?',
+                      onConfirm: function () {
+                        if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
+                          BookingService.cancel({ DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' }).then(function () {
+                            if (typeof UIToast !== 'undefined') UIToast.show('Hủy phiếu cọc thành công', 'success');
+                            _refreshGrid();
+                          }).catch(function () { if (typeof UIToast !== 'undefined') UIToast.show('Lỗi hủy phiếu', 'danger'); });
+                        } else {
+                          if (typeof UIToast !== 'undefined') UIToast.show('Chưa cấu hình API CANCEL', 'warning');
+                        }
+                      }
+                    });
+                  }
+                }
+              },
+              {
+                text: 'Lập Hợp Đồng', icon: 'description', type: 'tool',
+                onClick: function () {
+                  var selected = getSelected();
+                  if (!selected || selected.length === 0) return (typeof UIToast !== 'undefined' ? UIToast.show('Vui lòng chọn Biên nhận!', 'warning') : alert('Chọn Biên nhận!'));
+                  var docId = selected[0].MaChungTu || selected[0].id;
+                  window.location.hash = '#/contract?bookingId=' + docId;
+                }
+              }
+            ];
           }
-          if (idParam) {
-            filterParams.Keyword = idParam;
-            // Xóa bộ lọc ngày nếu đang tìm theo ID cụ thể
-            filterParams.TuNgay = "";
-            filterParams.DenNgay = "";
-          }
+        });
+
+        if (typeof DynamicFormEngine !== 'undefined') {
+          DynamicFormEngine.render(listContainer, {
+            FormName: 'frmBiennhancoccho',
+            PageTitle: 'Biên Nhận Cọc Chỗ',
+            PageSubtitle: 'Quản lý đặt cọc và lịch đặt tiệc',
+            HideAddBtn: true,
+            HideEditBtn: true,
+            HideDeleteBtn: true,
+            HideFilterBtn: true,
+            onRowDblClick: function(rData) {
+              openForm('edit', rData);
+            }
+          });
         }
 
-        _bindEvents();
-        _loadData();
+        _bindFormEvents();
+        _loadDropdownData();
       });
+  }
+
+  function _refreshGrid() {
+    var grid = document.querySelector('#booking-list-view .dx-datagrid');
+    if (grid && window.jQuery) {
+      window.jQuery(grid).dxDataGrid('instance').refresh();
+    }
   }
 
   var hallRecords = [];
@@ -57,22 +124,22 @@ var BookingPage = (function () {
     var container = $container.querySelector('#container-sanh-phu');
     if (!container) return;
     container.innerHTML = '';
-    
+
     if (!sanhChinhId) {
       container.innerHTML = '<span class="text-secondary" style="font-size: 12px; margin: auto; font-style: italic;">Vui lòng chọn Sảnh Chính trước</span>';
       return;
     }
-    
-    var filtered = hallRecords.filter(function(r) { return r.Sanhtiecid !== sanhChinhId; });
+
+    var filtered = hallRecords.filter(function (r) { return r.Sanhtiecid !== sanhChinhId; });
     if (filtered.length === 0) {
       container.innerHTML = '<span class="text-secondary" style="font-size: 12px; margin: auto; font-style: italic;">Không có sảnh phụ nào khác</span>';
       return;
     }
-    
-    filtered.forEach(function(h) {
+
+    filtered.forEach(function (h) {
       var isChecked = (selectedIds || []).includes(h.Sanhtiecid) ? 'checked' : '';
       container.innerHTML += `
-      <label class="modern-checkbox-wrapper mb-0" style="font-size: 13px; background: white; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--color-border); min-width: 160px; display: flex; flex-direction: column; cursor: pointer; transition: all 0.2s;">
+      <label class="modern-checkbox-wrapper mb-0" style="font-size: 13px; background: var(--color-surface); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--color-border); min-width: 160px; display: flex; flex-direction: column; cursor: pointer; transition: all 0.2s;">
         <div class="d-flex align-items-center gap-2">
           <input type="checkbox" class="modern-checkbox chk-sanh-phu" value="${h.Sanhtiecid}" ${isChecked}>
           <span style="font-weight: 600; color: var(--color-primary);">${h.Tensanhtiec}</span>
@@ -83,20 +150,7 @@ var BookingPage = (function () {
     });
   }
 
-  function _loadData() {
-    var tbody = $container.querySelector('#booking-table tbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4" style="color: var(--color-text-secondary);">Đang tải dữ liệu...</td></tr>';
-
-    BookingService.getList(filterParams)
-      .then(function (data) {
-        bookingData = data;
-        _renderTable();
-      })
-      .catch(function (err) {
-        console.error('Lỗi Load:', err);
-        if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger py-4">Lỗi kết nối API lấy danh sách cọc!</td></tr>';
-      });
-
+  function _loadDropdownData() {
     // Load Sảnh Tiệc
     if (typeof SystemDataService !== 'undefined') {
       SystemDataService.getHalls().then(function (records) {
@@ -107,13 +161,13 @@ var BookingPage = (function () {
           records.forEach(function (h) {
             selSanh.innerHTML += '<option value="' + h.Sanhtiecid + '">' + h.Tensanhtiec + ' (Max: ' + (h.Succhua || 0) + ')</option>';
           });
-          
-          selSanh.addEventListener('change', function() {
+
+          selSanh.addEventListener('change', function () {
             _renderSanhPhu(this.value, []);
           });
         }
-      }).catch(e => console.warn('Không load được sảnh', e));
-      
+      }).catch(function (e) { console.warn('Không load được sảnh', e); });
+
       // Load Loại Tiệc
       SystemDataService.getBanquetTypes().then(function (records) {
         var selLoaiTiec = $container.querySelector('#sel-loaitiec');
@@ -126,203 +180,23 @@ var BookingPage = (function () {
             selLoaiTiec.innerHTML += '<option value="' + idLoai + '" data-ishoinghi="' + isHoiNghiFlag + '">' + tenLoai + '</option>';
           });
         }
-      }).catch(e => console.warn('Không load được loại tiệc', e));
-    }
-  }
+      }).catch(function (e) { console.warn('Không load được loại tiệc', e); });
 
-  function _formatMoney(val) {
-    if (typeof val === 'string' && val.includes(',')) return val + ' đ';
-    var num = parseFloat(val);
-    if (isNaN(num)) return '0 đ';
-    return new Intl.NumberFormat('vi-VN').format(num) + ' đ';
-  }
-
-  function _renderTable() {
-    var tbody = $container.querySelector('#booking-table tbody');
-    tbody.innerHTML = '';
-    
-    if (!bookingData || bookingData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="text-center py-5" style="color: var(--color-text-secondary); font-size: 14px;">Không có dữ liệu cọc chỗ</td></tr>';
-      return;
-    }
-
-    bookingData.forEach((row, idx) => {
-      // Dùng tên trường của Backend trả về (TrangThai), dự phòng status cũ
-      var currentStatus = row.TrangThai || row.status || '';
-      var statusClass = currentStatus.includes('lần 1') ? 'status-badge warning' :
-        currentStatus.includes('Hủy') ? 'status-badge danger' : 'status-badge success';
-
-      var hallName = row.SanhDat || row.hall;
-      var hallHtml = hallName ? hallName : '<span style="color:var(--color-text-secondary);font-style:italic;">Chưa xác định</span>';
-
-      var tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="text-center">${idx + 1}</td>
-        <td class="fw-semibold" style="color: var(--color-primary);">${row.MaChungTu || row.id}</td>
-        <td class="fw-medium">${row.TenKhachHang || row.customerName}</td>
-        <td>${row.DienThoai || row.phone}</td>
-        <td><span style="background: rgba(148, 163, 184, 0.1); padding:2px 8px; border-radius:4px; font-weight:500; border:1px solid var(--color-border);">${row.NgayToChuc || row.eventDate}</span></td>
-        <td class="text-end">${row.SoBan != null ? row.SoBan : row.totalTables} bàn</td>
-        <td>${hallHtml}</td>
-        <td class="text-end fw-semibold" style="color: var(--color-success);">${_formatMoney(row.DaCocVND != null ? row.DaCocVND : row.deposit)}</td>
-        <td class="text-center"><span class="${statusClass}">${currentStatus}</span></td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function _bindEvents() {
-    var filterContainer = $container.querySelector('#booking-filter');
-    if (filterContainer && typeof UIFilter !== 'undefined') {
-      UIFilter.create(filterContainer, {
-        keyword: true,
-        keywordPlaceholder: 'Tìm Mã phiếu, Số ĐT...',
-        dateRange: true,
-        dateLabel: 'Ngày tổ chức',
-        status: [
-          { value: '1', label: 'Giữ chỗ (Lần 1)' },
-          { value: '2', label: 'Giữ chỗ (Lần 2)' },
-          { value: '3', label: 'Đã lên Hợp đồng' },
-          { value: '4', label: 'Đã hủy' }
-        ],
-        onFilter: function(params) {
-          filterParams.Keyword = params.keyword || '';
-          filterParams.TuNgay = params.fromDate || '';
-          filterParams.DenNgay = params.toDate || '';
-          filterParams.TrangThai = params.status || '';
-          _loadData();
+      // Load Ca Tiệc
+      SystemDataService.getShifts().then(function (records) {
+        var selCaTiec = $container.querySelector('#sel-catiec');
+        if (selCaTiec && records.length > 0) {
+          selCaTiec.innerHTML = '<option value="">-- Chọn Ca Tiệc --</option>';
+          records.forEach(function (ca) {
+            selCaTiec.innerHTML += '<option value="' + ca.Thoigianid + '">' + (ca.Tenthoigian || ca.Thoigianid) + '</option>';
+          });
         }
-      });
+      }).catch(function (e) { console.warn('Không load được ca tiệc', e); });
     }
+  }
 
-    // Row selection logic
-    var tbody = $container.querySelector('#booking-table tbody');
-    if (window.UIControls && UIControls.utils && UIControls.utils.setupTableSelection) {
-      UIControls.utils.setupTableSelection(tbody);
-    } else {
-      tbody.addEventListener('click', function (e) {
-        var tr = e.target.closest('tr');
-        if (!tr) return;
-        Array.from(tbody.querySelectorAll('tr')).forEach(r => r.classList.remove('active'));
-        tr.classList.add('active');
-      });
-    }
-
-    $container.querySelector('#btn-add-deposit1').addEventListener('click', function () {
-      openForm('add1', null);
-    });
-    
-    var btnMobileAdd = $container.querySelector('#btn-add-deposit1-mobile');
-    if (btnMobileAdd) {
-      btnMobileAdd.addEventListener('click', function () {
-        openForm('add1', null);
-      });
-    }
-
-    $container.querySelector('#btn-add-deposit2').addEventListener('click', function () {
-      var selected = getSelectedRow();
-      if (!selected) {
-        UIToast.show('Vui lòng chọn một Biên nhận cọc để bổ sung cọc lần 2!', 'warning');
-        return;
-      }
-      openForm('add2', selected);
-    });
-
-    var btnEdit = $container.querySelector('#btn-edit-booking');
-    if (btnEdit) {
-      btnEdit.addEventListener('click', function() {
-        var selected = getSelectedRow();
-        if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận!', 'warning');
-        openForm('edit', selected); 
-      });
-    }
-
-    var btnCancel = $container.querySelector('#btn-cancel-booking');
-    if (btnCancel) {
-      btnCancel.addEventListener('click', function() {
-        var selected = getSelectedRow();
-        if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận để hủy!', 'warning');
-        var docId = selected.MaChungTu || selected.id;
-        ConfirmModal.show({
-          title: 'Hủy Phiếu Cọc',
-          message: 'Bạn có chắc chắn muốn hủy phiếu cọc <b>' + docId + '</b> không?',
-          onConfirm: function() {
-            if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
-              BookingService.cancel({ DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' }).then(function () {
-                UIToast.show('Hủy phiếu cọc thành công', 'success');
-                _loadData();
-              }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
-            } else {
-              UIToast.show('Chưa cấu hình API CANCEL', 'warning');
-            }
-          }
-        });
-      });
-    }
-
-    var btnCreateContract = $container.querySelector('#btn-create-contract');
-    if (btnCreateContract) {
-      btnCreateContract.addEventListener('click', function() {
-        var selected = getSelectedRow();
-        if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận!', 'warning');
-        var docId = selected.MaChungTu || selected.id;
-        window.location.hash = '#/contract?bookingId=' + docId;
-      });
-    }
-
-    var btnMore = $container.querySelector('#btn-booking-more');
-    if (btnMore) {
-      btnMore.addEventListener('click', function(e) {
-        var selected = getSelectedRow();
-        if (typeof UIContextMenu !== 'undefined') {
-          UIContextMenu.show(e, [
-            { 
-              label: 'Thay Đổi Cọc', 
-              icon: 'edit', 
-              onClick: function() { 
-                if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận!', 'warning');
-                openForm('edit', selected); 
-              } 
-            },
-            { 
-              label: 'Lập Hợp Đồng', 
-              icon: 'description', 
-              onClick: function() { 
-                if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận!', 'warning');
-                var docId = selected.MaChungTu || selected.id;
-                window.location.hash = '#/contract?bookingId=' + docId;
-              } 
-            },
-            '|',
-            { 
-              label: '<span class="text-danger">Hủy Phiếu Cọc</span>', 
-              icon: 'delete', 
-              onClick: function() { 
-                if (!selected) return UIToast.show('Vui lòng chọn một Biên nhận để hủy!', 'warning');
-                var docId = selected.MaChungTu || selected.id;
-                ConfirmModal.show({
-                  title: 'Hủy Phiếu Cọc',
-                  message: 'Bạn có chắc chắn muốn hủy phiếu cọc <b>' + docId + '</b> không?',
-                  onConfirm: function() {
-                    if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
-                      BookingService.cancel({ DocumentID: docId, Lydohuy: 'Khách yêu cầu hủy' }).then(function () {
-                        UIToast.show('Hủy phiếu cọc thành công', 'success');
-                        _loadData();
-                      }).catch(function () { UIToast.show('Lỗi hủy phiếu', 'danger'); });
-                    } else {
-                      UIToast.show('Chưa cấu hình API CANCEL', 'warning');
-                    }
-                  }
-                });
-              } 
-            }
-          ]);
-        }
-      });
-    }
-
+  function _bindFormEvents() {
     // Form events - using the new UISidePanel component
-    var bookingPanel = null;
     if (window.UISidePanel) {
       var panelEl = $container.querySelector('#booking-form-panel');
       if (panelEl) bookingPanel = new UISidePanel(panelEl);
@@ -400,9 +274,9 @@ var BookingPage = (function () {
       var sanhId = $container.querySelector('#sel-sanh').value;
       var dsSanh = [];
       if (sanhId) dsSanh.push({ Sanhtiecid: sanhId, IsSanhchinh: 1 });
-      
+
       var chkPhu = $container.querySelectorAll('.chk-sanh-phu:checked');
-      Array.from(chkPhu).forEach(function(chk) {
+      Array.from(chkPhu).forEach(function (chk) {
         dsSanh.push({ Sanhtiecid: chk.value, IsSanhchinh: 0 });
       });
 
@@ -440,9 +314,9 @@ var BookingPage = (function () {
       if (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.SAVE) {
         BookingService.save(payload)
           .then(function (res) {
-            UIToast.show('Lưu Biên nhận cọc thành công!', 'success');
+            if (typeof UIToast !== 'undefined') UIToast.show('Lưu Biên nhận cọc thành công!', 'success');
             closeForm();
-            _loadData();
+            _refreshGrid();
           })
           .catch(function (err) {
             console.error('Lỗi lưu Cọc:', err);
@@ -462,11 +336,11 @@ var BookingPage = (function () {
     }
 
     // Removed auto calculate total tables as the UI uses dp fields now
-    
+
     // Dynamic Form Loại Tiệc
     var selLoaiTiec = $container.querySelector('#sel-loaitiec');
     if (selLoaiTiec) {
-      selLoaiTiec.addEventListener('change', function() {
+      selLoaiTiec.addEventListener('change', function () {
         var selectedOption = this.options[this.selectedIndex];
         var isHoiNghi = selectedOption ? selectedOption.getAttribute('data-ishoinghi') : '0';
 
@@ -504,6 +378,7 @@ var BookingPage = (function () {
         }
       });
     }
+  }
 
   function openForm(mode, data) {
     var title = $container.querySelector('#booking-form-title');
@@ -545,7 +420,7 @@ var BookingPage = (function () {
       ltSel.value = '';
       ltSel.dispatchEvent(new Event('change'));
     }
-    $container.querySelector('#sel-catiec').value = 'T';
+    $container.querySelector('#sel-catiec').value = '';
     $container.querySelector('#inp-ban-man').value = '';
     var manDp = $container.querySelector('#inp-ban-man-dp');
     if (manDp) manDp.value = '';
@@ -565,7 +440,7 @@ var BookingPage = (function () {
     $container.querySelector('#inp-dtchure').value = data.DTchure || data.DienThoai || data.phone || '';
     $container.querySelector('#inp-tencodau').value = data.Tencodau || (names[1] ? names[1].trim() : '');
     $container.querySelector('#inp-dtcodau').value = data.DTcodau || '';
-    
+
     $container.querySelector('#inp-diachi').value = data.Diachi || '';
     $container.querySelector('#inp-nguoigd').value = data.Nguoigd || '';
     $container.querySelector('#inp-dtdai-dien').value = data.DienThoaiDaiDien || '';
@@ -588,11 +463,11 @@ var BookingPage = (function () {
       ltSel.dispatchEvent(new Event('change'));
     }
 
-    $container.querySelector('#sel-catiec').value = data.Thoigianid || 'T';
+    $container.querySelector('#sel-catiec').value = data.Thoigianid || '';
     $container.querySelector('#inp-ban-man').value = data.SobanManchinhthuc != null ? data.SobanManchinhthuc : (data.SoBan != null ? data.SoBan : data.totalTables);
     var manDp = $container.querySelector('#inp-ban-man-dp');
     if (manDp) manDp.value = data.SobanManduphong || 0;
-    
+
     $container.querySelector('#inp-ban-chay').value = data.SobanChaychinhthuc || 0;
     var chayDp = $container.querySelector('#inp-ban-chay-dp');
     if (chayDp) chayDp.value = data.SobanChayduphong || 0;
@@ -600,13 +475,13 @@ var BookingPage = (function () {
     $container.querySelector('#sel-sanh').value = ''; // Reset select
     _renderSanhPhu('', []);
     var currentHall = data.SanhDat || data.hall || '';
-    
+
     // Nếu có data.JsonSanhTiec, decode ra để fill sảnh chính và sảnh phụ
     var dsSanh = [];
     try {
       if (data.JsonSanhTiec) dsSanh = JSON.parse(data.JsonSanhTiec);
-    } catch(e) {}
-    
+    } catch (e) { }
+
     if (dsSanh.length > 0) {
       var sanhChinh = dsSanh.find(s => s.IsSanhchinh === 1 || s.IsSanhchinh === true);
       if (sanhChinh) {
@@ -640,17 +515,19 @@ var BookingPage = (function () {
         if (vnTienCoc) vnTienCoc.innerText = '';
       }
     }
-    
+
     $container.querySelector('#inp-ghichu').value = data.Ghichu || '';
   }
 
   function getSelectedRow() {
-    var activeRow = $container.querySelector('#booking-table tbody tr.active');
-    if (!activeRow) return null;
-    var index = Array.from(activeRow.parentNode.children).indexOf(activeRow);
-    return bookingData[index];
-  }
-
+    var cached = sessionStorage.getItem('selectedRows_frmBiennhancoccho');
+    if (cached) {
+      try {
+        var arr = JSON.parse(cached);
+        if (arr && arr.length > 0) return arr[0];
+      } catch (e) { }
+    }
+    return null;
   }
 
   return { render: render };

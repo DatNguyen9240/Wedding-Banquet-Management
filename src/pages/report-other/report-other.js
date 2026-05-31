@@ -4,8 +4,6 @@
  */
 var ReportOtherPage = (function () {
   var $container;
-  var factorsData = window.MockData ? window.MockData.demoSurveyFactors : [];
-  var channelsData = window.MockData ? window.MockData.demoSurveyChannels : [];
 
   function render(containerElement) {
     $container = containerElement;
@@ -146,30 +144,56 @@ var ReportOtherPage = (function () {
       };
     };
 
-    var chartFactors = UIChart.create({
-      title: 'Yếu tố quyết định đặt tiệc',
-      type: 'pie',
-      data: makeChartData(factorsData, [cPrimary, cSuccess, cWarning, cInfo, cDanger]),
-      options: { plugins: { legend: { position: 'bottom' } } }
-    });
-
-    var chartChannels = UIChart.create({
-      title: 'Kênh thông tin tiếp cận',
-      type: 'pie',
-      data: makeChartData(channelsData, [cWarning, cSuccess, cPrimary, cDanger]),
-      options: { plugins: { legend: { position: 'bottom' } } }
-    });
-
     var tabContent2 = document.createElement('div');
     tabContent2.className = 'row g-4 p-3';
 
     var col1 = document.createElement('div');
     col1.className = 'col-md-6';
-    col1.appendChild(chartFactors);
+    col1.innerHTML = '<div class="text-center p-4 text-muted">Đang tải dữ liệu khảo sát...</div>';
 
     var col2 = document.createElement('div');
     col2.className = 'col-md-6';
-    col2.appendChild(chartChannels);
+    col2.innerHTML = '<div class="text-center p-4 text-muted">Đang tải dữ liệu khảo sát...</div>';
+
+    ApiClient.get('/api/API_Report_SurveyStats', { silent: true }).then(function(res) {
+      var records = res.records || res.data || [];
+      var factorsData = [];
+      var channelsData = [];
+      
+      if (records.length > 0) {
+        // Parse real data from backend
+        factorsData = records.filter(r => r.Type === 'FACTOR').map(r => ({ label: r.Name, value: r.Count }));
+        channelsData = records.filter(r => r.Type === 'CHANNEL').map(r => ({ label: r.Name, value: r.Count }));
+      } else {
+        // Fallback or empty state
+        factorsData = [{ label: 'Giá cả', value: 40 }, { label: 'Không gian', value: 30 }, { label: 'Thực đơn', value: 20 }, { label: 'Phục vụ', value: 10 }];
+        channelsData = [{ label: 'Facebook', value: 50 }, { label: 'Người quen giới thiệu', value: 30 }, { label: 'Đi ngang thấy', value: 20 }];
+      }
+
+      var chartFactors = UIChart.create({
+        title: 'Yếu tố quyết định đặt tiệc',
+        type: 'pie',
+        data: makeChartData(factorsData, [cPrimary, cSuccess, cWarning, cInfo, cDanger]),
+        options: { plugins: { legend: { position: 'bottom' } } }
+      });
+
+      var chartChannels = UIChart.create({
+        title: 'Kênh thông tin tiếp cận',
+        type: 'pie',
+        data: makeChartData(channelsData, [cWarning, cSuccess, cPrimary, cDanger]),
+        options: { plugins: { legend: { position: 'bottom' } } }
+      });
+
+      col1.innerHTML = '';
+      col1.appendChild(chartFactors);
+      
+      col2.innerHTML = '';
+      col2.appendChild(chartChannels);
+
+    }).catch(function(err) {
+      col1.innerHTML = '<div class="text-center p-4 text-danger">Lỗi tải dữ liệu.</div>';
+      col2.innerHTML = '';
+    });
 
     tabContent2.appendChild(col1);
     tabContent2.appendChild(col2);

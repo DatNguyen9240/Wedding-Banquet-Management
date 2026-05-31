@@ -161,5 +161,8 @@ var WorkflowTransferPlugin = (function () {
     window.FormActionPlugins = window.FormActionPlugins || [];
     window.FormActionPlugins.push({ getExtraButtons: getExtraButtons });
 
-    return { init: init, getExtraButtons: getExtraButtons };
+    // Tự khởi động MutationObserver khi load (giống DocumentExportPlugin)
+    init();
+
+    return { getExtraButtons: getExtraButtons };
 })();

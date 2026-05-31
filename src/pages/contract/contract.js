@@ -93,9 +93,22 @@ var ContractPage = (function () {
               {
                 text: 'Lập Hợp Đồng',
                 icon: 'add_circle',
-                type: 'primary',
+                type: 'tool',
                 onClick: function() {
                   _showDetailView(true);
+                }
+              },
+              {
+                text: 'Thay đổi / Bổ sung',
+                icon: 'edit_document',
+                type: 'tool',
+                onClick: function() {
+                  var selected = getSelected();
+                  if (!selected || selected.length === 0) {
+                    if (typeof Alert !== 'undefined') Alert.warning('Cảnh báo', 'Vui lòng chọn 1 hợp đồng để lập phiếu Thay đổi/Bổ sung!');
+                    return;
+                  }
+                  _showThayDoiBoSungModal(selected[0]);
                 }
               },
               {
@@ -555,6 +568,7 @@ var ContractPage = (function () {
               <label>Tiền Đặt Cọc</label>
               <input type="text" inputmode="numeric" autocomplete="off" id="inp-tiencoc" class="ui-input text-end" value="${tiencocVal}" style="color: var(--color-success); font-weight: 700;">
               <div id="vn-tiencoc" style="font-size:11px; color:var(--color-success); margin-top:3px; min-height:16px; font-style:italic;"></div>
+              <div id="warn-tiencoc-40" style="font-size:12px; color:var(--color-danger); margin-top:3px; font-weight: 500; display: none;"></div>
             </div>
           </div>
         </div>
@@ -567,6 +581,7 @@ var ContractPage = (function () {
 
     if (typeof UIInput !== 'undefined' && UIInput.setupMoneyInput) {
       UIInput.setupMoneyInput(document.getElementById('inp-tiencoc'), document.getElementById('vn-tiencoc'));
+      document.getElementById('inp-tiencoc').addEventListener('input', _calc40PercentDeposit);
     }
 
     // Tải danh sách Sảnh, Ca, Loại tiệc động từ Database
@@ -702,6 +717,15 @@ var ContractPage = (function () {
     var $uuDaiContainer = document.createElement('div');
     $uuDaiContainer.id = 'uu-dai-tab-container';
 
+    var $ghiChuContainer = document.createElement('div');
+    $ghiChuContainer.id = 'ghi-chu-tab-container';
+
+    var $setupPrintContainer = document.createElement('div');
+    $setupPrintContainer.id = 'setup-print-tab-container';
+
+    var $doiHuyContainer = document.createElement('div');
+    $doiHuyContainer.id = 'doi-huy-tab-container';
+
     var tabs = UITabs.create([
       { title: 'Bàn Tiệc', content: $banTiecContainer },
       { title: 'Sảnh', content: $sanhContainer },
@@ -710,9 +734,9 @@ var ContractPage = (function () {
       { title: 'Thức uống', content: $thucUongContainer },
       { title: 'Dịch vụ', content: $dichVuContainer },
       { title: 'Ưu đãi', content: $uuDaiContainer },
-      { title: 'Ghi chú', content: '<div class="p-4"><p>Các điều khoản bổ sung in vào hợp đồng giấy.</p></div>' },
-      { title: 'Setup Print', content: '<div class="p-4"><p>Tùy chỉnh thông tin in ấn và thiết kế bảng tên.</p></div>' },
-      { title: 'Dời / Hủy', content: '<div class="p-4"><p>Logic xử lý dời ngày, hủy hợp đồng và tính phí phạt.</p></div>' }
+      { title: 'Ghi chú', content: $ghiChuContainer },
+      { title: 'Setup Print', content: $setupPrintContainer },
+      { title: 'Dời / Hủy', content: $doiHuyContainer }
     ]);
     document.getElementById('contract-tabs-container').appendChild(tabs);
 
@@ -722,6 +746,10 @@ var ContractPage = (function () {
     _renderThucDonChay();
     _renderThucUong();
     _renderDichVu();
+    _renderUuDai();
+    _renderGhiChu();
+    _renderSetupPrint();
+    _renderDoiHuy();
 
     // Bind real-time total update event listeners
     setTimeout(function() {
@@ -1147,6 +1175,163 @@ var ContractPage = (function () {
       </div>
     `;
     updateRealTimeTotal();
+  }
+
+  function _renderUuDai() {
+    var container = document.getElementById('uu-dai-tab-container');
+    if (!container) return;
+    
+    container.innerHTML = `
+      <div class="p-4">
+        <h5 class="fw-bold mb-4" style="color: var(--color-primary);">Chương trình Ưu đãi Áp dụng</h5>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <div class="card" style="border:1px solid var(--color-border); cursor:pointer;" onclick="this.querySelector('input').click()">
+              <div class="card-body d-flex align-items-center gap-3">
+                <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
+                <div>
+                  <div class="fw-bold">Tặng Bánh kem 3 tầng</div>
+                  <small class="text-muted">Áp dụng cho tiệc > 20 bàn</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card" style="border:1px solid var(--color-border); cursor:pointer;" onclick="this.querySelector('input').click()">
+              <div class="card-body d-flex align-items-center gap-3">
+                <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
+                <div>
+                  <div class="fw-bold">Tặng Tháp Champagne</div>
+                  <small class="text-muted">Kèm 2 chai Champagne</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card" style="border:1px solid var(--color-border); cursor:pointer;" onclick="this.querySelector('input').click()">
+              <div class="card-body d-flex align-items-center gap-3">
+                <input type="checkbox" style="width:20px; height:20px; cursor:pointer;">
+                <div>
+                  <div class="fw-bold">Giảm 5% Tổng bill</div>
+                  <small class="text-muted">Khách đặt cọc trước 6 tháng</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-4">
+          <label class="form-label fw-bold">Chiết khấu thủ công (nếu có)</label>
+          <div class="input-group" style="max-width: 300px;">
+            <input type="text" class="form-control" placeholder="Nhập số tiền..." id="inp-discount">
+            <span class="input-group-text">VNĐ</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function _renderGhiChu() {
+    var container = document.getElementById('ghi-chu-tab-container');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="p-4">
+        <h5 class="fw-bold mb-4" style="color: var(--color-primary);">Ghi chú Hợp đồng</h5>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Ghi chú cho Bếp</label>
+            <textarea class="form-control" rows="4" placeholder="Khách dị ứng hải sản, không ăn cay..."></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Ghi chú cho Quản lý Sảnh</label>
+            <textarea class="form-control" rows="4" placeholder="Chuẩn bị thêm 2 ghế trẻ em, lối đi rộng..."></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold">Ghi chú chung (In lên Hợp đồng)</label>
+            <textarea class="form-control" rows="6" placeholder="Các điều khoản cam kết thêm..."></textarea>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function _renderSetupPrint() {
+    var container = document.getElementById('setup-print-tab-container');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="p-4">
+        <h5 class="fw-bold mb-4" style="color: var(--color-primary);">Thiết lập Bảng Tên & In Ấn</h5>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Tên Cô Dâu (Trái)</label>
+            <input type="text" class="form-control" placeholder="Tên cô dâu hiển thị trên bảng...">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Tên Chú Rể (Phải)</label>
+            <input type="text" class="form-control" placeholder="Tên chú rể hiển thị trên bảng...">
+          </div>
+          <div class="col-md-12">
+            <label class="form-label fw-bold">Dòng chữ Chào mừng</label>
+            <input type="text" class="form-control" value="LỄ THÀNH HÔN">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Nhạc đón khách</label>
+            <select class="form-select">
+              <option>Nhạc Cổ điển hòa tấu</option>
+              <option>Nhạc Trẻ lãng mạn</option>
+              <option>Theo USB của khách</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Kịch bản MC</label>
+            <select class="form-select">
+              <option>Truyền thống trang trọng</option>
+              <option>Hiện đại, sôi động</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function _renderDoiHuy() {
+    var container = document.getElementById('doi-huy-tab-container');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="p-4">
+        <h5 class="fw-bold mb-4" style="color: var(--color-danger);">Dời ngày / Hủy hợp đồng</h5>
+        
+        <div class="alert alert-warning mb-4">
+          <i class="material-symbols-outlined align-middle me-2">warning</i>
+          <strong>Lưu ý:</strong> Việc dời ngày hoặc hủy tiệc sẽ phải tính phí phạt theo quy định. Sảnh hiện tại sẽ được giải phóng!
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Hình thức</label>
+            <select class="form-select" onchange="document.getElementById('doi-ngay-wrapper').style.display = this.value === 'doi' ? 'block' : 'none'">
+              <option value="doi">Dời ngày tiệc</option>
+              <option value="huy">Hủy hợp đồng</option>
+            </select>
+          </div>
+          <div class="col-md-4" id="doi-ngay-wrapper">
+            <label class="form-label fw-bold">Ngày tiệc mới</label>
+            <input type="date" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold text-danger">Phí phạt (VNĐ)</label>
+            <input type="text" class="form-control" placeholder="0">
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold">Lý do</label>
+            <textarea class="form-control" rows="3" placeholder="Ghi chú lý do dời/hủy..."></textarea>
+          </div>
+          <div class="col-12 text-end">
+            <button class="btn btn-danger px-4">Thực hiện Ghi nhận</button>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   function removeFood(type, index) {
@@ -1687,6 +1872,28 @@ var ContractPage = (function () {
     if (inpTongTien) {
       inpTongTien.value = tongtienhopdong.toLocaleString('vi-VN');
     }
+
+    // Update 40% calculation
+    _calc40PercentDeposit();
+  }
+
+  function _calc40PercentDeposit() {
+    var inpTong = document.getElementById('inp-tong-tien');
+    var inpCoc = document.getElementById('inp-tiencoc');
+    var warnDiv = document.getElementById('warn-tiencoc-40');
+    if (!inpTong || !inpCoc || !warnDiv) return;
+    
+    var tongTien = parseFloat(inpTong.value.replace(/[^0-9]/g, '')) || 0;
+    var tienCoc = parseFloat(inpCoc.value.replace(/[^0-9]/g, '')) || 0;
+    var require40 = tongTien * 0.4;
+    
+    if (tongTien > 0 && tienCoc < require40) {
+      var diff = require40 - tienCoc;
+      warnDiv.innerHTML = '<i class="material-symbols-outlined align-middle" style="font-size:14px">warning</i> Cần thu thêm ' + new Intl.NumberFormat('vi-VN').format(diff) + ' ₫ để đủ 40% (Cọc lần 2).';
+      warnDiv.style.display = 'block';
+    } else {
+      warnDiv.style.display = 'none';
+    }
   }
 
   function saveContract() {
@@ -1951,6 +2158,90 @@ var ContractPage = (function () {
     _switchTabUI('list');
     
     _isFromBooking = false;
+  }
+
+  function _showThayDoiBoSungModal(contract) {
+    if (typeof UIModal === 'undefined') {
+      console.warn('UIModal is not defined.');
+      return;
+    }
+
+    var content = document.createElement('div');
+    content.className = 'p-3';
+    content.innerHTML = `
+      <div class="alert alert-info mb-4">
+        <i class="material-symbols-outlined align-middle me-2">info</i>
+        Đang lập phiếu Yêu cầu Thay đổi / Bổ sung cho Hợp đồng: <b>` + (contract.Sohopdong || contract.AutoID || 'N/A') + `</b>
+      </div>
+      
+      <div class="row g-4">
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Người yêu cầu (Khách hàng)</label>
+          <input type="text" class="form-control" value="` + (contract.Tenkh || contract.Tencodau || '') + `">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Ngày yêu cầu</label>
+          <input type="date" class="form-control" value="` + new Date().toISOString().split('T')[0] + `">
+        </div>
+        
+        <div class="col-12">
+          <label class="form-label fw-bold">Nội dung thay đổi</label>
+          <div class="card p-3 border" style="background: var(--color-surface);">
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="chkChangeBan">
+              <label class="form-check-label" for="chkChangeBan">Thay đổi số lượng bàn tiệc</label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="chkChangeMenu">
+              <label class="form-check-label" for="chkChangeMenu">Đổi món ăn / Thức uống</label>
+            </div>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="chkChangeService">
+              <label class="form-check-label" for="chkChangeService">Thêm / Bớt Dịch vụ, Setup</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-bold">Chi tiết mô tả bổ sung</label>
+          <textarea class="form-control" rows="4" placeholder="Ví dụ: Tăng thêm 2 bàn chay, đổi súp cua thành súp bào ngư..."></textarea>
+        </div>
+        
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Ký duyệt của Bếp / Sảnh</label>
+          <select class="form-select">
+            <option>Chờ duyệt</option>
+            <option>Đã xác nhận</option>
+            <option>Không thể đáp ứng</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Phụ thu (Nếu có)</label>
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="0">
+            <span class="input-group-text">VNĐ</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    var m = UIModal.show({
+      title: 'Phiếu Thay đổi - Bổ sung',
+      width: '700px',
+      content: content,
+      footer: '<button class="btn btn-outline-secondary btn-close-modal">Hủy</button>' +
+              '<button class="btn btn-outline-primary ms-2" onclick="window.print()"><i class="material-symbols-outlined align-middle" style="font-size:18px;">print</i> In Phiếu</button>' +
+              '<button class="btn btn-primary ms-2" id="btn-save-change">Lưu Yêu Cầu</button>'
+    });
+
+    m.node.querySelector('.btn-close-modal').onclick = function() {
+      m.closeNow();
+    };
+
+    m.node.querySelector('#btn-save-change').onclick = function() {
+      if (typeof Alert !== 'undefined') Alert.success('Thành công', 'Đã lưu Phiếu Thay đổi - Bổ sung!');
+      m.closeNow();
+    };
   }
 
   return { 

@@ -72,6 +72,8 @@ window.API_CONFIG = {
         },
         REPORTS: {
             SALES_STATS: '/api/API_Report_SalesStats',
+            REVENUE: '/api/API_Report_Revenue',
+            COST: '/api/API_Report_Cost',
         },
         VISITOR: {
             LIST: '/api/API_DanhSachKhachDen',
@@ -81,9 +83,10 @@ window.API_CONFIG = {
             LIST: '/api/API_DanhSachNhanVien',
             SAVE: '/api/API_LuuNhanVien',
         },
-        REPORTS: {
-            REVENUE: '/api/API_Report_Revenue',
-            COST: '/api/API_Report_Cost',
+        CHECKOUT: {
+            LIST: '/api/API_DanhSachQuyetToan',
+            SAVE: '/api/API_LuuQuyenToan',
+            CONTRACT_LIST: '/api/API_DanhSachHopDong',
         },
         MENUS: {
             GET_ALL: '/api/API_LayDanhSachMenuTatCa',

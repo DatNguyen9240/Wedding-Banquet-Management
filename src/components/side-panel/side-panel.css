@@ -27,10 +27,10 @@
   top: 0;
   right: -1000px;
   width: 100%;
-  max-width: 800px;
+  max-width: 650px;
   height: 100vh;
   background: var(--color-surface);
-  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.25);
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.12);
   z-index: 10001;
   display: none;
   flex-direction: column;

@@ -414,7 +414,7 @@ window.DynamicFormEngine = (function () {
               _openEditForm(selectedRows[0]);
             }
           } : 'DISABLED'),
-          onDelete: _hasPermission('DELETE') ? function () {
+          onDelete: MODULE_CONFIG.HideDeleteBtn ? false : _hasPermission('DELETE') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectDelete);
 
             // Hàm thực thi xóa gọi API
@@ -476,7 +476,7 @@ window.DynamicFormEngine = (function () {
               }
             }
           } : false,
-          onFilter: function () {
+          onFilter: MODULE_CONFIG.HideFilterBtn ? false : function () {
             var filterContainer = $container.querySelector('#dynamic-filter-container');
             if (filterContainer) {
               if (filterContainer.style.display === 'none') {
@@ -497,10 +497,11 @@ window.DynamicFormEngine = (function () {
 
         // Custom Buttons
         var hasAdd = _hasPermission('ADD');
-        var btnBulkAdd = UIButton.create({
-          text: 'Thêm nhiều',
-          icon: 'post_add',
-          type: 'tool',
+        if (!MODULE_CONFIG.HideAddBtn) {
+          var btnBulkAdd = UIButton.create({
+            text: 'Thêm nhiều',
+            icon: 'post_add',
+            type: 'tool',
           disabled: !hasAdd,
           onClick: function () {
             if (!hasAdd) return typeof Alert !== 'undefined' ? Alert.warning('Từ chối', 'Bạn không có quyền thao tác chức năng này!') : null;
@@ -515,6 +516,7 @@ window.DynamicFormEngine = (function () {
           btnAddOriginal.parentNode.insertBefore(btnBulkAdd, btnAddOriginal.nextSibling);
         } else {
           toolbar.insertBefore(btnBulkAdd, toolbar.firstChild);
+        }
         }
 
 
@@ -689,8 +691,9 @@ window.DynamicFormEngine = (function () {
         lastTimestamp = result._timestamp || '';
         var dataList = result.list || result.records || [];
         gridData = dataList.map(function (item) {
-          // Gắn ID tạm để Table hoạt động
-          item.id = item[MODULE_CONFIG.PrimaryKey] || item.Id || item.AutoID || Math.random();
+          // Lấy khóa chính từ cấu hình, nếu không có thì tự động lấy cột đầu tiên của dữ liệu
+          var firstKey = Object.keys(item).length > 0 ? Object.keys(item)[0] : null;
+          item.id = item[MODULE_CONFIG.PrimaryKey] || (firstKey ? item[firstKey] : null) || Math.random();
           return item;
         });
 
@@ -848,6 +851,13 @@ window.DynamicFormEngine = (function () {
           var idx = Array.from(tbody.children).indexOf(tr);
           var rData = gridData[idx];
           if (!rData) return;
+
+          if (typeof MODULE_CONFIG.onRowDblClick === 'function') {
+            MODULE_CONFIG.onRowDblClick(rData);
+            return;
+          }
+
+          if (MODULE_CONFIG.HideEditBtn) return;
 
           // Nếu đang chọn nhiều dòng (và dòng được double click nằm trong số đó) thì mở sửa hàng loạt
           if (selectedRows.length > 1 && selectedRows.find(function (sr) { return sr.id === rData.id; })) {

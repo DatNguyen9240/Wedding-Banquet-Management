@@ -16,71 +16,8 @@
   }
 </style>
 
-<div class="page-title-bar">
-  <div class="page-title-info">
-    <h1 class="page-title-heading">Biên Nhận Cọc Chỗ</h1>
-    <span class="page-title-sub">Quản lý đặt cọc và lịch đặt tiệc</span>
-  </div>
-  <div class="page-title-actions" id="booking-toolbar-slot"></div>
-</div>
-
-<!-- THANH CÔNG CỤ DESKTOP -->
-<div class="d-none d-md-flex flex-row align-items-center gap-4 mb-4" style="border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-background); box-shadow: 0 1px 2px rgba(0,0,0,0.02); animation: slideUp 0.3s ease forwards; padding: 12px 20px;">
-  <div class="d-flex align-items-center gap-2" id="btn-add-deposit1" style="color: var(--color-text-secondary); font-weight: 500; font-size: 13px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-secondary)'">
-    <span class="material-symbols-outlined" style="font-size: 18px;">add_circle</span>Thêm Cọc Lần 1
-  </div>
-  <div class="d-flex align-items-center gap-2" id="btn-edit-booking" style="color: var(--color-text-secondary); font-weight: 500; font-size: 13px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-secondary)'">
-    <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>Thay đổi Cọc
-  </div>
-  <div class="d-flex align-items-center gap-2" id="btn-add-deposit2" style="color: var(--color-text-secondary); font-weight: 500; font-size: 13px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='var(--color-text-secondary)'">
-    <span class="material-symbols-outlined" style="font-size: 18px;">payments</span>Tiếp nhận Cọc Lần 2
-  </div>
-  <div style="width: 1px; height: 16px; background: var(--color-border);"></div>
-  <div class="d-flex align-items-center gap-2" id="btn-cancel-booking" style="color: var(--color-danger); font-weight: 500; font-size: 13px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">
-    <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>Hủy Cọc
-  </div>
-  <div class="d-flex align-items-center gap-2" id="btn-create-contract" style="color: var(--color-primary); font-weight: 500; font-size: 13px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-    <span class="material-symbols-outlined" style="font-size: 18px;">description</span>Lập Hợp Đồng
-  </div>
-</div>
-
-<!-- THANH CÔNG CỤ MOBILE -->
-<div class="d-flex d-md-none align-items-center mb-4 gap-2" style="animation: slideUp 0.3s ease forwards;">
-  <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-add-deposit1-mobile" style="border-radius: 8px;">
-    <span class="material-symbols-outlined" style="font-size: 20px;">add_circle</span>Thêm Cọc Mới
-  </button>
-  
-  <button class="btn btn-secondary ms-auto d-flex align-items-center justify-content-center shadow-sm" id="btn-booking-more" style="width: 38px; height: 38px; padding: 0; border-radius: 8px; background: white;" title="Tùy chọn khác">
-    <span class="material-symbols-outlined">more_vert</span>
-  </button>
-</div>
-
-<!-- BỘ LỌC (FILTER) -->
-<div id="booking-filter" class="mb-4" style="animation: slideUp 0.3s ease forwards;"></div>
-
-<!-- DATAGRID -->
-<div class="card" style="animation: slideUp 0.4s ease forwards;">
-  <div class="table-responsive" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
-    <table class="data-table selectable" id="booking-table" style="min-width: 1000px; white-space: nowrap;">
-      <thead>
-        <tr>
-          <th class="text-center" style="width: 50px;">STT</th>
-          <th>Số Phiếu</th>
-          <th>Tên Khách Hàng (Cặp Đôi)</th>
-          <th>Điện Thoại</th>
-          <th>Ngày Tổ Chức</th>
-          <th class="text-end">Số Bàn</th>
-          <th>Sảnh Đặt</th>
-          <th class="text-end">Đã Cọc (VNĐ)</th>
-          <th class="text-center">Trạng thái</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Render by JS -->
-      </tbody>
-    </table>
-  </div>
-</div>
+<!-- DANH SÁCH FORM ĐỘNG -->
+<div id="booking-list-view" style="width: 100%; animation: slideUp 0.3s ease forwards;"></div>
 
 <!-- Khung Trượt Form (Slide-over Panel) -->
 <div id="booking-form-panel">
@@ -173,9 +110,7 @@
           <div class="col-md-6">
             <label class="form-label">Ca tiệc</label>
             <select id="sel-catiec" class="ui-input w-100">
-              <option value="S">Sáng (08h-11h)</option>
-              <option value="T" selected>Trưa (11h-14h)</option>
-              <option value="C">Chiều (17h-22h)</option>
+              <option value="">-- Chọn Ca Tiệc --</option>
             </select>
           </div>
           <div class="col-md-6">
@@ -222,7 +157,7 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Sảnh Phụ (Ghép sảnh - Tùy chọn)</label>
-          <div id="container-sanh-phu" class="d-flex flex-wrap gap-3 p-3" style="border: 1px solid var(--color-border); border-radius: 8px; background: #f8fafc; min-height: 60px; max-height: 200px; overflow-y: auto;">
+          <div id="container-sanh-phu" class="d-flex flex-wrap gap-3 p-3" style="border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-background); min-height: 60px; max-height: 200px; overflow-y: auto;">
             <span class="text-secondary" style="font-size: 12px; margin: auto; font-style: italic;">Vui lòng chọn Sảnh Chính trước</span>
           </div>
         </div>

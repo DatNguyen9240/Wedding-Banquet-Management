@@ -3,10 +3,10 @@
  */
 document.addEventListener('DOMContentLoaded', function () {
   // 0. Global Auth Logic
-  window.logoutApp = function() {
+  window.logoutApp = function () {
     // Gọi API đăng xuất (background)
     if (typeof ApiClient !== 'undefined' && window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.AUTH.LOGOUT) {
-      ApiClient.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT).catch(function(){});
+      ApiClient.post(API_CONFIG.ENDPOINTS.AUTH.LOGOUT).catch(function () { });
     }
 
     localStorage.removeItem('pmql_user');
@@ -91,13 +91,4 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // 5. Khởi tạo Plugin xuất tài liệu
-  if (typeof DocumentExportPlugin !== 'undefined') {
-    DocumentExportPlugin.init();
-  }
-
-  // 6. Khởi tạo Plugin luồng nghiệp vụ
-  if (typeof WorkflowTransferPlugin !== 'undefined') {
-    WorkflowTransferPlugin.init();
-  }
 });

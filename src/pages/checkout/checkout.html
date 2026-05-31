@@ -1,0 +1,39 @@
+<div class="checkout-module-container" style="display:flex; flex-direction:column; min-height: 80vh; width: 100%;">
+  <!-- Tabs Navigation Custom -->
+  <div class="checkout-tabs-header"
+    style="background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 0 24px; display: flex; gap: 16px; width: 100%;">
+    <button id="checkout-tab-list-btn" class="custom-tab-btn active"
+      style="padding: 12px 16px; font-weight: 500; font-size: 14px; color: var(--color-primary); background: transparent; border: none; border-bottom: 2px solid var(--color-primary); cursor: pointer;">
+      Danh sách Quyết toán
+    </button>
+    <button id="checkout-tab-detail-btn" class="custom-tab-btn"
+      style="padding: 12px 16px; font-weight: 500; font-size: 14px; color: var(--color-text-secondary); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer;">
+      Chi tiết Quyết toán
+    </button>
+  </div>
+
+  <style>
+    .custom-tab-btn:hover {
+      color: var(--color-primary) !important;
+    }
+
+    .custom-tab-btn.active {
+      color: var(--color-primary) !important;
+      border-bottom-color: var(--color-primary) !important;
+    }
+  </style>
+
+  <!-- Tabs Content -->
+  <div class="tab-content" style="flex:1; width: 100%;" id="checkoutTabsContent">
+
+    <!-- PANE 1: LIST -->
+    <div id="checkout-tab-list-pane" style="display: block; padding: 0; width: 100%;">
+      <div id="checkout-list-view" style="width: 100%;"></div>
+    </div>
+
+    <!-- PANE 2: DETAIL -->
+    <div id="checkout-tab-detail-pane" style="display: none; padding: 24px 0; width: 100%;">
+      <div id="checkout-detail-view" style="width: 100%;"></div>
+    </div>
+  </div>
+</div>

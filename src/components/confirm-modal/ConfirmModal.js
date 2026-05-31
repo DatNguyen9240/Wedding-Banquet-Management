@@ -43,7 +43,7 @@ var ConfirmModal = (function () {
     if (!modalOverlay) init();
 
     document.getElementById('confirm-modal-title').innerText = options.title || 'Xác nhận';
-    document.getElementById('confirm-modal-message').innerText = options.message || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+    document.getElementById('confirm-modal-message').innerHTML = options.message || 'Bạn có chắc chắn muốn thực hiện hành động này?';
     
     var btnConfirm = document.getElementById('confirm-modal-btn-confirm');
     btnConfirm.innerText = options.confirmText || 'Đồng ý';
