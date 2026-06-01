@@ -44,18 +44,18 @@ INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosit
 ### 4. Giao Dịch: Đặt Cọc (`src/pages/booking/`)
 ```sql
 INSERT INTO SY_FrmLstTbl (FormID, FormType, CaptionVN, TableName, PrimaryKey)
-VALUES ('frmDatCoc', 'DOC', N'Biên Nhận Đặt Cọc', 'DatCocTbl', 'BookingID');
+VALUES ('frmBiennhancoccho', 'DOC', N'Biên Nhận Đặt Cọc', 'DatCocTbl', 'BookingID');
 
 INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo) VALUES 
-('frmDatCoc', 'BookingNo', N'Số Phiếu Cọc', 'text', '6', 1, 1),
-('frmDatCoc', 'CustomerID', N'Khách Hàng', 'sl', '6', 1, 2),
-('frmDatCoc', 'HallID', N'Sảnh Tiệc', 'sl', '6', 1, 3),
-('frmDatCoc', 'DepositAmount', N'Số Tiền Cọc', 'nm', '6', 1, 4);
+('frmBiennhancoccho', 'BookingNo', N'Số Phiếu Cọc', 'text', '6', 1, 1),
+('frmBiennhancoccho', 'CustomerID', N'Khách Hàng', 'sl', '6', 1, 2),
+('frmBiennhancoccho', 'HallID', N'Sảnh Tiệc', 'sl', '6', 1, 3),
+('frmBiennhancoccho', 'DepositAmount', N'Số Tiền Cọc', 'nm', '6', 1, 4);
 
 -- Thêm tính năng Quick Add (Tạo KH mới) ngay tại Combobox Khách Hàng của form Cọc
 UPDATE SY_FormatFields 
 SET DataSource = 'API_DanhSachKhachHang|API_ThemMoiKhachHang'
-WHERE FormName = 'frmDatCoc' AND FieldName = 'CustomerID';
+WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'CustomerID';
 ```
 
 ### 5. Giao Dịch: Hợp Đồng (`src/pages/contract/`)
@@ -87,7 +87,7 @@ Chạy lệnh này để báo cho `router.js` biết: "Khi user bấm menu này,
 ```sql
 UPDATE WA_Menu SET URLPara = 'visitor', FormName = 'frmKhachThamQuan' WHERE URLPara = 'visitor';
 UPDATE WA_Menu SET URLPara = 'users', FormName = 'frmNguoiDung' WHERE URLPara = 'users';
-UPDATE WA_Menu SET URLPara = 'booking', FormName = 'frmDatCoc' WHERE URLPara = 'booking';
+UPDATE WA_Menu SET URLPara = 'booking', FormName = 'frmBiennhancoccho' WHERE URLPara = 'booking';
 UPDATE WA_Menu SET URLPara = 'contract', FormName = 'frmHopDong' WHERE URLPara = 'contract';
 UPDATE WA_Menu SET URLPara = 'checkout', FormName = 'frmQuyetToan' WHERE URLPara = 'checkout';
 -- Thêm menu Khách Hàng (nếu chưa có)

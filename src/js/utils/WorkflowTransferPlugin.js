@@ -23,13 +23,13 @@ var WorkflowTransferPlugin = (function () {
             storageKey: 'transfer_VisitorToBooking',
             getTransferData: function(row) {
                 return {
-                    Tenkh: row.Tenkh || row.Tenchure || row.Tencodau || '',
-                    Dienthoai: row.Dienthoai || row.DTchure || row.DTcodau || '',
-                    Ngaytochuc: row.Ngaydukien || row.Ngaytochuc || ''
+                    Tenkh: row.TenKhachHang || row.Tenkh || row.Tenchure || row.Tencodau || '',
+                    Dienthoai: row.DienThoai || row.Dienthoai || row.DTchure || row.DTcodau || '',
+                    Ngaytochuc: row._Ngaytochuc || row.NgayToChucGoc || row.NgayDuKien || row.Ngaytochuc || ''
                 };
             }
         },
-        'frmDatCoc': {
+        'frmBiennhancoccho': {
             id: 'btn-transfer-contract',
             text: 'Lên Hợp Đồng',
             icon: 'description',
@@ -37,10 +37,11 @@ var WorkflowTransferPlugin = (function () {
             storageKey: 'transfer_BookingToContract',
             getTransferData: function(row) {
                 return {
-                    Tenkh: row.Tenkh || row.Tenchure || row.Tencodau || '',
-                    Ngaytochuc: row.Ngaytochuc || row.Ngaydukien || '',
+                    Tenkh: row.Tenchure || row.Tencodau || row.Tenkh || '',
+                    Dienthoai: row.DTchure || row.DTcodau || row.Dienthoai || '',
+                    Ngaytochuc: row._Ngaytochuc || row.Ngaytochuc || row.Ngaydukien || '',
                     SanhTiec: row.Tensanh || row.SanhTiec || '',
-                    TongTienCoc: row.TienCoc || row.Sotien || ''
+                    TongTienCoc: row.Tongtien || row.TienCoc || row.Sotien || ''
                 };
             }
         },
@@ -54,7 +55,7 @@ var WorkflowTransferPlugin = (function () {
                 return {
                     Sohopdong: row.Sohopdong || row.AutoID || '',
                     Tenkh: row.Tenkh || row.Tenchure || row.Tencodau || '',
-                    Ngaytochuc: row.Ngaytochuc || ''
+                    Ngaytochuc: row._Ngaytochuc || row.Ngaytochuc || ''
                 };
             }
         }
@@ -136,7 +137,7 @@ var WorkflowTransferPlugin = (function () {
 
             tryFill('input[name="Tenkh"], input[name="Tenchure"], input[name="Tencodau"]', data.Tenkh);
             tryFill('input[name="Dienthoai"], input[name="DTchure"], input[name="DTcodau"]', data.Dienthoai);
-            tryFill('input[name="Ngaytochuc"], input[name="Ngaydukien"]', data.Ngaytochuc);
+            tryFill('input[name="_Ngaytochuc"], input[name="Ngaytochuc"], input[name="Ngaydukien"]', data.Ngaytochuc);
             tryFill('input[name="SanhTiec"], select[name="Tensanh"]', data.SanhTiec);
             tryFill('input[name="Sohopdong"]', data.Sohopdong);
             

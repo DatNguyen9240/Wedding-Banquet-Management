@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -35,7 +35,9 @@ BEGIN
         b.Thoigianid AS [Thoigianid],
         b.Loaitiecid AS [Loaihinhtiecid],
         b.SobanManchinhthuc AS [SobanManchinhthuc],
+        b.SobanManduphong AS [SobanManduphong],
         b.SobanChaychinhthuc AS [SobanChaychinhthuc],
+        b.SobanChayduphong AS [SobanChayduphong],
         b.Ghichu AS [Ghichu],
         
         -- Ghép Tên 2 người, hoặc xài Tên Khách chung chung nếu không có
@@ -48,18 +50,23 @@ BEGIN
         -- Lấy sdt nếu không có bốc số chú rể / cô dâu
         ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
         
-        CONVERT(VARCHAR(10), b.Ngaytochuc, 103) AS [NgayToChuc],
+        -- Cột ngày nguyên thủy cho Form Sửa
+        b.Ngaytochuc AS [_Ngaytochuc],
+        
+        -- Cột ngày hiển thị trên Lưới
+        CONVERT(VARCHAR(10), b.Ngaytochuc, 103) AS [Ngaytochuc],
         
         ISNULL(b.Tongsoban, 0) AS [SoBan],
         
-        -- Lấy Sảnh đặt bằng subquery (chỉ lấy 1 sảnh tượng trưng nếu chọn nhiều)
-        -- Chú ý: Ở đây Join với 1 bảng Trung Gian SanhTiec (dựa theo cấu trúc thực tế tbmk_Biennhancocchosanhtiec)
-        (
-            SELECT TOP 1 s.Tensanhtiec 
+        -- Lấy Sảnh đặt bằng subquery (Hiển thị tất cả các sảnh được chọn)
+        STUFF((
+            SELECT ', ' + s.Tensanhtiec + CASE WHEN bs.IsSanhchinh = 1 THEN N' (Chính)' ELSE N' (Phụ)' END
             FROM tbmk_Biennhancocchosanhtiec bs 
             INNER JOIN dmSanhtiec s ON bs.Sanhtiecid = s.Sanhtiecid 
             WHERE bs.DocumentID = b.DocumentID
-        ) AS [SanhDat],
+            ORDER BY bs.IsSanhchinh DESC, s.Tensanhtiec ASC
+            FOR XML PATH('')
+        ), 1, 2, '') AS [SanhDat],
         
         -- Tiền đã cọc (lấy từ TongTien)
         ISNULL(b.Tongtien, 0) AS [DaCocVND],
@@ -70,7 +77,7 @@ BEGIN
             FROM tbmk_Biennhancocchosanhtiec 
             WHERE DocumentID = b.DocumentID 
             FOR JSON PATH
-        ) AS [JsonSanhTiec],
+        ) AS [_JsonSanhTiec],
         
         -- Label trạng thái
         CASE

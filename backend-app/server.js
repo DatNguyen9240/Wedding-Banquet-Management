@@ -247,7 +247,7 @@ app.get('/api/documents/fields/:type', (req, res) => {
         let fields = [];
         const dummyRow = {};
         const dummySetup = {};
-        
+
         if (type === 'hop_dong' || type === 'quyet_toan' || type === 'de_nghi_thay_doi') {
             fields = Object.keys(mapHopDong(dummyRow, dummySetup));
         } else if (type === 'dat_coc' || type === 'phieu_thu') {
@@ -255,7 +255,7 @@ app.get('/api/documents/fields/:type', (req, res) => {
         } else {
             return res.status(400).json({ success: false, message: 'Invalid type' });
         }
-        
+
         const formattedFields = fields.map(f => `{${f}}`);
         res.json({ success: true, fields: formattedFields });
     } catch (error) {
@@ -277,7 +277,7 @@ app.post('/api/documents/generate', async (req, res) => {
         // ── 2. Map data từ rowData (frontend) hoặc fallback SQL API ─────────
         const API_MAP = {
             'hop_dong': { list: 'frmHopDong', mapFn: mapHopDong },
-            'dat_coc': { list: 'frmDatCoc', mapFn: mapDatCoc },
+            'dat_coc': { list: 'frmBiennhancocchoancoccho', mapFn: mapDatCoc },
             'phieu_thu': { list: 'frmPhieuThu', mapFn: mapDatCoc },
             'de_nghi_thay_doi': { list: 'frmHopDong', mapFn: mapHopDong },
         };
@@ -366,7 +366,7 @@ app.post('/api/upload-logo', (req, res) => {
     try {
         const { base64, fileName } = req.body;
         if (!base64) return res.status(400).json({ success: false, message: 'Thiếu dữ liệu base64' });
-        
+
         // base64 có dạng: "data:image/jpeg;base64,/9j/4AA..."
         const matches = base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
         let imageBuffer = null;
@@ -375,14 +375,14 @@ app.post('/api/upload-logo', (req, res) => {
         } else {
             imageBuffer = Buffer.from(base64, 'base64');
         }
-        
+
         // Mô phỏng lưu vào thư mục Qplaza\Logo theo yêu cầu TODO.md
         const logoDir = path.join(__dirname, '..', 'Qplaza', 'Logo');
         if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
-        
+
         const filePath = path.join(logoDir, fileName || 'logo.jpg');
         fs.writeFileSync(filePath, imageBuffer);
-        
+
         console.log(`[UPLOAD] Đã lưu logo tại: ${filePath}`);
         res.json({ success: true, message: 'Upload logo thành công!', path: filePath });
     } catch (error) {

@@ -393,6 +393,7 @@ var UITable = (function () {
     if (keys.length > 0) {
       keys.forEach(function(key) {
         if (key === 'id' || key === 'Id') return;
+        if (key.startsWith('_')) return;
         
         var headerLabel = dictionary[key] || key;
         var header = { label: headerLabel, sortable: true, field: key };

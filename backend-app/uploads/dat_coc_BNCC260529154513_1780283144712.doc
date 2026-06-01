@@ -6,7 +6,7 @@
    TEMPLATE: BIÊN NHẬN ĐẶT CỌC
    Sửa trực tiếp file này để thay đổi layout.
    Biến  sẽ được server thay bằng dữ liệu thật.
-   Tên biến = cột [name] từ: EXEC API_LayCacTruongGiaoDien @FormName='frmDatCoc'
+   Tên biến = cột [name] từ: EXEC API_LayCacTruongGiaoDien @FormName='frmBiennhancoccho'
    ============================================================ */
 body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #1A1A2E; line-height: 1.6; margin: 2cm 2.5cm; }
 

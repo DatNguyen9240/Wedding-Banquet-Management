@@ -100,7 +100,7 @@ var BookingPage = (function () {
             HideEditBtn: true,
             HideDeleteBtn: true,
             HideFilterBtn: true,
-            onRowDblClick: function(rData) {
+            onRowDblClick: function (rData) {
               openForm('edit', rData);
             }
           });
@@ -108,13 +108,59 @@ var BookingPage = (function () {
 
         _bindFormEvents();
         _loadDropdownData();
+
+        // Xử lý Autofill nếu chuyển từ màn hình khác sang (Khách Tham Quan)
+        var v2b = sessionStorage.getItem('transfer_VisitorToBooking');
+        if (v2b) {
+          try {
+            var transferData = JSON.parse(v2b);
+            sessionStorage.removeItem('transfer_VisitorToBooking');
+
+            // Mở form thêm mới
+            openForm('add1', null);
+
+            // Đợi side panel load xong rồi điền
+            setTimeout(function () {
+              if (transferData.Tenkh) {
+                var names = transferData.Tenkh.split('&');
+                $container.querySelector('#inp-tenchure').value = names[0] ? names[0].trim() : transferData.Tenkh;
+                if (names[1]) $container.querySelector('#inp-tencodau').value = names[1].trim();
+              }
+              if (transferData.Dienthoai) {
+                $container.querySelector('#inp-dtchure').value = transferData.Dienthoai;
+              }
+              if (transferData.Ngaytochuc) {
+                var dateVal = transferData.Ngaytochuc;
+                if (dateVal.indexOf('T') !== -1) dateVal = dateVal.split('T')[0];
+                else if (dateVal.indexOf('/') !== -1) {
+                  var parts = dateVal.split('/');
+                  if (parts.length === 3) dateVal = parts[2] + '-' + parts[1] + '-' + parts[0];
+                }
+                $container.querySelector('#inp-ngaytochuc').value = dateVal;
+              }
+              if (window.Toast) Toast.success('Đã tự động điền thông tin khách hàng!');
+              else if (typeof UIToast !== 'undefined') UIToast.show('Đã tự động điền thông tin khách hàng!', 'success');
+            }, 400);
+          } catch (e) { }
+        }
       });
   }
 
   function _refreshGrid() {
-    var grid = document.querySelector('#booking-list-view .dx-datagrid');
-    if (grid && window.jQuery) {
-      window.jQuery(grid).dxDataGrid('instance').refresh();
+    var listContainer = $container.querySelector('#booking-list-view');
+    if (listContainer && typeof DynamicFormEngine !== 'undefined') {
+      DynamicFormEngine.render(listContainer, {
+        FormName: 'frmBiennhancoccho',
+        PageTitle: 'Biên Nhận Cọc Chỗ',
+        PageSubtitle: 'Quản lý đặt cọc và lịch đặt tiệc',
+        HideAddBtn: true,
+        HideEditBtn: true,
+        HideDeleteBtn: true,
+        HideFilterBtn: true,
+        onRowDblClick: function (rData) {
+          openForm('edit', rData);
+        }
+      });
     }
   }
 
@@ -266,16 +312,40 @@ var BookingPage = (function () {
       var dtdaidien = $container.querySelector('#inp-dtdai-dien').value;
       var email = $container.querySelector('#inp-email').value;
       var eventDate = $container.querySelector('#inp-ngaytochuc').value;
+      if (!eventDate) {
+        if (typeof UIToast !== 'undefined') UIToast.show('Vui lòng chọn Ngày tổ chức!', 'warning');
+        else alert('Vui lòng chọn Ngày tổ chức!');
+        return;
+      }
       if (window.PeriodManager && window.PeriodManager.isDateLocked(eventDate)) {
         if (typeof UIToast !== 'undefined') UIToast.show('Kỳ kế toán của ngày ' + eventDate + ' đã bị khóa. Không thể lưu dữ liệu!', 'danger');
         return;
       }
+
       var caTiec = $container.querySelector('#sel-catiec').value;
+      if (!caTiec) {
+        if (typeof UIToast !== 'undefined') UIToast.show('Vui lòng chọn Ca Tiệc!', 'warning');
+        else alert('Vui lòng chọn Ca Tiệc!');
+        return;
+      }
+
+      var loaitiec = $container.querySelector('#sel-loaitiec').value;
+      if (!loaitiec) {
+        if (typeof UIToast !== 'undefined') UIToast.show('Vui lòng chọn Loại Tiệc!', 'warning');
+        else alert('Vui lòng chọn Loại Tiệc!');
+        return;
+      }
+
       var banMan = parseInt($container.querySelector('#inp-ban-man').value) || 0;
       var banManDp = parseInt($container.querySelector('#inp-ban-man-dp').value) || 0;
       var banChay = parseInt($container.querySelector('#inp-ban-chay').value) || 0;
       var banChayDp = parseInt($container.querySelector('#inp-ban-chay-dp').value) || 0;
       var sanhId = $container.querySelector('#sel-sanh').value;
+      if (!sanhId) {
+        if (typeof UIToast !== 'undefined') UIToast.show('Vui lòng chọn Sảnh Tiệc chính!', 'warning');
+        else alert('Vui lòng chọn Sảnh Tiệc chính!');
+        return;
+      }
       var dsSanh = [];
       if (sanhId) dsSanh.push({ Sanhtiecid: sanhId, IsSanhchinh: 1 });
 
@@ -285,7 +355,7 @@ var BookingPage = (function () {
       });
 
       var tienCocRaw = $container.querySelector('#inp-tiencoc').value || '0';
-      var tienCoc = parseFloat(tienCocRaw.replace(/,/g, ''));
+      var tienCoc = parseFloat(tienCocRaw.replace(/\D/g, '')) || 0;
       var ghiChu = $container.querySelector('#inp-ghichu').value;
       var loaitiec = $container.querySelector('#sel-loaitiec').value;
 
@@ -302,6 +372,7 @@ var BookingPage = (function () {
         DienThoaiDaiDien: dtdaidien,
         Mail: email,
         Ngaytochuc: eventDate,
+        _Ngaytochuc: eventDate, // Truyền thêm cho Router của API_Gateway_Router
         Loaitiecid: loaitiec,
         Thoigianid: caTiec,
         SobanManchinhthuc: banMan,
@@ -313,6 +384,8 @@ var BookingPage = (function () {
         Ghichu: ghiChu,
         JsonSanhTiec: JSON.stringify(dsSanh)
       };
+
+      // Đã bắt buộc nhập ở trên, không cần delete nữa, payload chắc chắn có giá trị hợp lệ.
 
       // Kiểm tra và sử dụng ENDPOINT từ env.js
       if (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.SAVE) {
@@ -483,7 +556,8 @@ var BookingPage = (function () {
     // Nếu có data.JsonSanhTiec, decode ra để fill sảnh chính và sảnh phụ
     var dsSanh = [];
     try {
-      if (data.JsonSanhTiec) dsSanh = JSON.parse(data.JsonSanhTiec);
+      if (data._JsonSanhTiec) dsSanh = JSON.parse(data._JsonSanhTiec);
+      else if (data.JsonSanhTiec) dsSanh = JSON.parse(data.JsonSanhTiec);
     } catch (e) { }
 
     if (dsSanh.length > 0) {
@@ -521,17 +595,6 @@ var BookingPage = (function () {
     }
 
     $container.querySelector('#inp-ghichu').value = data.Ghichu || '';
-  }
-
-  function getSelectedRow() {
-    var cached = sessionStorage.getItem('selectedRows_frmBiennhancoccho');
-    if (cached) {
-      try {
-        var arr = JSON.parse(cached);
-        if (arr && arr.length > 0) return arr[0];
-      } catch (e) { }
-    }
-    return null;
   }
 
   return { render: render };

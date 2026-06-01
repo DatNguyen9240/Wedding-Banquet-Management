@@ -1,15 +1,7 @@
 USE [QLTiec]
 GO
 
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
--- =============================================
--- API: Thêm mới / Cập nhật Khách Tham Quan (Visitor)
--- =============================================
-CREATE PROCEDURE [dbo].[API_LuuKhachDen]
+CREATE OR ALTER PROCEDURE [dbo].[API_LuuKhachDen]
     @DocumentID VARCHAR(50) = NULL,
     @Makh VARCHAR(50) = NULL,
     @Tenkh NVARCHAR(200) = NULL,
@@ -23,58 +15,55 @@ CREATE PROCEDURE [dbo].[API_LuuKhachDen]
     @Ghichu NVARCHAR(500) = NULL,
     @GoiThucDonID VARCHAR(50) = '',
     @SanhTiec VARCHAR(50) = NULL,
-    @JsonSanhTiec NVARCHAR(MAX) = '[]' -- JSON array danh sách sảnh: [{"Sanhtiecid": "S01"}]
+    @JsonSanhTiec NVARCHAR(MAX) = '[]'
 AS
 BEGIN
     SET NOCOUNT ON;
     
     DECLARE @IsNew INT = 0;
     
-    -- 1. Nếu chưa có DocumentID -> Sinh mã mới (Theo logic thực tế dự án, ví dụ TQYYMM/XXX)
-    -- Ở đây giả định dùng HÀM sinh mã hoặc tự tạo chuỗi tạm. 
-    -- Bạn nhớ điều chỉnh lại hàm phát sinh mã theo chuẩn của dự án nhé (ví dụ: dbo.GetNewDocumentID('TQ'))
+    -- 1. Sinh mã tự động
     IF @DocumentID IS NULL OR @DocumentID = '' OR @DocumentID = 'TQ-AUTO'
     BEGIN
         SET @DocumentID = 'TQ' + FORMAT(GETDATE(), 'yyMM') + '/' + RIGHT('000' + CAST((ABS(CHECKSUM(NEWID())) % 1000) AS VARCHAR), 3);
         SET @IsNew = 1;
     END
 
-    -- 2. Xử lý khách hàng — tìm theo SĐT trước, không có mới tạo mới
-    IF (@Makh IS NULL OR @Makh = '') AND (@Tenkh IS NOT NULL)
+    -- 2. Xử lý thông minh: Nhận diện nếu @Tenkh thực chất là ID khách hàng (KH...) từ Combobox
+    IF @Tenkh IS NOT NULL AND @Tenkh <> '' AND (@Makh IS NULL OR @Makh = '')
     BEGIN
-        -- Tìm khách hàng cũ theo SĐT
+        IF EXISTS (SELECT 1 FROM dmkhachhang WHERE Makh = @Tenkh)
+        BEGIN
+            SET @Makh = @Tenkh;
+            SET @Tenkh = NULL;
+        END
+    END
+
+    -- 3. Xử lý khách hàng (Tạo mới nếu có Tên KH hoặc có Số điện thoại)
+    IF (@Makh IS NULL OR @Makh = '') AND ((@Tenkh IS NOT NULL AND @Tenkh <> '') OR (@Dienthoai IS NOT NULL AND @Dienthoai <> ''))
+    BEGIN
         IF (@Dienthoai IS NOT NULL AND @Dienthoai <> '')
         BEGIN
-            SELECT TOP 1 @Makh = Makh
-            FROM dmkhachhang
-            WHERE Dienthoai = @Dienthoai
-            ORDER BY DateCreate ASC;   -- Lấy record gốc cũ nhất
+            SELECT TOP 1 @Makh = Makh FROM dmkhachhang WHERE Dienthoai = @Dienthoai ORDER BY DateCreate ASC;
         END
 
-        -- Không tìm thấy → tạo mới
         IF (@Makh IS NULL OR @Makh = '')
         BEGIN
             SET @Makh = 'KH' + FORMAT(GETDATE(), 'yyMM') + RIGHT('0000' + CAST((ABS(CHECKSUM(NEWID())) % 10000) AS VARCHAR), 4);
             INSERT INTO dmkhachhang (Makh, Tenkh, Dienthoai, IsKhachhang, DateCreate)
-            VALUES (@Makh, @Tenkh, @Dienthoai, 1, GETDATE());
+            VALUES (@Makh, ISNULL(@Tenkh, N'Khách vãng lai'), @Dienthoai, 1, GETDATE());
         END
-        ELSE
+        ELSE IF (@Tenkh IS NOT NULL AND @Tenkh <> '')
         BEGIN
-            -- Tìm thấy → cập nhật tên nếu trống
-            UPDATE dmkhachhang
-            SET Tenkh = ISNULL(NULLIF(@Tenkh, ''), Tenkh)
-            WHERE Makh = @Makh;
+            UPDATE dmkhachhang SET Tenkh = ISNULL(NULLIF(@Tenkh, ''), Tenkh) WHERE Makh = @Makh;
         END
     END
     ELSE IF (@Makh IS NOT NULL AND @Makh <> '')
     BEGIN
-        -- Cập nhật sđt/tên cho khách cũ nếu có thay đổi
-        UPDATE dmkhachhang 
-        SET Tenkh = ISNULL(@Tenkh, Tenkh), Dienthoai = ISNULL(@Dienthoai, Dienthoai)
-        WHERE Makh = @Makh;
+        UPDATE dmkhachhang SET Tenkh = ISNULL(@Tenkh, Tenkh), Dienthoai = ISNULL(@Dienthoai, Dienthoai) WHERE Makh = @Makh;
     END
 
-    -- 3. Xử lý fallback cho Gói Thực Đơn nếu FE truyền lên rỗng (để tránh lỗi FK do không sửa DB)
+    -- 3. Xử lý fallback cho Gói Thực Đơn
     IF ISNULL(@GoiThucDonID, '') = ''
     BEGIN
         SELECT TOP 1 @GoiThucDonID = GoiThucDonID FROM dmGoiThucDon;
@@ -94,39 +83,29 @@ BEGIN
     ELSE
     BEGIN
         UPDATE tbmk_Khachthamquan SET
-            Makh = @Makh,
-            Ngaytochuc = @Ngaytochuc,
-            Nhamngay = @Nhamngay,
-            Loaitiecid = @Loaitiecid,
-            Thoigianid = @Thoigianid,
-            SobanMan = @SobanMan,
-            SobanChay = @SobanChay,
-            TongsoBan = (@SobanMan + @SobanChay),
-            Ghichu = @Ghichu,
-            GoiThucDonID = @GoiThucDonID
+            Makh = @Makh, Ngaytochuc = @Ngaytochuc, Nhamngay = @Nhamngay, Loaitiecid = @Loaitiecid,
+            Thoigianid = @Thoigianid, SobanMan = @SobanMan, SobanChay = @SobanChay, 
+            TongsoBan = (@SobanMan + @SobanChay), Ghichu = @Ghichu, GoiThucDonID = @GoiThucDonID
         WHERE DocumentID = @DocumentID;
     END
 
-    -- 4. Xử lý Sảnh Tiệc
+    -- 5. Xử lý Sảnh Tiệc (Sử dụng NEWID() để chống trùng mã)
     IF @SanhTiec IS NOT NULL AND @SanhTiec <> ''
     BEGIN
-        -- Xử lý Sảnh Tiệc dạng đơn (1 lựa chọn từ Dropdown)
         DELETE FROM tbmk_Khachthamquansanhtiec WHERE DocumentID = @DocumentID;
         
-        INSERT INTO tbmk_Khachthamquansanhtiec (DocumentID, Sanhtiecid)
-        VALUES (@DocumentID, @SanhTiec);
+        INSERT INTO tbmk_Khachthamquansanhtiec (DocumentID, Sanhtiecid, UserAutoid)
+        VALUES (@DocumentID, @SanhTiec, CAST(NEWID() AS VARCHAR(50)));
     END
     ELSE IF @JsonSanhTiec IS NOT NULL AND @JsonSanhTiec <> '[]'
     BEGIN
-        -- Xử lý Sảnh Tiệc từ JSON (hỗ trợ lưu nhiều sảnh 1 lúc)
         DELETE FROM tbmk_Khachthamquansanhtiec WHERE DocumentID = @DocumentID;
         
-        INSERT INTO tbmk_Khachthamquansanhtiec (DocumentID, Sanhtiecid)
-        SELECT @DocumentID, JSON_VALUE(value, '$.Sanhtiecid')
+        INSERT INTO tbmk_Khachthamquansanhtiec (DocumentID, Sanhtiecid, UserAutoid)
+        SELECT @DocumentID, JSON_VALUE(value, '$.Sanhtiecid'), CAST(NEWID() AS VARCHAR(50))
         FROM OPENJSON(@JsonSanhTiec);
     END
 
-    -- Trả về mã chứng từ để giao diện biết
     SELECT @DocumentID AS DocumentID;
 END
 GO

@@ -9,7 +9,7 @@ GO
 -- =============================================
 -- VIEW: Danh sách Biên nhận đặt cọc
 -- Chức năng: Nối (JOIN) bảng tbmk_Biennhancoccho với bảng Khách hàng
--- Mục đích: Làm Data Source (TableName) cho màn hình Form Động frmDatCoc
+-- Mục đích: Làm Data Source (TableName) cho màn hình Form Động frmBiennhancoccho
 -- =============================================
 CREATE OR ALTER VIEW [dbo].[v_DanhSachPhieuCoc] AS
 SELECT 
@@ -23,7 +23,8 @@ SELECT
     b.SobanManduphong,
     b.SobanChayduphong,
     b.Ghichu,
-    b.Ngaytochuc AS NgayToChucGoc,
+    -- Ngày tổ chức gốc chuẩn Date để Form Đặt Cọc bind vào Datepicker
+    b.Ngaytochuc AS [_Ngaytochuc],
     
     -- Lôi thông tin khách hàng từ bảng khác đắp vào đây
     k.Tenchure,
@@ -43,8 +44,8 @@ SELECT
     
     ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS DienThoai,
     
-    -- CÁC CỘT TÍNH TOÁN BỔ SUNG (CHO GIỐNG HỆT API_DanhSachPhieuCoc)
-    CONVERT(VARCHAR(10), b.Ngaytochuc, 103) AS NgayToChuc,
+    -- Cột hiển thị định dạng đẹp dd/MM/yyyy trên Lưới
+    CONVERT(VARCHAR(10), b.Ngaytochuc, 103) AS [Ngaytochuc],
     ISNULL(b.Tongsoban, 0) AS SoBan,
     (
         SELECT TOP 1 s.Tensanhtiec 
@@ -73,5 +74,5 @@ GO
 -- Dạy cho Form Đặt Cọc biết: Hãy chọc vào cái View v_DanhSachPhieuCoc thay vì bảng gốc
 UPDATE SY_FrmLstTbl 
 SET TableName = 'v_DanhSachPhieuCoc' 
-WHERE FormID = 'frmDatCoc';
+WHERE FormID = 'frmBiennhancoccho';
 GO

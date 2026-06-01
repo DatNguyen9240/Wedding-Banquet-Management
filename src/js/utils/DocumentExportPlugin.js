@@ -3,7 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────
  * Plugin cấu hình nút "Xuất tài liệu" cho các form:
  *   frmHopDong   → Hợp đồng tiệc     (PK: Sohopdong)
- *   frmDatCoc    → Biên nhận đặt cọc (PK: MaChungTu)
+ *   frmBiennhancoccho    → Biên nhận đặt cọc (PK: MaChungTu)
  *   frmQuyetToan → Quyết toán        (PK: Sohopdong)
  */
 var DocumentExportPlugin = (function () {
@@ -111,7 +111,7 @@ var DocumentExportPlugin = (function () {
       text: config.label,
       icon: config.icon,
       type: 'tool',
-      onClick: function() {
+      onClick: function () {
         var selectedRows = getSelectedRows();
         if (!selectedRows || selectedRows.length !== 1) {
           if (typeof Alert !== 'undefined') {
