@@ -21,12 +21,10 @@ var WorkflowTransferPlugin = (function () {
             icon: 'monetization_on',
             targetHash: '#/booking',
             storageKey: 'transfer_VisitorToBooking',
-            getTransferData: function(row) {
-                return {
-                    Tenkh: row.TenKhachHang || row.Tenkh || row.Tenchure || row.Tencodau || '',
-                    Dienthoai: row.DienThoai || row.Dienthoai || row.DTchure || row.DTcodau || '',
-                    Ngaytochuc: row._Ngaytochuc || row.NgayToChucGoc || row.NgayDuKien || row.Ngaytochuc || ''
-                };
+            getTransferData: function (row) {
+                var data = Object.assign({}, row);
+                delete data.Id; delete data.AutoID; delete data.Sohopdong;
+                return data;
             }
         },
         'frmHopDong': {
@@ -35,12 +33,10 @@ var WorkflowTransferPlugin = (function () {
             icon: 'receipt_long',
             targetHash: '#/checkout',
             storageKey: 'transfer_ContractToCheckout',
-            getTransferData: function(row) {
-                return {
-                    Sohopdong: row.Sohopdong || row.AutoID || '',
-                    Tenkh: row.Tenkh || row.Tenchure || row.Tencodau || '',
-                    Ngaytochuc: row._Ngaytochuc || row.Ngaytochuc || ''
-                };
+            getTransferData: function (row) {
+                var data = Object.assign({}, row);
+                delete data.Id; delete data.AutoID;
+                return data;
             }
         }
     };
@@ -54,14 +50,14 @@ var WorkflowTransferPlugin = (function () {
             text: config.text,
             icon: config.icon,
             type: 'tool',
-            onClick: function() {
+            onClick: function () {
                 var selectedRows = getSelectedRows();
                 if (!selectedRows || selectedRows.length !== 1) {
                     if (window.Alert) Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng duy nhất để ' + config.text + '.');
                     else alert('Vui lòng chọn 1 dòng!');
                     return;
                 }
-                
+
                 var transferData = config.getTransferData(selectedRows[0]);
                 sessionStorage.setItem(config.storageKey, JSON.stringify(transferData));
                 window.location.hash = config.targetHash;
@@ -100,24 +96,33 @@ var WorkflowTransferPlugin = (function () {
             if (!modalContent) return;
             var filled = false;
 
-            var tryFill = function(selectors, value) {
+            var tryFill = function (selectors, value) {
                 if (!value) return;
-                var el = modalContent.querySelector(selectors);
-                if (el && !el.value) {
-                    el.value = value;
-                    el.style.backgroundColor = '#f0fdf4';
-                    el.style.borderColor = '#10b981';
-                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                var els = modalContent.querySelectorAll(selectors);
+                if (els.length > 0) {
+                    els.forEach(function (el) {
+                        el.value = value;
+                        el.style.backgroundColor = '#f0fdf4';
+                        el.style.borderColor = '#10b981';
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
                     filled = true;
                 }
             };
 
-            tryFill('input[name="Tenkh"], input[name="Tenchure"], input[name="Tencodau"]', data.Tenkh);
-            tryFill('input[name="Dienthoai"], input[name="DTchure"], input[name="DTcodau"]', data.Dienthoai);
-            tryFill('input[name="_Ngaytochuc"], input[name="Ngaytochuc"], input[name="Ngaydukien"]', data.Ngaytochuc);
-            tryFill('input[name="SanhTiec"], select[name="Tensanh"]', data.SanhTiec);
-            tryFill('input[name="Sohopdong"]', data.Sohopdong);
-            
+            // Duyệt qua mapping động từ JSON data (keys chính là tên trường của form đích)
+            Object.keys(data).forEach(function (fieldName) {
+                var value = data[fieldName];
+                if (!value) return; // Bỏ qua nếu không có giá trị
+
+                // Tự động tạo selector thông minh bao phủ input, select, textarea
+                var selector = 'input[name="' + fieldName + '"], ' +
+                    'select[name="' + fieldName + '"], ' +
+                    'textarea[name="' + fieldName + '"]';
+
+                tryFill(selector, value);
+            });
+
             if (filled && window.Toast) {
                 Toast.success('Đã tự động điền thông tin từ ' + sourceName + '!');
             }
@@ -126,12 +131,12 @@ var WorkflowTransferPlugin = (function () {
 
     function init() {
         if (_observer) _observer.disconnect();
-        
+
         // Chỉ observe để auto-fill (chờ modal xuất hiện)
         _observer = new MutationObserver(function () {
             _handleAutoFill();
         });
-        
+
         _observer.observe(document.body, { childList: true, subtree: true });
     }
 

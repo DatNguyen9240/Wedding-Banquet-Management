@@ -1840,11 +1840,11 @@ var ContractService = (function () {
    */
   function getBookingById(bookingId) {
     return new Promise(function (resolve, reject) {
-      var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.LIST) 
-        ? API_CONFIG.ENDPOINTS.BOOKING.LIST 
+      var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.LIST)
+        ? API_CONFIG.ENDPOINTS.BOOKING.LIST
         : '/api/API_Booking_List';
       var payloadString = encodeURIComponent(JSON.stringify({ Keyword: bookingId }));
-      
+
       ApiClient.get(endpoint + '?q=' + payloadString)
         .then(function (res) {
           var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
@@ -1866,7 +1866,7 @@ var ContractService = (function () {
   function getFoods(params) {
     return new Promise(function (resolve, reject) {
       var endpoint = API_CONFIG.ENDPOINTS.FOODS.LIST;
-      
+
       var payloadString = encodeURIComponent(JSON.stringify(params || { Keyword: '', PhanLoai: '', IsChay: -1 }));
       ApiClient.get(endpoint + '?q=' + payloadString)
         .then(function (res) {
@@ -1903,11 +1903,64 @@ var ContractService = (function () {
     });
   }
 
+  /**
+   * Lấy lịch sử phụ lục hợp đồng
+   * @param {string} sohopdong
+   * @param {string} sothaydoi
+   * @returns {Promise<Array>}
+   */
+  function getPhuLucHistory(sohopdong, sothaydoi) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.ROUTER)
+        ? API_CONFIG.ENDPOINTS.ROUTER
+        : '/api/API_Gateway_Router';
+      
+      var payload = {
+        List: 'tbmk_Thaydoi',
+        Func: 'View',
+        Keyword: sohopdong || '',
+        JsonData: JSON.stringify({ Sothaydoi: sothaydoi || '' })
+      };
+
+      ApiClient.post(endpoint, payload)
+        .then(function (res) {
+          var records = (res && res.records) ? res.records : ((res && res.data) ? res.data : (Array.isArray(res) ? res : []));
+          resolve(records);
+        })
+        .catch(function (err) {
+          console.error('[ContractService] Lỗi getPhuLucHistory:', err);
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Lưu phụ lục thay đổi bổ sung
+   * @param {Object} payload
+   * @returns {Promise}
+   */
+  function savePhuLuc(payload) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.ROUTER)
+        ? API_CONFIG.ENDPOINTS.ROUTER
+        : '/api/API_Gateway_Router';
+
+      ApiClient.post(endpoint, payload)
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[ContractService] Lỗi savePhuLuc:', err);
+          reject(err);
+        });
+    });
+  }
+
   return {
     getList: getList,
     getBookingById: getBookingById,
     getFoods: getFoods,
-    save: save
+    save: save,
+    getPhuLucHistory: getPhuLucHistory,
+    savePhuLuc: savePhuLuc
   };
 })();
 

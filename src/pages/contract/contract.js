@@ -13,12 +13,14 @@ var ContractPage = (function () {
   };
 
   var _isFromBooking = false;
+  var _currentBookingId = null;
 
   function render(containerElement) {
     $container = containerElement;
 
     contractData = [];
     _isFromBooking = false;
+    _currentBookingId = null;
 
     // Đảm bảo DynamicFormEngine được tải (Fix lỗi F5 tải lại trang bị mất bảng)
     if (typeof DynamicFormEngine === 'undefined') {
@@ -141,12 +143,14 @@ var ContractPage = (function () {
 
         if (bookingIdParam) {
           _isFromBooking = true;
+          _currentBookingId = bookingIdParam;
           _showDetailView(true, bookingIdParam);
         }
       });
   }
 
   function getSelectedRow() {
+    if (_isFromBooking) return null;
     // Trả về dòng đang chọn từ state của DynamicFormEngine (được lưu trong selectedRows cục bộ của DynamicFormEngine)
     // Hoặc query phần tử tr.selected nếu cần
     var cached = sessionStorage.getItem('selectedRows_frmHopDong');
@@ -1988,7 +1992,7 @@ var ContractPage = (function () {
 
     var payload = {
       Sohopdong: contract ? (contract.Sohopdong || contract.id || '') : '',
-      Sobiennhan: contract ? (contract.Sobiennhan || '') : '',
+      Sobiennhan: _isFromBooking ? _currentBookingId : (contract ? (contract.Sobiennhan || '') : ''),
       Tenchure: tenchure,
       Tencodau: tencodau,
       Dienthoai: dienthoai,
@@ -2218,6 +2222,7 @@ var ContractPage = (function () {
     _switchTabUI('list');
 
     _isFromBooking = false;
+    _currentBookingId = null;
   }
 
   function _renderPhuLuc() {
@@ -2268,84 +2273,81 @@ var ContractPage = (function () {
     var listContainer = document.getElementById('phuluc-list-container');
     if (!listContainer) return;
 
-    if (typeof ApiClient !== 'undefined' && API_CONFIG.ENDPOINTS.ROUTER) {
-      ApiClient.post(API_CONFIG.ENDPOINTS.ROUTER, {
-        List: 'tbmk_Thaydoi',
-        Func: 'View',
-        Keyword: sohopdong
-      }).then(function (res) {
-        var records = res.records || res.data || [];
-        var html = '';
-        if (records.length === 0) {
-          html = `
-            <div class="text-center p-5 rounded" style="background: var(--color-background); border: 1px dashed var(--color-border-strong);">
-              <i class="material-symbols-outlined text-muted mb-2" style="font-size: 32px;">receipt_long</i>
-              <div class="text-muted fw-medium">Chưa có phụ lục thay đổi nào</div>
-              <div class="text-muted small mt-1">Các yêu cầu thay đổi bàn tiệc, thực đơn sẽ hiển thị ở đây</div>
-            </div>
-          `;
-        } else {
-          html = '<div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">' +
-            '<table class="table table-hover align-middle m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 700px; background: var(--color-surface);">' +
-            '<thead style="background: var(--color-background); border-bottom: 2px solid var(--color-border);">' +
-            '<tr>' +
-            '<th style="width: 160px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Số Phụ Lục</th>' +
-            '<th style="width: 150px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Ngày Lập</th>' +
-            '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px; width: auto;">Chi Tiết Thay Đổi</th>' +
-            '<th class="text-end" style="width: 140px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Phụ Thu</th>' +
-            '</tr>' +
-            '</thead><tbody>';
-          records.forEach(function (r) {
-            // Support case-insensitive property access
-            var getProp = function (obj, keyName) {
-              if (obj[keyName] !== undefined) return obj[keyName];
-              var lowerKey = keyName.toLowerCase();
-              for (var k in obj) {
-                if (k.toLowerCase() === lowerKey) return obj[k];
+    var selectedRow = getSelectedRow();
+    var currentSothaydoi = selectedRow ? (selectedRow.Sothaydoi || '') : '';
+    var sobiennhan = selectedRow ? (selectedRow.Sobiennhan || '') : '';
+
+    if (typeof ContractService !== 'undefined') {
+      ContractService.getPhuLucHistory(sohopdong).then(function (records) {
+          var html = '';
+          if (records.length === 0) {
+            html = `
+              <div class="text-center p-5 rounded" style="background: var(--color-background); border: 1px dashed var(--color-border-strong);">
+                <i class="material-symbols-outlined text-muted mb-2" style="font-size: 32px;">receipt_long</i>
+                <div class="text-muted fw-medium">Chưa có phụ lục thay đổi nào</div>
+                <div class="text-muted small mt-1">Các yêu cầu thay đổi bàn tiệc, thực đơn sẽ hiển thị ở đây</div>
+              </div>
+            `;
+          } else {
+            html = '<div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">' +
+              '<table class="table table-hover align-middle m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 700px; background: var(--color-surface);">' +
+              '<thead style="background: var(--color-background); border-bottom: 2px solid var(--color-border);">' +
+              '<tr>' +
+              '<th style="width: 160px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Số Phụ Lục</th>' +
+              '<th style="width: 150px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Ngày Lập</th>' +
+              '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px; width: auto;">Chi Tiết Thay Đổi</th>' +
+              '<th class="text-end" style="width: 140px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Phụ Thu</th>' +
+              '</tr>' +
+              '</thead><tbody>';
+            records.forEach(function (r) {
+              var getProp = function (obj, keyName) {
+                if (obj[keyName] !== undefined) return obj[keyName];
+                var lowerKey = keyName.toLowerCase();
+                for (var k in obj) {
+                  if (k.toLowerCase() === lowerKey) return obj[k];
+                }
+                return undefined;
+              };
+
+              var sothaydoiDisplay = getProp(r, 'Sothaydoi') || getProp(r, 'sohopdong') || 'N/A';
+              var rawDate = getProp(r, 'Ngaythaydoi') || getProp(r, 'DateCreate') || getProp(r, 'created_at');
+              var ghichu = getProp(r, 'Ghichu') || getProp(r, 'noidung') || '';
+              var phuthu = getProp(r, 'TongtienHopdongTD') || getProp(r, 'TienPhuThu') || 0;
+
+              if (sothaydoiDisplay === 'N/A') {
+                ghichu = ghichu + ' (Data: ' + JSON.stringify(r) + ')';
               }
-              return undefined;
-            };
 
-            var sothaydoi = getProp(r, 'Sothaydoi') || getProp(r, 'sohopdong') || 'N/A';
-            var rawDate = getProp(r, 'Ngaythaydoi') || getProp(r, 'DateCreate') || getProp(r, 'created_at');
-            var ghichu = getProp(r, 'Ghichu') || getProp(r, 'noidung') || '';
-            var phuthu = getProp(r, 'TongtienHopdongTD') || getProp(r, 'TienPhuThu') || 0;
-
-            if (sothaydoi === 'N/A') {
-              ghichu = ghichu + ' (Data: ' + JSON.stringify(r) + ')';
-            }
-
-            var date = 'N/A';
-            if (rawDate) {
-              // If it's already DD/MM/YYYY formatted from SQL
-              if (typeof rawDate === 'string' && rawDate.indexOf('/') !== -1) {
-                date = rawDate; // Just display it directly
-              } else {
-                var parsedDate = new Date(rawDate);
-                if (!isNaN(parsedDate)) {
-                  date = parsedDate.toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+              var date = 'N/A';
+              if (rawDate) {
+                if (typeof rawDate === 'string' && rawDate.indexOf('/') !== -1) {
+                  date = rawDate;
                 } else {
-                  date = rawDate; // Fallback to raw string
+                  var parsedDate = new Date(rawDate);
+                  if (!isNaN(parsedDate)) {
+                    date = parsedDate.toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                  } else {
+                    date = rawDate;
+                  }
                 }
               }
-            }
 
-            ghichu = (ghichu + '').replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
-            var tien = parseFloat(phuthu || 0).toLocaleString('vi-VN') + ' đ';
+              ghichu = (ghichu + '').replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
+              var tien = parseFloat(phuthu || 0).toLocaleString('vi-VN') + ' đ';
 
-            html += `<tr style="border-bottom: 1px solid var(--color-border);">
-              <td style="font-weight: 600; color: var(--color-primary); padding: 16px;">${sothaydoi}</td>
-              <td style="font-size: 14px; padding: 16px; color: var(--color-text);">${date}</td>
-              <td style="font-size: 14px; white-space: pre-wrap; line-height: 1.6; padding: 16px; color: var(--color-text-secondary);">${ghichu}</td>
-              <td class="text-end" style="font-weight: 700; color: #10B981; padding: 16px;">+${tien}</td>
-            </tr>`;
-          });
-          html += '</tbody></table></div>';
-        }
-        listContainer.innerHTML = html;
-      }).catch(function (err) {
-        listContainer.innerHTML = `<div class="alert alert-danger">Lỗi tải dữ liệu: ${err.message}</div>`;
-      });
+              html += `<tr style="border-bottom: 1px solid var(--color-border);">
+                <td style="font-weight: 600; color: var(--color-primary); padding: 16px;">${sothaydoiDisplay}</td>
+                <td style="font-size: 14px; padding: 16px; color: var(--color-text);">${date}</td>
+                <td style="font-size: 14px; white-space: pre-wrap; line-height: 1.6; padding: 16px; color: var(--color-text-secondary);">${ghichu}</td>
+                <td class="text-end" style="font-weight: 700; color: #10B981; padding: 16px;">+${tien}</td>
+              </tr>`;
+            });
+            html += '</tbody></table></div>';
+          }
+          listContainer.innerHTML = html;
+        }).catch(function (err) {
+          listContainer.innerHTML = `<div class="alert alert-danger">Lỗi tải dữ liệu: ${err.message}</div>`;
+        });
     }
   }
 
@@ -2461,8 +2463,8 @@ var ContractPage = (function () {
         })
       };
 
-      if (typeof ApiClient !== 'undefined') {
-        ApiClient.post(API_CONFIG.ENDPOINTS.ROUTER, payload)
+      if (typeof ContractService !== 'undefined') {
+        ContractService.savePhuLuc(payload)
           .then(function (res) {
             if (res && res.code === 0) {
               if (typeof Alert !== 'undefined') Alert.success('Thành công', 'Đã lưu Phiếu Thay đổi vào hệ thống!');
@@ -2478,7 +2480,7 @@ var ContractPage = (function () {
             btn.disabled = false;
           });
       } else {
-        if (typeof Alert !== 'undefined') Alert.success('Mock', 'Chưa có ApiClient, lưu giả lập thành công!');
+        if (typeof Alert !== 'undefined') Alert.success('Mock', 'Chưa có ContractService, lưu giả lập thành công!');
         m.closeNow();
       }
     };
