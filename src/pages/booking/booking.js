@@ -130,9 +130,11 @@ var BookingPage = (function () {
                 $container.querySelector('#inp-dtchure').value = transferData.Dienthoai;
               }
               if (transferData.Ngaytochuc) {
-                var dateVal = transferData.Ngaytochuc;
-                if (dateVal.indexOf('T') !== -1) dateVal = dateVal.split('T')[0];
-                else if (dateVal.indexOf('/') !== -1) {
+                var dateVal = transferData.Ngaytochuc.toString().trim();
+                if (dateVal.includes('T')) dateVal = dateVal.split('T')[0];
+                else if (dateVal.includes(' ')) dateVal = dateVal.split(' ')[0];
+
+                if (dateVal.includes('/')) {
                   var parts = dateVal.split('/');
                   if (parts.length === 3) dateVal = parts[2] + '-' + parts[1] + '-' + parts[0];
                 }
@@ -523,12 +525,20 @@ var BookingPage = (function () {
     $container.querySelector('#inp-dtdai-dien').value = data.DienThoaiDaiDien || '';
     $container.querySelector('#inp-email').value = data.Mail || '';
 
-    var eventDate = data.NgayToChuc || data.eventDate || '';
+    var eventDate = data._Ngaytochuc || data.Ngaytochuc || data.NgayToChuc || data.eventDate || '';
+    if (eventDate) {
+      eventDate = eventDate.toString().trim();
+      if (eventDate.includes('T')) eventDate = eventDate.split('T')[0];
+      else if (eventDate.includes(' ')) eventDate = eventDate.split(' ')[0];
+    }
+
     if (eventDate.includes('/')) {
       var parts = eventDate.split('/');
       if (parts.length === 3) {
         $container.querySelector('#inp-ngaytochuc').value = parts[2] + '-' + parts[1] + '-' + parts[0];
       }
+    } else if (eventDate.includes('-')) {
+      $container.querySelector('#inp-ngaytochuc').value = eventDate;
     } else {
       $container.querySelector('#inp-ngaytochuc').value = '';
     }
