@@ -1,15 +1,7 @@
 USE [QLTiec]
 GO
 
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
--- =============================================
--- API: Lấy danh sách Màn hình Khách Tham Quan (Visitor)
--- =============================================
-CREATE PROCEDURE [dbo].[API_DanhSachKhachDen]
+CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachKhachDen]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
     @Keyword NVARCHAR(100) = NULL
@@ -21,11 +13,10 @@ BEGIN
         v.DocumentID AS [MaPhieu],
         v.Tenkh AS [TenKhachHang],
         v.Dienthoai AS [DienThoai],
-        
         CONVERT(VARCHAR(10), v.Ngaytochuc, 103) AS [NgayDuKien],
         v.Nhamngay AS [NgayAmLich],
         
-        -- Dữ liệu ngầm định (Raw fields) phục vụ cho Form Edit binding dữ liệu
+        -- Dữ liệu ngầm định
         v.DocumentID,
         v.Makh,
         t.GoiThucDonID,
@@ -51,7 +42,7 @@ BEGIN
             WHERE bs.DocumentID = v.DocumentID
         ) AS [SanhTiec],
         
-        -- Label trạng thái
+        -- Label trạng thái (Tự động dịch)
         CASE
             WHEN t.IsHuy = 1 THEN N'Đã Hủy'
             WHEN t.IsKetthuc = 1 THEN N'Đã Đặt Cọc'
@@ -63,13 +54,9 @@ BEGIN
     LEFT JOIN
         tbmk_Khachthamquan t ON v.DocumentID = t.DocumentID
     WHERE 
-        -- Filter theo Keyword (Mã Phiếu, Tên Khách, SĐT)
         (@Keyword IS NULL OR v.DocumentID LIKE '%' + @Keyword + '%' OR v.Tenkh LIKE N'%' + @Keyword + '%' OR v.Dienthoai LIKE '%' + @Keyword + '%')
-        
-        -- Lọc ngày dự kiến tổ chức nếu truyền TuNgay / DenNgay
         AND (@TuNgay IS NULL OR v.Ngaytochuc >= @TuNgay)
         AND (@DenNgay IS NULL OR v.Ngaytochuc <= @DenNgay)
-        
     ORDER BY 
         v.DocumentDate DESC, v.Ngaytochuc DESC;
 END
