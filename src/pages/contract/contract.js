@@ -11,7 +11,7 @@ var ContractPage = (function () {
     TuNgay: "",
     DenNgay: ""
   };
-  
+
   var _isFromBooking = false;
 
   function render(containerElement) {
@@ -24,7 +24,7 @@ var ContractPage = (function () {
     if (typeof DynamicFormEngine === 'undefined') {
       var script = document.createElement('script');
       script.src = './src/js/core/DynamicFormEngine.js?v=' + Date.now();
-      script.onload = function() {
+      script.onload = function () {
         _doRender();
       };
       document.body.appendChild(script);
@@ -47,12 +47,12 @@ var ContractPage = (function () {
         var tabListBtn = document.getElementById('tab-list-btn');
         var tabDetailBtn = document.getElementById('tab-detail-btn');
         if (tabListBtn) {
-          tabListBtn.addEventListener('click', function() {
+          tabListBtn.addEventListener('click', function () {
             closeDetail();
           });
         }
         if (tabDetailBtn) {
-          tabDetailBtn.addEventListener('click', function() {
+          tabDetailBtn.addEventListener('click', function () {
             var detailView = document.getElementById('contract-detail-view');
             if (!detailView || detailView.innerHTML.trim() === '') {
               _showDetailView(true);
@@ -70,7 +70,7 @@ var ContractPage = (function () {
           var dateParam = params.get('date');
           var idParam = params.get('id');
           bookingIdParam = params.get('bookingId');
-          
+
           if (dateParam) {
             filterParams.TuNgay = dateParam;
             filterParams.DenNgay = dateParam;
@@ -81,20 +81,20 @@ var ContractPage = (function () {
             filterParams.DenNgay = "";
           }
         }
-        
+
         // Cấu hình Plugin Button "Lập Hợp Đồng Mới"
         if (!window.FormActionPlugins) window.FormActionPlugins = [];
-        window.FormActionPlugins = window.FormActionPlugins.filter(function(p) { return p.id !== 'contract_plugin'; });
+        window.FormActionPlugins = window.FormActionPlugins.filter(function (p) { return p.id !== 'contract_plugin'; });
         window.FormActionPlugins.push({
           id: 'contract_plugin',
-          getExtraButtons: function(formName, getSelected) {
+          getExtraButtons: function (formName, getSelected) {
             if (formName !== 'frmHopDong') return [];
             return [
               {
                 text: 'Lập Hợp Đồng',
                 icon: 'add_circle',
                 type: 'tool',
-                onClick: function() {
+                onClick: function () {
                   _showDetailView(true);
                 }
               },
@@ -102,7 +102,7 @@ var ContractPage = (function () {
                 text: 'Thay đổi / Bổ sung',
                 icon: 'edit_document',
                 type: 'tool',
-                onClick: function() {
+                onClick: function () {
                   var selected = getSelected();
                   if (!selected || selected.length === 0) {
                     if (typeof Alert !== 'undefined') Alert.warning('Cảnh báo', 'Vui lòng chọn 1 hợp đồng để lập phiếu Thay đổi/Bổ sung!');
@@ -115,7 +115,7 @@ var ContractPage = (function () {
                 text: 'Xem / Sửa',
                 icon: 'edit',
                 type: 'tool',
-                onClick: function() {
+                onClick: function () {
                   var selected = getSelected();
                   if (!selected || selected.length === 0) {
                     if (typeof UIToast !== 'undefined') UIToast.show('Vui lòng chọn 1 Hợp Đồng để xem/sửa!', 'warning');
@@ -138,7 +138,7 @@ var ContractPage = (function () {
             HideEditBtn: true // Ẩn nút Sửa mặc định
           });
         }
-        
+
         if (bookingIdParam) {
           _isFromBooking = true;
           _showDetailView(true, bookingIdParam);
@@ -154,7 +154,7 @@ var ContractPage = (function () {
       try {
         var arr = JSON.parse(cached);
         if (arr && arr.length > 0) return arr[0];
-      } catch(e) {}
+      } catch (e) { }
     }
     return null;
   }
@@ -182,16 +182,48 @@ var ContractPage = (function () {
     }
   }
 
+  function _renderContractSanhPhu(sanhChinhId, selectedIds) {
+    var container = document.getElementById('container-contract-sanh-phu');
+    if (!container) return;
+    container.innerHTML = '';
+    var halls = window._contractHallRecords || [];
+
+    if (!sanhChinhId) {
+      container.innerHTML = '<span class="text-secondary" style="font-size: 12px; margin: auto; font-style: italic;">Vui lòng chọn Sảnh Chính trước</span>';
+      return;
+    }
+
+    var filtered = halls.filter(function (r) { return r.Sanhtiecid !== sanhChinhId; });
+    if (filtered.length === 0) {
+      container.innerHTML = '<span class="text-secondary" style="font-size: 12px; margin: auto; font-style: italic;">Không có sảnh phụ nào khác</span>';
+      return;
+    }
+
+    filtered.forEach(function (h) {
+      var isChecked = (selectedIds || []).includes(h.Sanhtiecid) ? 'checked' : '';
+      container.innerHTML += `
+      <label class="modern-checkbox-wrapper mb-0" style="font-size: 13px; background: var(--color-surface); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--color-border); min-width: 160px; display: flex; flex-direction: column; cursor: pointer; transition: all 0.2s;">
+        <div class="d-flex align-items-center gap-2">
+          <input type="checkbox" class="modern-checkbox chk-contract-sanh-phu" value="${h.Sanhtiecid}" ${isChecked}>
+          <span style="font-weight: 600; color: var(--color-primary);">${h.Tensanhtiec}</span>
+        </div>
+      </label>
+      `;
+    });
+  }
+
   function _showDetailView(isNew, bookingId) {
+    window._pendingSanhChinhId = null;
+    window._pendingPhuIds = [];
     _switchTabUI('detail');
-    
+
     var detailContainer = document.getElementById('contract-detail-view');
     if (detailContainer) {
       detailContainer.style.animation = 'slideUp 0.3s ease forwards';
     }
 
     var dv = detailContainer;
-    
+
     var titleText = 'Lập Hợp Đồng Mới';
     var chureVal = '';
     var codauVal = '';
@@ -213,13 +245,13 @@ var ContractPage = (function () {
       if (contract) {
         var hdId = contract.Sohopdong || contract.id || '';
         titleText = 'Chi Tiết Hợp Đồng ' + hdId;
-        
+
         var names = (contract.TenKhachHang || contract.customerName || '').split('&');
         chureVal = names[0] ? names[0].trim() : '';
         codauVal = names[1] ? names[1].trim() : '';
-        
+
         dienthoaiVal = contract.DienThoai || contract.phone || '';
-        
+
         var rawDate = contract.NgayToChuc || contract.eventDate || '';
         if (rawDate.includes('/')) {
           var parts = rawDate.split('/');
@@ -507,6 +539,13 @@ var ContractPage = (function () {
               <label>Sảnh Chính</label>
               <select id="sel-sanh" class="ui-input"><option value="">-- Chọn Sảnh --</option></select>
             </div>
+            </div>
+          
+          <div class="form-group mb-4" style="margin-top: -8px;">
+             <label>Sảnh Phụ (Kèm theo)</label>
+             <div id="container-contract-sanh-phu" class="d-flex flex-wrap gap-2 p-2" style="background: var(--color-background); border-radius: 8px; border: 1px solid var(--color-border); min-height: 60px;">
+                <span class="text-secondary" style="font-size: 12px; margin: auto; font-style: italic;">Vui lòng chọn Sảnh Chính trước</span>
+             </div>
           </div>
 
           <!-- 3. Quy mô & Tiền cọc -->
@@ -556,37 +595,46 @@ var ContractPage = (function () {
     // Tải danh sách Sảnh, Ca, Loại tiệc động từ Database
     if (typeof SystemDataService !== 'undefined') {
       SystemDataService.getHalls()
-        .then(function(halls) {
+        .then(function (halls) {
+          window._contractHallRecords = halls;
           var selSanh = document.getElementById('sel-sanh');
           if (selSanh) {
             selSanh.innerHTML = '<option value="">-- Chọn Sảnh --</option>';
-            halls.forEach(function(h) {
+            halls.forEach(function (h) {
               var isSel = (h.Sanhtiecid === sanhIdVal || h.Tensanhtiec === mainHallName) ? 'selected' : '';
               selSanh.innerHTML += `<option value="${h.Sanhtiecid}" ${isSel}>${h.Tensanhtiec}</option>`;
             });
+            selSanh.addEventListener('change', function () {
+              _renderContractSanhPhu(this.value, []);
+            });
+            if (window._pendingSanhChinhId) {
+              _renderContractSanhPhu(window._pendingSanhChinhId, window._pendingPhuIds || []);
+            } else if (sanhIdVal) {
+              _renderContractSanhPhu(sanhIdVal, []);
+            }
           }
         })
-        .catch(function(e) { console.warn('Không tải được sảnh động', e); });
+        .catch(function (e) { console.warn('Không tải được sảnh động', e); });
 
       SystemDataService.getShifts()
-        .then(function(shifts) {
+        .then(function (shifts) {
           var selCa = document.getElementById('sel-ca');
           if (selCa) {
             selCa.innerHTML = '<option value="">-- Chọn Ca --</option>';
-            shifts.forEach(function(s) {
+            shifts.forEach(function (s) {
               var isSel = (s.Thoigianid === caIdVal) ? 'selected' : '';
               selCa.innerHTML += `<option value="${s.Thoigianid}" ${isSel}>${s.Tenthoigian || s.Thoigianid}</option>`;
             });
           }
         })
-        .catch(function(e) { console.warn('Không tải được ca động', e); });
+        .catch(function (e) { console.warn('Không tải được ca động', e); });
 
       SystemDataService.getBanquetTypes()
-        .then(function(types) {
+        .then(function (types) {
           var selLoai = document.getElementById('sel-loai');
           if (selLoai) {
             selLoai.innerHTML = '<option value="">-- Chọn Loại Tiệc --</option>';
-            types.forEach(function(t) {
+            types.forEach(function (t) {
               var id = t.Loaihinhtiecid || t.Loaitiecid || '';
               var name = t.Tenloaihinhtiec || t.Tenloaitiec || id;
               var isHoiNghiFlag = (String(t.isHoiNghi) === '1' || String(t.isHoiNghi).toLowerCase() === 'true') ? '1' : '0';
@@ -598,13 +646,13 @@ var ContractPage = (function () {
             updateBanquetFields();
           }
         })
-        .catch(function(e) { console.warn('Không tải được loại hình tiệc động', e); });
+        .catch(function (e) { console.warn('Không tải được loại hình tiệc động', e); });
     }
 
     // Nếu tạo mới từ một Booking cụ thể, tải thông tin thật từ DB
     if (isNew && bookingId) {
       ContractService.getBookingById(bookingId)
-        .then(function(booking) {
+        .then(function (booking) {
           if (!booking) return;
           if (document.getElementById('inp-tenchure')) document.getElementById('inp-tenchure').value = booking.TenChuRe || booking.Tenchure || '';
           if (document.getElementById('inp-tencodau')) document.getElementById('inp-tencodau').value = booking.TenCoDau || booking.Tencodau || '';
@@ -632,18 +680,38 @@ var ContractPage = (function () {
             inpTiencoc.dispatchEvent(new Event('input'));
           }
 
-          if (booking.Sanhtiecid || booking.SanhDat) {
+          var dsSanh = [];
+          try {
+            if (booking._JsonSanhTiec) dsSanh = JSON.parse(booking._JsonSanhTiec);
+            else if (booking.JsonSanhTiec) dsSanh = JSON.parse(booking.JsonSanhTiec);
+          } catch (e) { }
+
+          var sanhChinhId = booking.Sanhtiecid || '';
+          var phuIds = [];
+          if (dsSanh.length > 0) {
+            var sc = dsSanh.find(function (s) { return s.IsSanhchinh === 1 || s.IsSanhchinh === true; });
+            if (sc) sanhChinhId = sc.Sanhtiecid;
+            phuIds = dsSanh.filter(function (s) { return s.IsSanhchinh === 0 || s.IsSanhchinh === false; }).map(function (s) { return s.Sanhtiecid; });
+          }
+
+          if (sanhChinhId || booking.SanhDat) {
             var sanhSel = document.getElementById('sel-sanh');
             if (sanhSel) {
-              var valToSet = booking.Sanhtiecid || '';
+              var valToSet = sanhChinhId || '';
               if (!valToSet && booking.SanhDat) {
-                Array.from(sanhSel.options).forEach(function(opt) {
+                Array.from(sanhSel.options).forEach(function (opt) {
                   if (opt.text.toLowerCase().includes(booking.SanhDat.toLowerCase())) {
                     opt.selected = true;
+                    valToSet = opt.value;
                   }
                 });
               } else {
                 sanhSel.value = valToSet;
+              }
+              window._pendingSanhChinhId = valToSet;
+              window._pendingPhuIds = phuIds;
+              if (window._contractHallRecords) {
+                _renderContractSanhPhu(valToSet, phuIds);
               }
             }
           }
@@ -658,7 +726,7 @@ var ContractPage = (function () {
             }
           }
         })
-        .catch(function(err) {
+        .catch(function (err) {
           console.warn('Lỗi khi tải thông tin booking từ API:', err);
         });
     }
@@ -673,7 +741,7 @@ var ContractPage = (function () {
 
     var $thucDonManContainer = document.createElement('div');
     $thucDonManContainer.id = 'thuc-don-man-tab-container';
-    
+
     var $thucDonChayContainer = document.createElement('div');
     $thucDonChayContainer.id = 'thuc-don-chay-tab-container';
 
@@ -726,7 +794,7 @@ var ContractPage = (function () {
     _renderDoiHuy();
 
     // Bind real-time total update event listeners
-    setTimeout(function() {
+    setTimeout(function () {
       var inpBanMan = document.getElementById('inp-ban-man');
       var inpBanChay = document.getElementById('inp-ban-chay');
       if (inpBanMan) inpBanMan.addEventListener('input', updateRealTimeTotal);
@@ -802,52 +870,52 @@ var ContractPage = (function () {
 
   function _renderBanTiec() {
     var container = document.getElementById('ban-tiec-tab-container');
-    if(!container) return;
+    if (!container) return;
     container.innerHTML = '<div class="p-4">' +
       '<h5 class="mb-3" style="color: var(--color-primary); font-weight: 600;">Thiết lập Bàn Tiệc</h5>' +
       '<div class="row g-3">' +
-        '<div class="col-md-6">' +
-          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Gói Bàn Mặn</label>' +
-          '<select class="ui-input w-100" id="sel-goi-ban-man">' +
-             '<option value="0">-- Chọn Gói --</option>' +
-             '<option value="1">Gói Tiêu chuẩn</option>' +
-             '<option value="2">Gói Cao cấp</option>' +
-          '</select>' +
-        '</div>' +
-        '<div class="col-md-6">' +
-          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Đơn giá Bàn Mặn (VNĐ)</label>' +
-          '<input type="text" class="ui-input w-100" id="inp-gia-ban-man" value="0" style="text-align:right; font-weight:bold; color:var(--color-danger);">' +
-        '</div>' +
-        '<div class="col-md-6 mt-3">' +
-          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Gói Bàn Chay</label>' +
-          '<select class="ui-input w-100" id="sel-goi-ban-chay">' +
-             '<option value="0">-- Chọn Gói --</option>' +
-             '<option value="1">Chay Tiêu chuẩn</option>' +
-             '<option value="2">Chay Đặc biệt</option>' +
-          '</select>' +
-        '</div>' +
-        '<div class="col-md-6 mt-3">' +
-          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Đơn giá Bàn Chay (VNĐ)</label>' +
-          '<input type="text" class="ui-input w-100" id="inp-gia-ban-chay" value="0" style="text-align:right; font-weight:bold; color:var(--color-danger);">' +
-        '</div>' +
+      '<div class="col-md-6">' +
+      '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Gói Bàn Mặn</label>' +
+      '<select class="ui-input w-100" id="sel-goi-ban-man">' +
+      '<option value="0">-- Chọn Gói --</option>' +
+      '<option value="1">Gói Tiêu chuẩn</option>' +
+      '<option value="2">Gói Cao cấp</option>' +
+      '</select>' +
+      '</div>' +
+      '<div class="col-md-6">' +
+      '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Đơn giá Bàn Mặn (VNĐ)</label>' +
+      '<input type="text" class="ui-input w-100" id="inp-gia-ban-man" value="0" style="text-align:right; font-weight:bold; color:var(--color-danger);">' +
+      '</div>' +
+      '<div class="col-md-6 mt-3">' +
+      '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Gói Bàn Chay</label>' +
+      '<select class="ui-input w-100" id="sel-goi-ban-chay">' +
+      '<option value="0">-- Chọn Gói --</option>' +
+      '<option value="1">Chay Tiêu chuẩn</option>' +
+      '<option value="2">Chay Đặc biệt</option>' +
+      '</select>' +
+      '</div>' +
+      '<div class="col-md-6 mt-3">' +
+      '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Đơn giá Bàn Chay (VNĐ)</label>' +
+      '<input type="text" class="ui-input w-100" id="inp-gia-ban-chay" value="0" style="text-align:right; font-weight:bold; color:var(--color-danger);">' +
+      '</div>' +
       '</div>' +
       '</div>';
   }
 
   function _renderSanh() {
     var container = document.getElementById('sanh-tab-container');
-    if(!container) return;
+    if (!container) return;
     container.innerHTML = '<div class="p-4">' +
       '<h5 class="mb-3" style="color: var(--color-primary); font-weight: 600;">Thông tin Sảnh Tiệc</h5>' +
       '<div class="row g-3">' +
-        '<div class="col-md-6">' +
-          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Sảnh Đặt</label>' +
-          '<input type="text" class="ui-input w-100 bg-light" id="inp-sanh-hien-tai" readonly placeholder="Chưa chọn sảnh...">' +
-        '</div>' +
-        '<div class="col-md-6">' +
-          '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Phí Thuê Sảnh (VNĐ)</label>' +
-          '<input type="text" class="ui-input w-100" id="inp-phi-sanh" value="0" style="text-align:right; font-weight:bold;">' +
-        '</div>' +
+      '<div class="col-md-6">' +
+      '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Sảnh Đặt</label>' +
+      '<input type="text" class="ui-input w-100 bg-light" id="inp-sanh-hien-tai" readonly placeholder="Chưa chọn sảnh...">' +
+      '</div>' +
+      '<div class="col-md-6">' +
+      '<label class="form-label fw-bold" style="color:var(--color-text-secondary);">Phí Thuê Sảnh (VNĐ)</label>' +
+      '<input type="text" class="ui-input w-100" id="inp-phi-sanh" value="0" style="text-align:right; font-weight:bold;">' +
+      '</div>' +
       '</div>' +
       '</div>';
   }
@@ -861,8 +929,8 @@ var ContractPage = (function () {
 
     var rowsHtml = selectedFoodsMan.map((item, idx) => {
       var formattedPrice = new Intl.NumberFormat('vi-VN').format(item.DonGia || 0) + ' đ';
-      var badgeStyle = item.PhanLoai === 'Khai Vị' 
-        ? 'background: rgba(148, 163, 184, 0.2); color: var(--color-text-secondary); padding: 4px 10px; border-radius: 6px; font-weight: 600;' 
+      var badgeStyle = item.PhanLoai === 'Khai Vị'
+        ? 'background: rgba(148, 163, 184, 0.2); color: var(--color-text-secondary); padding: 4px 10px; border-radius: 6px; font-weight: 600;'
         : 'background: rgba(16, 185, 129, 0.1); color: var(--color-success); padding: 4px 10px; border-radius: 6px; font-weight: 600;';
       return `
         <tr>
@@ -889,12 +957,12 @@ var ContractPage = (function () {
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="m-0 fw-bold" style="color: var(--color-primary); font-size: 16px;">Danh sách Món Mặn / 1 Bàn</h6>
           ${UIButton.createHTML({
-            text: 'Thêm Món',
-            icon: 'add',
-            type: 'outline-primary',
-            className: 'btn-sm d-flex align-items-center gap-1',
-            onClick: "ContractPage.openFoodSelectionModal('man')"
-          })}
+      text: 'Thêm Món',
+      icon: 'add',
+      type: 'outline-primary',
+      className: 'btn-sm d-flex align-items-center gap-1',
+      onClick: "ContractPage.openFoodSelectionModal('man')"
+    })}
         </div>
         <div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">
           <table class="table table-hover m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 650px;">
@@ -958,12 +1026,12 @@ var ContractPage = (function () {
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="m-0 fw-bold" style="color: var(--color-success); font-size: 16px;">Danh sách Món Chay / 1 Bàn</h6>
           ${UIButton.createHTML({
-            text: 'Thêm Món Chay',
-            icon: 'add',
-            type: 'outline-success',
-            className: 'btn-sm d-flex align-items-center gap-1',
-            onClick: "ContractPage.openFoodSelectionModal('chay')"
-          })}
+      text: 'Thêm Món Chay',
+      icon: 'add',
+      type: 'outline-success',
+      className: 'btn-sm d-flex align-items-center gap-1',
+      onClick: "ContractPage.openFoodSelectionModal('chay')"
+    })}
         </div>
         <div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">
           <table class="table table-hover m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 650px;">
@@ -1010,11 +1078,11 @@ var ContractPage = (function () {
           <td class="text-end align-middle fw-semibold text-muted">${formattedPrice}</td>
           <td class="text-center align-middle" style="width: 130px;">
             ${UIInput.createQuantityHTML({
-              value: item.SoLuong || 1,
-              onDecrease: `ContractPage.changeQty('drink', ${idx}, ${(item.SoLuong || 1) - 1})`,
-              onIncrease: `ContractPage.changeQty('drink', ${idx}, ${(item.SoLuong || 1) + 1})`,
-              onChange: `ContractPage.changeQty('drink', ${idx}, this.value)`
-            })}
+        value: item.SoLuong || 1,
+        onDecrease: `ContractPage.changeQty('drink', ${idx}, ${(item.SoLuong || 1) - 1})`,
+        onIncrease: `ContractPage.changeQty('drink', ${idx}, ${(item.SoLuong || 1) + 1})`,
+        onChange: `ContractPage.changeQty('drink', ${idx}, this.value)`
+      })}
           </td>
           <td class="text-end align-middle fw-semibold text-danger">${formattedSubTotal}</td>
           <td class="text-center align-middle">
@@ -1036,12 +1104,12 @@ var ContractPage = (function () {
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="m-0 fw-bold" style="color: var(--color-primary); font-size: 16px;">Danh sách Thức Uống & Phí Phục Vụ</h6>
           ${UIButton.createHTML({
-            text: 'Thêm Thức Uống',
-            icon: 'add',
-            type: 'outline-primary',
-            className: 'btn-sm d-flex align-items-center gap-1',
-            onClick: "ContractPage.openFoodSelectionModal('drink')"
-          })}
+      text: 'Thêm Thức Uống',
+      icon: 'add',
+      type: 'outline-primary',
+      className: 'btn-sm d-flex align-items-center gap-1',
+      onClick: "ContractPage.openFoodSelectionModal('drink')"
+    })}
         </div>
         <div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">
           <table class="table table-hover m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 650px;">
@@ -1089,11 +1157,11 @@ var ContractPage = (function () {
           <td class="text-end align-middle fw-semibold text-muted">${formattedPrice}</td>
           <td class="text-center align-middle" style="width: 130px;">
             ${UIInput.createQuantityHTML({
-              value: item.SoLuong || 1,
-              onDecrease: `ContractPage.changeQty('service', ${idx}, ${(item.SoLuong || 1) - 1})`,
-              onIncrease: `ContractPage.changeQty('service', ${idx}, ${(item.SoLuong || 1) + 1})`,
-              onChange: `ContractPage.changeQty('service', ${idx}, this.value)`
-            })}
+        value: item.SoLuong || 1,
+        onDecrease: `ContractPage.changeQty('service', ${idx}, ${(item.SoLuong || 1) - 1})`,
+        onIncrease: `ContractPage.changeQty('service', ${idx}, ${(item.SoLuong || 1) + 1})`,
+        onChange: `ContractPage.changeQty('service', ${idx}, this.value)`
+      })}
           </td>
           <td class="text-end align-middle fw-semibold text-danger">${formattedSubTotal}</td>
           <td class="text-center align-middle">
@@ -1115,12 +1183,12 @@ var ContractPage = (function () {
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h6 class="m-0 fw-bold" style="color: var(--color-primary); font-size: 16px;">Danh sách Dịch Vụ & Nghi Lễ Đi Kèm</h6>
           ${UIButton.createHTML({
-            text: 'Thêm Dịch Vụ',
-            icon: 'add',
-            type: 'outline-primary',
-            className: 'btn-sm d-flex align-items-center gap-1',
-            onClick: "ContractPage.openFoodSelectionModal('service')"
-          })}
+      text: 'Thêm Dịch Vụ',
+      icon: 'add',
+      type: 'outline-primary',
+      className: 'btn-sm d-flex align-items-center gap-1',
+      onClick: "ContractPage.openFoodSelectionModal('service')"
+    })}
         </div>
         <div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">
           <table class="table table-hover m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 650px;">
@@ -1154,7 +1222,7 @@ var ContractPage = (function () {
   function _renderUuDai() {
     var container = document.getElementById('uu-dai-tab-container');
     if (!container) return;
-    
+
     container.innerHTML = `
       <div class="p-4">
         <span class="form-section-title">Chương trình Ưu đãi Áp dụng</span>
@@ -1329,13 +1397,13 @@ var ContractPage = (function () {
       selectedDichVu.splice(index, 1);
       _renderDichVu();
     }
-    
+
     if (removedItem && removedItem.MaMon) {
       if (typeof unhighlightFoodCard === 'function') {
         unhighlightFoodCard(removedItem.MaMon);
       }
     }
-    
+
     UIToast.show('Đã xóa khỏi danh sách', 'success');
   }
 
@@ -1355,7 +1423,7 @@ var ContractPage = (function () {
     var title = 'Thêm Món Thực Đơn Mặn';
     var isChayVal = -1;
     var phanLoaiVal = '';
-    
+
     if (type === 'man') {
       title = 'Thêm Món Thực Đơn Mặn';
       isChayVal = 0;
@@ -1576,8 +1644,10 @@ var ContractPage = (function () {
         <!-- Sleek Horizontal Sticky Bottom Bar -->
         <div class="modal-bottom-bar">
           <div class="modal-bottom-left-sec">
-            ${UIButton.createHTML({ type: 'outline-primary', className: 'd-flex align-items-center justify-content-center', style: 'height: 38px; border-radius: 8px; font-weight: 700; font-size: 14px; padding: 0 14px; white-space: nowrap; gap: 6px;', onClick: 'ContractPage.toggleSelectedDrawer()',
-              text: `${UIIcon.createHTML('shopping_cart', 'font-size: 20px; transform: translateY(2.5px);')}<span style="transform: translateY(-1px);">Đã chọn: <strong id="modal-sidebar-count">0</strong> món</span>${UIIcon.createHTML('expand_less', 'font-size: 20px; transform: translateY(2.5px);', '', 'id="drawer-toggle-arrow"')}` })}
+            ${UIButton.createHTML({
+      type: 'outline-primary', className: 'd-flex align-items-center justify-content-center', style: 'height: 38px; border-radius: 8px; font-weight: 700; font-size: 14px; padding: 0 14px; white-space: nowrap; gap: 6px;', onClick: 'ContractPage.toggleSelectedDrawer()',
+      text: `${UIIcon.createHTML('shopping_cart', 'font-size: 20px; transform: translateY(2.5px);')}<span style="transform: translateY(-1px);">Đã chọn: <strong id="modal-sidebar-count">0</strong> món</span>${UIIcon.createHTML('expand_less', 'font-size: 20px; transform: translateY(2.5px);', '', 'id="drawer-toggle-arrow"')}`
+    })}
           </div>
           
           <div class="modal-bottom-right-sec" style="display: flex; align-items: center; gap: 16px;">
@@ -1616,10 +1686,10 @@ var ContractPage = (function () {
       }
 
       ContractService.getFoods(params)
-        .then(function(items) {
+        .then(function (items) {
           _renderModalList(items);
         })
-        .catch(function(err) {
+        .catch(function (err) {
           console.warn('API error loading food list:', err);
           _renderModalList([]);
         });
@@ -1649,7 +1719,7 @@ var ContractPage = (function () {
 
       groupNames.forEach(groupName => {
         var groupItems = groups[groupName];
-        
+
         // Render Category Section Header
         html += `
           <div class="food-category-section mb-4">
@@ -1669,9 +1739,9 @@ var ContractPage = (function () {
           var formattedPrice = new Intl.NumberFormat('vi-VN').format(price) + ' đ';
           var maMon = item.MaMon || item.Mahang;
           var tenMon = item.TenMon || item.Tenhang;
-          
+
           var escapedItem = JSON.stringify(item).replace(/"/g, '&quot;');
-          
+
           var isSelected = false;
           if (type === 'man') isSelected = selectedFoodsMan.some(x => x.MaMon === maMon || x.Mahang === maMon);
           else if (type === 'chay') isSelected = selectedFoodsChay.some(x => x.MaMon === maMon || x.Mahang === maMon);
@@ -1711,10 +1781,10 @@ var ContractPage = (function () {
 
     setTimeout(() => {
       loadModalFoods();
-      
+
       var btnSearch = document.getElementById('btn-modal-food-search');
       var txtSearch = document.getElementById('modal-food-search');
-      
+
       if (btnSearch && txtSearch) {
         btnSearch.onclick = () => {
           loadModalFoods(txtSearch.value);
@@ -1732,7 +1802,7 @@ var ContractPage = (function () {
   function addFood(type, itemStr) {
     var rawItem = JSON.parse(itemStr);
     var maMon = rawItem.MaMon || rawItem.Mahang;
-    
+
     var existingItem = null;
     var list = [];
     if (type === 'man') list = selectedFoodsMan;
@@ -1770,7 +1840,7 @@ var ContractPage = (function () {
       selectedDichVu.push(item);
       _renderDichVu();
     }
-    
+
     // Đổ bộ trạng thái hiển thị của item trên modal
     var card = document.getElementById('food-card-' + maMon);
     var btn = document.getElementById('food-btn-' + maMon);
@@ -1783,7 +1853,7 @@ var ContractPage = (function () {
       btn.style.cssText = "width: 28px; height: 28px; background: #10B981; border: none; flex-shrink: 0;";
       btn.innerHTML = UIIcon.createHTML('check', 'font-size: 16px; color: white;');
     }
-    
+
     _renderModalSidebar(type);
     UIToast.show(`Đã thêm món: ${item.TenMon}`, 'success');
   }
@@ -1837,13 +1907,13 @@ var ContractPage = (function () {
     var banman = parseInt(document.getElementById('inp-ban-man') ? document.getElementById('inp-ban-man').value : 0) || 0;
     var banchay = parseInt(document.getElementById('inp-ban-chay') ? document.getElementById('inp-ban-chay').value : 0) || 0;
 
-    var totalFoodMan = selectedFoodsMan.reduce(function(sum, item) { return sum + parseFloat(item.DonGia || 0); }, 0);
-    var totalFoodChay = selectedFoodsChay.reduce(function(sum, item) { return sum + parseFloat(item.DonGia || 0); }, 0);
-    var totalDrink = selectedThucUong.reduce(function(sum, item) { return sum + parseFloat(item.DonGia || 0) * (item.SoLuong || 1); }, 0);
-    var totalService = selectedDichVu.reduce(function(sum, item) { return sum + parseFloat(item.DonGia || 0) * (item.SoLuong || 1); }, 0);
+    var totalFoodMan = selectedFoodsMan.reduce(function (sum, item) { return sum + parseFloat(item.DonGia || 0); }, 0);
+    var totalFoodChay = selectedFoodsChay.reduce(function (sum, item) { return sum + parseFloat(item.DonGia || 0); }, 0);
+    var totalDrink = selectedThucUong.reduce(function (sum, item) { return sum + parseFloat(item.DonGia || 0) * (item.SoLuong || 1); }, 0);
+    var totalService = selectedDichVu.reduce(function (sum, item) { return sum + parseFloat(item.DonGia || 0) * (item.SoLuong || 1); }, 0);
 
     var tongtienhopdong = (totalFoodMan * banman) + (totalFoodChay * banchay) + totalDrink + totalService;
-    
+
     var inpTongTien = document.getElementById('inp-tong-tien');
     if (inpTongTien) {
       inpTongTien.value = tongtienhopdong.toLocaleString('vi-VN');
@@ -1858,11 +1928,11 @@ var ContractPage = (function () {
     var inpCoc = document.getElementById('inp-tiencoc');
     var warnDiv = document.getElementById('warn-tiencoc-40');
     if (!inpTong || !inpCoc || !warnDiv) return;
-    
+
     var tongTien = parseFloat(inpTong.value.replace(/[^0-9]/g, '')) || 0;
     var tienCoc = parseFloat(inpCoc.value.replace(/[^0-9]/g, '')) || 0;
     var require40 = tongTien * 0.4;
-    
+
     if (tongTien > 0 && tienCoc < require40) {
       var diff = require40 - tienCoc;
       warnDiv.innerHTML = '<i class="material-symbols-outlined align-middle" style="font-size:14px">warning</i> Cần thu thêm ' + new Intl.NumberFormat('vi-VN').format(diff) + ' ₫ để đủ 40% (Cọc lần 2).';
@@ -1874,7 +1944,7 @@ var ContractPage = (function () {
 
   function saveContract() {
     var contract = getSelectedRow();
-    
+
     // Đọc trực tiếp dữ liệu động từ form do người dùng chỉnh sửa hoặc lấy từ DB
     var tenchure = document.getElementById('inp-tenchure') ? document.getElementById('inp-tenchure').value.trim() : '';
     var tencodau = document.getElementById('inp-tencodau') ? document.getElementById('inp-tencodau').value.trim() : '';
@@ -1888,10 +1958,10 @@ var ContractPage = (function () {
     var banmanDuPhong = parseInt(document.getElementById('inp-duphong-man') ? document.getElementById('inp-duphong-man').value : 0) || 0;
     var banchay = parseInt(document.getElementById('inp-ban-chay') ? document.getElementById('inp-ban-chay').value : 0) || 0;
     var banchayDuPhong = parseInt(document.getElementById('inp-duphong-chay') ? document.getElementById('inp-duphong-chay').value : 0) || 0;
-    
+
     var tiencocRaw = document.getElementById('inp-tiencoc') ? document.getElementById('inp-tiencoc').value.replace(/\D/g, '') : '0';
     var tiencoc = parseFloat(tiencocRaw) || 0;
-    
+
     var sanhVal = document.getElementById('sel-sanh') ? document.getElementById('sel-sanh').value : '';
     var caVal = document.getElementById('sel-ca') ? document.getElementById('sel-ca').value : '';
     var loaiVal = document.getElementById('sel-loai') ? document.getElementById('sel-loai').value : '';
@@ -1899,12 +1969,22 @@ var ContractPage = (function () {
     var totalTables = banman + banchay;
 
     // Tính toán tổng tiền hợp đồng thực tế từ món ăn và dịch vụ được chọn
-    var totalFoodMan = selectedFoodsMan.reduce(function(sum, item) { return sum + parseFloat(item.DonGia || 0); }, 0);
-    var totalFoodChay = selectedFoodsChay.reduce(function(sum, item) { return sum + parseFloat(item.DonGia || 0); }, 0);
-    var totalDrink = selectedThucUong.reduce(function(sum, item) { return sum + parseFloat(item.DonGia || 0) * (item.SoLuong || 1); }, 0);
-    var totalService = selectedDichVu.reduce(function(sum, item) { return sum + parseFloat(item.DonGia || 0) * (item.SoLuong || 1); }, 0);
+    var totalFoodMan = selectedFoodsMan.reduce(function (sum, item) { return sum + parseFloat(item.DonGia || 0); }, 0);
+    var totalFoodChay = selectedFoodsChay.reduce(function (sum, item) { return sum + parseFloat(item.DonGia || 0); }, 0);
+    var totalDrink = selectedThucUong.reduce(function (sum, item) { return sum + parseFloat(item.DonGia || 0) * (item.SoLuong || 1); }, 0);
+    var totalService = selectedDichVu.reduce(function (sum, item) { return sum + parseFloat(item.DonGia || 0) * (item.SoLuong || 1); }, 0);
 
     var tongtienhopdong = (totalFoodMan * banman) + (totalFoodChay * banchay) + totalDrink + totalService;
+
+    var dsSanh = [];
+    if (sanhVal) dsSanh.push({ Sanhtiecid: sanhVal, IsSanhchinh: 1 });
+
+    var chkPhu = document.querySelectorAll('.chk-contract-sanh-phu:checked');
+    if (chkPhu) {
+      Array.from(chkPhu).forEach(function (chk) {
+        dsSanh.push({ Sanhtiecid: chk.value, IsSanhchinh: 0 });
+      });
+    }
 
     var payload = {
       Sohopdong: contract ? (contract.Sohopdong || contract.id || '') : '',
@@ -1925,13 +2005,13 @@ var ContractPage = (function () {
       Thoigianid: caVal,
       Loaitiecid: loaiVal,
       Ghichu: 'Lưu từ giao diện Hợp Đồng',
-      JsonSanhTiec: JSON.stringify([{ Sanhtiecid: sanhVal, IsSanhchinh: 1 }])
+      JsonSanhTiec: JSON.stringify(dsSanh)
     };
 
     UIToast.show('Đang lưu Hợp Đồng...', 'info');
 
     ContractService.save(payload)
-      .then(function(res) {
+      .then(function (res) {
         var data = res;
         if (Array.isArray(res) && res.length > 0) data = res[0];
 
@@ -1943,7 +2023,7 @@ var ContractPage = (function () {
           UIToast.show(data.Message || 'Lỗi khi lưu hợp đồng', 'danger');
         }
       })
-      .catch(function(err) {
+      .catch(function (err) {
         console.error('Lỗi API Contract Save:', err);
         UIToast.show('Đã lưu Hợp đồng thành công (Mô phỏng lưu thành công)', 'success');
         closeDetail();
@@ -1995,21 +2075,21 @@ var ContractPage = (function () {
       total += subtotal;
 
       var formattedPrice = new Intl.NumberFormat('vi-VN').format(price) + ' đ';
-      
+
       var qtyControlHtml = '';
       if (type === 'drink' || type === 'service') {
         qtyControlHtml = `
           <div style="flex-shrink: 0; margin-left: 8px;">
             ${UIInput.createQuantityHTML({
-              value: qty,
-              onDecrease: `ContractPage.changeModalSidebarQty('${type}', ${idx}, -1)`,
-              onIncrease: `ContractPage.changeModalSidebarQty('${type}', ${idx}, 1)`,
-              onChange: '',
-              stopPropagation: true,
-              width: 72,
-              height: 24,
-              btnWidth: 24
-            })}
+          value: qty,
+          onDecrease: `ContractPage.changeModalSidebarQty('${type}', ${idx}, -1)`,
+          onIncrease: `ContractPage.changeModalSidebarQty('${type}', ${idx}, 1)`,
+          onChange: '',
+          stopPropagation: true,
+          width: 72,
+          height: 24,
+          btnWidth: 24
+        })}
           </div>
         `;
       } else {
@@ -2081,13 +2161,13 @@ var ContractPage = (function () {
       selectedDichVu.splice(index, 1);
       _renderDichVu();
     }
-    
+
     if (removedItem && removedItem.MaMon) {
       if (typeof unhighlightFoodCard === 'function') {
         unhighlightFoodCard(removedItem.MaMon);
       }
     }
-    
+
     _renderModalSidebar(type);
     UIToast.show('Đã xóa khỏi danh sách', 'success');
   }
@@ -2136,17 +2216,17 @@ var ContractPage = (function () {
     }
 
     _switchTabUI('list');
-    
+
     _isFromBooking = false;
   }
 
   function _renderPhuLuc() {
     var container = document.getElementById('phu-luc-tab-container');
     if (!container) return;
-    
+
     var contract = getSelectedRow();
     var isNew = (!contract || !contract.Sohopdong);
-    
+
     container.innerHTML = `
       <div class="card p-3 p-md-4 mt-3 mx-auto" style="width: 100%; max-width: 1200px; background: var(--color-surface); border-radius: 12px; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); overflow: hidden;">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 gap-3" style="border-bottom: 1px solid var(--color-border);">
@@ -2177,7 +2257,7 @@ var ContractPage = (function () {
       return;
     }
 
-    container.querySelector('#btn-create-phuluc').onclick = function() {
+    container.querySelector('#btn-create-phuluc').onclick = function () {
       _showThayDoiBoSungModal(contract);
     };
 
@@ -2193,7 +2273,7 @@ var ContractPage = (function () {
         List: 'tbmk_Thaydoi',
         Func: 'View',
         Keyword: sohopdong
-      }).then(function(res) {
+      }).then(function (res) {
         var records = res.records || res.data || [];
         var html = '';
         if (records.length === 0) {
@@ -2206,18 +2286,18 @@ var ContractPage = (function () {
           `;
         } else {
           html = '<div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">' +
-                 '<table class="table table-hover align-middle m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 700px; background: var(--color-surface);">' +
-                 '<thead style="background: var(--color-background); border-bottom: 2px solid var(--color-border);">' +
-                 '<tr>' +
-                 '<th style="width: 160px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Số Phụ Lục</th>' +
-                 '<th style="width: 150px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Ngày Lập</th>' +
-                 '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px; width: auto;">Chi Tiết Thay Đổi</th>' +
-                 '<th class="text-end" style="width: 140px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Phụ Thu</th>' +
-                 '</tr>' +
-                 '</thead><tbody>';
-          records.forEach(function(r) {
+            '<table class="table table-hover align-middle m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 700px; background: var(--color-surface);">' +
+            '<thead style="background: var(--color-background); border-bottom: 2px solid var(--color-border);">' +
+            '<tr>' +
+            '<th style="width: 160px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Số Phụ Lục</th>' +
+            '<th style="width: 150px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Ngày Lập</th>' +
+            '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px; width: auto;">Chi Tiết Thay Đổi</th>' +
+            '<th class="text-end" style="width: 140px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Phụ Thu</th>' +
+            '</tr>' +
+            '</thead><tbody>';
+          records.forEach(function (r) {
             // Support case-insensitive property access
-            var getProp = function(obj, keyName) {
+            var getProp = function (obj, keyName) {
               if (obj[keyName] !== undefined) return obj[keyName];
               var lowerKey = keyName.toLowerCase();
               for (var k in obj) {
@@ -2243,13 +2323,13 @@ var ContractPage = (function () {
               } else {
                 var parsedDate = new Date(rawDate);
                 if (!isNaN(parsedDate)) {
-                  date = parsedDate.toLocaleDateString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+                  date = parsedDate.toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' });
                 } else {
                   date = rawDate; // Fallback to raw string
                 }
               }
             }
-            
+
             ghichu = (ghichu + '').replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
             var tien = parseFloat(phuthu || 0).toLocaleString('vi-VN') + ' đ';
 
@@ -2263,7 +2343,7 @@ var ContractPage = (function () {
           html += '</tbody></table></div>';
         }
         listContainer.innerHTML = html;
-      }).catch(function(err) {
+      }).catch(function (err) {
         listContainer.innerHTML = `<div class="alert alert-danger">Lỗi tải dữ liệu: ${err.message}</div>`;
       });
     }
@@ -2339,15 +2419,15 @@ var ContractPage = (function () {
       width: '700px',
       content: content,
       footer: '<button class="btn btn-outline-secondary" id="btn-cancel-change">Hủy</button>' +
-              '<button class="btn btn-outline-primary ms-2 d-inline-flex align-items-center gap-1" onclick="window.print()"><i class="material-symbols-outlined align-middle" style="font-size:18px;">print</i> In Phiếu</button>' +
-              '<button class="btn btn-primary ms-2" id="btn-save-change">Lưu Yêu Cầu</button>'
+        '<button class="btn btn-outline-primary ms-2 d-inline-flex align-items-center gap-1" onclick="window.print()"><i class="material-symbols-outlined align-middle" style="font-size:18px;">print</i> In Phiếu</button>' +
+        '<button class="btn btn-primary ms-2" id="btn-save-change">Lưu Yêu Cầu</button>'
     });
 
-    m.node.querySelector('#btn-cancel-change').onclick = function() {
+    m.node.querySelector('#btn-cancel-change').onclick = function () {
       m.closeNow();
     };
 
-    m.node.querySelector('#btn-save-change').onclick = function() {
+    m.node.querySelector('#btn-save-change').onclick = function () {
       var btn = this;
       var originalText = btn.innerHTML;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang xử lý...';
@@ -2363,11 +2443,11 @@ var ContractPage = (function () {
 
       var now = new Date();
       var soThayDoi = 'TD' + now.getFullYear().toString().slice(-2) +
-                      ('0' + (now.getMonth() + 1)).slice(-2) +
-                      ('0' + now.getDate()).slice(-2) +
-                      ('0' + now.getHours()).slice(-2) +
-                      ('0' + now.getMinutes()).slice(-2) +
-                      ('0' + now.getSeconds()).slice(-2);
+        ('0' + (now.getMonth() + 1)).slice(-2) +
+        ('0' + now.getDate()).slice(-2) +
+        ('0' + now.getHours()).slice(-2) +
+        ('0' + now.getMinutes()).slice(-2) +
+        ('0' + now.getSeconds()).slice(-2);
 
       var payload = {
         List: 'tbmk_Thaydoi',
@@ -2383,7 +2463,7 @@ var ContractPage = (function () {
 
       if (typeof ApiClient !== 'undefined') {
         ApiClient.post(API_CONFIG.ENDPOINTS.ROUTER, payload)
-          .then(function(res) {
+          .then(function (res) {
             if (res && res.code === 0) {
               if (typeof Alert !== 'undefined') Alert.success('Thành công', 'Đã lưu Phiếu Thay đổi vào hệ thống!');
               m.closeNow();
@@ -2392,7 +2472,7 @@ var ContractPage = (function () {
               throw new Error(res.msg || 'Không thể lưu phiếu bổ sung');
             }
           })
-          .catch(function(err) {
+          .catch(function (err) {
             if (typeof Alert !== 'undefined') Alert.error('Lỗi', err.message);
             btn.innerHTML = originalText;
             btn.disabled = false;
@@ -2404,8 +2484,8 @@ var ContractPage = (function () {
     };
   }
 
-  return { 
-    render: render, 
+  return {
+    render: render,
     closeDetail: closeDetail,
     removeFood: removeFood,
     changeQty: changeQty,

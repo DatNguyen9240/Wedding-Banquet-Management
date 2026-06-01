@@ -29,22 +29,6 @@ var WorkflowTransferPlugin = (function () {
                 };
             }
         },
-        'frmBiennhancoccho': {
-            id: 'btn-transfer-contract',
-            text: 'Lên Hợp Đồng',
-            icon: 'description',
-            targetHash: '#/contract',
-            storageKey: 'transfer_BookingToContract',
-            getTransferData: function(row) {
-                return {
-                    Tenkh: row.Tenchure || row.Tencodau || row.Tenkh || '',
-                    Dienthoai: row.DTchure || row.DTcodau || row.Dienthoai || '',
-                    Ngaytochuc: row._Ngaytochuc || row.Ngaytochuc || row.Ngaydukien || '',
-                    SanhTiec: row.Tensanh || row.SanhTiec || '',
-                    TongTienCoc: row.Tongtien || row.TienCoc || row.Sotien || ''
-                };
-            }
-        },
         'frmHopDong': {
             id: 'btn-transfer-checkout',
             text: 'Quyết Toán',
@@ -99,13 +83,6 @@ var WorkflowTransferPlugin = (function () {
         if (dataV2B) {
             _fillData(JSON.parse(dataV2B), 'Khách Tham Quan');
             sessionStorage.removeItem('transfer_VisitorToBooking');
-            return;
-        }
-
-        var dataB2C = sessionStorage.getItem('transfer_BookingToContract');
-        if (dataB2C) {
-            _fillData(JSON.parse(dataB2C), 'Biên Nhận Cọc');
-            sessionStorage.removeItem('transfer_BookingToContract');
             return;
         }
 

@@ -40,7 +40,12 @@ var ContractService = (function () {
    */
   function getBookingById(bookingId) {
     return new Promise(function (resolve, reject) {
-      ApiClient.get('/api/API_Booking_List?Keyword=' + encodeURIComponent(bookingId))
+      var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.BOOKING && API_CONFIG.ENDPOINTS.BOOKING.LIST) 
+        ? API_CONFIG.ENDPOINTS.BOOKING.LIST 
+        : '/api/API_Booking_List';
+      var payloadString = encodeURIComponent(JSON.stringify({ Keyword: bookingId }));
+      
+      ApiClient.get(endpoint + '?q=' + payloadString)
         .then(function (res) {
           var records = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
           var booking = records.find(function (b) { return (b.MaChungTu || b.id) == bookingId; });
