@@ -67,6 +67,23 @@ var UIInput = (function () {
    * Ô chọn Ngày
    */
   function createDate(config) {
+    if (config.value) {
+      var rawVal = String(config.value).trim();
+      if (rawVal.indexOf('T') !== -1) {
+        config.value = rawVal.split('T')[0];
+      } else if (rawVal.indexOf('/') !== -1) {
+        var parts = rawVal.split(' ')[0].split('/');
+        if (parts.length === 3) {
+          if (parts[0].length === 4) { // YYYY/MM/DD
+            config.value = parts[0] + '-' + parts[1] + '-' + parts[2];
+          } else { // DD/MM/YYYY
+            config.value = parts[2] + '-' + parts[1] + '-' + parts[0];
+          }
+        }
+      } else if (rawVal.indexOf(' ') !== -1) {
+        config.value = rawVal.split(' ')[0];
+      }
+    }
     return _createBaseWrapper(config, 'date').wrapper;
   }
 
