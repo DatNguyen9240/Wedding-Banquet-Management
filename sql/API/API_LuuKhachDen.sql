@@ -21,6 +21,8 @@ CREATE PROCEDURE [dbo].[API_LuuKhachDen]
     @SobanMan INT = 0,
     @SobanChay INT = 0,
     @Ghichu NVARCHAR(500) = NULL,
+    @GoiThucDonID VARCHAR(50) = '',
+    @SanhTiec VARCHAR(50) = NULL,
     @JsonSanhTiec NVARCHAR(MAX) = '[]' -- JSON array danh sách sảnh: [{"Sanhtiecid": "S01"}]
 AS
 BEGIN
@@ -72,15 +74,21 @@ BEGIN
         WHERE Makh = @Makh;
     END
 
-    -- 3. Lưu Khách Tham Quan (Insert hoặc Update)
+    -- 3. Xử lý fallback cho Gói Thực Đơn nếu FE truyền lên rỗng (để tránh lỗi FK do không sửa DB)
+    IF ISNULL(@GoiThucDonID, '') = ''
+    BEGIN
+        SELECT TOP 1 @GoiThucDonID = GoiThucDonID FROM dmGoiThucDon;
+    END
+
+    -- 4. Lưu Khách Tham Quan (Insert hoặc Update)
     IF @IsNew = 1
     BEGIN
         INSERT INTO tbmk_Khachthamquan (
             DocumentID, DocumentDate, Makh, Ngaytochuc, Nhamngay, Loaitiecid, Thoigianid, 
-            SobanMan, SobanChay, TongsoBan, Ghichu, IsKetthuc, IsHuy
+            SobanMan, SobanChay, TongsoBan, Ghichu, IsKetthuc, IsHuy, GoiThucDonID
         ) VALUES (
             @DocumentID, GETDATE(), @Makh, @Ngaytochuc, @Nhamngay, @Loaitiecid, @Thoigianid,
-            @SobanMan, @SobanChay, (@SobanMan + @SobanChay), @Ghichu, 0, 0
+            @SobanMan, @SobanChay, (@SobanMan + @SobanChay), @Ghichu, 0, 0, @GoiThucDonID
         );
     END
     ELSE
@@ -94,13 +102,23 @@ BEGIN
             SobanMan = @SobanMan,
             SobanChay = @SobanChay,
             TongsoBan = (@SobanMan + @SobanChay),
-            Ghichu = @Ghichu
+            Ghichu = @Ghichu,
+            GoiThucDonID = @GoiThucDonID
         WHERE DocumentID = @DocumentID;
     END
 
-    -- 4. Xử lý Sảnh Tiệc (Xóa cũ, Insert mới từ JSON)
-    IF @JsonSanhTiec IS NOT NULL AND @JsonSanhTiec <> '[]'
+    -- 4. Xử lý Sảnh Tiệc
+    IF @SanhTiec IS NOT NULL AND @SanhTiec <> ''
     BEGIN
+        -- Xử lý Sảnh Tiệc dạng đơn (1 lựa chọn từ Dropdown)
+        DELETE FROM tbmk_Khachthamquansanhtiec WHERE DocumentID = @DocumentID;
+        
+        INSERT INTO tbmk_Khachthamquansanhtiec (DocumentID, Sanhtiecid)
+        VALUES (@DocumentID, @SanhTiec);
+    END
+    ELSE IF @JsonSanhTiec IS NOT NULL AND @JsonSanhTiec <> '[]'
+    BEGIN
+        -- Xử lý Sảnh Tiệc từ JSON (hỗ trợ lưu nhiều sảnh 1 lúc)
         DELETE FROM tbmk_Khachthamquansanhtiec WHERE DocumentID = @DocumentID;
         
         INSERT INTO tbmk_Khachthamquansanhtiec (DocumentID, Sanhtiecid)

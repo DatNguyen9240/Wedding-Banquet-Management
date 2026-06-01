@@ -457,7 +457,7 @@ window.DynamicFormEngine = (function () {
                   _updateSelectionCounter();
                   _loadData();
                 } else {
-                  Alert.error(MODULE_CONFIG.AlertTitleError, res.message || MODULE_CONFIG.AlertDeleteFailed);
+                  Alert.error(MODULE_CONFIG.AlertTitleError, res.message || res.msg || MODULE_CONFIG.AlertDeleteFailed);
                 }
               }).catch(function (err) {
                 Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertNetworkError);

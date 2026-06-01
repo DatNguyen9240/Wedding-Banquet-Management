@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -12,18 +12,22 @@ GO
 -- Description: API Lấy danh sách Sảnh Tiệc đang hoạt động
 -- =============================================
 CREATE PROCEDURE [dbo].[API_DanhSachSanh]
+    @Keyword NVARCHAR(100) = ''
 AS
 BEGIN
     SET NOCOUNT ON;
 
     SELECT 
+        Sanhtiecid AS [value],
+        Tensanhtiec AS [label],
         Sanhtiecid,
         Tensanhtiec,
         Succhua,
         SLBanMin,
         SLBanMax
     FROM dmSanhtiec
-    WHERE IsTamngung = 0 OR IsTamngung IS NULL
+    WHERE (IsTamngung = 0 OR IsTamngung IS NULL)
+      AND (@Keyword = '' OR Tensanhtiec LIKE N'%' + @Keyword + '%' OR Sanhtiecid LIKE '%' + @Keyword + '%')
     ORDER BY Tensanhtiec ASC;
 END
 GO

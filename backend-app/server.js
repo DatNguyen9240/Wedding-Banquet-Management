@@ -248,9 +248,9 @@ app.get('/api/documents/fields/:type', (req, res) => {
         const dummyRow = {};
         const dummySetup = {};
         
-        if (type === 'hop_dong' || type === 'quyet_toan') {
+        if (type === 'hop_dong' || type === 'quyet_toan' || type === 'de_nghi_thay_doi') {
             fields = Object.keys(mapHopDong(dummyRow, dummySetup));
-        } else if (type === 'dat_coc') {
+        } else if (type === 'dat_coc' || type === 'phieu_thu') {
             fields = Object.keys(mapDatCoc(dummyRow, dummySetup));
         } else {
             return res.status(400).json({ success: false, message: 'Invalid type' });
@@ -278,6 +278,8 @@ app.post('/api/documents/generate', async (req, res) => {
         const API_MAP = {
             'hop_dong': { list: 'frmHopDong', mapFn: mapHopDong },
             'dat_coc': { list: 'frmDatCoc', mapFn: mapDatCoc },
+            'phieu_thu': { list: 'frmPhieuThu', mapFn: mapDatCoc },
+            'de_nghi_thay_doi': { list: 'frmHopDong', mapFn: mapHopDong },
         };
         const apiCfg = API_MAP[templateType];
         let dataMap = mapBenA(setup);  // Luôn có thông tin nhà hàng
@@ -323,9 +325,9 @@ app.post('/api/documents/generate', async (req, res) => {
         // [FIX] Khắc phục lỗi chữ trắng trên nền trắng trong bảng
         html = html.replace(/color:#ffffff;mso-style-textfill-fill-color:#ffffff/gi, 'color:#8b0000;mso-style-textfill-fill-color:#8b0000');
 
-        // ── 5. Lưu file .doc (template đã có sẵn xmlns header) ──────────────
-        // Template HỢP LỆ: mở được trong Word và OnlyOffice
-        const finalFileName = `${outputFileName}_${Date.now()}.doc`;
+        // ── 5. Lưu file .doc hoặc .xls (dựa theo loại mẫu) ──────────────
+        const ext = (templateType === 'phieu_thu') ? '.xls' : '.doc';
+        const finalFileName = `${outputFileName}_${Date.now()}${ext}`;
         const outputPath = path.join(UPLOADS_DIR, finalFileName);
         fs.writeFileSync(outputPath, html, 'utf8');
 
