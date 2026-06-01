@@ -16,7 +16,7 @@ var DocumentExportPlugin = (function () {
       icon: 'description',
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
     },
-    'frmDatCoc': {
+    'frmBiennhancoccho': {
       docType: 'dat_coc',
       label: 'Xuất Biên Nhận Cọc',
       icon: 'receipt_long',

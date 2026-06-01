@@ -57,7 +57,7 @@ var Router = (function () {
         existingRoute.title = m.MenuName || m.VN || m.label || existingRoute.title || '';
         existingRoute.subTitle = m.SubTitle || m.subTitle || existingRoute.subTitle || '';
         if (m.HideHeader || m.hideHeader) existingRoute.hideHeader = true;
-        
+
         _routeMap[path] = existingRoute;
         if (path === currentHash) needsReload = true;
         return;
@@ -300,16 +300,16 @@ var Router = (function () {
             if (mod && typeof mod.render === 'function') {
               // Xóa sạch nội dung cũ
               $content.innerHTML = '';
-              
+
               // 1. Dựng Global Header (Lấy Title/Subtitle từ Router/Menu)
               if (!route.hideHeader) {
-                var headerHtml = 
+                var headerHtml =
                   '<div class="page-title-bar" id="global-header">' +
-                    '<div class="page-title-info">' +
-                      '<h1 class="page-title-heading">' + (route.title || 'Quản lý Dữ liệu') + '</h1>' +
-                      (route.subTitle ? '<span class="page-title-sub">' + route.subTitle + '</span>' : '') +
-                    '</div>' +
-                    '<div class="page-title-actions" id="global-page-actions"></div>' +
+                  '<div class="page-title-info">' +
+                  '<h1 class="page-title-heading">' + (route.title || 'Quản lý Dữ liệu') + '</h1>' +
+                  (route.subTitle ? '<span class="page-title-sub">' + route.subTitle + '</span>' : '') +
+                  '</div>' +
+                  '<div class="page-title-actions" id="global-page-actions"></div>' +
                   '</div>';
                 $content.insertAdjacentHTML('beforeend', headerHtml);
               }
@@ -318,7 +318,7 @@ var Router = (function () {
               var wrapper = document.createElement('div');
               wrapper.className = 'page-wrapper';
               $content.appendChild(wrapper);
-              
+
               // 3. Render trang vào wrapper
               mod.render(wrapper, route.config || null);
             } else {

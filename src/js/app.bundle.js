@@ -346,7 +346,7 @@ var DocumentExportPlugin = (function () {
       icon: 'description',
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
     },
-    'frmDatCoc': {
+    'frmBiennhancoccho': {
       docType: 'dat_coc',
       label: 'Xuất Biên Nhận Cọc',
       icon: 'receipt_long',
@@ -5532,7 +5532,7 @@ var ConfirmModal = (function () {
 
     document.getElementById('confirm-modal-title').innerText = options.title || 'Xác nhận';
     document.getElementById('confirm-modal-message').innerHTML = options.message || 'Bạn có chắc chắn muốn thực hiện hành động này?';
-    
+
     var btnConfirm = document.getElementById('confirm-modal-btn-confirm');
     btnConfirm.innerText = options.confirmText || 'Đồng ý';
     btnConfirm.className = 'btn ' + (options.confirmClass || 'btn-primary');
@@ -5551,7 +5551,7 @@ var ConfirmModal = (function () {
     btnClose.parentNode.replaceChild(newBtnClose, btnClose);
 
     // Add new listeners
-    newBtnConfirm.addEventListener('click', function() {
+    newBtnConfirm.addEventListener('click', function () {
       hide();
       if (typeof options.onConfirm === 'function') options.onConfirm();
     });
