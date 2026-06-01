@@ -451,7 +451,7 @@ window.DynamicFormEngine = (function () {
 
               ApiClient.post(finalUrl, payload).then(function (res) {
                 if (res && res.code === 0) {
-                  if (typeof Toast !== 'undefined') Toast.success(MODULE_CONFIG.ToastDelete);
+                  if (typeof UIToast !== 'undefined') UIToast.show(MODULE_CONFIG.ToastDelete, 'success');
                   selectedRows = [];
                   if (_isFormBuilder()) window._uiConfigCache = {};
                   _updateSelectionCounter();
@@ -592,7 +592,9 @@ window.DynamicFormEngine = (function () {
         filterContainer.style.display = 'none'; // Ẩn mặc định, ấn Lọc mới hiện
       }
 
-      _loadData();
+      if (!MODULE_CONFIG.NoAutoLoad) {
+        _loadData();
+      }
     })
       .catch(function (err) {
         $container.innerHTML = '<div class="p-4 text-danger">' + MODULE_CONFIG.TextLoadingError + err.message + '</div>';

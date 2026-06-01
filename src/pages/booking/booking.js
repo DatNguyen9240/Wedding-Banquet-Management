@@ -55,7 +55,7 @@ var BookingPage = (function () {
                 }
               },
               {
-                text: 'Hủy Cọc', icon: 'delete', type: 'tool',
+                text: 'Hủy Cọc', icon: 'cancel', type: 'tool',
                 onClick: function () {
                   var selected = getSelected();
                   if (!selected || selected.length === 0) return (typeof UIToast !== 'undefined' ? UIToast.show('Vui lòng chọn Biên nhận để hủy!', 'warning') : alert('Chọn Biên nhận!'));
@@ -72,6 +72,37 @@ var BookingPage = (function () {
                           }).catch(function () { if (typeof UIToast !== 'undefined') UIToast.show('Lỗi hủy phiếu', 'danger'); });
                         } else {
                           if (typeof UIToast !== 'undefined') UIToast.show('Chưa cấu hình API CANCEL', 'warning');
+                        }
+                      }
+                    });
+                  }
+                }
+              },
+              {
+                text: 'Xóa Cọc', icon: 'delete', type: 'tool',
+                onClick: function () {
+                  var selected = getSelected();
+                  if (!selected || selected.length === 0) return (typeof UIToast !== 'undefined' ? UIToast.show('Vui lòng chọn ít nhất 1 Biên nhận để xóa!', 'warning') : alert('Chọn Biên nhận!'));
+                  
+                  if (typeof ConfirmModal !== 'undefined') {
+                    ConfirmModal.show({
+                      title: 'Xóa Phiếu Cọc',
+                      message: 'Bạn có chắc chắn muốn xóa vĩnh viễn <b>' + selected.length + '</b> phiếu cọc đã chọn không? Hành động này không thể hoàn tác.',
+                      onConfirm: function () {
+                        if (API_CONFIG && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.ROUTER) {
+                          // Gom tất cả ID lại thành chuỗi phân cách bằng dấu phẩy
+                          var docIds = selected.map(function(item) { return item.MaChungTu || item.id; }).join(',');
+                          
+                          BookingService.remove({ DocumentIDs: docIds })
+                            .then(function() {
+                              if (typeof UIToast !== 'undefined') UIToast.show('Xóa ' + selected.length + ' phiếu cọc thành công', 'success');
+                              _refreshGrid();
+                            })
+                            .catch(function(err) {
+                              if (typeof UIToast !== 'undefined') UIToast.show('Lỗi xóa phiếu: ' + (err.message || 'Có lỗi xảy ra'), 'danger'); 
+                            });
+                        } else {
+                          if (typeof UIToast !== 'undefined') UIToast.show('Chưa cấu hình API DELETE (ROUTER)', 'warning');
                         }
                       }
                     });

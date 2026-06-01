@@ -1,4 +1,4 @@
-﻿/* --- mockData.js --- */
+/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -1745,9 +1745,36 @@ var BookingService = (function () {
     });
   }
 
+  /**
+   * Xóa biên nhận cọc qua Gateway (Batch)
+   * @param {Object} payload
+   * @returns {Promise}
+   */
+  function remove(payload) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.ROUTER)
+        ? API_CONFIG.ENDPOINTS.ROUTER
+        : '/api/API_Gateway_Router';
+
+      var routerPayload = {
+        List: 'frmBiennhancoccho',
+        Func: 'Delete',
+        JsonData: JSON.stringify(payload)
+      };
+
+      ApiClient.post(endpoint, routerPayload)
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[BookingService] Lỗi remove:', err);
+          reject(err);
+        });
+    });
+  }
+
   return {
     getList: getList,
     cancel: cancel,
+    remove: remove,
     searchCustomer: searchCustomer,
     save: save
   };
@@ -1892,7 +1919,7 @@ var ContractService = (function () {
     return new Promise(function (resolve, reject) {
       var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.CONTRACT && API_CONFIG.ENDPOINTS.CONTRACT.SAVE)
         ? API_CONFIG.ENDPOINTS.CONTRACT.SAVE
-        : '/api/API_Contract_Save';
+        : '/api/API_LuuHopDong';
 
       ApiClient.post(endpoint, payload)
         .then(resolve)

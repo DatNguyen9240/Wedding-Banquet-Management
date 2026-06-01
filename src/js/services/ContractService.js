@@ -92,7 +92,7 @@ var ContractService = (function () {
     return new Promise(function (resolve, reject) {
       var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.CONTRACT && API_CONFIG.ENDPOINTS.CONTRACT.SAVE)
         ? API_CONFIG.ENDPOINTS.CONTRACT.SAVE
-        : '/api/API_Contract_Save';
+        : '/api/API_LuuHopDong';
 
       ApiClient.post(endpoint, payload)
         .then(resolve)

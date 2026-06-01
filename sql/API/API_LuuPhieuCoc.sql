@@ -63,9 +63,9 @@ BEGIN
             BEGIN
                 SELECT TOP 1 @Makh = Makh
                 FROM dmkhachhang
-                WHERE Dienthoai = @SdtTimkiem
-                   OR DTchure   = @SdtTimkiem
-                   OR DTcodau   = @SdtTimkiem
+                WHERE (Dienthoai = @SdtTimkiem OR DTchure = @SdtTimkiem OR DTcodau = @SdtTimkiem)
+                  AND ISNULL(Tenchure, '') = ISNULL(@Tenchure, '') 
+                  AND ISNULL(Tencodau, '') = ISNULL(@Tencodau, '')
                 ORDER BY DateCreate ASC;  -- Lấy record gốc cũ nhất
             END
 
@@ -90,7 +90,7 @@ BEGIN
             END
             ELSE
             BEGIN
-                -- Tìm thấy khách cũ → cập nhật thông tin còn thiếu (không ghi đè dữ liệu cũ)
+                -- Tìm thấy khách cũ → cập nhật thông tin (ghi đè dữ liệu mới nếu có)
                 UPDATE dmkhachhang
                 SET
                     Tenchure          = ISNULL(NULLIF(@Tenchure, ''),          Tenchure),

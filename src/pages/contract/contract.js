@@ -137,7 +137,8 @@ var ContractPage = (function () {
             PageTitle: 'Hợp Đồng Tiệc',
             PageSubtitle: 'Quản lý và lập hợp đồng tiệc cưới, hội nghị',
             HideAddBtn: true, // Ẩn nút Thêm mặc định vì đã dùng PluginButtons ở trên
-            HideEditBtn: true // Ẩn nút Sửa mặc định
+            HideEditBtn: true, // Ẩn nút Sửa mặc định
+            NoAutoLoad: !!bookingIdParam
           });
         }
 
@@ -770,7 +771,7 @@ var ContractPage = (function () {
     var $phuLucContainer = document.createElement('div');
     $phuLucContainer.id = 'phu-luc-tab-container';
 
-    var tabs = UITabs.create([
+    var tabsArr = [
       { title: 'Bàn Tiệc', content: $banTiecContainer },
       { title: 'Sảnh', content: $sanhContainer },
       { title: 'Thực đơn Mặn', content: $thucDonManContainer },
@@ -779,10 +780,15 @@ var ContractPage = (function () {
       { title: 'Dịch vụ', content: $dichVuContainer },
       { title: 'Ưu đãi', content: $uuDaiContainer },
       { title: 'Ghi chú', content: $ghiChuContainer },
-      { title: 'Setup Print', content: $setupPrintContainer },
-      { title: 'Phụ lục', content: $phuLucContainer },
-      { title: 'Dời / Hủy', content: $doiHuyContainer }
-    ]);
+      { title: 'Setup Print', content: $setupPrintContainer }
+    ];
+
+    if (!isNew) {
+      tabsArr.push({ title: 'Phụ lục', content: $phuLucContainer });
+      tabsArr.push({ title: 'Dời / Hủy', content: $doiHuyContainer });
+    }
+
+    var tabs = UITabs.create(tabsArr);
     document.getElementById('contract-tabs-container').appendChild(tabs);
 
     _renderBanTiec();
@@ -794,8 +800,11 @@ var ContractPage = (function () {
     _renderUuDai();
     _renderGhiChu();
     _renderSetupPrint();
-    _renderPhuLuc();
-    _renderDoiHuy();
+
+    if (!isNew) {
+      _renderPhuLuc();
+      _renderDoiHuy();
+    }
 
     // Bind real-time total update event listeners
     setTimeout(function () {
@@ -2029,9 +2038,7 @@ var ContractPage = (function () {
       })
       .catch(function (err) {
         console.error('Lỗi API Contract Save:', err);
-        UIToast.show('Đã lưu Hợp đồng thành công (Mô phỏng lưu thành công)', 'success');
-        closeDetail();
-        _loadData();
+        UIToast.show('Lỗi API: ' + (err.message || 'Không thể lưu Hợp đồng'), 'danger');
       });
   }
 
@@ -2230,7 +2237,6 @@ var ContractPage = (function () {
     if (!container) return;
 
     var contract = getSelectedRow();
-    var isNew = (!contract || !contract.Sohopdong);
 
     container.innerHTML = `
       <div class="card p-3 p-md-4 mt-3 mx-auto" style="width: 100%; max-width: 1200px; background: var(--color-surface); border-radius: 12px; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm); overflow: hidden;">
@@ -2239,7 +2245,7 @@ var ContractPage = (function () {
             <i class="material-symbols-outlined text-primary" style="font-size: 24px;">history</i>
             <h5 class="m-0" style="color: var(--color-text); font-weight: 600;">Lịch sử Thay đổi / Bổ sung</h5>
           </div>
-          <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-create-phuluc" ${isNew ? 'disabled' : ''}>
+          <button class="btn btn-primary d-flex align-items-center gap-2" id="btn-create-phuluc">
             <i class="material-symbols-outlined" style="font-size: 18px;">add</i> Tạo Phụ Lục Mới
           </button>
         </div>
@@ -2251,16 +2257,6 @@ var ContractPage = (function () {
         </div>
       </div>
     `;
-
-    if (isNew) {
-      container.querySelector('#phuluc-list-container').innerHTML = `
-        <div class="alert alert-warning d-flex align-items-center gap-2">
-          <i class="material-symbols-outlined">info</i>
-          <span>Vui lòng lưu Hợp đồng lần đầu trước khi tạo Phụ lục thay đổi.</span>
-        </div>
-      `;
-      return;
-    }
 
     container.querySelector('#btn-create-phuluc').onclick = function () {
       _showThayDoiBoSungModal(contract);
@@ -2279,75 +2275,75 @@ var ContractPage = (function () {
 
     if (typeof ContractService !== 'undefined') {
       ContractService.getPhuLucHistory(sohopdong).then(function (records) {
-          var html = '';
-          if (records.length === 0) {
-            html = `
+        var html = '';
+        if (records.length === 0) {
+          html = `
               <div class="text-center p-5 rounded" style="background: var(--color-background); border: 1px dashed var(--color-border-strong);">
                 <i class="material-symbols-outlined text-muted mb-2" style="font-size: 32px;">receipt_long</i>
                 <div class="text-muted fw-medium">Chưa có phụ lục thay đổi nào</div>
                 <div class="text-muted small mt-1">Các yêu cầu thay đổi bàn tiệc, thực đơn sẽ hiển thị ở đây</div>
               </div>
             `;
-          } else {
-            html = '<div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">' +
-              '<table class="table table-hover align-middle m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 700px; background: var(--color-surface);">' +
-              '<thead style="background: var(--color-background); border-bottom: 2px solid var(--color-border);">' +
-              '<tr>' +
-              '<th style="width: 160px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Số Phụ Lục</th>' +
-              '<th style="width: 150px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Ngày Lập</th>' +
-              '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px; width: auto;">Chi Tiết Thay Đổi</th>' +
-              '<th class="text-end" style="width: 140px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Phụ Thu</th>' +
-              '</tr>' +
-              '</thead><tbody>';
-            records.forEach(function (r) {
-              var getProp = function (obj, keyName) {
-                if (obj[keyName] !== undefined) return obj[keyName];
-                var lowerKey = keyName.toLowerCase();
-                for (var k in obj) {
-                  if (k.toLowerCase() === lowerKey) return obj[k];
-                }
-                return undefined;
-              };
-
-              var sothaydoiDisplay = getProp(r, 'Sothaydoi') || getProp(r, 'sohopdong') || 'N/A';
-              var rawDate = getProp(r, 'Ngaythaydoi') || getProp(r, 'DateCreate') || getProp(r, 'created_at');
-              var ghichu = getProp(r, 'Ghichu') || getProp(r, 'noidung') || '';
-              var phuthu = getProp(r, 'TongtienHopdongTD') || getProp(r, 'TienPhuThu') || 0;
-
-              if (sothaydoiDisplay === 'N/A') {
-                ghichu = ghichu + ' (Data: ' + JSON.stringify(r) + ')';
+        } else {
+          html = '<div class="table-responsive" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow-x: auto;">' +
+            '<table class="table table-hover align-middle m-0" style="font-size: 14px; table-layout: fixed; width: 100%; min-width: 700px; background: var(--color-surface);">' +
+            '<thead style="background: var(--color-background); border-bottom: 2px solid var(--color-border);">' +
+            '<tr>' +
+            '<th style="width: 160px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Số Phụ Lục</th>' +
+            '<th style="width: 150px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Ngày Lập</th>' +
+            '<th style="color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px; width: auto;">Chi Tiết Thay Đổi</th>' +
+            '<th class="text-end" style="width: 140px; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; padding: 12px 16px;">Phụ Thu</th>' +
+            '</tr>' +
+            '</thead><tbody>';
+          records.forEach(function (r) {
+            var getProp = function (obj, keyName) {
+              if (obj[keyName] !== undefined) return obj[keyName];
+              var lowerKey = keyName.toLowerCase();
+              for (var k in obj) {
+                if (k.toLowerCase() === lowerKey) return obj[k];
               }
+              return undefined;
+            };
 
-              var date = 'N/A';
-              if (rawDate) {
-                if (typeof rawDate === 'string' && rawDate.indexOf('/') !== -1) {
-                  date = rawDate;
+            var sothaydoiDisplay = getProp(r, 'Sothaydoi') || getProp(r, 'sohopdong') || 'N/A';
+            var rawDate = getProp(r, 'Ngaythaydoi') || getProp(r, 'DateCreate') || getProp(r, 'created_at');
+            var ghichu = getProp(r, 'Ghichu') || getProp(r, 'noidung') || '';
+            var phuthu = getProp(r, 'TongtienHopdongTD') || getProp(r, 'TienPhuThu') || 0;
+
+            if (sothaydoiDisplay === 'N/A') {
+              ghichu = ghichu + ' (Data: ' + JSON.stringify(r) + ')';
+            }
+
+            var date = 'N/A';
+            if (rawDate) {
+              if (typeof rawDate === 'string' && rawDate.indexOf('/') !== -1) {
+                date = rawDate;
+              } else {
+                var parsedDate = new Date(rawDate);
+                if (!isNaN(parsedDate)) {
+                  date = parsedDate.toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' });
                 } else {
-                  var parsedDate = new Date(rawDate);
-                  if (!isNaN(parsedDate)) {
-                    date = parsedDate.toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                  } else {
-                    date = rawDate;
-                  }
+                  date = rawDate;
                 }
               }
+            }
 
-              ghichu = (ghichu + '').replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
-              var tien = parseFloat(phuthu || 0).toLocaleString('vi-VN') + ' đ';
+            ghichu = (ghichu + '').replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
+            var tien = parseFloat(phuthu || 0).toLocaleString('vi-VN') + ' đ';
 
-              html += `<tr style="border-bottom: 1px solid var(--color-border);">
+            html += `<tr style="border-bottom: 1px solid var(--color-border);">
                 <td style="font-weight: 600; color: var(--color-primary); padding: 16px;">${sothaydoiDisplay}</td>
                 <td style="font-size: 14px; padding: 16px; color: var(--color-text);">${date}</td>
                 <td style="font-size: 14px; white-space: pre-wrap; line-height: 1.6; padding: 16px; color: var(--color-text-secondary);">${ghichu}</td>
                 <td class="text-end" style="font-weight: 700; color: #10B981; padding: 16px;">+${tien}</td>
               </tr>`;
-            });
-            html += '</tbody></table></div>';
-          }
-          listContainer.innerHTML = html;
-        }).catch(function (err) {
-          listContainer.innerHTML = `<div class="alert alert-danger">Lỗi tải dữ liệu: ${err.message}</div>`;
-        });
+          });
+          html += '</tbody></table></div>';
+        }
+        listContainer.innerHTML = html;
+      }).catch(function (err) {
+        listContainer.innerHTML = `<div class="alert alert-danger">Lỗi tải dữ liệu: ${err.message}</div>`;
+      });
     }
   }
 
@@ -2479,9 +2475,6 @@ var ContractPage = (function () {
             btn.innerHTML = originalText;
             btn.disabled = false;
           });
-      } else {
-        if (typeof Alert !== 'undefined') Alert.success('Mock', 'Chưa có ContractService, lưu giả lập thành công!');
-        m.closeNow();
       }
     };
   }

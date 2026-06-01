@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -72,7 +72,7 @@ BEGIN
             OR k.Dienthoai LIKE '%' + @Keyword + '%'
         )
     ORDER BY 
-        h.Ngaytochuc ASC;
+        h.Sohopdong DESC;
         
 END
 GO

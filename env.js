@@ -45,6 +45,7 @@ window.API_CONFIG = {
             LIST: '/api/API_DanhSachPhieuCoc',
             SAVE: '/api/API_LuuPhieuCoc',
             CANCEL: '/api/API_HuyPhieuCoc',
+            DELETE: '/api/API_XoaPhieuCoc',
         },
         CUSTOMER: {
             SEARCH: '/api/API_DanhSachKhachHang',
@@ -62,6 +63,7 @@ window.API_CONFIG = {
         },
         CONTRACT: {
             LIST: '/api/API_DanhSachHopDong',
+            SAVE: '/api/API_LuuHopDong',
         },
         FOODS: {
             LIST: '/api/API_DanhSachThucDon',
