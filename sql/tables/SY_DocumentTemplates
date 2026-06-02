@@ -1,9 +1,0 @@
-CREATE TABLE SY_DocumentTemplates (
-    TemplateID VARCHAR(50) PRIMARY KEY,
-    TemplateName NVARCHAR(255) NOT NULL, -- Tên mẫu (VD: Hợp đồng tiệc cưới chuẩn 2026)
-    DocType VARCHAR(50) NOT NULL, -- Phân loại: HOP_DONG, BIEN_COC, QUYET_TOAN
-    FilePath NVARCHAR(500) NOT NULL, -- Đường dẫn lưu file mẫu trên server (VD: /uploads/templates/hopdong_v1.docx)
-    IsActive BIT DEFAULT 1,
-    UserCreate VARCHAR(50),
-    DateCreate DATETIME DEFAULT GETDATE()
-);
