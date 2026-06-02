@@ -27,7 +27,6 @@ BEGIN
         k.DTchure AS [DTchure],
         k.DTcodau AS [DTcodau],
         k.Diachi AS [Diachi],
-        k.Diachi AS [DiaChi],
         k.Nguoigd AS [Nguoigd],
         k.DienThoaiDaiDien AS [DienThoaiDaiDien],
         k.Mail AS [Mail],
