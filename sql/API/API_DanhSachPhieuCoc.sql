@@ -44,11 +44,11 @@ BEGIN
         (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com1') AS [TenNhaHang],
         (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com2') AS [DiaChiNhaHang],
         N'Cọc giữ chỗ' AS [Lydo],
-        DAY(ISNULL(b.DocumentDate, GETDATE())) AS [NgayThu],
-        MONTH(ISNULL(b.DocumentDate, GETDATE())) AS [ThangThu],
-        YEAR(ISNULL(b.DocumentDate, GETDATE())) AS [NamThu],
-        CONVERT(VARCHAR(10), b.DocumentDate, 103) AS [NgayThuFull],
-        b.DocumentDate AS [DocumentDate],
+        d.Ngay AS [NgayThu],
+        d.Thang AS [ThangThu],
+        d.Nam AS [NamThu],
+        CONVERT(VARCHAR(10), d.DDate, 103) AS [NgayThuFull],
+        d.DDate AS [DocumentDate],
         b.DocumentID AS [Sohopdong],
         FORMAT(ISNULL(b.Tongtien, 0), 'N0', 'vi-VN') AS [Tongtien],
         b.Tongtien AS [TongtienRaw],
@@ -114,6 +114,13 @@ BEGIN
                 ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
             END AS FullName
     ) c
+    OUTER APPLY (
+        SELECT 
+            ISNULL(b.DocumentDate, GETDATE()) AS DDate,
+            DAY(ISNULL(b.DocumentDate, GETDATE())) AS Ngay,
+            MONTH(ISNULL(b.DocumentDate, GETDATE())) AS Thang,
+            YEAR(ISNULL(b.DocumentDate, GETDATE())) AS Nam
+    ) d
     WHERE 
         -- Nếu có tìm kiếm thì ưu tiên
         (@Keyword IS NULL OR @Keyword = '' OR b.DocumentID LIKE '%' + @Keyword + '%' OR b.SoBN LIKE '%' + @Keyword + '%' OR k.Dienthoai LIKE '%' + @Keyword + '%' OR k.Tenkh LIKE N'%' + @Keyword + '%' OR k.Tenchure LIKE N'%' + @Keyword + '%' OR k.Tencodau LIKE N'%' + @Keyword + '%')
