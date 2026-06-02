@@ -42,6 +42,8 @@ BEGIN
         b.Ghichu AS [Ghichu],
         
         -- Các trường bổ sung phục vụ in mẫu Phiếu Thu (phieu_thu.docx)
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com1') AS [TenNhaHang],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com2') AS [DiaChiNhaHang],
         N'Cọc giữ chỗ' AS [Lydo],
         DAY(ISNULL(b.DocumentDate, GETDATE())) AS [NgayThu],
         MONTH(ISNULL(b.DocumentDate, GETDATE())) AS [ThangThu],

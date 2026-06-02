@@ -41,12 +41,28 @@ CREATE OR ALTER PROCEDURE [dbo].[API_LuuPhieuCoc]
     @UserCreate VARCHAR(50) = 'System',
     
     -- Danh sách Sảnh đặt (Dạng JSON: [{"Sanhtiecid":"S01", "IsSanhchinh": 1}, ...])
-    @JsonSanhTiec NVARCHAR(MAX) = NULL 
+    @JsonSanhTiec NVARCHAR(MAX) = NULL,
+    
+    -- Mapped fields from DynamicFormEngine (client-side form values)
+    @MaChungTu VARCHAR(50) = NULL,
+    @_Ngaytochuc DATETIME = NULL,
+    @TongtienRaw DECIMAL(18,2) = NULL,
+    @Loaihinhtiecid VARCHAR(50) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     
     BEGIN TRY
+        -- Map values from client format fields to standard parameters
+        IF @MaChungTu IS NOT NULL AND (@DocumentID IS NULL OR @DocumentID = '')
+            SET @DocumentID = @MaChungTu;
+        IF @_Ngaytochuc IS NOT NULL
+            SET @Ngaytochuc = @_Ngaytochuc;
+        IF @TongtienRaw IS NOT NULL
+            SET @Tongtien = @TongtienRaw;
+        IF @Loaihinhtiecid IS NOT NULL
+            SET @Loaitiecid = @Loaihinhtiecid;
+
         BEGIN TRANSACTION;
 
         DECLARE @Now DATETIME = GETDATE();
