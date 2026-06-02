@@ -121,7 +121,18 @@ var DocumentExportPlugin = (function () {
           }
           return;
         }
-        _generateDocument(selectedRows[0], config);
+
+        var row = selectedRows[0];
+        if (row.Status === 'SIGNED' || row.TrangThai === 'SIGNED') {
+          if (typeof Alert !== 'undefined') {
+            Alert.warning('Bị khóa', 'Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (SIGNED).');
+          } else {
+            alert('Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (SIGNED).');
+          }
+          return;
+        }
+
+        _generateDocument(row, config);
       }
     }];
   }

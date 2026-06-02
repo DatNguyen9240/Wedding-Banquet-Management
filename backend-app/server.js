@@ -4,6 +4,9 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import PizZip from 'pizzip';
+import Docxtemplater from 'docxtemplater';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -118,81 +121,22 @@ async function fetchFromSQLAPI(listName, keyword) {
     return null;
 }
 
-/** Map HopDong API row → docx placeholder object */
 function mapHopDong(row, setup) {
-    const now = new Date();
-    const d = String(now.getDate()).padStart(2, '0');
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const y = now.getFullYear();
     return {
         // Bên A — từ setup
         ...mapBenA(setup),
-        // Bên B + tiệc — từ API hợp đồng
-        Sohopdong: row.Sohopdong || row.sohopdong || '',
-        Sobiennhan: row.Sobiennhan || row.sobiennhan || '',
-        TenKhachHang: row.TenKhachHang || row.tenkh || '',
-        DienThoai: row.DienThoai || row.dienthoai || '',
-        NgayToChuc: row.NgayToChuc || row.ngaytochuc || '',
-        SoBan: row.SoBan || row.soban || '',
-        SanhDat: row.SanhDat || row.sanhdat || '',
-        TongTien: _formatMoney(row.TongTien || row.tongtien || '0'),
-        TrangThai: row.TrangThai || row.trangthai || '',
-        NgayKy: `${d}/${m}/${y}`,
-        NhanVienPhuTrach: row.NhanVien || row.nhanvien || '',
+        // Bên B — tự động đổ toàn bộ từ API SQL
+        ...row
     };
 }
 
-/**
- * Map DatCoc (PhieuCoc) API row → docx placeholder object
- * SQL API_DanhSachPhieuCoc trả về: MaChungTu, SoPhieu, TenKhachHang,
- * DienThoai, NgayToChuc, SoBan, SanhDat, DaCocVND (không phải SoTienCoc!)
- */
 function mapDatCoc(row, setup) {
-    const now = new Date();
-    const d = String(now.getDate()).padStart(2, '0');
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const y = now.getFullYear();
-    // Field thực tế trong SQL là DaCocVND (xem API_DanhSachPhieuCoc.sql dòng 65)
-    const soTien = row.DaCocVND || row.dacoc || row.SoTienCoc || row.Tongtien || row.tongtien || '0';
     return {
         // Bên A — từ setup
         ...mapBenA(setup),
-        // Thông tin phiếu cọc — field name CHÍNH XÁC theo SQL
-        MaChungTu: row.MaChungTu || row.DocumentID || row.SoPhieu || '',
-        SoPhieu: row.SoPhieu || row.SoBN || '',
-        TenKhachHang: row.TenKhachHang || '',
-        DienThoai: row.DienThoai || '',
-        NgayToChuc: row.NgayToChuc || '',
-        SanhDat: row.SanhDat || '',
-        SoBan: row.SoBan || String(row.SobanManchinhthuc || ''),
-        SoTienCoc: _formatMoney(soTien),
-        SoTienCocChu: _numberToWords(soTien),
-        NgayLap: row.NgayLap || `${d}/${m}/${y}`,
-        NhanVienLap: row.NhanVien || '',
-        TrangThai: row.TrangThai || '',
+        // Bên B — tự động đổ toàn bộ từ API SQL
+        ...row
     };
-}
-
-function _formatMoney(val) {
-    const n = parseInt(String(val).replace(/[^0-9]/g, ''), 10);
-    if (isNaN(n)) return String(val);
-    return n.toLocaleString('vi-VN');
-}
-
-function _numberToWords(val) {
-    const n = parseInt(String(val).replace(/[^0-9]/g, ''), 10);
-    if (isNaN(n) || n === 0) return 'Không đồng';
-    const units = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
-    const levels = [{ v: 1e9, n: 'tỷ' }, { v: 1e6, n: 'triệu' }, { v: 1e3, n: 'nghìn' }, { v: 1, n: '' }];
-    let result = '', rem = n;
-    for (const lv of levels) {
-        if (rem >= lv.v) {
-            const q = Math.floor(rem / lv.v);
-            rem -= q * lv.v;
-            result += (q < 10 ? units[q] : q) + (lv.n ? ' ' + lv.n + ' ' : '');
-        }
-    }
-    return result.trim().replace(/\s+/g, ' ') + ' đồng chẵn';
 }
 
 // ==========================================
@@ -225,36 +169,34 @@ app.get('/api/documents', (req, res) => {
 
 
 
-/**
- * 2b. Generate tài liệu từ HTML template
- *
- * Cách hoạt động:
- *   1. Đọc file mẫu HTML  (samples/hop_dong.html  hoặc dat_coc.html)
- *   2. Thay tất cả {TenBien} bằng giá trị thật từ rowData
- *   3. Lưu ra file .doc (Word đọc được HTML)
- *
- * Tên biến trong template lấy từ:
- *   EXEC API_LayCacTruongGiaoDien @FormName = 'frmHopDong'
- *   → cột [name] = tên biến,  cột [label] = nhãn tiếng Việt
- */
 
 /**
  * 1.5 Lấy danh sách các biến dữ liệu cho một loại mẫu
  */
-app.get('/api/documents/fields/:type', (req, res) => {
+app.get('/api/documents/fields/:type', async (req, res) => {
     try {
         const type = req.params.type;
-        let fields = [];
-        const dummyRow = {};
-        const dummySetup = {};
+        const API_MAP = {
+            'hop_dong': { list: 'frmHopDong', mapFn: mapHopDong },
+            'dat_coc': { list: 'frmBiennhancocchoancoccho', mapFn: mapDatCoc },
+            'phieu_thu': { list: 'frmPhieuThu', mapFn: mapDatCoc },
+            'de_nghi_thay_doi': { list: 'frmHopDong', mapFn: mapHopDong },
+        };
+        const cfg = API_MAP[type];
+        if (!cfg) return res.status(400).json({ success: false, message: 'Invalid type' });
 
-        if (type === 'hop_dong' || type === 'quyet_toan' || type === 'de_nghi_thay_doi') {
-            fields = Object.keys(mapHopDong(dummyRow, dummySetup));
-        } else if (type === 'dat_coc' || type === 'phieu_thu') {
-            fields = Object.keys(mapDatCoc(dummyRow, dummySetup));
-        } else {
-            return res.status(400).json({ success: false, message: 'Invalid type' });
+        // Lấy 1 dòng dữ liệu mẫu từ SQL API để quét tự động 100% cột
+        let sampleRow = {};
+        try {
+            const sqlRow = await fetchFromSQLAPI(cfg.list, '');
+            if (sqlRow) sampleRow = sqlRow;
+        } catch (e) {
+            console.log('[FIELDS] Không lấy được data mẫu từ DB, dùng object rỗng');
         }
+
+        // Truyền qua map function: Kết quả = Tất cả cột SQL + Các cột ảo (ngày tháng, số tiền format)
+        const finalData = cfg.mapFn(sampleRow, {});
+        const fields = Object.keys(finalData);
 
         const formattedFields = fields.map(f => `{${f}}`);
         res.json({ success: true, fields: formattedFields });
@@ -300,36 +242,62 @@ app.post('/api/documents/generate', async (req, res) => {
 
         console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
 
-        // ── 3. Đọc template HTML ─────────────────────────────────────────────
-        const htmlTemplatePath = path.join(SAMPLES_DIR, `${templateType}.html`);
-        if (!fs.existsSync(htmlTemplatePath)) {
+        // ── 3. Đọc template DOCX ─────────────────────────────────────────────
+        const docxTemplatePath = path.join(SAMPLES_DIR, `${templateType}.docx`);
+        if (!fs.existsSync(docxTemplatePath)) {
             return res.status(404).json({
                 success: false,
-                message: `Không tìm thấy template '${templateType}.html' trong samples/`
+                message: `Không tìm thấy template '${templateType}.docx' trong samples/. Vui lòng tạo file Word mẫu!`
             });
         }
-        let html = fs.readFileSync(htmlTemplatePath, 'utf8');
+        
+        const content = fs.readFileSync(docxTemplatePath, "binary");
 
-        // ── 4. Thay thế tất cả {TenBien} bằng giá trị thật ─────────────────
-        // Dùng regex để tìm toàn bộ {placeholder} và replace
-        html = html.replace(/\{(\w+)\}/g, (match, key) => {
-            const val = dataMap[key];
-            return (val !== undefined && val !== null) ? String(val) : '';
+        // ── 4. Khởi tạo docxtemplater và bơm dữ liệu ─────────────────────────
+        const zip = new PizZip(content);
+        const doc = new Docxtemplater(zip, {
+            paragraphLoop: true,
+            linebreaks: true,
         });
 
-        // [FIX] Khắc phục lỗi OnlyOffice xuất file với line-height: 0.1pt gây đè dòng
-        html = html.replace(/line-height:\s*0\.1pt;?/gi, 'line-height: 1.5;');
-        html = html.replace(/margin-top:\s*56\.7pt;?/gi, 'margin-top: 10pt;');
-        html = html.replace(/margin-bottom:\s*56\.7pt;?/gi, 'margin-bottom: 10pt;');
+        // Đổ toàn bộ dataMap (Bên A + Bên B + Món ăn) vào template Word
+        doc.render(dataMap);
 
-        // [FIX] Khắc phục lỗi chữ trắng trên nền trắng trong bảng
-        html = html.replace(/color:#ffffff;mso-style-textfill-fill-color:#ffffff/gi, 'color:#8b0000;mso-style-textfill-fill-color:#8b0000');
+        const buf = doc.getZip().generate({
+            type: "nodebuffer",
+            compression: "DEFLATE",
+        });
 
-        // ── 5. Lưu file .doc hoặc .xls (dựa theo loại mẫu) ──────────────
-        const ext = (templateType === 'phieu_thu') ? '.xls' : '.doc';
-        const finalFileName = `${outputFileName}_${Date.now()}${ext}`;
+        // ── 5. Lưu file .docx đã sinh ra ──────────────
+        const finalFileName = `${outputFileName}_${Date.now()}.docx`;
         const outputPath = path.join(UPLOADS_DIR, finalFileName);
-        fs.writeFileSync(outputPath, html, 'utf8');
+        fs.writeFileSync(outputPath, buf);
+
+        // ── 6. Ghi Log vào Tiec_Documents (Sổ lưu trữ) ───────────────────────
+        try {
+            // Tính toán mã băm SHA-256 từ nội dung file vật lý
+            const fileHash = crypto.createHash('sha256').update(buf).digest('hex');
+
+            const docData = {
+                DocumentID: 'DOC_' + Date.now(), 
+                TiecID: customerId || dataMap.Sohopdong || dataMap.MaChungTu || '', 
+                FileName: finalFileName,
+                FileType: templateType,
+                VersionNo: 1, 
+                Status: 'SIGNED', // Vừa in xong chốt cứng luôn
+                FileHash: fileHash // Lưu mã băm chống giả mạo
+            };
+            const payload = {
+                List: 'Tiec_Documents',
+                Func: 'Save',
+                UserName: req.body.UserName || 'system',
+                data: docData
+            };
+            await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload);
+            console.log(`[AUDIT] ✅ Đã lưu vết Sổ lưu trữ cho file ${finalFileName}`);
+        } catch(err) {
+            console.error(`[AUDIT] ❌ Lỗi ghi log:`, err.message);
+        }
 
         console.log(`[GENERATE] ✅ Tạo thành công: ${finalFileName}`);
         return res.json({ success: true, message: 'Tạo tài liệu thành công!', fileName: finalFileName });
@@ -343,12 +311,31 @@ app.post('/api/documents/generate', async (req, res) => {
 /**
  * 3. Xóa tài liệu
  */
-app.delete('/api/documents/:fileName', (req, res) => {
+app.delete('/api/documents/:fileName', async (req, res) => {
     try {
         const fileName = req.params.fileName;
         const filePath = path.join(UPLOADS_DIR, fileName);
         if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+            fs.unlinkSync(filePath); // Xóa file vật lý (Hard delete)
+            
+            // Cập nhật Bia mộ (Soft Delete) trong CSDL
+            try {
+                const payload = {
+                    List: 'Tiec_Documents',
+                    Func: 'Edit', // Cập nhật lại Status
+                    UserName: req.body.UserName || 'system',
+                    data: {
+                        FileName: fileName, // Dùng tên file để tìm record
+                        Status: 'DELETED',
+                        IsDeleted: 1
+                    }
+                };
+                await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload);
+                console.log(`[AUDIT] 🪦 Đã dán nhãn XÓA cho file ${fileName} trong CSDL`);
+            } catch(err) {
+                console.error(`[AUDIT] ❌ Lỗi cập nhật bia mộ:`, err.message);
+            }
+
             res.json({ success: true, message: 'Xóa thành công!' });
         } else {
             res.status(404).json({ success: false, message: 'Không tìm thấy file để xóa!' });

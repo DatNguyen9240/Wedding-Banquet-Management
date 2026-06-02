@@ -416,6 +416,13 @@ window.DynamicFormEngine = (function () {
           onAdd: MODULE_CONFIG.HideAddBtn ? false : (_hasPermission('ADD') ? _openAddForm : 'DISABLED'),
           onEdit: MODULE_CONFIG.HideEditBtn ? false : (_hasPermission('EDIT') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectEdit);
+            
+            // CHẶN CHỈNH SỬA NẾU HỢP ĐỒNG ĐÃ CHỐT
+            var hasSigned = selectedRows.find(function(r) { return r.Status === 'SIGNED' || r.TrangThai === 'SIGNED'; });
+            if (hasSigned) {
+              return Alert.warning('Bị khóa', 'Không thể sửa hợp đồng/phiếu đã chốt (SIGNED). Vui lòng dùng chức năng Phụ lục nếu muốn thay đổi!');
+            }
+
             if (selectedRows.length > 1) {
               _openBulkEditForm();
             } else {
