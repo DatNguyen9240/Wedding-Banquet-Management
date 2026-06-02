@@ -42,7 +42,7 @@ BEGIN
         b.Ghichu AS [Ghichu],
         
         -- Các trường bổ sung phục vụ in mẫu Phiếu Thu (phieu_thu.docx)
-        CASE WHEN ISNULL(b.Ghichu, '') <> '' THEN b.Ghichu ELSE N'Đặt cọc giữ chỗ sảnh tiệc' + CASE WHEN b.Solan = 2 THEN N' (Lần 2)' ELSE N' (Lần 1)' END END AS [Lydo],
+        N'Cọc giữ chỗ' AS [Lydo],
         DAY(ISNULL(b.DocumentDate, GETDATE())) AS [NgayThu],
         MONTH(ISNULL(b.DocumentDate, GETDATE())) AS [ThangThu],
         YEAR(ISNULL(b.DocumentDate, GETDATE())) AS [NamThu],
