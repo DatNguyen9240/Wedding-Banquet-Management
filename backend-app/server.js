@@ -212,27 +212,6 @@ app.post('/api/documents/generate', async (req, res) => {
             dataMap = { ...dataMap, ...dbRow };
         }
 
-        // Đảm bảo case-insensitive cho các biến thông dụng của template Word (như Diachi/DiaChi, Nguoinop/NguoiNop)
-        const keys = Object.keys(dataMap);
-        for (const key of keys) {
-            const lowerKey = key.toLowerCase();
-            if (lowerKey === 'diachi') {
-                dataMap['DiaChi'] = dataMap[key];
-                dataMap['Diachi'] = dataMap[key];
-            }
-            if (lowerKey === 'nguoinop') {
-                dataMap['NguoiNop'] = dataMap[key];
-                dataMap['Nguoinop'] = dataMap[key];
-            }
-            if (lowerKey === 'sohopdong') {
-                dataMap['SoHopDong'] = dataMap[key];
-                dataMap['Sohopdong'] = dataMap[key];
-            }
-            if (lowerKey === 'sophieu') {
-                dataMap['SoPhieu'] = dataMap[key];
-                dataMap['Sophieu'] = dataMap[key];
-            }
-        }
 
         console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
 
