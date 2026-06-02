@@ -47,7 +47,7 @@ BEGIN
         d.Ngay AS [Ngày],
         d.Thang AS [Tháng],
         d.Nam AS [Năm],
-        CONVERT(VARCHAR(10), d.DDate, 103) AS [NgayThuFull],
+        CONVERT(VARCHAR(10), d.DDate, 103) AS [NgàyThuFull],
         d.DDate AS [DocumentDate],
         b.DocumentID AS [Sohopdong],
         FORMAT(ISNULL(b.Tongtien, 0), 'N0', 'vi-VN') AS [Tongtien],
