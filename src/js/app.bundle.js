@@ -7156,12 +7156,22 @@ var UITable = (function () {
     var dynamicHeaders = [];
     var dynamicColumns = [];
 
-    // Lấy keys từ data, nếu data rỗng thì lấy từ dictionary
+    // Lấy keys: ưu tiên lọc theo dictionary nếu dictionary không rỗng để chỉ hiện các cột được cấu hình.
+    // Nếu dictionary rỗng hoặc không khớp khóa nào, ta mới lấy toàn bộ keys từ data.
     var keys = [];
-    if (data && data.length > 0) {
+    var hasDictionary = dictionary && Object.keys(dictionary).length > 0;
+    if (hasDictionary) {
+      var dataKeys = (data && data.length > 0) ? Object.keys(data[0]) : [];
+      Object.keys(dictionary).forEach(function(key) {
+        if (dataKeys.length === 0 || dataKeys.indexOf(key) >= 0) {
+          keys.push(key);
+        }
+      });
+      if (keys.length === 0) {
+        keys = dataKeys;
+      }
+    } else if (data && data.length > 0) {
       keys = Object.keys(data[0]);
-    } else if (dictionary && Object.keys(dictionary).length > 0) {
-      keys = Object.keys(dictionary);
     }
 
     if (keys.length > 0) {
