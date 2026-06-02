@@ -309,7 +309,7 @@ var DocumentManagerPage = (function () {
 
   // ── Chỉnh sửa Template ────────────────────────────────────────────────
   function _openTemplateEditor(fileName) {
-    var type = fileName.includes('hop_dong') ? 'hop_dong' : (fileName.includes('dat_coc') ? 'dat_coc' : 'quyet_toan');
+    var type = fileName.includes('hop_dong') ? 'hop_dong' : (fileName.includes('phieu_thu') ? 'phieu_thu' : 'quyet_toan');
     var ext = fileName.endsWith('.docx') ? '.docx' : '.html';
     var templateName = type + ext;
 

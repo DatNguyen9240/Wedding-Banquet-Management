@@ -55,6 +55,14 @@ BEGIN
         -- ==========================================================
         -- 1. XỬ LÝ KHÁCH HÀNG (dmkhachhang)
         -- ==========================================================
+        -- Nếu cập nhật mà không truyền Makh, lấy Makh hiện tại từ Phiếu Cọc
+        IF (@Makh IS NULL OR @Makh = '') AND (@DocumentID IS NOT NULL AND @DocumentID <> '')
+        BEGIN
+            SELECT @Makh = Makh FROM tbmk_Biennhancoccho WHERE DocumentID = @DocumentID;
+        END
+
+        DECLARE @IsNewCustomer BIT = 0;
+
         IF (@Makh IS NULL OR @Makh = '')
         BEGIN
             -- Tìm khách hàng cũ theo SĐT chú rể hoặc cô dâu (tránh tạo duplicate)
@@ -73,6 +81,7 @@ BEGIN
             IF (@Makh IS NULL OR @Makh = '')
             BEGIN
                 SET @Makh = 'KH' + FORMAT(@Now, 'yyMMddHHmmss');
+                SET @IsNewCustomer = 1;
 
                 INSERT INTO dmkhachhang (
                     Makh, Tenkh, Tenchure, Tencodau, DTchure, DTcodau, Dienthoai, Diachi, Nguoigd, DienThoaiDaiDien, Mail,
@@ -88,27 +97,11 @@ BEGIN
                     1, @Now, @UserCreate
                 );
             END
-            ELSE
-            BEGIN
-                -- Tìm thấy khách cũ → cập nhật thông tin (ghi đè dữ liệu mới nếu có)
-                UPDATE dmkhachhang
-                SET
-                    Tenchure          = ISNULL(NULLIF(@Tenchure, ''),          Tenchure),
-                    Tencodau          = ISNULL(NULLIF(@Tencodau, ''),          Tencodau),
-                    DTchure           = ISNULL(NULLIF(@DTchure,  ''),          DTchure),
-                    DTcodau           = ISNULL(NULLIF(@DTcodau,  ''),          DTcodau),
-                    Diachi            = ISNULL(NULLIF(@Diachi,   ''),          Diachi),
-                    Mail              = ISNULL(NULLIF(@Mail,     ''),          Mail),
-                    Nguoigd           = ISNULL(NULLIF(@Nguoigd,  ''),          Nguoigd),
-                    DienThoaiDaiDien  = ISNULL(NULLIF(@DienThoaiDaiDien, ''), DienThoaiDaiDien),
-                    DateUpdate        = @Now,
-                    UserUpdate        = @UserCreate
-                WHERE Makh = @Makh;
-            END
         END
-        ELSE
+
+        -- Nếu không phải khách hàng mới tạo, cập nhật lại thông tin mới nhất
+        IF (@IsNewCustomer = 0)
         BEGIN
-            -- Cập nhật thông tin khách hàng nếu đã tồn tại
             UPDATE dmkhachhang
             SET 
                 Tenkh = CASE 

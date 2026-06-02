@@ -98,7 +98,7 @@ BEGIN
         
         -- Thông tin Cọc & Khuyến mãi
         FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') AS [Coc_Lan1_SoTien],
-        '...' AS [Coc_Lan1_BangChu],
+        [dbo].[fn_DocTienBangChu](ISNULL(h.Sotiencochopdong, 0)) AS [Coc_Lan1_BangChu],
         RIGHT('0' + CAST(DAY(h.Ngayhopdong) AS VARCHAR), 2) AS [Coc_Ngay],
         RIGHT('0' + CAST(MONTH(h.Ngayhopdong) AS VARCHAR), 2) AS [Coc_Thang],
         CAST(YEAR(h.Ngayhopdong) AS VARCHAR) AS [Coc_Nam],

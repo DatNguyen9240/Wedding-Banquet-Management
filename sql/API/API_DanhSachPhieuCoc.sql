@@ -27,6 +27,7 @@ BEGIN
         k.DTchure AS [DTchure],
         k.DTcodau AS [DTcodau],
         k.Diachi AS [Diachi],
+        k.Diachi AS [DiaChi],
         k.Nguoigd AS [Nguoigd],
         k.DienThoaiDaiDien AS [DienThoaiDaiDien],
         k.Mail AS [Mail],
@@ -40,12 +41,33 @@ BEGIN
         b.SobanChayduphong AS [SobanChayduphong],
         b.Ghichu AS [Ghichu],
         
+        -- Các trường bổ sung phục vụ in mẫu Phiếu Thu (phieu_thu.docx)
+        CASE WHEN ISNULL(b.Ghichu, '') <> '' THEN b.Ghichu ELSE N'Đặt cọc giữ chỗ sảnh tiệc' + CASE WHEN b.Solan = 2 THEN N' (Lần 2)' ELSE N' (Lần 1)' END END AS [Lydo],
+        DAY(ISNULL(b.DocumentDate, GETDATE())) AS [NgayThu],
+        MONTH(ISNULL(b.DocumentDate, GETDATE())) AS [ThangThu],
+        YEAR(ISNULL(b.DocumentDate, GETDATE())) AS [NamThu],
+        b.DocumentID AS [Sohopdong],
+        b.DocumentID AS [SohopDong],
+        FORMAT(ISNULL(b.Tongtien, 0), 'N0', 'vi-VN') AS [Tongtien],
+        b.Tongtien AS [TongtienRaw],
+        [dbo].[fn_DocTienBangChu](ISNULL(b.Tongtien, 0)) AS [SoTienBangChu],
+        '' AS [TaiKhoanNo],
+        '' AS [TaiKhoanCo],
+        '' AS [Kemtheo],
+        N'Tiền mặt / Chuyển khoản' AS [HinhThuc],
+        
         -- Ghép Tên 2 người, hoặc xài Tên Khách chung chung nếu không có
         CASE 
             WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL 
                 THEN k.Tenchure + ' & ' + k.Tencodau
             ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
         END AS [TenKhachHang],
+
+        CASE 
+            WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL 
+                THEN k.Tenchure + ' & ' + k.Tencodau
+            ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
+        END AS [Nguoinop],
         
         -- Lấy sdt nếu không có bốc số chú rể / cô dâu
         ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],

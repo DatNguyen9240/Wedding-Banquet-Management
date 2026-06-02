@@ -1,4 +1,4 @@
-/* --- mockData.js --- */
+﻿/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -347,8 +347,8 @@ var DocumentExportPlugin = (function () {
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
     },
     'frmBiennhancoccho': {
-      docType: 'dat_coc',
-      label: 'Xuất Biên Nhận Cọc',
+      docType: 'phieu_thu',
+      label: 'Xuất Phiếu Thu',
       icon: 'receipt_long',
       altKeys: ['MaChungTu', 'maChungTu', 'DocumentID', 'SoPhieu']
     },
@@ -451,7 +451,19 @@ var DocumentExportPlugin = (function () {
           }
           return;
         }
-        _generateDocument(selectedRows[0], config);
+
+        var row = selectedRows[0];
+        var st = (row.Status || row.TrangThai || '').toString().toLowerCase();
+        if (st.includes('đã ký')) {
+          if (typeof Alert !== 'undefined') {
+            Alert.warning('Bị khóa', 'Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
+          } else {
+            alert('Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
+          }
+          return;
+        }
+
+        _generateDocument(row, config);
       }
     }];
   }
@@ -930,12 +942,10 @@ var WorkflowTransferPlugin = (function () {
             icon: 'monetization_on',
             targetHash: '#/booking',
             storageKey: 'transfer_VisitorToBooking',
-            getTransferData: function(row) {
-                return {
-                    Tenkh: row.TenKhachHang || row.Tenkh || row.Tenchure || row.Tencodau || '',
-                    Dienthoai: row.DienThoai || row.Dienthoai || row.DTchure || row.DTcodau || '',
-                    Ngaytochuc: row._Ngaytochuc || row.NgayToChucGoc || row.NgayDuKien || row.Ngaytochuc || ''
-                };
+            getTransferData: function (row) {
+                var data = Object.assign({}, row);
+                delete data.Id; delete data.AutoID; delete data.Sohopdong;
+                return data;
             }
         },
         'frmHopDong': {
@@ -944,12 +954,10 @@ var WorkflowTransferPlugin = (function () {
             icon: 'receipt_long',
             targetHash: '#/checkout',
             storageKey: 'transfer_ContractToCheckout',
-            getTransferData: function(row) {
-                return {
-                    Sohopdong: row.Sohopdong || row.AutoID || '',
-                    Tenkh: row.Tenkh || row.Tenchure || row.Tencodau || '',
-                    Ngaytochuc: row._Ngaytochuc || row.Ngaytochuc || ''
-                };
+            getTransferData: function (row) {
+                var data = Object.assign({}, row);
+                delete data.Id; delete data.AutoID;
+                return data;
             }
         }
     };
@@ -963,14 +971,14 @@ var WorkflowTransferPlugin = (function () {
             text: config.text,
             icon: config.icon,
             type: 'tool',
-            onClick: function() {
+            onClick: function () {
                 var selectedRows = getSelectedRows();
                 if (!selectedRows || selectedRows.length !== 1) {
                     if (window.Alert) Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng duy nhất để ' + config.text + '.');
                     else alert('Vui lòng chọn 1 dòng!');
                     return;
                 }
-                
+
                 var transferData = config.getTransferData(selectedRows[0]);
                 sessionStorage.setItem(config.storageKey, JSON.stringify(transferData));
                 window.location.hash = config.targetHash;
@@ -1009,24 +1017,33 @@ var WorkflowTransferPlugin = (function () {
             if (!modalContent) return;
             var filled = false;
 
-            var tryFill = function(selectors, value) {
+            var tryFill = function (selectors, value) {
                 if (!value) return;
-                var el = modalContent.querySelector(selectors);
-                if (el && !el.value) {
-                    el.value = value;
-                    el.style.backgroundColor = '#f0fdf4';
-                    el.style.borderColor = '#10b981';
-                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                var els = modalContent.querySelectorAll(selectors);
+                if (els.length > 0) {
+                    els.forEach(function (el) {
+                        el.value = value;
+                        el.style.backgroundColor = '#f0fdf4';
+                        el.style.borderColor = '#10b981';
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
                     filled = true;
                 }
             };
 
-            tryFill('input[name="Tenkh"], input[name="Tenchure"], input[name="Tencodau"]', data.Tenkh);
-            tryFill('input[name="Dienthoai"], input[name="DTchure"], input[name="DTcodau"]', data.Dienthoai);
-            tryFill('input[name="_Ngaytochuc"], input[name="Ngaytochuc"], input[name="Ngaydukien"]', data.Ngaytochuc);
-            tryFill('input[name="SanhTiec"], select[name="Tensanh"]', data.SanhTiec);
-            tryFill('input[name="Sohopdong"]', data.Sohopdong);
-            
+            // Duyệt qua mapping động từ JSON data (keys chính là tên trường của form đích)
+            Object.keys(data).forEach(function (fieldName) {
+                var value = data[fieldName];
+                if (!value) return; // Bỏ qua nếu không có giá trị
+
+                // Tự động tạo selector thông minh bao phủ input, select, textarea
+                var selector = 'input[name="' + fieldName + '"], ' +
+                    'select[name="' + fieldName + '"], ' +
+                    'textarea[name="' + fieldName + '"]';
+
+                tryFill(selector, value);
+            });
+
             if (filled && window.Toast) {
                 Toast.success('Đã tự động điền thông tin từ ' + sourceName + '!');
             }
@@ -1035,12 +1052,12 @@ var WorkflowTransferPlugin = (function () {
 
     function init() {
         if (_observer) _observer.disconnect();
-        
+
         // Chỉ observe để auto-fill (chờ modal xuất hiện)
         _observer = new MutationObserver(function () {
             _handleAutoFill();
         });
-        
+
         _observer.observe(document.body, { childList: true, subtree: true });
     }
 
@@ -1747,7 +1764,7 @@ var BookingService = (function () {
 
   /**
    * Xóa biên nhận cọc qua Gateway (Batch)
-   * @param {Object} payload
+   * @param {Object} payload - { DocumentIDs: 'ID1,ID2' }
    * @returns {Promise}
    */
   function remove(payload) {
@@ -1759,7 +1776,7 @@ var BookingService = (function () {
       var routerPayload = {
         List: 'frmBiennhancoccho',
         Func: 'Delete',
-        JsonData: JSON.stringify(payload)
+        JsonData: JSON.stringify(payload) // Truyền { DocumentIDs: 'ID1,ID2' }
       };
 
       ApiClient.post(endpoint, routerPayload)
@@ -1933,10 +1950,9 @@ var ContractService = (function () {
   /**
    * Lấy lịch sử phụ lục hợp đồng
    * @param {string} sohopdong
-   * @param {string} sothaydoi
    * @returns {Promise<Array>}
    */
-  function getPhuLucHistory(sohopdong, sothaydoi) {
+  function getPhuLucHistory(sohopdong) {
     return new Promise(function (resolve, reject) {
       var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.ROUTER)
         ? API_CONFIG.ENDPOINTS.ROUTER
@@ -1945,8 +1961,7 @@ var ContractService = (function () {
       var payload = {
         List: 'tbmk_Thaydoi',
         Func: 'View',
-        Keyword: sohopdong || '',
-        JsonData: JSON.stringify({ Sothaydoi: sothaydoi || '' })
+        Keyword: sohopdong || ''
       };
 
       ApiClient.post(endpoint, payload)

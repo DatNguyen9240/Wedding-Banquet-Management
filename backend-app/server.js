@@ -89,22 +89,6 @@ async function fetchSetupInfo() {
     }
 }
 
-/**
- * Tạo object thông tin Bên A từ setup API
- * API_LayGiaTriSetup trả về: CodeID='Com1' → tên công ty
- */
-function mapBenA(setup) {
-    // 'Com1' = Tên công ty theo bảng SY_Setup
-    const tenNhaHang = setup['Com1'] || setup.Com1 || setup.TenNhaHang || setup.TenCongTy || 'NHÀ HÀNG TIỆC CƯỚI';
-    return {
-        TenNhaHang: tenNhaHang,
-        SlogenNhaHang: setup.Slogan || setup.SlogenNhaHang || '★ LUXURY WEDDING & EVENTS ★',
-        DiaChiNhaHang: setup.DiaChi || setup.DiaChiNhaHang || setup.Com2 || '',
-        DienThoaiNhaHang: setup.DienThoai || setup.DienThoaiNhaHang || setup.Com3 || '',
-        HotlineNhaHang: setup.Hotline || setup.HotlineNhaHang || setup.Com4 || '',
-    };
-}
-
 /** Gọi API Gateway để lấy record theo List + Keyword */
 async function fetchFromSQLAPI(listName, keyword) {
     const payload = {
@@ -119,24 +103,6 @@ async function fetchFromSQLAPI(listName, keyword) {
     if (json && json.records && json.records.length > 0) return json.records[0];
     if (json && json.code === 0) return json;
     return null;
-}
-
-function mapHopDong(row, setup) {
-    return {
-        // Bên A — từ setup
-        ...mapBenA(setup),
-        // Bên B — tự động đổ toàn bộ từ API SQL
-        ...row
-    };
-}
-
-function mapDatCoc(row, setup) {
-    return {
-        // Bên A — từ setup
-        ...mapBenA(setup),
-        // Bên B — tự động đổ toàn bộ từ API SQL
-        ...row
-    };
 }
 
 // ==========================================
@@ -177,25 +143,24 @@ app.get('/api/documents/fields/:type', async (req, res) => {
     try {
         const type = req.params.type;
         const API_MAP = {
-            'hop_dong': { list: 'frmHopDong', mapFn: mapHopDong },
-            'dat_coc': { list: 'frmBiennhancocchoancoccho', mapFn: mapDatCoc },
-            'phieu_thu': { list: 'frmPhieuThu', mapFn: mapDatCoc },
-            'de_nghi_thay_doi': { list: 'frmHopDong', mapFn: mapHopDong },
+            'hop_dong': 'frmHopDong',
+            'phieu_thu': 'frmPhieuThu',
+            'de_nghi_thay_doi': 'frmHopDong',
         };
-        const cfg = API_MAP[type];
-        if (!cfg) return res.status(400).json({ success: false, message: 'Invalid type' });
+        const listName = API_MAP[type];
+        if (!listName) return res.status(400).json({ success: false, message: 'Invalid type' });
 
         // Lấy 1 dòng dữ liệu mẫu từ SQL API để quét tự động 100% cột
         let sampleRow = {};
         try {
-            const sqlRow = await fetchFromSQLAPI(cfg.list, '');
+            const sqlRow = await fetchFromSQLAPI(listName, '');
             if (sqlRow) sampleRow = sqlRow;
         } catch (e) {
             console.log('[FIELDS] Không lấy được data mẫu từ DB, dùng object rỗng');
         }
 
-        // Truyền qua map function: Kết quả = Tất cả cột SQL + Các cột ảo (ngày tháng, số tiền format)
-        const finalData = cfg.mapFn(sampleRow, {});
+        const setup = await fetchSetupInfo().catch(() => ({}));
+        const finalData = { ...setup, ...sampleRow };
         const fields = Object.keys(finalData);
 
         const formattedFields = fields.map(f => `{${f}}`);
@@ -218,23 +183,22 @@ app.post('/api/documents/generate', async (req, res) => {
 
         // ── 2. Map data từ rowData (frontend) hoặc fallback SQL API ─────────
         const API_MAP = {
-            'hop_dong': { list: 'frmHopDong', mapFn: mapHopDong },
-            'dat_coc': { list: 'frmBiennhancocchoancoccho', mapFn: mapDatCoc },
-            'phieu_thu': { list: 'frmPhieuThu', mapFn: mapDatCoc },
-            'de_nghi_thay_doi': { list: 'frmHopDong', mapFn: mapHopDong },
+            'hop_dong': 'frmHopDong',
+            'phieu_thu': 'frmPhieuThu',
+            'de_nghi_thay_doi': 'frmHopDong',
         };
-        const apiCfg = API_MAP[templateType];
-        let dataMap = mapBenA(setup);  // Luôn có thông tin nhà hàng
+        const listName = API_MAP[templateType];
+        let dataMap = { ...setup };
 
         if (rowData && typeof rowData === 'object') {
             // Frontend đã gửi kèm rowData (selected row từ DynamicFormEngine)
-            dataMap = apiCfg ? apiCfg.mapFn(rowData, setup) : { ...dataMap, ...rowData };
+            dataMap = { ...dataMap, ...rowData };
             console.log('[GENERATE] ✅ Dùng rowData từ frontend');
-        } else if (apiCfg && customerId) {
+        } else if (listName && customerId) {
             // Fallback: gọi SQL API
             try {
-                const row = await fetchFromSQLAPI(apiCfg.list, customerId);
-                if (row) dataMap = apiCfg.mapFn(row, setup);
+                const row = await fetchFromSQLAPI(listName, customerId);
+                if (row) dataMap = { ...dataMap, ...row };
             } catch (e) {
                 console.error('[GENERATE] Lỗi SQL API:', e.message);
             }

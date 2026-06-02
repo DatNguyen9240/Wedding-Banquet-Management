@@ -17,8 +17,8 @@ var DocumentExportPlugin = (function () {
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
     },
     'frmBiennhancoccho': {
-      docType: 'dat_coc',
-      label: 'Xuất Biên Nhận Cọc',
+      docType: 'phieu_thu',
+      label: 'Xuất Phiếu Thu',
       icon: 'receipt_long',
       altKeys: ['MaChungTu', 'maChungTu', 'DocumentID', 'SoPhieu']
     },
