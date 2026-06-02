@@ -1,0 +1,18 @@
+{
+  "name": "Insert Document Fields",
+  "guid": "asc.{A4E9E6D5-D0E6-4A59-86BC-576974AB8190}",
+  "version": "1.0.0",
+  "variations": [
+    {
+      "description": "Chèn biến dữ liệu trực tiếp bằng menu chuột phải",
+      "url": "index.html",
+      "icons": [ "icon_v4.png", "icon_v4@2x.png" ],
+      "isViewer": false,
+      "isVisual": true,
+      "isInsideMode": true,
+      "initDataType": "none",
+      "initData": "",
+      "buttons": []
+    }
+  ]
+}

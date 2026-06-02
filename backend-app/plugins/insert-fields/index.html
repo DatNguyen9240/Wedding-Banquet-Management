@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Insert Fields Plugin</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            padding: 12px;
+            font-size: 13px;
+            user-select: none;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* ── DARK THEME (Mặc định ban đầu) ── */
+        body.theme-dark {
+            background: #1e1e24; /* Tông tối của sidebar */
+            color: #e2e8f0;
+        }
+        body.theme-dark .search-box {
+            background: #2d2d34;
+            border: 1px solid #444;
+            color: #fff;
+        }
+        body.theme-dark .search-box:focus {
+            border-color: #4f46e5;
+        }
+        body.theme-dark .group-title {
+            color: #a855f7;
+        }
+        body.theme-dark .field-badge {
+            background: #2d2d34;
+            border: 1px solid #3f3f46;
+        }
+        body.theme-dark .field-badge:hover {
+            background: #4f46e5;
+            border-color: #4f46e5;
+        }
+        body.theme-dark .field-label {
+            color: #fff;
+        }
+        body.theme-dark .field-token {
+            color: #94a3b8;
+        }
+
+        /* ── LIGHT THEME (Khớp với giao diện Light của OnlyOffice) ── */
+        body.theme-light {
+            background: #f4f4f6; /* Xám nhạt tiệp màu với thanh công cụ */
+            color: #333333;
+        }
+        body.theme-light .search-box {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #333333;
+        }
+        body.theme-light .search-box:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79,70,229,0.1);
+        }
+        body.theme-light .group-title {
+            color: #7c3aed; /* Tím đậm tương phản tốt trên nền sáng */
+        }
+        body.theme-light .field-badge {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        body.theme-light .field-badge:hover {
+            background: #4f46e5;
+            border-color: #4f46e5;
+        }
+        body.theme-light .field-badge:hover .field-label {
+            color: #ffffff;
+        }
+        body.theme-light .field-badge:hover .field-token {
+            color: #e2e8f0;
+        }
+        body.theme-light .field-label {
+            color: #1e293b;
+        }
+        body.theme-light .field-token {
+            color: #64748b;
+        }
+
+        /* ── COMMON STYLES ── */
+        .search-box {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            font-size: 12px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .group-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 18px 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .fields-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .field-badge {
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: grab;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .field-badge:active {
+            cursor: grabbing;
+        }
+        .field-badge:hover {
+            transform: translateX(2px);
+        }
+        .field-label {
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .field-token {
+            font-size: 10px;
+            font-family: monospace;
+            transition: color 0.2s;
+        }
+        .empty-state {
+            text-align: center;
+            color: #94a3b8;
+            padding: 20px 0;
+        }
+        #groups-container {
+            padding-bottom: 40px;
+        }
+    </style>
+    
+    <!-- ── BỘ TỰ ĐỘNG ĐỒNG BỘ THEME ONLYOFFICE ── -->
+    <script type="text/javascript">
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            // Lấy theme từ OnlyOffice truyền qua URL query
+            var themeName = params.get("theme") || "theme-light"; 
+            
+            window.addEventListener("DOMContentLoaded", function() {
+                if (themeName.indexOf("dark") !== -1 || themeName.indexOf("contrast") !== -1) {
+                    document.body.className = "theme-dark";
+                } else {
+                    document.body.className = "theme-light";
+                }
+                console.log("[InsertFieldsPlugin] Theme applied:", document.body.className);
+            });
+        })();
+
+        // Cờ hiệu kiểm tra handshake
+        window.initCalled = false;
+
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error("[InsertFieldsPlugin Error]", message, "at", source, ":", lineno);
+            var container = document.getElementById("groups-container");
+            if (container) {
+                var fileOnly = source ? source.split('/').pop() : "unknown";
+                container.innerHTML = 
+                    '<div style="color:#ef4444;padding:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:6px;font-size:11px;font-family:monospace;word-break:break-all;line-height:1.5;">' +
+                    '<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">⚠️ Lỗi JavaScript khởi chạy:</div>' +
+                    '<b>Nội dung:</b> ' + message + '<br>' +
+                    '<b>Tệp nguồn:</b> ' + fileOnly + ' (Dòng ' + lineno + ', cột ' + colno + ')' +
+                    '</div>';
+            }
+            return false;
+        };
+
+        function handleScriptError() {
+            var container = document.getElementById("groups-container");
+            if (container) {
+                container.innerHTML = 
+                    '<div style="color:#ef4444;padding:12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:6px;font-size:11px;line-height:1.5;">' +
+                    '<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">⚠️ Lỗi Tải Thư Viện OnlyOffice:</div>' +
+                    'Không thể tải file <code style="background:rgba(0,0,0,0.3);padding:2px 4px;border-radius:3px;">plugins.js</code> từ máy chủ OnlyOffice (cổng 8081).<br><br>' +
+                    'Vui lòng kiểm tra cấu hình hoặc kiểm tra lỗi CORS chặn tải chéo cổng.' +
+                    '</div>';
+            }
+        }
+
+        function loadPluginLogic() {
+            console.log("[InsertFieldsPlugin] plugins.js loaded! Injecting plugin.js dynamically...");
+            var script = document.createElement("script");
+            script.src = "plugin.js?v=42"; // Tăng version cache-buster lên v=42
+            script.onerror = function() {
+                var container = document.getElementById("groups-container");
+                if (container) {
+                    container.innerHTML = '<div style="color:#ef4444;padding:12px;">⚠️ Không thể tải file logic plugin.js từ backend!</div>';
+                }
+            };
+            document.head.appendChild(script);
+        }
+
+        // Thiết lập bộ đếm thời gian kiểm tra handshake (4 giây)
+        setTimeout(function() {
+            if (!window.initCalled) {
+                var container = document.getElementById("groups-container");
+                if (container && container.innerText.indexOf("Đang tải biến") !== -1) {
+                    container.innerHTML = 
+                        '<div style="color:#eab308;padding:12px;background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.2);border-radius:6px;font-size:11px;line-height:1.5;">' +
+                        '<div style="font-weight:bold;margin-bottom:6px;font-size:12px;">⚠️ OnlyOffice chưa gọi hàm init():</div>' +
+                        'Thư viện đã tải thành công nhưng OnlyOffice chưa phát lệnh khởi chạy (handshake chưa hoàn tất).<br><br>' +
+                        '<b>Nguyên nhân phổ biến:</b> Thao tác lưu cache của trình duyệt hoặc cơ chế bảo mật cổng chéo chặn quyền điều khiển của OnlyOffice.<br><br>' +
+                        '<b>Cách xem lỗi:</b> Click chuột phải vào vị trí bất kỳ bên ngoài OnlyOffice -> Chọn <b>Inspect (Kiểm tra)</b> -> Chọn tab <b>Console</b> để xem chi tiết.' +
+                        '</div>';
+                }
+            }
+        }, 4000);
+    </script>
+    
+    <!-- Nhúng API Plugin tiêu chuẩn của OnlyOffice Document Server v9.x thực tế -->
+    <script type="text/javascript" 
+            src="http://192.168.68.241:8081/sdkjs-plugins/v1/plugins.js"
+            onerror="handleScriptError()"
+            onload="loadPluginLogic()">
+    </script>
+</head>
+<body>
+    <input type="text" class="search-box" id="search-input" placeholder="Tìm kiếm trường dữ liệu...">
+    <div id="groups-container">
+        <div style="text-align:center;padding:2rem;color:#94a3b8">Đang tải biến dữ liệu...</div>
+    </div>
+</body>
+</html>
