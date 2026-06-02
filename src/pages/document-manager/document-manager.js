@@ -232,7 +232,7 @@ var DocumentManagerPage = (function () {
             mode: 'view',
             lang: 'vi',
             user: { id: 'user_' + Date.now(), name: _getCurrentUserName() },
-            customization: { compactHeader: true, toolbarNoTabs: true, hideRightMenu: true }
+            customization: { compactHeader: true, toolbarNoTabs: false, hideRightMenu: true }
           }
         };
         _docEditor = new DocsAPI.DocEditor('docmgr-oo-viewer', config);
