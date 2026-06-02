@@ -60,17 +60,8 @@ BEGIN
         N'Tiền mặt / Chuyển khoản' AS [HinhThuc],
         
         -- Ghép Tên 2 người, hoặc xài Tên Khách chung chung nếu không có
-        CASE 
-            WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL 
-                THEN k.Tenchure + ' & ' + k.Tencodau
-            ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
-        END AS [TenKhachHang],
-
-        CASE 
-            WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL 
-                THEN k.Tenchure + ' & ' + k.Tencodau
-            ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
-        END AS [Nguoinop],
+        c.FullName AS [TenKhachHang],
+        c.FullName AS [Nguoinop],
         
         -- Lấy sdt nếu không có bốc số chú rể / cô dâu
         ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
@@ -116,6 +107,14 @@ BEGIN
         tbmk_Biennhancoccho b
     LEFT JOIN 
         dmkhachhang k ON b.Makh = k.Makh
+    OUTER APPLY (
+        SELECT 
+            CASE 
+                WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL 
+                    THEN k.Tenchure + ' & ' + k.Tencodau
+                ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
+            END AS FullName
+    ) c
     WHERE 
         -- Nếu có tìm kiếm thì ưu tiên
         (@Keyword IS NULL OR @Keyword = '' OR b.DocumentID LIKE '%' + @Keyword + '%' OR b.SoBN LIKE '%' + @Keyword + '%' OR k.Dienthoai LIKE '%' + @Keyword + '%' OR k.Tenkh LIKE N'%' + @Keyword + '%' OR k.Tenchure LIKE N'%' + @Keyword + '%' OR k.Tencodau LIKE N'%' + @Keyword + '%')
