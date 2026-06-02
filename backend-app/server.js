@@ -258,6 +258,9 @@ app.post('/api/documents/generate', async (req, res) => {
         const doc = new Docxtemplater(zip, {
             paragraphLoop: true,
             linebreaks: true,
+            nullGetter() {
+                return "";
+            }
         });
 
         // Đổ toàn bộ dataMap (Bên A + Bên B + Món ăn) vào template Word
