@@ -123,11 +123,12 @@ var DocumentExportPlugin = (function () {
         }
 
         var row = selectedRows[0];
-        if (row.Status === 'SIGNED' || row.TrangThai === 'SIGNED') {
+        var st = (row.Status || row.TrangThai || '').toString().toLowerCase();
+        if (st.includes('đã ký')) {
           if (typeof Alert !== 'undefined') {
-            Alert.warning('Bị khóa', 'Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (SIGNED).');
+            Alert.warning('Bị khóa', 'Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
           } else {
-            alert('Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (SIGNED).');
+            alert('Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
           }
           return;
         }

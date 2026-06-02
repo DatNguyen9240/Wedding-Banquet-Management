@@ -416,11 +416,14 @@ window.DynamicFormEngine = (function () {
           onAdd: MODULE_CONFIG.HideAddBtn ? false : (_hasPermission('ADD') ? _openAddForm : 'DISABLED'),
           onEdit: MODULE_CONFIG.HideEditBtn ? false : (_hasPermission('EDIT') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectEdit);
-            
+
             // CHẶN CHỈNH SỬA NẾU HỢP ĐỒNG ĐÃ CHỐT
-            var hasSigned = selectedRows.find(function(r) { return r.Status === 'SIGNED' || r.TrangThai === 'SIGNED'; });
+            var hasSigned = selectedRows.find(function (r) {
+              var st = (r.TrangThai || '').toString().toLowerCase();
+              return st.includes('đã ký');
+            });
             if (hasSigned) {
-              return Alert.warning('Bị khóa', 'Không thể sửa hợp đồng/phiếu đã chốt (SIGNED). Vui lòng dùng chức năng Phụ lục nếu muốn thay đổi!');
+              return Alert.warning('Bị khóa', 'Không thể sửa hợp đồng/phiếu đã chốt (Đã ký). Vui lòng dùng chức năng Phụ lục nếu muốn thay đổi!');
             }
 
             if (selectedRows.length > 1) {
@@ -432,39 +435,48 @@ window.DynamicFormEngine = (function () {
           onDelete: MODULE_CONFIG.HideDeleteBtn ? false : _hasPermission('DELETE') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectDelete);
 
+            // CHẶN XÓA NẾU HỢP ĐỒNG ĐÃ CHỐT
+            var hasSigned = selectedRows.find(function (r) {
+              var st = (r.TrangThai || '').toString().toLowerCase();
+              return st.includes('đã ký') || st.includes('quyết toán') || st === 'signed' || st === 'completed';
+            });
+            if (hasSigned) {
+              return Alert.warning('Bị khóa', 'Tuyệt đối không được xóa hợp đồng/phiếu đã chốt (Đã ký / Đã quyết toán). Hệ thống yêu cầu lưu trữ chứng từ pháp lý!');
+            }
+
             // Hàm thực thi xóa gọi API
             var performDelete = function () {
               if (!MODULE_CONFIG.ApiDelete) {
                 return Alert.info(MODULE_CONFIG.AlertTitleInfo, MODULE_CONFIG.InfoDeleteDev);
               }
 
-              var payload = {
-                FormName: MODULE_CONFIG.FormName,
-                UserName: _currentUser()
-              };
-
-              // Thu thập danh sách ID của các dòng đã chọn
-              var ids = selectedRows.map(function (r) { return r[MODULE_CONFIG.PrimaryKey] || r.Id || r.AutoID; });
-              payload.IDs = ids.join(',');
-
-              var finalUrl = MODULE_CONFIG.ApiDelete;
-              if (finalUrl === '/api/API_Gateway_Router') {
-                payload = {
+              // Xử lý từng dòng một (Vì API Gateway C# map JSON sang Model, thiếu field sẽ bị NULL update)
+              var deletePromises = selectedRows.map(function (row) {
+                var payload = {
                   List: MODULE_CONFIG.FormName,
                   Func: 'Delete',
-                  JsonData: JSON.stringify({ IDs: payload.IDs })
+                  UserName: _currentUser()
                 };
-              }
 
-              ApiClient.post(finalUrl, payload).then(function (res) {
-                if (res && res.code === 0) {
+                // Bơm toàn bộ dữ liệu gốc của row vào để C# binding không bị mất các cột Not Null (như Ngaytochuc)
+                var rowData = Object.assign({}, row);
+                rowData.IsDeleted = 1; // Flag xóa mềm
+
+                payload.JsonData = JSON.stringify(rowData);
+
+                return ApiClient.post(MODULE_CONFIG.ApiDelete, payload);
+              });
+
+              Promise.all(deletePromises).then(function (results) {
+                var allSuccess = results.every(function (res) { return res && res.code === 0; });
+                if (allSuccess) {
                   if (typeof UIToast !== 'undefined') UIToast.show(MODULE_CONFIG.ToastDelete, 'success');
                   selectedRows = [];
                   if (_isFormBuilder()) window._uiConfigCache = {};
                   _updateSelectionCounter();
                   _loadData();
                 } else {
-                  Alert.error(MODULE_CONFIG.AlertTitleError, res.message || res.msg || MODULE_CONFIG.AlertDeleteFailed);
+                  Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertDeleteFailed);
                 }
               }).catch(function (err) {
                 Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertNetworkError);
