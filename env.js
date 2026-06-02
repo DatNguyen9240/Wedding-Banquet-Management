@@ -25,10 +25,10 @@ window.API_CONFIG = {
 
         DOCUMENT_MANAGER: {
             NODE_IP: ENV_VARS.DOC_NODE_IP,
-            BASE_API: 'http://' + ENV_VARS.DOC_NODE_IP + ':5000/api/documents',
-            ONLYOFFICE_API: 'http://' + ENV_VARS.DOC_NODE_IP + ':82/web-apps/apps/api/documents/api.js',
-            UPLOADS_URL: 'http://' + ENV_VARS.DOC_NODE_IP + ':5000/uploads/',
-            SAMPLES_URL: 'http://' + ENV_VARS.DOC_NODE_IP + ':5000/samples/'
+            BASE_API: 'http://' + ENV_VARS.DOC_NODE_IP + ':8080/api/documents',
+            ONLYOFFICE_API: 'http://' + ENV_VARS.DOC_NODE_IP + ':8081/web-apps/apps/api/documents/api.js',
+            UPLOADS_URL: 'http://' + ENV_VARS.DOC_NODE_IP + ':8080/uploads/',
+            SAMPLES_URL: 'http://' + ENV_VARS.DOC_NODE_IP + ':8080/samples/'
         },
 
         PERMISSIONS: {

@@ -8,7 +8,7 @@ const http = require('http');
 
 const LISTEN_PORT = 8080;
 const BACKEND_HOST = '127.0.0.1';
-const BACKEND_PORT = 5000; // Sửa cổng này tương ứng với cổng API Backend của bạn (VD: 5000 của .NET hoặc FastAPI v.v)
+const BACKEND_PORT = 8080; // Sửa cổng này tương ứng với cổng API Backend của bạn (VD: 5000 của .NET hoặc FastAPI v.v)
 
 console.log('=======================================================');
 console.log('       CORS PROXY - WEDDING BANQUET MANAGEMENT         ');
