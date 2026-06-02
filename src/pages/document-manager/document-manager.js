@@ -37,7 +37,7 @@ var DocumentManagerPage = (function () {
       }
       var script = document.createElement('script');
       script.id = '__onlyoffice_api__';
-      script.src = ONLYOFFICE_API;
+      script.src = ONLYOFFICE_API + '?v=' + Date.now();
       script.onload = function () { resolve(); };
       script.onerror = function () { reject(new Error('Không thể tải OnlyOffice API')); };
       document.head.appendChild(script);
@@ -192,6 +192,62 @@ var DocumentManagerPage = (function () {
 
     var fileUrl = DOC_CONFIG.UPLOADS_URL + encodeURIComponent(fileName);
 
+    // Nếu là file .docx -> Dùng OnlyOffice để view
+    if (fileName.endsWith('.docx')) {
+      area.innerHTML =
+        '<div style="display:flex;flex-direction:column;height:100%;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;' +
+        'padding:.6rem 1rem;background:var(--color-surface, #ffffff);border-bottom:1px solid var(--color-border, #e2e8f0);">' +
+        '<span style="color:var(--color-text-secondary, #64748b);font-size:.82rem;font-family:monospace;">' +
+        '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">description</span> ' +
+        fileName +
+        '</span>' +
+        '<div style="display:flex;gap:.5rem;">' +
+        '<a href="' + fileUrl + '" download="' + fileName + '" ' +
+        'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
+        'background:var(--color-primary-light, rgba(79,70,229,0.1));color:var(--color-primary, #4f46e5);text-decoration:none;font-size:.8rem;">' +
+        '<span class="material-symbols-outlined" style="font-size:14px;">download</span> Tải về' +
+        '</a>' +
+        '<button id="docmgr-btn-edit-tpl" ' +
+        'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
+        'background:var(--color-surface-elevated, #f1f5f9);color:var(--color-text, #1e293b);border:1px solid var(--color-border, #e2e8f0);cursor:pointer;font-size:.8rem;">' +
+        '<span class="material-symbols-outlined" style="font-size:14px;">edit</span> Chỉnh sửa template' +
+        '</button>' +
+        '</div>' +
+        '</div>' +
+        '<div id="docmgr-oo-viewer" style="flex:1;width:100%;"></div>' +
+        '</div>';
+
+      _ensureOnlyOfficeApi().then(function () {
+        var config = {
+          document: {
+            fileType: 'docx',
+            key: fileName + '_' + Date.now(),
+            title: fileName,
+            url: fileUrl,
+            permissions: { edit: false, download: true, print: true }
+          },
+          documentType: 'word',
+          editorConfig: {
+            mode: 'view',
+            lang: 'vi',
+            user: { id: 'user_' + Date.now(), name: _getCurrentUserName() },
+            customization: { compactHeader: true, toolbarNoTabs: true, hideRightMenu: true }
+          }
+        };
+        _docEditor = new DocsAPI.DocEditor('docmgr-oo-viewer', config);
+      }).catch(function (err) {
+        var v = _qs('#docmgr-oo-viewer');
+        if (v) v.innerHTML = '<div class="docmgr-onerror">⚠️ Lỗi tải OnlyOffice: ' + err.message + '</div>';
+      });
+
+      var btnEditTplDocx = _qs('#docmgr-btn-edit-tpl');
+      if (btnEditTplDocx) {
+        btnEditTplDocx.addEventListener('click', function () { _openTemplateEditor(fileName); });
+      }
+      return;
+    }
+
     // File .doc của hệ thống là HTML-based → dùng iframe render trực tiếp
     // Không cần OnlyOffice, không cần Docker
     area.innerHTML =
@@ -254,7 +310,8 @@ var DocumentManagerPage = (function () {
   // ── Chỉnh sửa Template ────────────────────────────────────────────────
   function _openTemplateEditor(fileName) {
     var type = fileName.includes('hop_dong') ? 'hop_dong' : (fileName.includes('dat_coc') ? 'dat_coc' : 'quyet_toan');
-    var templateName = type + '.html';
+    var ext = fileName.endsWith('.docx') ? '.docx' : '.html';
+    var templateName = type + ext;
 
     // Đóng giao diện xem tài liệu cũ
     var area = _qs('#docmgr-editor-area');
@@ -276,7 +333,7 @@ var DocumentManagerPage = (function () {
 
         var config = {
           document: {
-            fileType: 'html',
+            fileType: ext === '.docx' ? 'docx' : 'html',
             key: type + '_' + Date.now(),
             title: templateName,
             url: fileUrl,

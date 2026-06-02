@@ -250,7 +250,7 @@ app.post('/api/documents/generate', async (req, res) => {
                 message: `Không tìm thấy template '${templateType}.docx' trong samples/. Vui lòng tạo file Word mẫu!`
             });
         }
-        
+
         const content = fs.readFileSync(docxTemplatePath, "binary");
 
         // ── 4. Khởi tạo docxtemplater và bơm dữ liệu ─────────────────────────
@@ -279,11 +279,11 @@ app.post('/api/documents/generate', async (req, res) => {
             const fileHash = crypto.createHash('sha256').update(buf).digest('hex');
 
             const docData = {
-                DocumentID: 'DOC_' + Date.now(), 
-                TiecID: customerId || dataMap.Sohopdong || dataMap.MaChungTu || '', 
+                DocumentID: 'DOC_' + Date.now(),
+                TiecID: customerId || dataMap.Sohopdong || dataMap.MaChungTu || '',
                 FileName: finalFileName,
                 FileType: templateType,
-                VersionNo: 1, 
+                VersionNo: 1,
                 Status: 'SIGNED', // Vừa in xong chốt cứng luôn
                 FileHash: fileHash // Lưu mã băm chống giả mạo
             };
@@ -295,7 +295,7 @@ app.post('/api/documents/generate', async (req, res) => {
             };
             await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload);
             console.log(`[AUDIT] ✅ Đã lưu vết Sổ lưu trữ cho file ${finalFileName}`);
-        } catch(err) {
+        } catch (err) {
             console.error(`[AUDIT] ❌ Lỗi ghi log:`, err.message);
         }
 
@@ -317,7 +317,7 @@ app.delete('/api/documents/:fileName', async (req, res) => {
         const filePath = path.join(UPLOADS_DIR, fileName);
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath); // Xóa file vật lý (Hard delete)
-            
+
             // Cập nhật Bia mộ (Soft Delete) trong CSDL
             try {
                 const payload = {
@@ -332,7 +332,7 @@ app.delete('/api/documents/:fileName', async (req, res) => {
                 };
                 await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload);
                 console.log(`[AUDIT] 🪦 Đã dán nhãn XÓA cho file ${fileName} trong CSDL`);
-            } catch(err) {
+            } catch (err) {
                 console.error(`[AUDIT] ❌ Lỗi cập nhật bia mộ:`, err.message);
             }
 
