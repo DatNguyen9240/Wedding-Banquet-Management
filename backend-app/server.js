@@ -16,8 +16,9 @@ const PORT = process.env.PORT || 8081;
 // ==========================================
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const SAMPLES_DIR = path.join(__dirname, 'samples');
+const PLUGINS_DIR = path.join(__dirname, 'plugins');
 
-[UPLOADS_DIR, SAMPLES_DIR].forEach(dir => {
+[UPLOADS_DIR, SAMPLES_DIR, PLUGINS_DIR].forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -37,6 +38,12 @@ app.use('/samples', function (req, res, next) {
     res.header('Access-Control-Allow-Headers', '*');
     next();
 }, express.static(SAMPLES_DIR));
+
+app.use('/plugins', function (req, res, next) {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', '*');
+    next();
+}, express.static(PLUGINS_DIR));
 
 app.use(express.json());
 

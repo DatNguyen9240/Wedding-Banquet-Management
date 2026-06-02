@@ -8,7 +8,9 @@
 // 1. Tham số môi trường (Environment Variables)
 const ENV_VARS = {
     API_BASE: 'https://qlt.bms79.com', // Domain backend thực tế
-    DOC_NODE_IP: '103.190.38.46',      // Server Node.js (OnlyOffice & Documents)
+    DOC_NODE_IP: (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+        ? '192.168.68.241'      // Server Node.js mặc định dự phòng khi chạy localhost
+        : (typeof window !== 'undefined' ? window.location.hostname : '192.168.68.241')
 };
 
 // 2. Cấu hình API chi tiết

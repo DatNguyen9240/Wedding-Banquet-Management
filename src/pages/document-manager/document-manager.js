@@ -292,6 +292,14 @@ var DocumentManagerPage = (function () {
             mode: 'edit',
             callbackUrl: callbackUrl,
             lang: 'vi',
+            plugins: {
+              autostart: [
+                "asc.{A4E9E6D5-D0E6-4A59-86BC-576974AB8190}"
+              ],
+              pluginsData: [
+                "http://" + HOST_IP + ":8080/plugins/insert-fields/config.json?v=6"
+              ]
+            },
             user: {
               id: 'admin_' + Math.floor(Math.random() * 9999),
               name: _getCurrentUserName() + ' (Admin)'
