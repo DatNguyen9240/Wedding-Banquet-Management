@@ -20,6 +20,7 @@ BEGIN
     SELECT 
         b.DocumentID AS [MaChungTu],
         b.SoBN AS [SoPhieu],
+        b.SoBN AS [Số phiếu],
         
         -- Thông tin khách hàng chi tiết
         k.Tenchure AS [Tenchure],
@@ -27,6 +28,7 @@ BEGIN
         k.DTchure AS [DTchure],
         k.DTcodau AS [DTcodau],
         k.Diachi AS [DiaChi],
+        k.Diachi AS [Địa chỉ],
         k.Nguoigd AS [Nguoigd],
         k.DienThoaiDaiDien AS [DienThoaiDaiDien],
         k.Mail AS [Mail],
@@ -41,26 +43,26 @@ BEGIN
         b.Ghichu AS [Ghichu],
         
         -- Các trường bổ sung phục vụ in mẫu Phiếu Thu (phieu_thu.docx)
-        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com1') AS [TenNhaHang],
-        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com2') AS [DiaChiNhaHang],
-        N'Cọc giữ chỗ' AS [Lydo],
-        d.Ngay AS [Ngày],
-        d.Thang AS [Tháng],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com1') AS [Tên nhà hàng],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com2') AS [Địa chỉ nhà hàng],
+        N'Cọc giữ chỗ' AS [Lý do],
+        RIGHT('0' + CAST(d.Ngay AS VARCHAR(2)), 2) AS [Ngày],
+        RIGHT('0' + CAST(d.Thang AS VARCHAR(2)), 2) AS [Tháng],
         d.Nam AS [Năm],
-        CONVERT(VARCHAR(10), d.DDate, 103) AS [NgàyThuFull],
+        CONVERT(VARCHAR(10), d.DDate, 103) AS [Ngày thu],
         d.DDate AS [DocumentDate],
-        b.DocumentID AS [Sohopdong],
-        FORMAT(ISNULL(b.Tongtien, 0), 'N0', 'vi-VN') AS [Tongtien],
-        b.Tongtien AS [TongtienRaw],
-        [dbo].[fn_DocTienBangChu](ISNULL(b.Tongtien, 0)) AS [SoTienBangChu],
-        '' AS [TaiKhoanNo],
-        '' AS [TaiKhoanCo],
-        '' AS [Kemtheo],
-        N'Tiền mặt / Chuyển khoản' AS [HinhThuc],
+        b.DocumentID AS [Số hợp đồng],
+        FORMAT(ISNULL(b.Tongtien, 0), 'N0', 'vi-VN') AS [Tổng tiền],
+        ISNULL(b.Tongtien, 0) AS [TongtienRaw],
+        [dbo].[fn_DocTienBangChu](ISNULL(b.Tongtien, 0)) AS [Số tiền bằng chữ],
+        '' AS [Tài khoản nợ],
+        '' AS [Tài khoản có],
+        '' AS [Kèm theo],
+        N'Tiền mặt / Chuyển khoản' AS [Hình thức],
         
         -- Ghép Tên 2 người, hoặc xài Tên Khách chung chung nếu không có
         c.FullName AS [TenKhachHang],
-        c.FullName AS [Nguoinop],
+        ISNULL(NULLIF(k.Nguoigd, ''), c.FullName) AS [Người nộp],
         
         -- Lấy sdt nếu không có bốc số chú rể / cô dâu
         ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
@@ -93,6 +95,12 @@ BEGIN
             WHERE DocumentID = b.DocumentID 
             FOR JSON PATH
         ) AS [_JsonSanhTiec],
+        (
+            SELECT Sanhtiecid, IsSanhchinh 
+            FROM tbmk_Biennhancocchosanhtiec 
+            WHERE DocumentID = b.DocumentID 
+            FOR JSON PATH
+        ) AS [JsonSanhTiec],
         
         -- Label trạng thái
         CASE

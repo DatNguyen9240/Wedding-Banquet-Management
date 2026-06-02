@@ -150,6 +150,7 @@ app.get('/api/documents/fields/:type', async (req, res) => {
             'hop_dong': 'frmHopDong',
             'phieu_thu': 'frmPhieuThu',
             'de_nghi_thay_doi': 'frmHopDong',
+            'quyet_toan': 'frmQuyetToan',
         };
         const listName = API_MAP[type];
         if (!listName) return res.status(400).json({ success: false, message: 'Invalid type' });
@@ -190,6 +191,7 @@ app.post('/api/documents/generate', async (req, res) => {
             'hop_dong': 'frmHopDong',
             'phieu_thu': 'frmPhieuThu',
             'de_nghi_thay_doi': 'frmHopDong',
+            'quyet_toan': 'frmQuyetToan',
         };
         const listName = API_MAP[templateType];
         let dataMap = { ...setup };
@@ -210,6 +212,20 @@ app.post('/api/documents/generate', async (req, res) => {
         }
         if (dbRow) {
             dataMap = { ...dataMap, ...dbRow };
+        }
+
+        // Tự động phân tích các chuỗi JSON từ CSDL thành mảng/đối tượng JS
+        for (const key in dataMap) {
+            if (typeof dataMap[key] === 'string') {
+                const val = dataMap[key].trim();
+                if ((val.startsWith('[') && val.endsWith(']')) || (val.startsWith('{') && val.endsWith('}'))) {
+                    try {
+                        dataMap[key] = JSON.parse(val);
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+            }
         }
 
 
