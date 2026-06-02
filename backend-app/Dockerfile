@@ -12,7 +12,7 @@ RUN bun install
 COPY . .
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8081
 
 # Run the server
 CMD ["bun", "run", "server.js"]

@@ -8,7 +8,7 @@
 // 1. Tham số môi trường (Environment Variables)
 const ENV_VARS = {
     API_BASE: 'https://qlt.bms79.com', // Domain backend thực tế
-    DOC_NODE_IP: '192.168.68.121',      // Server Node.js (OnlyOffice & Documents)
+    DOC_NODE_IP: '103.190.38.46',      // Server Node.js (OnlyOffice & Documents)
 };
 
 // 2. Cấu hình API chi tiết
@@ -25,10 +25,10 @@ window.API_CONFIG = {
 
         DOCUMENT_MANAGER: {
             NODE_IP: ENV_VARS.DOC_NODE_IP,
-            BASE_API: 'http://' + ENV_VARS.DOC_NODE_IP + ':8080/api/documents',
-            ONLYOFFICE_API: 'http://' + ENV_VARS.DOC_NODE_IP + ':8081/web-apps/apps/api/documents/api.js',
-            UPLOADS_URL: 'http://' + ENV_VARS.DOC_NODE_IP + ':8080/uploads/',
-            SAMPLES_URL: 'http://' + ENV_VARS.DOC_NODE_IP + ':8080/samples/'
+            BASE_API: 'http://' + ENV_VARS.DOC_NODE_IP + ':8081/api/documents',
+            ONLYOFFICE_API: 'http://' + ENV_VARS.DOC_NODE_IP + ':8082/web-apps/apps/api/documents/api.js',
+            UPLOADS_URL: 'http://' + ENV_VARS.DOC_NODE_IP + ':8081/uploads/',
+            SAMPLES_URL: 'http://' + ENV_VARS.DOC_NODE_IP + ':8081/samples/'
         },
 
         PERMISSIONS: {
@@ -58,7 +58,7 @@ window.API_CONFIG = {
             SETUP_VALUE: '/api/API_LayGiaTriSetup',
             GET_UI_DICTIONARY: '/api/API_LayCacTruongGiaoDien',
             GET_FIELDS_LIST: '/api/API_DanhSachTruongGiaoDien',
-            SAVE_FIELD:   '/api/API_LuuTruongGiaoDien',
+            SAVE_FIELD: '/api/API_LuuTruongGiaoDien',
             DELETE_FIELD: '/api/API_XoaTruongGiaoDien'
         },
         CONTRACT: {
