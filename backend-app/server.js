@@ -63,12 +63,14 @@ let _setupCacheTime = 0;
 const SETUP_CACHE_TTL = 5 * 60 * 1000; // 5 phút
 
 /** Lấy thông tin nhà hàng từ API_LayGiaTriSetup (có cache) */
-async function fetchSetupInfo() {
+async function fetchSetupInfo(authToken) {
     const now = Date.now();
     if (_setupCache && (now - _setupCacheTime) < SETUP_CACHE_TTL) return _setupCache;
     try {
         const url = `${SQL_API_BASE}/api/API_LayGiaTriSetup`;
-        const resp = await axios.get(url, { timeout: 8000 });
+        const headers = {};
+        if (authToken) headers['Authorization'] = authToken;
+        const resp = await axios.get(url, { headers, timeout: 8000 });
         const json = resp.data;
         // API_LayGiaTriSetup trả về rows có CodeID + CodeValue (xem SQL)
         const rows = json.records || (Array.isArray(json) ? json : []);
@@ -90,7 +92,7 @@ async function fetchSetupInfo() {
 }
 
 /** Gọi API Gateway để lấy record theo List + Keyword */
-async function fetchFromSQLAPI(listName, keyword) {
+async function fetchFromSQLAPI(listName, keyword, authToken) {
     const payload = {
         List: listName, Func: 'View', UserName: SQL_API_USER,
         Keyword: keyword || '', Page: 1, Limit: 1
@@ -98,7 +100,9 @@ async function fetchFromSQLAPI(listName, keyword) {
     const qs = encodeURIComponent(JSON.stringify(payload));
     const url = `${SQL_API_BASE}/api/API_Gateway_Router?q=${qs}`;
     console.log(`[SQL API] Gọi: ${listName} | Keyword: ${keyword}`);
-    const resp = await axios.get(url, { timeout: 10000 });
+    const headers = {};
+    if (authToken) headers['Authorization'] = authToken;
+    const resp = await axios.get(url, { headers, timeout: 10000 });
     const json = resp.data;
     if (json && json.records && json.records.length > 0) return json.records[0];
     if (json && json.code === 0) return json;
@@ -153,13 +157,13 @@ app.get('/api/documents/fields/:type', async (req, res) => {
         // Lấy 1 dòng dữ liệu mẫu từ SQL API để quét tự động 100% cột
         let sampleRow = {};
         try {
-            const sqlRow = await fetchFromSQLAPI(listName, '');
+            const sqlRow = await fetchFromSQLAPI(listName, '', req.headers.authorization);
             if (sqlRow) sampleRow = sqlRow;
         } catch (e) {
             console.log('[FIELDS] Không lấy được data mẫu từ DB, dùng object rỗng');
         }
 
-        const setup = await fetchSetupInfo().catch(() => ({}));
+        const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
         const finalData = { ...setup, ...sampleRow };
         const fields = Object.keys(finalData);
 
@@ -179,7 +183,7 @@ app.post('/api/documents/generate', async (req, res) => {
         outputFileName = outputFileName.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_');
 
         // ── 1. Lấy thông tin nhà hàng từ Setup API ──────────────────────────
-        const setup = await fetchSetupInfo().catch(() => ({}));
+        const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
 
         // ── 2. Map data từ rowData (frontend) hoặc fallback SQL API ─────────
         const API_MAP = {
@@ -190,19 +194,24 @@ app.post('/api/documents/generate', async (req, res) => {
         const listName = API_MAP[templateType];
         let dataMap = { ...setup };
 
-        if (rowData && typeof rowData === 'object') {
-            // Frontend đã gửi kèm rowData (selected row từ DynamicFormEngine)
-            dataMap = { ...dataMap, ...rowData };
-            console.log('[GENERATE] ✅ Dùng rowData từ frontend');
-        } else if (listName && customerId) {
-            // Fallback: gọi SQL API
+        let dbRow = null;
+        if (listName && customerId) {
             try {
-                const row = await fetchFromSQLAPI(listName, customerId);
-                if (row) dataMap = { ...dataMap, ...row };
+                dbRow = await fetchFromSQLAPI(listName, customerId, req.headers.authorization);
+                console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API thành công');
             } catch (e) {
                 console.error('[GENERATE] Lỗi SQL API:', e.message);
             }
         }
+
+        // Merge dữ liệu: setup -> rowData từ frontend -> dbRow từ SQL API (ưu tiên cao nhất)
+        if (rowData && typeof rowData === 'object') {
+            dataMap = { ...dataMap, ...rowData };
+        }
+        if (dbRow) {
+            dataMap = { ...dataMap, ...dbRow };
+        }
+
 
         console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
 
