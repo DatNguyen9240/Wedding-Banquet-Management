@@ -84,7 +84,186 @@ var UIInput = (function () {
         config.value = rawVal.split(' ')[0];
       }
     }
-    return _createBaseWrapper(config, 'date').wrapper;
+
+    var obj = _createBaseWrapper(config, 'text');
+    var visibleInput = obj.input;
+
+    // Remove name to prevent duplicate submission of the text representation
+    visibleInput.removeAttribute('name');
+    if (config.id) visibleInput.id = config.id + '_visible';
+    visibleInput.readOnly = true;
+    visibleInput.style.cursor = 'pointer';
+    visibleInput.placeholder = config.placeholder || 'Chọn ngày...';
+
+    // Format display value
+    var initialDate = config.value || '';
+    if (initialDate) {
+      var p = initialDate.split('-');
+      if (p.length === 3) {
+        visibleInput.value = p[2] + '/' + p[1] + '/' + p[0];
+      }
+    }
+
+    // Create the actual hidden input for form value collection
+    var hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    if (config.name) hiddenInput.name = config.name;
+    if (config.id) hiddenInput.id = config.id;
+    hiddenInput.value = initialDate;
+    obj.wrapper.appendChild(hiddenInput);
+
+    // Sync from hidden input value back to visible input value
+    hiddenInput.addEventListener('change', function () {
+      var val = hiddenInput.value;
+      if (val) {
+        var p = val.split('-');
+        if (p.length === 3) {
+          visibleInput.value = p[2] + '/' + p[1] + '/' + p[0];
+        } else {
+          visibleInput.value = val;
+        }
+      } else {
+        visibleInput.value = '';
+      }
+    });
+
+    // Remove the native input direct placement to wrap it nicely
+    if (visibleInput.parentNode) {
+      visibleInput.parentNode.removeChild(visibleInput);
+    }
+
+    // Input Group wrapper
+    var inputContainer = document.createElement('div');
+    inputContainer.style.position = 'relative';
+    inputContainer.style.display = 'flex';
+    inputContainer.style.alignItems = 'center';
+    inputContainer.appendChild(visibleInput);
+
+    // Icon
+    var icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined';
+    icon.innerText = 'calendar_today';
+    icon.style.position = 'absolute';
+    icon.style.right = '12px';
+    icon.style.color = 'var(--color-text-secondary)';
+    icon.style.pointerEvents = 'none';
+    icon.style.fontSize = '20px';
+    inputContainer.appendChild(icon);
+
+    obj.wrapper.appendChild(inputContainer);
+
+    // Custom calendar popup picker
+    var popup = null;
+    var calendarInstance = null;
+
+    function openPopup() {
+      if (popup) return;
+      popup = document.createElement('div');
+      popup.className = 'custom-datepicker-popup';
+
+      var rect = visibleInput.getBoundingClientRect();
+      var windowWidth = window.innerWidth;
+      var windowHeight = window.innerHeight;
+      var popupWidth = 320;
+      var popupHeight = 350;
+
+      if (windowWidth <= 576) {
+        // Add a dim backdrop for mobile focus
+        var backdrop = document.createElement('div');
+        backdrop.id = 'datepicker-mobile-backdrop';
+        backdrop.style.position = 'fixed';
+        backdrop.style.inset = '0';
+        backdrop.style.background = 'rgba(0, 0, 0, 0.4)';
+        backdrop.style.zIndex = '99999998';
+        backdrop.addEventListener('click', closePopup);
+        document.body.appendChild(backdrop);
+      } else {
+        // Desktop/Tablet layout: Position relative to input using fixed
+        popup.style.position = 'fixed';
+        popup.style.zIndex = '99999999';
+        
+        // Calculate horizontal position
+        var leftPos = rect.left;
+        if (rect.left + popupWidth > windowWidth) {
+          leftPos = windowWidth - popupWidth - 12;
+          if (leftPos < 0) leftPos = 4;
+        }
+        
+        // Calculate vertical position (open above if not enough space below)
+        var topPos = rect.bottom + 4;
+        if (rect.bottom + popupHeight > windowHeight && rect.top - popupHeight > 0) {
+          topPos = rect.top - popupHeight - 4;
+        }
+        
+        popup.style.top = topPos + 'px';
+        popup.style.left = leftPos + 'px';
+
+        // Close on scroll for fixed positioning consistency
+        window.addEventListener('scroll', closePopup, { passive: true });
+      }
+
+      if (typeof UICalendar !== 'undefined') {
+        calendarInstance = UICalendar.create({
+          selectedDate: hiddenInput.value || null,
+          onSelect: function (dateStr) {
+            hiddenInput.value = dateStr;
+            var p = dateStr.split('-');
+            if (p.length === 3) {
+              visibleInput.value = p[2] + '/' + p[1] + '/' + p[0];
+            }
+            hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+            hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+            closePopup();
+          }
+        });
+        popup.appendChild(calendarInstance);
+      } else {
+        popup.innerText = 'UICalendar not loaded';
+      }
+
+      document.body.appendChild(popup);
+
+      if (calendarInstance && calendarInstance.setSelectedDate) {
+        calendarInstance.setSelectedDate(hiddenInput.value || null);
+      }
+
+      setTimeout(function () {
+        document.addEventListener('click', outsideClickListener);
+      }, 0);
+    }
+
+    function closePopup() {
+      if (!popup) return;
+      document.removeEventListener('click', outsideClickListener);
+      window.removeEventListener('scroll', closePopup);
+      var backdrop = document.getElementById('datepicker-mobile-backdrop');
+      if (backdrop && backdrop.parentNode) {
+        backdrop.parentNode.removeChild(backdrop);
+      }
+      if (popup.parentNode) {
+        popup.parentNode.removeChild(popup);
+      }
+      popup = null;
+      calendarInstance = null;
+    }
+
+    function outsideClickListener(e) {
+      if (!document.body.contains(e.target)) return;
+      if (popup && !popup.contains(e.target) && e.target !== visibleInput) {
+        closePopup();
+      }
+    }
+
+    visibleInput.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (popup) {
+        closePopup();
+      } else {
+        openPopup();
+      }
+    });
+
+    return obj.wrapper;
   }
 
   /**

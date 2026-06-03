@@ -48,7 +48,7 @@ var UICalendar = (function () {
         overlay.style.left = '0';
         overlay.style.width = '100%';
         overlay.style.height = '100%';
-        overlay.style.zIndex = '9999';
+        overlay.style.zIndex = '999999999';
         
         var dropdown = document.createElement('div');
         dropdown.className = 'calendar-dropdown-picker';
@@ -247,6 +247,15 @@ var UICalendar = (function () {
         dNum.innerHTML = '<span class="solar-date">' + prevDateNum + '</span>' + _getLunarDateHTML(prevY, prevM, prevDateNum);
         empty.appendChild(dNum);
         
+        if (config.selectedDate) {
+          var selDateObj = typeof config.selectedDate === 'string' ? new Date(config.selectedDate) : config.selectedDate;
+          if (selDateObj && !isNaN(selDateObj.getTime())) {
+            if (selDateObj.getFullYear() === prevY && selDateObj.getMonth() === prevM && selDateObj.getDate() === prevDateNum) {
+              empty.classList.add('selected');
+            }
+          }
+        }
+        
         empty.onclick = (function(d, pY, pM) {
           return function() {
             if (typeof config.onSelect === 'function') {
@@ -268,6 +277,15 @@ var UICalendar = (function () {
         
         if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === i) {
           dayCell.classList.add('today');
+        }
+
+        if (config.selectedDate) {
+          var selDateObj = typeof config.selectedDate === 'string' ? new Date(config.selectedDate) : config.selectedDate;
+          if (selDateObj && !isNaN(selDateObj.getTime())) {
+            if (selDateObj.getFullYear() === year && selDateObj.getMonth() === month && selDateObj.getDate() === i) {
+              dayCell.classList.add('selected');
+            }
+          }
         }
 
         var dayNum = document.createElement('div');
@@ -353,6 +371,15 @@ var UICalendar = (function () {
         dNumEnd.innerHTML = '<span class="solar-date">' + nextDateNum + '</span>' + _getLunarDateHTML(nextY, nextM, nextDateNum);
         emptyEnd.appendChild(dNumEnd);
         
+        if (config.selectedDate) {
+          var selDateObj = typeof config.selectedDate === 'string' ? new Date(config.selectedDate) : config.selectedDate;
+          if (selDateObj && !isNaN(selDateObj.getTime())) {
+            if (selDateObj.getFullYear() === nextY && selDateObj.getMonth() === nextM && selDateObj.getDate() === nextDateNum) {
+              emptyEnd.classList.add('selected');
+            }
+          }
+        }
+        
         emptyEnd.onclick = (function(d, nY, nM) {
           return function() {
             if (typeof config.onSelect === 'function') {
@@ -373,6 +400,18 @@ var UICalendar = (function () {
     
     wrapper.updateEvents = function(newEvents) {
       config.events = newEvents;
+      render(currentYear, currentMonth);
+    };
+    
+    wrapper.setSelectedDate = function(newDate) {
+      config.selectedDate = newDate;
+      if (newDate) {
+        var d = typeof newDate === 'string' ? new Date(newDate) : newDate;
+        if (d && !isNaN(d.getTime())) {
+          currentYear = d.getFullYear();
+          currentMonth = d.getMonth();
+        }
+      }
       render(currentYear, currentMonth);
     };
     
