@@ -48,7 +48,7 @@ SELECT
     
     ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS DienThoai,
     
-    b.Ngaytochuc AS [Ngaytochuc],
+    b.Ngaytochuc AS [NgayToChuc],
     ISNULL(b.Tongsoban, 0) AS SoBan,
     (
         SELECT TOP 1 s.Tensanhtiec 

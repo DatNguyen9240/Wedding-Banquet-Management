@@ -356,7 +356,7 @@ window.showCreateBanquetModal = function (prefillDate) {
           <div class="row g-3">
             <div class="col-md-4">
               <label class="form-label" style="font-size: 13px; font-weight: 600;">Ngày Tổ Chức</label>
-              <input type="text" class="ui-input w-100" name="Ngaytochuc" id="modal-ngaytochuc" placeholder="Chọn ngày..." required>
+              <input type="text" class="ui-input w-100" name="NgayToChuc" id="modal-ngaytochuc" placeholder="Chọn ngày..." required>
             </div>
             <div class="col-md-4">
               <label class="form-label" style="font-size: 13px; font-weight: 600;">Ca Tiệc</label>
@@ -617,7 +617,7 @@ window.submitCreateBanquet = function (btn) {
     Nguoigd:            formData.get('Nguoigd'),
     DienThoaiDaiDien:   formData.get('DienThoaiDaiDien'),
     Mail:               formData.get('Mail'),
-    Ngaytochuc:         formData.get('Ngaytochuc'),
+    NgayToChuc:         formData.get('NgayToChuc'),
     Loaitiecid:         formData.get('Loaitiecid'),
     Thoigianid:         formData.get('Thoigianid'),
     SobanManchinhthuc:  parseInt(formData.get('SobanManchinhthuc')) || 0,

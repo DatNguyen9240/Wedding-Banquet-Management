@@ -1064,8 +1064,9 @@ var WorkflowTransferPlugin = (function () {
                 if (lowerData[lowerName] !== undefined && lowerData[lowerName] !== null && String(lowerData[lowerName]).trim() !== '') {
                     var val = lowerData[lowerName];
 
-                    // Nếu phần tử là input date, định dạng lại thành YYYY-MM-DD
-                    if (el.type === 'date' && val) {
+                    // Nếu phần tử là input date hoặc input hidden của custom Datepicker, định dạng lại thành YYYY-MM-DD
+                    var isCustomDate = el.type === 'hidden' && (elName.toLowerCase().includes('ngay') || el.id.toLowerCase().includes('ngay'));
+                    if ((el.type === 'date' || isCustomDate) && val) {
                         var rawVal = String(val).trim();
                         if (rawVal.indexOf('T') !== -1) {
                             val = rawVal.split('T')[0];
@@ -1094,6 +1095,16 @@ var WorkflowTransferPlugin = (function () {
                     el.value = val;
                     el.style.backgroundColor = '#f0fdf4';
                     el.style.borderColor = '#10b981';
+
+                    // Nếu là input hidden (như Datepicker tùy chỉnh), áp dụng màu highlight lên ô hiển thị visible
+                    if (el.type === 'hidden' && el.id) {
+                        var visibleEl = modalContent.querySelector('#' + el.id + '_visible');
+                        if (visibleEl) {
+                            visibleEl.style.backgroundColor = '#f0fdf4';
+                            visibleEl.style.borderColor = '#10b981';
+                        }
+                    }
+
                     el.dispatchEvent(new Event('change', { bubbles: true }));
                     if (typeof el.fetchDataForValue === 'function') {
                         el.fetchDataForValue();
@@ -9272,14 +9283,64 @@ var UICalendar = (function () {
   function create(config) {
     config = config || {};
     var today = new Date();
-    var currentYear = (config.year !== undefined && !isNaN(config.year)) ? Number(config.year) : today.getFullYear();
-    var currentMonth = (config.month !== undefined && !isNaN(config.month)) ? Number(config.month) : today.getMonth();
+
+    // Tự động nhận diện Năm và Tháng từ ngày được chọn làm giá trị bắt đầu hiển thị
+    var defaultYear = today.getFullYear();
+    var defaultMonth = today.getMonth();
+
+    if (config.selectedDate) {
+      var initialSelObj = null;
+      if (typeof config.selectedDate === 'string') {
+        var cleanDate = config.selectedDate.split(' ')[0];
+        var parts = cleanDate.split(/[-/]/);
+        if (parts.length === 3) {
+          if (parts[0].length === 4) { // YYYY-MM-DD
+            initialSelObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          } else if (parts[2].length === 4) { // DD-MM-YYYY
+            initialSelObj = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+          }
+        }
+        if (!initialSelObj || isNaN(initialSelObj.getTime())) {
+          initialSelObj = new Date(config.selectedDate);
+        }
+      } else {
+        initialSelObj = config.selectedDate;
+      }
+      if (initialSelObj && !isNaN(initialSelObj.getTime())) {
+        defaultYear = initialSelObj.getFullYear();
+        defaultMonth = initialSelObj.getMonth();
+      }
+    }
+
+    var currentYear = (config.year !== undefined && !isNaN(config.year)) ? Number(config.year) : defaultYear;
+    var currentMonth = (config.month !== undefined && !isNaN(config.month)) ? Number(config.month) : defaultMonth;
 
     var wrapper = document.createElement('div');
     wrapper.className = 'ui-calendar-wrapper';
 
     function render(year, month) {
       wrapper.innerHTML = '';
+
+      // Phân tích selectedDate an toàn về mặt múi giờ (timezone-safe) để highlight chính xác ngày
+      var selDateObj = null;
+      if (config.selectedDate) {
+        if (typeof config.selectedDate === 'string') {
+          var cleanDate = config.selectedDate.split(' ')[0];
+          var parts = cleanDate.split(/[-/]/);
+          if (parts.length === 3) {
+            if (parts[0].length === 4) {
+              selDateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            } else if (parts[2].length === 4) {
+              selDateObj = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            }
+          }
+          if (!selDateObj || isNaN(selDateObj.getTime())) {
+            selDateObj = new Date(config.selectedDate);
+          }
+        } else {
+          selDateObj = config.selectedDate;
+        }
+      }
 
       // Header
       var header = document.createElement('div');
@@ -9508,12 +9569,9 @@ var UICalendar = (function () {
         dNum.innerHTML = '<span class="solar-date">' + prevDateNum + '</span>' + _getLunarDateHTML(prevY, prevM, prevDateNum);
         empty.appendChild(dNum);
         
-        if (config.selectedDate) {
-          var selDateObj = typeof config.selectedDate === 'string' ? new Date(config.selectedDate) : config.selectedDate;
-          if (selDateObj && !isNaN(selDateObj.getTime())) {
-            if (selDateObj.getFullYear() === prevY && selDateObj.getMonth() === prevM && selDateObj.getDate() === prevDateNum) {
-              empty.classList.add('selected');
-            }
+        if (selDateObj && !isNaN(selDateObj.getTime())) {
+          if (selDateObj.getFullYear() === prevY && selDateObj.getMonth() === prevM && selDateObj.getDate() === prevDateNum) {
+            empty.classList.add('selected');
           }
         }
         
@@ -9540,12 +9598,9 @@ var UICalendar = (function () {
           dayCell.classList.add('today');
         }
 
-        if (config.selectedDate) {
-          var selDateObj = typeof config.selectedDate === 'string' ? new Date(config.selectedDate) : config.selectedDate;
-          if (selDateObj && !isNaN(selDateObj.getTime())) {
-            if (selDateObj.getFullYear() === year && selDateObj.getMonth() === month && selDateObj.getDate() === i) {
-              dayCell.classList.add('selected');
-            }
+        if (selDateObj && !isNaN(selDateObj.getTime())) {
+          if (selDateObj.getFullYear() === year && selDateObj.getMonth() === month && selDateObj.getDate() === i) {
+            dayCell.classList.add('selected');
           }
         }
 
@@ -9632,12 +9687,9 @@ var UICalendar = (function () {
         dNumEnd.innerHTML = '<span class="solar-date">' + nextDateNum + '</span>' + _getLunarDateHTML(nextY, nextM, nextDateNum);
         emptyEnd.appendChild(dNumEnd);
         
-        if (config.selectedDate) {
-          var selDateObj = typeof config.selectedDate === 'string' ? new Date(config.selectedDate) : config.selectedDate;
-          if (selDateObj && !isNaN(selDateObj.getTime())) {
-            if (selDateObj.getFullYear() === nextY && selDateObj.getMonth() === nextM && selDateObj.getDate() === nextDateNum) {
-              emptyEnd.classList.add('selected');
-            }
+        if (selDateObj && !isNaN(selDateObj.getTime())) {
+          if (selDateObj.getFullYear() === nextY && selDateObj.getMonth() === nextM && selDateObj.getDate() === nextDateNum) {
+            emptyEnd.classList.add('selected');
           }
         }
         

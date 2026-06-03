@@ -535,5 +535,22 @@ BEGIN
 END
 GO
 
+-- Đảm bảo trường Nhằm ngày âm lịch (Nhamngay) có FormatID = 't' (text) và đặt Read-Only
+IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Nhamngay')
+BEGIN
+    UPDATE SY_FormatFields SET FormatID = 't', IsReadOnlyAdd = 1, IsReadOnlyEdit = 1 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Nhamngay';
+END
+GO
+
+-- Ẩn/Hiện và khóa (Read-Only) các trường mã tự sinh bởi database
+UPDATE SY_FormatFields 
+SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
+WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SoPhieu';
+
+UPDATE SY_FormatFields 
+SET ShowInAdd = 0, ShowInEdit = 0
+WHERE FormName = 'frmBiennhancoccho' AND FieldName IN ('DocumentID', 'MaChungTu', 'Makh');
+GO
+
 PRINT N'Cập nhật toàn bộ phân hệ Đặt cọc thành công!';
 GO

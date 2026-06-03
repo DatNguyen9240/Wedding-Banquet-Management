@@ -1970,17 +1970,29 @@ window.DynamicFormEngine = (function () {
         });
 
         // 2. Trigger API (Gọi API ngoài)
-        var changedSchema = globalFormSchema.find(function (s) { return s.name === changedName; });
+        var changedSchema = globalFormSchema.find(function (s) { return s.name.toLowerCase() === changedName.toLowerCase(); });
         if (changedSchema && changedSchema.triggerApi && e.target.value) {
           var apiEndpoint = changedSchema.triggerApi;
           var payload = Object.assign({}, currentModalFormState);
+
+          // Trích xuất các tham số từ URL query string (ví dụ: List, Func) và đưa vào payload body
+          if (apiEndpoint.indexOf('?') > -1) {
+            var parts = apiEndpoint.split('?');
+            var searchParams = new URLSearchParams(parts[1]);
+            searchParams.forEach(function (value, key) {
+              payload[key] = value;
+            });
+          }
+
+          payload.JsonData = JSON.stringify(currentModalFormState);
+
           ApiClient.post(apiEndpoint, payload).then(function (res) {
             var dataList = res.list || res.records || [];
             if (dataList && dataList.length > 0) {
               var row = dataList[0];
               Object.keys(row).forEach(function (keyName) {
                 var targetInput = body.querySelector('[name="' + keyName + '" i]');
-                if (targetInput && targetInput.name !== changedName) {
+                if (targetInput) {
                   targetInput.value = row[keyName] || '';
                   targetInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
@@ -2048,6 +2060,18 @@ window.DynamicFormEngine = (function () {
     btnSave.onclick = function () {
       _saveData(isEdit, row, modal, body, btnSave);
     };
+
+    // Kích hoạt Trigger API ban đầu cho các trường có giá trị sẵn khi mở Form (nhất là trường hợp Sửa nhưng trường đích bị trống)
+    globalFormSchema.forEach(function (f) {
+      if (f.triggerApi && currentModalFormState[f.name]) {
+        var el = body.querySelector('[name="' + f.name + '"]');
+        if (el) {
+          setTimeout(function () {
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }, 150);
+        }
+      }
+    });
 
     // Focus ô nhập liệu đầu tiên (không bị ẩn)
     setTimeout(function () {

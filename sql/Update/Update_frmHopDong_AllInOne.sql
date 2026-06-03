@@ -326,6 +326,24 @@ WHERE FormName = 'frmHopDong'
     'DieuKhoanBoSung', 'DS_KhuyenMai'
   );
 
+-- Đồng bộ hóa tên trường "Ngày tổ chức" về duy nhất "NgayToChuc" (chữ hoa chữ T)
+IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'Ngaytochuc')
+BEGIN
+    IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NgayToChuc')
+        DELETE FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'Ngaytochuc';
+    ELSE
+        UPDATE SY_FormatFields SET FieldName = 'NgayToChuc' WHERE FormName = 'frmHopDong' AND FieldName = 'Ngaytochuc';
+END
+GO
+IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = '_Ngaytochuc')
+BEGIN
+    IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NgayToChuc')
+        DELETE FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = '_Ngaytochuc';
+    ELSE
+        UPDATE SY_FormatFields SET FieldName = 'NgayToChuc' WHERE FormName = 'frmHopDong' AND FieldName = '_Ngaytochuc';
+END
+GO
+
 -- Ẩn các trường tính toán tự động khỏi Form (chỉ hiện trên Grid lưới) hoặc cấu hình Read-Only khi sửa
 UPDATE SY_FormatFields
 SET ShowInAdd = 0, ShowInEdit = 0
@@ -335,9 +353,9 @@ UPDATE SY_FormatFields
 SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmHopDong' AND FieldName IN ('Makh', 'SoBan', 'SanhDat', 'TongTien', 'TrangThai', 'Sohopdong');
 
--- Cấu hình định dạng (FormatID) cho các trường
-UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail', 'Nhamngay', 'Ghichu');
+UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail', 'Ghichu');
 UPDATE SY_FormatFields SET FormatID = 'dt' WHERE FormName = 'frmHopDong' AND FieldName IN ('Ngayhopdong', 'NgayToChuc');
+UPDATE SY_FormatFields SET FormatID = 't', IsReadOnlyAdd = 1, IsReadOnlyEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'Nhamngay';
 UPDATE SY_FormatFields SET FormatID = 'sl' WHERE FormName = 'frmHopDong' AND FieldName IN ('Loaitiecid', 'Thoigianid', 'JsonSanhTiec');
 UPDATE SY_FormatFields SET FormatID = 'n' WHERE FormName = 'frmHopDong' AND FieldName IN ('SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong', 'Sotiencoccho', 'Sotiencochopdong', 'Tongtiencoc');
 
@@ -452,4 +470,18 @@ UPDATE SY_FormatFields SET OrderNo = 23 WHERE FormName = 'frmHopDong' AND FieldN
 UPDATE SY_FormatFields SET OrderNo = 24 WHERE FormName = 'frmHopDong' AND FieldName = 'TongTien';
 UPDATE SY_FormatFields SET OrderNo = 25 WHERE FormName = 'frmHopDong' AND FieldName = 'TrangThai';
 UPDATE SY_FormatFields SET OrderNo = 26 WHERE FormName = 'frmHopDong' AND FieldName = 'Ghichu';
+GO
+
+-- Ẩn/Hiện và khóa (Read-Only) các trường mã tự sinh bởi database
+UPDATE SY_FormatFields 
+SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
+WHERE FormName = 'frmHopDong' AND FieldName = 'Sohopdong';
+
+UPDATE SY_FormatFields 
+SET IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
+WHERE FormName = 'frmHopDong' AND FieldName = 'Sobiennhan';
+
+UPDATE SY_FormatFields 
+SET ShowInAdd = 0, ShowInEdit = 0
+WHERE FormName = 'frmHopDong' AND FieldName = 'Makh';
 GO
