@@ -1092,8 +1092,21 @@ var WorkflowTransferPlugin = (function () {
 
                     // Điền giá trị
                     el.value = val;
-                    el.style.backgroundColor = '#f0fdf4';
-                    el.style.borderColor = '#10b981';
+                    el.style.setProperty('background-color', '#f0fdf4', 'important');
+                    el.style.setProperty('border-color', '#10b981', 'important');
+
+                    // Nếu là input custom (hidden input đồng bộ với các control hiển thị khác như Datepicker, ComboBox)
+                    if (el.type === 'hidden') {
+                        var formGroup = el.closest('.form-group');
+                        if (formGroup) {
+                            var visibleInputs = formGroup.querySelectorAll('input:not([type="hidden"]), select, textarea');
+                            visibleInputs.forEach(function (visibleEl) {
+                                visibleEl.style.setProperty('background-color', '#f0fdf4', 'important');
+                                visibleEl.style.setProperty('border-color', '#10b981', 'important');
+                            });
+                        }
+                    }
+
                     el.dispatchEvent(new Event('change', { bubbles: true }));
                     if (typeof el.fetchDataForValue === 'function') {
                         el.fetchDataForValue();
@@ -6331,7 +6344,8 @@ var UIInput = (function () {
 
     // Remove name to prevent duplicate submission of the text representation
     visibleInput.removeAttribute('name');
-    if (config.id) visibleInput.id = config.id + '_visible';
+    var elementId = config.id || config.name;
+    if (elementId) visibleInput.id = elementId + '_visible';
     visibleInput.readOnly = true;
     visibleInput.style.cursor = 'pointer';
     visibleInput.placeholder = config.placeholder || 'Chọn ngày...';
@@ -6349,7 +6363,7 @@ var UIInput = (function () {
     var hiddenInput = document.createElement('input');
     hiddenInput.type = 'hidden';
     if (config.name) hiddenInput.name = config.name;
-    if (config.id) hiddenInput.id = config.id;
+    if (elementId) hiddenInput.id = elementId;
     hiddenInput.value = initialDate;
     obj.wrapper.appendChild(hiddenInput);
 

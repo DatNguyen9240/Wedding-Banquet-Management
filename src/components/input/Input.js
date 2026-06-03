@@ -90,7 +90,8 @@ var UIInput = (function () {
 
     // Remove name to prevent duplicate submission of the text representation
     visibleInput.removeAttribute('name');
-    if (config.id) visibleInput.id = config.id + '_visible';
+    var elementId = config.id || config.name;
+    if (elementId) visibleInput.id = elementId + '_visible';
     visibleInput.readOnly = true;
     visibleInput.style.cursor = 'pointer';
     visibleInput.placeholder = config.placeholder || 'Chọn ngày...';
@@ -108,7 +109,7 @@ var UIInput = (function () {
     var hiddenInput = document.createElement('input');
     hiddenInput.type = 'hidden';
     if (config.name) hiddenInput.name = config.name;
-    if (config.id) hiddenInput.id = config.id;
+    if (elementId) hiddenInput.id = elementId;
     hiddenInput.value = initialDate;
     obj.wrapper.appendChild(hiddenInput);
 

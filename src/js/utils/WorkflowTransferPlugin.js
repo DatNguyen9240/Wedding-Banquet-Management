@@ -171,8 +171,21 @@ var WorkflowTransferPlugin = (function () {
 
                     // Điền giá trị
                     el.value = val;
-                    el.style.backgroundColor = '#f0fdf4';
-                    el.style.borderColor = '#10b981';
+                    el.style.setProperty('background-color', '#f0fdf4', 'important');
+                    el.style.setProperty('border-color', '#10b981', 'important');
+
+                    // Nếu là input custom (hidden input đồng bộ với các control hiển thị khác như Datepicker, ComboBox)
+                    if (el.type === 'hidden') {
+                        var formGroup = el.closest('.form-group');
+                        if (formGroup) {
+                            var visibleInputs = formGroup.querySelectorAll('input:not([type="hidden"]), select, textarea');
+                            visibleInputs.forEach(function (visibleEl) {
+                                visibleEl.style.setProperty('background-color', '#f0fdf4', 'important');
+                                visibleEl.style.setProperty('border-color', '#10b981', 'important');
+                            });
+                        }
+                    }
+
                     el.dispatchEvent(new Event('change', { bubbles: true }));
                     if (typeof el.fetchDataForValue === 'function') {
                         el.fetchDataForValue();

@@ -344,6 +344,28 @@ BEGIN
 END
 GO
 
+-- Đảm bảo trường NgayToChuc luôn tồn tại trong cấu hình Form kèm Trigger tính lịch âm
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NgayToChuc')
+BEGIN
+    INSERT INTO SY_FormatFields (
+        FormatID, FieldName, FormName, CaptionVN, IsRequired, 
+        FormPosition, ShowInForm, OrderNo, ShowInAdd, ShowInEdit, 
+        IsReadOnlyAdd, IsReadOnlyEdit, ValidateRule
+    )
+    VALUES (
+        'dt', 'NgayToChuc', 'frmHopDong', N'Ngày tổ chức', 1, 
+        '6', 1, 11, 1, 1, 
+        0, 0, 'trigger:/api/API_Gateway_Router?List=API_TinhLichAm&Func=View'
+    );
+END
+ELSE
+BEGIN
+    UPDATE SY_FormatFields
+    SET ValidateRule = 'trigger:/api/API_Gateway_Router?List=API_TinhLichAm&Func=View'
+    WHERE FormName = 'frmHopDong' AND FieldName = 'NgayToChuc';
+END
+GO
+
 -- Ẩn các trường tính toán tự động khỏi Form (chỉ hiện trên Grid lưới) hoặc cấu hình Read-Only khi sửa
 UPDATE SY_FormatFields
 SET ShowInAdd = 0, ShowInEdit = 0
