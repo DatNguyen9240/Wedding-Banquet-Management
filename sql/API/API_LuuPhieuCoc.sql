@@ -106,10 +106,14 @@ BEGIN
                 VALUES (
                     @Makh,
                     CASE
-                        WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '')
-                        ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '')
+                        WHEN ISNULL(@Tenchure, '') <> '' AND ISNULL(@Tencodau, '') <> '' THEN @Tenchure + ' & ' + @Tencodau
+                        WHEN ISNULL(@Tenchure, '') <> '' THEN @Tenchure
+                        WHEN ISNULL(@Tencodau, '') <> '' THEN @Tencodau
+                        ELSE ISNULL(NULLIF(@Nguoigd, ''), N'Khách vãng lai')
                     END,
-                    @Tenchure, @Tencodau, @DTchure, @DTcodau, ISNULL(@DTchure, @DTcodau), @Diachi, @Nguoigd, @DienThoaiDaiDien, @Mail,
+                    @Tenchure, @Tencodau, @DTchure, @DTcodau, 
+                    ISNULL(NULLIF(@DTchure, ''), ISNULL(NULLIF(@DTcodau, ''), @DienThoaiDaiDien)), 
+                    @Diachi, @Nguoigd, @DienThoaiDaiDien, @Mail,
                     1, @Now, @UserCreate
                 );
             END
@@ -121,14 +125,16 @@ BEGIN
             UPDATE dmkhachhang
             SET 
                 Tenkh = CASE 
-                            WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '')
-                            ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') 
+                            WHEN ISNULL(@Tenchure, '') <> '' AND ISNULL(@Tencodau, '') <> '' THEN @Tenchure + ' & ' + @Tencodau
+                            WHEN ISNULL(@Tenchure, '') <> '' THEN @Tenchure
+                            WHEN ISNULL(@Tencodau, '') <> '' THEN @Tencodau
+                            ELSE ISNULL(NULLIF(@Nguoigd, ''), N'Khách vãng lai')
                         END,
                 Tenchure = @Tenchure,
                 Tencodau = @Tencodau,
                 DTchure = @DTchure,
                 DTcodau = @DTcodau,
-                Dienthoai = ISNULL(@DTchure, @DTcodau),
+                Dienthoai = ISNULL(NULLIF(@DTchure, ''), ISNULL(NULLIF(@DTcodau, ''), @DienThoaiDaiDien)),
                 Diachi = @Diachi,
                 Nguoigd = @Nguoigd,
                 DienThoaiDaiDien = @DienThoaiDaiDien,
@@ -188,6 +194,13 @@ BEGIN
         -- Chỉ xử lý nếu có truyền danh sách Sảnh
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
+            -- Nếu không phải dạng mảng JSON (ví dụ: chỉ là mã sảnh 'S01' chọn từ dropdown đơn giản)
+            -- thì tự động bọc thành JSON array hợp lệ để OPENJSON không bị lỗi
+            IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+            BEGIN
+                SET @JsonSanhTiec = '[{"Sanhtiecid":"' + @JsonSanhTiec + '", "IsSanhchinh":1}]';
+            END
+
             -- Xóa sảnh cũ của phiếu này
             DELETE FROM tbmk_Biennhancocchosanhtiec WHERE DocumentID = @DocumentID;
 

@@ -18,13 +18,8 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
-        Sanhtiecid AS [value],
-        Tensanhtiec AS [label],
-        Sanhtiecid,
-        Tensanhtiec,
-        Succhua,
-        SLBanMin,
-        SLBanMax
+        Sanhtiecid AS [Mã sảnh],
+        Tensanhtiec AS [Tên sảnh]
     FROM dmSanhtiec
     WHERE (IsTamngung = 0 OR IsTamngung IS NULL)
       AND (@Keyword = '' OR Tensanhtiec LIKE N'%' + @Keyword + '%' OR Sanhtiecid LIKE '%' + @Keyword + '%')

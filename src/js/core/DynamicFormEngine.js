@@ -749,8 +749,16 @@ window.DynamicFormEngine = (function () {
     lastSelectedIdx = -1;
 
     if (typeof UITable !== 'undefined') {
-      // Dùng bộ từ điển từ DB để dịch các cột sang Tiếng Việt
-      var dictionary = globalDictionary;
+      // Chỉ hiển thị các cột có cấu hình position là 'grid'
+      var dictionary = {};
+      globalFormSchema.forEach(function (f) {
+        if (f.position === 'grid') {
+          dictionary[f.name] = f.label;
+        }
+      });
+      if (Object.keys(dictionary).length === 0) {
+        dictionary = globalDictionary;
+      }
 
       // Render các cột tùy chỉnh (Sinh ra tự động từ RenderRule trong DB)
       var customRenderers = globalRenderers;

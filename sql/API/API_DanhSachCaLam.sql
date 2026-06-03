@@ -1,4 +1,4 @@
-﻿GO
+GO
 
 /****** Object:  StoredProcedure [dbo].[API_DanhSachCaLam] ******/
 SET ANSI_NULLS ON
@@ -12,11 +12,8 @@ BEGIN
 
     -- Truy vấn danh sách Ca Tiệc từ bảng dmThoigian
     SELECT 
-        Thoigianid = ISNULL(Thoigianid, ''),
-        Thoigian = ISNULL(Thoigian, ''),       -- Tên hiển thị (VD: 11h - 14h)
-        GioBatDau = ISNULL(GhiBatDau, 0),      -- Đổi tên thành GioBatDau khi trả về JSON cho dễ dùng
-        GioKetThuc = ISNULL(GioKetThuc, 0),
-        IsTiecCuoi = ISNULL(IsTiecCuoi, 0)
+        Thoigianid AS [Mã ca],
+        Thoigian AS [Ca tiệc]
     FROM 
         dmThoigian
     ORDER BY 

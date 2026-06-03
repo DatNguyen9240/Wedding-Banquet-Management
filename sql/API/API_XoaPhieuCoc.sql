@@ -26,6 +26,12 @@ BEGIN
 
         BEGIN TRANSACTION;
 
+        -- Khóa dòng trong bảng cha trước để đồng bộ thứ tự khóa (tránh Deadlock với các hàm Save/Update)
+        DECLARE @Dummy INT;
+        SELECT @Dummy = 1 
+        FROM tbmk_Biennhancoccho WITH (XLOCK, ROWLOCK)
+        WHERE DocumentID IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@DocumentIDs, ','));
+
         -- 1. Xóa sảnh phụ/chính liên kết với phiếu cọc
         DELETE FROM tbmk_Biennhancocchosanhtiec 
         WHERE DocumentID IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@DocumentIDs, ','));

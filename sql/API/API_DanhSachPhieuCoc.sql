@@ -26,7 +26,7 @@ BEGIN
         k.Tencodau AS [Tencodau],
         k.DTchure AS [DTchure],
         k.DTcodau AS [DTcodau],
-        k.Diachi AS [DiaChi],
+        k.Diachi AS [Diachi],
         k.Nguoigd AS [Nguoigd],
         k.DienThoaiDaiDien AS [DienThoaiDaiDien],
         k.Mail AS [Mail],
@@ -62,8 +62,8 @@ BEGIN
         c.FullName AS [TenKhachHang],
         ISNULL(NULLIF(k.Nguoigd, ''), c.FullName) AS [Nguoinop],
         
-        -- Lấy sdt nếu không có bốc số chú rể / cô dâu
-        ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
+        -- Lấy sdt nếu không có bốc số chú rể / cô dâu / đại diện
+        ISNULL(NULLIF(k.Dienthoai, ''), ISNULL(NULLIF(k.DTchure, ''), ISNULL(NULLIF(k.DTcodau, ''), k.DienThoaiDaiDien))) AS [DienThoai],
         
         -- Cột ngày nguyên thủy cho Form Sửa
         b.Ngaytochuc AS [_Ngaytochuc],
@@ -115,9 +115,13 @@ BEGIN
     OUTER APPLY (
         SELECT 
             CASE 
-                WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL 
+                WHEN ISNULL(k.Tenchure, '') <> '' AND ISNULL(k.Tencodau, '') <> '' 
                     THEN k.Tenchure + ' & ' + k.Tencodau
-                ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
+                WHEN ISNULL(k.Tenchure, '') <> ''
+                    THEN k.Tenchure
+                WHEN ISNULL(k.Tencodau, '') <> ''
+                    THEN k.Tencodau
+                ELSE ISNULL(NULLIF(k.Tenkh, ''), ISNULL(NULLIF(k.Nguoigd, ''), N'Khách vãng lai'))
             END AS FullName
     ) c
     OUTER APPLY (

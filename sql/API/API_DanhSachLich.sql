@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -30,9 +30,11 @@ BEGIN
         
         -- Ghép Tên 2 người
         CASE 
-            WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL 
+            WHEN ISNULL(k.Tenchure, '') <> '' AND ISNULL(k.Tencodau, '') <> '' 
                 THEN k.Tenchure + ' & ' + k.Tencodau
-            ELSE ISNULL(k.Tenkh, N'Khách')
+            WHEN ISNULL(k.Tenchure, '') <> '' THEN k.Tenchure
+            WHEN ISNULL(k.Tencodau, '') <> '' THEN k.Tencodau
+            ELSE ISNULL(NULLIF(k.Tenkh, ''), ISNULL(NULLIF(k.Nguoigd, ''), N'Khách vãng lai'))
         END AS [TenKhachHang]
         
     FROM tbmk_Biennhancoccho b
@@ -58,9 +60,11 @@ BEGIN
         ISNULL(hs.IsSanhchinh, 1) AS [LaSanhChinh],
         
         CASE 
-            WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL 
+            WHEN ISNULL(k.Tenchure, '') <> '' AND ISNULL(k.Tencodau, '') <> '' 
                 THEN k.Tenchure + ' & ' + k.Tencodau
-            ELSE ISNULL(k.Tenkh, N'Khách')
+            WHEN ISNULL(k.Tenchure, '') <> '' THEN k.Tenchure
+            WHEN ISNULL(k.Tencodau, '') <> '' THEN k.Tencodau
+            ELSE ISNULL(NULLIF(k.Tenkh, ''), ISNULL(NULLIF(k.Nguoigd, ''), N'Khách vãng lai'))
         END AS [TenKhachHang]
         
     FROM tbmk_Hopdong h

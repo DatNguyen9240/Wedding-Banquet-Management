@@ -21,15 +21,16 @@ BEGIN
         h.Sohopdong,
         h.Sobiennhan,
         
-        -- Ghép Tên 2 người, hoặc xài Tên Khách chung chung nếu không có
         CASE 
-            WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL AND k.Tenchure <> '' AND k.Tencodau <> ''
+            WHEN ISNULL(k.Tenchure, '') <> '' AND ISNULL(k.Tencodau, '') <> '' 
                 THEN k.Tenchure + ' & ' + k.Tencodau
-            ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
+            WHEN ISNULL(k.Tenchure, '') <> '' THEN k.Tenchure
+            WHEN ISNULL(k.Tencodau, '') <> '' THEN k.Tencodau
+            ELSE ISNULL(NULLIF(k.Tenkh, ''), ISNULL(NULLIF(k.Nguoigd, ''), N'Khách vãng lai'))
         END AS [TenKhachHang],
         
-        -- Lấy sdt nếu không có bốc số chú rể / cô dâu
-        ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
+        -- Lấy sdt nếu không có bốc số chú rể / cô dâu / đại diện
+        ISNULL(NULLIF(k.Dienthoai, ''), ISNULL(NULLIF(k.DTchure, ''), ISNULL(NULLIF(k.DTcodau, ''), k.DienThoaiDaiDien))) AS [DienThoai],
         
         CONVERT(VARCHAR(10), h.Ngaytochuc, 103) AS [NgayToChuc],
         
