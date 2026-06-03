@@ -11,7 +11,12 @@ GO
 -- Create date: 2026-04-29
 -- Description: API Lưu (Thêm/Sửa) Biên nhận cọc chỗ (Cọc lần 1 & Lần 2)
 -- =============================================
-CREATE OR ALTER PROCEDURE [dbo].[API_LuuPhieuCoc]
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[API_LuuPhieuCoc]') AND type in (N'P', N'PC'))
+BEGIN
+    DROP PROCEDURE [dbo].[API_LuuPhieuCoc];
+END
+GO
+CREATE PROCEDURE [dbo].[API_LuuPhieuCoc]
     @DocumentID VARCHAR(50) = NULL OUTPUT, -- Nếu NULL: Thêm mới, Ngược lại: Cập nhật
     -- Thông tin Khách hàng
     @Makh VARCHAR(50) = NULL OUTPUT, -- Nếu NULL: Tạo khách hàng mới
@@ -46,8 +51,7 @@ CREATE OR ALTER PROCEDURE [dbo].[API_LuuPhieuCoc]
     -- Mapped fields from DynamicFormEngine (client-side form values)
     @MaChungTu VARCHAR(50) = NULL,
     @_Ngaytochuc DATETIME = NULL,
-    @TongtienRaw DECIMAL(18,2) = NULL,
-    @Loaihinhtiecid VARCHAR(50) = NULL,
+    @TongtienRaw NVARCHAR(50) = NULL,
     
     -- Các trường bổ sung phiếu thu
     @TaiKhoanNo VARCHAR(50) = NULL,
@@ -65,10 +69,13 @@ BEGIN
             SET @DocumentID = @MaChungTu;
         IF @_Ngaytochuc IS NOT NULL
             SET @Ngaytochuc = @_Ngaytochuc;
-        IF @TongtienRaw IS NOT NULL
-            SET @Tongtien = @TongtienRaw;
-        IF @Loaihinhtiecid IS NOT NULL
-            SET @Loaitiecid = @Loaihinhtiecid;
+            
+        IF @TongtienRaw IS NOT NULL AND LTRIM(RTRIM(@TongtienRaw)) <> ''
+        BEGIN
+            DECLARE @CleanedTongTien NVARCHAR(50) = REPLACE(REPLACE(REPLACE(@TongtienRaw, '.', ''), ',', ''), ' ', '');
+            IF TRY_CAST(@CleanedTongTien AS DECIMAL(18,2)) IS NOT NULL
+                SET @Tongtien = CAST(@CleanedTongTien AS DECIMAL(18,2));
+        END
 
         BEGIN TRANSACTION;
 

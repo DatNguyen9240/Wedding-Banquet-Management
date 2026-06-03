@@ -11,20 +11,24 @@ GO
 -- Chức năng: Nối (JOIN) bảng tbmk_Biennhancoccho với bảng Khách hàng
 -- Mục đích: Làm Data Source (TableName) cho màn hình Form Động frmBiennhancoccho
 -- =============================================
-CREATE OR ALTER VIEW [dbo].[v_DanhSachPhieuCoc] AS
+IF EXISTS(SELECT * FROM sys.views WHERE name = 'v_DanhSachPhieuCoc' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    DROP VIEW [dbo].[v_DanhSachPhieuCoc];
+END
+GO
+CREATE VIEW [dbo].[v_DanhSachPhieuCoc] AS
 SELECT 
     b.DocumentID,
     b.DocumentID AS MaChungTu,
     b.SoBN AS SoPhieu,
     b.Thoigianid,
-    b.Loaitiecid AS Loaihinhtiecid,
+    b.Loaitiecid,
+    b.Nhamngay,
     b.SobanManchinhthuc,
     b.SobanChaychinhthuc,
     b.SobanManduphong,
     b.SobanChayduphong,
     b.Ghichu,
-    -- Ngày tổ chức gốc chuẩn Date để Form Đặt Cọc bind vào Datepicker
-    b.Ngaytochuc AS [_Ngaytochuc],
     
     -- Lôi thông tin khách hàng từ bảng khác đắp vào đây
     k.Tenchure,
@@ -44,8 +48,7 @@ SELECT
     
     ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS DienThoai,
     
-    -- Cột hiển thị định dạng đẹp dd/MM/yyyy trên Lưới
-    CONVERT(VARCHAR(10), b.Ngaytochuc, 103) AS [Ngaytochuc],
+    b.Ngaytochuc AS [Ngaytochuc],
     ISNULL(b.Tongsoban, 0) AS SoBan,
     (
         SELECT TOP 1 s.Tensanhtiec 
@@ -93,8 +96,8 @@ FROM tbmk_Biennhancoccho b
 LEFT JOIN dmkhachhang k ON b.Makh = k.Makh;
 GO
 
--- Dạy cho Form Đặt Cọc biết: Hãy chọc vào cái View v_DanhSachPhieuCoc thay vì bảng gốc
+-- Dạy cho Form Đặt Cọc biết: Hãy chọc vào cái View v_DanhSachPhieuCoc thay vì bảng gốc và dùng khóa chính DocumentID
 UPDATE SY_FrmLstTbl 
-SET TableName = 'v_DanhSachPhieuCoc' 
+SET TableName = 'v_DanhSachPhieuCoc', PrimaryKey = 'DocumentID'
 WHERE FormID = 'frmBiennhancoccho';
 GO

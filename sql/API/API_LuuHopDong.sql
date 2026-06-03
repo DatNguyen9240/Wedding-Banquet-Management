@@ -219,6 +219,13 @@ BEGIN
         -- ==========================================================
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
+            -- Nếu không phải dạng mảng JSON (ví dụ: chỉ là mã sảnh 'S01' chọn từ dropdown đơn giản)
+            -- thì tự động bọc thành JSON array hợp lệ để OPENJSON không bị lỗi
+            IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+            BEGIN
+                SET @JsonSanhTiec = '[{"Sanhtiecid":"' + @JsonSanhTiec + '", "IsSanhchinh":1}]';
+            END
+
             -- Xóa sảnh cũ
             DELETE FROM tbmk_Hopdongsanhtiec WHERE Sohopdong = @Sohopdong;
 

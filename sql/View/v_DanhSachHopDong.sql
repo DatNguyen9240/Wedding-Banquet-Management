@@ -14,7 +14,7 @@ CREATE VIEW [dbo].[v_DanhSachHopDong] AS
 SELECT 
     h.Sohopdong AS [Id], -- Đóng vai trò là PrimaryKey cho Frontend
 
-    h.Sohopdong AS [SoHopDong],
+    h.Sohopdong AS [Sohopdong], -- Cột khoá chính thật
     h.Sobiennhan,
     h.Makh,
     
@@ -26,9 +26,7 @@ SELECT
     END AS [TenKhachHang],
     
     ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
-    
-    h.Ngaytochuc AS [NgayToChucGoc],
-    CONVERT(VARCHAR(10), h.Ngaytochuc, 103) AS [NgayToChuc],
+    h.Ngaytochuc AS [NgayToChuc],
     
     ISNULL(h.TongSoBan, 0) AS [SoBan],
     
@@ -46,6 +44,30 @@ SELECT
         WHEN h.IsKetthuc = 1 THEN N'Đã Quyết Toán'
         ELSE N'Đã Ký'
     END AS [TrangThai],
+
+    -- CÁC TRƯỜNG THÊM MỚI ĐỂ PHỤC VỤ NHẬP LIỆU/SỬA HỢP ĐỒNG (ShowInForm = 1, ShowInGrid = 0)
+    k.Tenchure,
+    k.Tencodau,
+    k.Diachi,
+    k.Mail,
+    h.Ngayhopdong,
+    h.Nhamngay,
+    h.Loaitiecid,
+    h.Thoigianid,
+    h.SobanManchinhthuc,
+    h.SobanManduphong,
+    h.SobanChaychinhthuc,
+    h.SobanChayduphong,
+    h.Sotiencoccho,
+    h.Sotiencochopdong,
+    h.Tongtiencoc,
+    h.Ghichu,
+    (
+        SELECT TOP 1 hs.Sanhtiecid 
+        FROM tbmk_Hopdongsanhtiec hs 
+        WHERE hs.Sohopdong = h.Sohopdong 
+        ORDER BY hs.IsSanhchinh DESC
+    ) AS [JsonSanhTiec],
     
     -- ==========================================
     -- CÁC CỘT DỮ LIỆU ĐƯỢC FORMAT SẴN CHO IN ẤN 
@@ -122,9 +144,36 @@ GO
 EXEC API_DongBoTruongGiaoDien @FormName = 'frmHopDong', @ObjectName = 'v_DanhSachHopDong';
 GO
 
--- 3. Cập nhật Tiếng Việt (CaptionVN) và Ẩn các cột chỉ dùng để IN ẤN khỏi giao diện Grid/Form
+-- 3. Đăng ký định tuyến Save trong WA_API
+DELETE FROM WA_API WHERE List = 'frmHopDong' AND Func = 'Save';
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES (
+    'frmHopDong',
+    'Save',
+    'API_LuuHopDong',
+    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{Sotiencoccho}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'''
+);
+GO
+
+-- 4. Cấu hình hiển thị và định dạng cho các trường nhập liệu Hợp đồng trong SY_FormatFields
 UPDATE SY_FormatFields
-SET ShowInForm = 0, ShowInEdit = 0, ShowInAdd = 0, ShowInFilter = 0
+SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '6'
+WHERE FormName = 'frmHopDong'
+  AND FieldName IN (
+    'Tenchure', 'Tencodau', 'Diachi', 'Mail',
+    'Ngayhopdong', 'Nhamngay', 'Loaitiecid', 'Thoigianid', 'JsonSanhTiec',
+    'SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong',
+    'Sotiencoccho', 'Sotiencochopdong', 'Tongtiencoc'
+  );
+
+-- Ghi chú bổ sung
+UPDATE SY_FormatFields
+SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = 'form'
+WHERE FormName = 'frmHopDong' AND FieldName = 'Ghichu';
+
+-- Ẩn các cột chỉ dùng để IN ẤN khỏi giao diện Grid/Form
+UPDATE SY_FormatFields
+SET ShowInForm = 0, ShowInEdit = 0, ShowInAdd = 0, ShowInFilter = 0, FormPosition = 'hidden'
 WHERE FormName = 'frmHopDong' 
   AND FieldName IN (
     'NgayLapHD', 'ThangLapHD', 'NamLapHD',
@@ -137,6 +186,34 @@ WHERE FormName = 'frmHopDong'
     'Coc_Lan1_SoTien', 'Coc_Lan1_BangChu', 'Coc_Ngay', 'Coc_Thang', 'Coc_Nam',
     'DieuKhoanBoSung', 'DS_KhuyenMai'
   );
+
+-- Ẩn các trường tính toán tự động khỏi Form (chỉ hiện trên Grid lưới) hoặc cấu hình Read-Only khi sửa
+UPDATE SY_FormatFields
+SET ShowInAdd = 0, ShowInEdit = 0
+WHERE FormName = 'frmHopDong' AND FieldName = 'TenKhachHang';
+
+UPDATE SY_FormatFields
+SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
+WHERE FormName = 'frmHopDong' AND FieldName IN ('Makh', 'SoBan', 'SanhDat', 'TongTien', 'TrangThai', 'Sohopdong');
+
+-- Cấu hình định dạng (FormatID) cho các trường
+UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail', 'Nhamngay', 'Ghichu');
+UPDATE SY_FormatFields SET FormatID = 'd' WHERE FormName = 'frmHopDong' AND FieldName IN ('Ngayhopdong');
+UPDATE SY_FormatFields SET FormatID = 'sl' WHERE FormName = 'frmHopDong' AND FieldName IN ('Loaitiecid', 'Thoigianid', 'JsonSanhTiec');
+UPDATE SY_FormatFields SET FormatID = 'n' WHERE FormName = 'frmHopDong' AND FieldName IN ('SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong', 'Sotiencoccho', 'Sotiencochopdong', 'Tongtiencoc');
+
+-- Cấu hình DataSource cho các Dropdown
+UPDATE SY_FormatFields
+SET DataSource = '/api/API_Gateway_Router?List=API_DanhSachCaLam&Func=View'
+WHERE FormName = 'frmHopDong' AND FieldName = 'Thoigianid';
+
+UPDATE SY_FormatFields
+SET DataSource = '/api/API_Gateway_Router?List=API_DanhSachLoaiHinhTiec&Func=View'
+WHERE FormName = 'frmHopDong' AND FieldName = 'Loaitiecid';
+
+UPDATE SY_FormatFields
+SET DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View'
+WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
 
 -- Cập nhật tên tiếng Việt thân thiện
 UPDATE SY_FormatFields SET CaptionVN = N'Ngày lập HĐ' WHERE FormName = 'frmHopDong' AND FieldName = 'NgayLapHD';
@@ -178,6 +255,25 @@ UPDATE SY_FormatFields SET CaptionVN = N'Năm cọc' WHERE FormName = 'frmHopDon
 UPDATE SY_FormatFields SET CaptionVN = N'Điều khoản bổ sung' WHERE FormName = 'frmHopDong' AND FieldName = 'DieuKhoanBoSung';
 UPDATE SY_FormatFields SET CaptionVN = N'Khuyến mãi' WHERE FormName = 'frmHopDong' AND FieldName = 'DS_KhuyenMai';
 
+-- Cập nhật tên tiếng Việt cho các trường mới
+UPDATE SY_FormatFields SET CaptionVN = N'Tên chú rể' WHERE FormName = 'frmHopDong' AND FieldName = 'Tenchure';
+UPDATE SY_FormatFields SET CaptionVN = N'Tên cô dâu' WHERE FormName = 'frmHopDong' AND FieldName = 'Tencodau';
+UPDATE SY_FormatFields SET CaptionVN = N'Địa chỉ khách hàng' WHERE FormName = 'frmHopDong' AND FieldName = 'Diachi';
+UPDATE SY_FormatFields SET CaptionVN = N'Email' WHERE FormName = 'frmHopDong' AND FieldName = 'Mail';
+UPDATE SY_FormatFields SET CaptionVN = N'Ngày lập HĐ' WHERE FormName = 'frmHopDong' AND FieldName = 'Ngayhopdong';
+UPDATE SY_FormatFields SET CaptionVN = N'Nhằm ngày âm lịch' WHERE FormName = 'frmHopDong' AND FieldName = 'Nhamngay';
+UPDATE SY_FormatFields SET CaptionVN = N'Loại hình tiệc' WHERE FormName = 'frmHopDong' AND FieldName = 'Loaitiecid';
+UPDATE SY_FormatFields SET CaptionVN = N'Ca đãi tiệc' WHERE FormName = 'frmHopDong' AND FieldName = 'Thoigianid';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đãi tiệc' WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
+UPDATE SY_FormatFields SET CaptionVN = N'Bàn mặn chính thức' WHERE FormName = 'frmHopDong' AND FieldName = 'SobanManchinhthuc';
+UPDATE SY_FormatFields SET CaptionVN = N'Bàn mặn dự phòng' WHERE FormName = 'frmHopDong' AND FieldName = 'SobanManduphong';
+UPDATE SY_FormatFields SET CaptionVN = N'Bàn chay chính thức' WHERE FormName = 'frmHopDong' AND FieldName = 'SobanChaychinhthuc';
+UPDATE SY_FormatFields SET CaptionVN = N'Bàn chay dự phòng' WHERE FormName = 'frmHopDong' AND FieldName = 'SobanChayduphong';
+UPDATE SY_FormatFields SET CaptionVN = N'Tiền cọc chỗ (Lần 1)' WHERE FormName = 'frmHopDong' AND FieldName = 'Sotiencoccho';
+UPDATE SY_FormatFields SET CaptionVN = N'Tiền cọc hợp đồng (Lần 2)' WHERE FormName = 'frmHopDong' AND FieldName = 'Sotiencochopdong';
+UPDATE SY_FormatFields SET CaptionVN = N'Tổng tiền cọc' WHERE FormName = 'frmHopDong' AND FieldName = 'Tongtiencoc';
+UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú bổ sung' WHERE FormName = 'frmHopDong' AND FieldName = 'Ghichu';
+
 -- Cập nhật tên tiếng Việt thân thiện cho các cột gốc (Grid mặc định)
 UPDATE SY_FormatFields SET CaptionVN = N'Số hợp đồng' WHERE FormName = 'frmHopDong' AND FieldName = 'Sohopdong';
 UPDATE SY_FormatFields SET CaptionVN = N'Số biên nhận' WHERE FormName = 'frmHopDong' AND FieldName = 'Sobiennhan';
@@ -189,4 +285,32 @@ UPDATE SY_FormatFields SET CaptionVN = N'Số bàn' WHERE FormName = 'frmHopDong
 UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
 UPDATE SY_FormatFields SET CaptionVN = N'Tổng tiền' WHERE FormName = 'frmHopDong' AND FieldName = 'TongTien';
 UPDATE SY_FormatFields SET CaptionVN = N'Trạng thái' WHERE FormName = 'frmHopDong' AND FieldName = 'TrangThai';
+
+-- Cấu hình thứ tự hiển thị (OrderNo) trên Form
+UPDATE SY_FormatFields SET OrderNo = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'Sohopdong';
+UPDATE SY_FormatFields SET OrderNo = 2 WHERE FormName = 'frmHopDong' AND FieldName = 'Sobiennhan';
+UPDATE SY_FormatFields SET OrderNo = 3 WHERE FormName = 'frmHopDong' AND FieldName = 'Makh';
+UPDATE SY_FormatFields SET OrderNo = 4 WHERE FormName = 'frmHopDong' AND FieldName = 'TenKhachHang';
+UPDATE SY_FormatFields SET OrderNo = 5 WHERE FormName = 'frmHopDong' AND FieldName = 'Tenchure';
+UPDATE SY_FormatFields SET OrderNo = 6 WHERE FormName = 'frmHopDong' AND FieldName = 'Tencodau';
+UPDATE SY_FormatFields SET OrderNo = 7 WHERE FormName = 'frmHopDong' AND FieldName = 'DienThoai';
+UPDATE SY_FormatFields SET OrderNo = 8 WHERE FormName = 'frmHopDong' AND FieldName = 'Mail';
+UPDATE SY_FormatFields SET OrderNo = 9 WHERE FormName = 'frmHopDong' AND FieldName = 'Diachi';
+UPDATE SY_FormatFields SET OrderNo = 10 WHERE FormName = 'frmHopDong' AND FieldName = 'Ngayhopdong';
+UPDATE SY_FormatFields SET OrderNo = 11 WHERE FormName = 'frmHopDong' AND FieldName = 'NgayToChuc';
+UPDATE SY_FormatFields SET OrderNo = 12 WHERE FormName = 'frmHopDong' AND FieldName = 'Nhamngay';
+UPDATE SY_FormatFields SET OrderNo = 13 WHERE FormName = 'frmHopDong' AND FieldName = 'Loaitiecid';
+UPDATE SY_FormatFields SET OrderNo = 14 WHERE FormName = 'frmHopDong' AND FieldName = 'Thoigianid';
+UPDATE SY_FormatFields SET OrderNo = 15 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
+UPDATE SY_FormatFields SET OrderNo = 16 WHERE FormName = 'frmHopDong' AND FieldName = 'SoBan';
+UPDATE SY_FormatFields SET OrderNo = 17 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanManchinhthuc';
+UPDATE SY_FormatFields SET OrderNo = 18 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanManduphong';
+UPDATE SY_FormatFields SET OrderNo = 19 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanChaychinhthuc';
+UPDATE SY_FormatFields SET OrderNo = 20 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanChayduphong';
+UPDATE SY_FormatFields SET OrderNo = 21 WHERE FormName = 'frmHopDong' AND FieldName = 'Sotiencoccho';
+UPDATE SY_FormatFields SET OrderNo = 22 WHERE FormName = 'frmHopDong' AND FieldName = 'Sotiencochopdong';
+UPDATE SY_FormatFields SET OrderNo = 23 WHERE FormName = 'frmHopDong' AND FieldName = 'Tongtiencoc';
+UPDATE SY_FormatFields SET OrderNo = 24 WHERE FormName = 'frmHopDong' AND FieldName = 'TongTien';
+UPDATE SY_FormatFields SET OrderNo = 25 WHERE FormName = 'frmHopDong' AND FieldName = 'TrangThai';
+UPDATE SY_FormatFields SET OrderNo = 26 WHERE FormName = 'frmHopDong' AND FieldName = 'Ghichu';
 GO

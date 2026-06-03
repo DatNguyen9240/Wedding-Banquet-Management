@@ -431,7 +431,7 @@ var UITable = (function () {
         }
 
         // Heuristic Format
-        if (keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0) {
+        if ((keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0 || keyLower.indexOf('ngay') >= 0) && keyLower.indexOf('songay') === -1 && keyLower.indexOf('so_ngay') === -1) {
           header.align = 'center';
           col.align = 'center';
           col.render = function(v) { return typeof FormatUtils !== 'undefined' ? FormatUtils.date(v) : v; };

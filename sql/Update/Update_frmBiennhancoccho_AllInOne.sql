@@ -36,19 +36,24 @@ GO
 -- =====================================================================
 PRINT N'Đang cập nhật View v_DanhSachPhieuCoc...';
 GO
-CREATE OR ALTER VIEW [dbo].[v_DanhSachPhieuCoc] AS
+IF EXISTS(SELECT * FROM sys.views WHERE name = 'v_DanhSachPhieuCoc' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    DROP VIEW [dbo].[v_DanhSachPhieuCoc];
+END
+GO
+CREATE VIEW [dbo].[v_DanhSachPhieuCoc] AS
 SELECT 
     b.DocumentID,
     b.DocumentID AS MaChungTu,
     b.SoBN AS SoPhieu,
     b.Thoigianid,
-    b.Loaitiecid AS Loaihinhtiecid,
+    b.Loaitiecid,
+    b.Nhamngay,
     b.SobanManchinhthuc,
     b.SobanChaychinhthuc,
     b.SobanManduphong,
     b.SobanChayduphong,
     b.Ghichu,
-    b.Ngaytochuc AS [_Ngaytochuc],
     
     k.Tenchure,
     k.Tencodau,
@@ -66,7 +71,7 @@ SELECT
     
     ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS DienThoai,
     
-    CONVERT(VARCHAR(10), b.Ngaytochuc, 103) AS [Ngaytochuc],
+    b.Ngaytochuc AS [NgayToChuc],
     ISNULL(b.Tongsoban, 0) AS SoBan,
     (
         SELECT TOP 1 s.Tensanhtiec 
@@ -75,6 +80,7 @@ SELECT
         WHERE bs.DocumentID = b.DocumentID
     ) AS SanhDat,
     ISNULL(b.Tongtien, 0) AS DaCocVND,
+    ISNULL(b.Tongtien, 0) AS [Sotiencoccho],
     
     b.Solan AS [Solan],
     b.TaiKhoanNo,
@@ -113,7 +119,12 @@ GO
 -- =====================================================================
 PRINT N'Đang cập nhật Stored Procedure API_DanhSachPhieuCoc...';
 GO
-CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachPhieuCoc]
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[API_DanhSachPhieuCoc]') AND type in (N'P', N'PC'))
+BEGIN
+    DROP PROCEDURE [dbo].[API_DanhSachPhieuCoc];
+END
+GO
+CREATE PROCEDURE [dbo].[API_DanhSachPhieuCoc]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
     @Keyword NVARCHAR(100) = NULL
@@ -122,6 +133,7 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
+        b.DocumentID AS [DocumentID],
         b.DocumentID AS [MaChungTu],
         b.SoBN AS [SoPhieu],
         
@@ -135,7 +147,8 @@ BEGIN
         k.Mail AS [Mail],
         
         b.Thoigianid AS [Thoigianid],
-        b.Loaitiecid AS [Loaihinhtiecid],
+        b.Loaitiecid AS [Loaitiecid],
+        b.Nhamngay AS [Nhamngay],
         b.SobanManchinhthuc AS [SobanManchinhthuc],
         b.SobanManduphong AS [SobanManduphong],
         b.SobanChaychinhthuc AS [SobanChaychinhthuc],
@@ -151,8 +164,8 @@ BEGIN
         CONVERT(VARCHAR(10), d.DDate, 103) AS [NgayThu],
         d.DDate AS [DocumentDate],
         b.DocumentID AS [Sohopdong],
-        FORMAT(ISNULL(b.Tongtien, 0), 'N0', 'vi-VN') AS [Tongtien],
-        ISNULL(b.Tongtien, 0) AS [TongtienRaw],
+        FORMAT(ISNULL(b.Tongtien, 0), 'N0', 'vi-VN') AS [TongTien],
+        ISNULL(b.Tongtien, 0) AS [TongTienRaw],
         [dbo].[fn_DocTienBangChu](ISNULL(b.Tongtien, 0)) AS [SoTienBangChu],
         ISNULL(b.TaiKhoanNo, '') AS [TaiKhoanNo],
         ISNULL(b.TaiKhoanCo, '') AS [TaiKhoanCo],
@@ -164,10 +177,8 @@ BEGIN
         
         ISNULL(NULLIF(k.Dienthoai, ''), ISNULL(NULLIF(k.DTchure, ''), ISNULL(NULLIF(k.DTcodau, ''), k.DienThoaiDaiDien))) AS [DienThoai],
         
-        b.Ngaytochuc AS [_Ngaytochuc],
         b.Solan AS [Solan],
-        
-        CONVERT(VARCHAR(10), b.Ngaytochuc, 103) AS [Ngaytochuc],
+        b.Ngaytochuc AS [NgayToChuc],
         ISNULL(b.Tongsoban, 0) AS [SoBan],
         
         STUFF((
@@ -180,6 +191,7 @@ BEGIN
         ), 1, 2, '') AS [SanhDat],
         
         ISNULL(b.Tongtien, 0) AS [DaCocVND],
+        ISNULL(b.Tongtien, 0) AS [Sotiencoccho],
         
         (
             SELECT Sanhtiecid, IsSanhchinh 
@@ -239,7 +251,12 @@ GO
 -- =====================================================================
 PRINT N'Đang cập nhật Stored Procedure API_LuuPhieuCoc...';
 GO
-CREATE OR ALTER PROCEDURE [dbo].[API_LuuPhieuCoc]
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[API_LuuPhieuCoc]') AND type in (N'P', N'PC'))
+BEGIN
+    DROP PROCEDURE [dbo].[API_LuuPhieuCoc];
+END
+GO
+CREATE PROCEDURE [dbo].[API_LuuPhieuCoc]
     @DocumentID VARCHAR(50) = NULL OUTPUT,
     @Makh VARCHAR(50) = NULL OUTPUT,
     @Tenchure NVARCHAR(255) = NULL,
@@ -270,8 +287,7 @@ CREATE OR ALTER PROCEDURE [dbo].[API_LuuPhieuCoc]
     
     @MaChungTu VARCHAR(50) = NULL,
     @_Ngaytochuc DATETIME = NULL,
-    @TongtienRaw DECIMAL(18,2) = NULL,
-    @Loaihinhtiecid VARCHAR(50) = NULL,
+    @TongtienRaw NVARCHAR(50) = NULL,
     
     @TaiKhoanNo VARCHAR(50) = NULL,
     @TaiKhoanCo VARCHAR(50) = NULL,
@@ -287,10 +303,13 @@ BEGIN
             SET @DocumentID = @MaChungTu;
         IF @_Ngaytochuc IS NOT NULL
             SET @Ngaytochuc = @_Ngaytochuc;
-        IF @TongtienRaw IS NOT NULL
-            SET @Tongtien = @TongtienRaw;
-        IF @Loaihinhtiecid IS NOT NULL
-            SET @Loaitiecid = @Loaihinhtiecid;
+            
+        IF @TongtienRaw IS NOT NULL AND LTRIM(RTRIM(@TongtienRaw)) <> ''
+        BEGIN
+            DECLARE @CleanedTongTien NVARCHAR(50) = REPLACE(REPLACE(REPLACE(@TongtienRaw, '.', ''), ',', ''), ' ', '');
+            IF TRY_CAST(@CleanedTongTien AS DECIMAL(18,2)) IS NOT NULL
+                SET @Tongtien = CAST(@CleanedTongTien AS DECIMAL(18,2));
+        END
 
         BEGIN TRANSACTION;
 
@@ -458,6 +477,12 @@ GO
 -- =====================================================================
 PRINT N'Đang cấu hình các trường Form và Grid trong SY_FormatFields...';
 GO
+-- Đổi tên trường trong database nếu đang cấu hình tên cũ Loaihinhtiecid
+IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Loaihinhtiecid')
+BEGIN
+    UPDATE SY_FormatFields SET FieldName = 'Loaitiecid' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Loaihinhtiecid';
+END
+
 DELETE FROM SY_FormatFields 
 WHERE FormName = 'frmBiennhancoccho' 
   AND FieldName IN ('TaiKhoanNo', 'TaiKhoanCo', 'Kemtheo', 'Lydo', 'HinhThuc');
@@ -484,8 +509,30 @@ GO
 PRINT N'Đang cấu hình định tuyến tham số API Save trong WA_API...';
 GO
 UPDATE WA_API
-SET Para = '@DocumentID=N''{DocumentID}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Diachi=N''{Diachi}'', @Nguoigd=N''{Nguoigd}'', @DienThoaiDaiDien=N''{DienThoaiDaiDien}'', @Mail=N''{Mail}'', @Ngaytochuc=N''{_Ngaytochuc}'', @Loaitiecid=N''{Loaihinhtiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @Tongtien=N''{TongtienRaw}'', @Solan=N''{Solan}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @TaiKhoanNo=N''{TaiKhoanNo}'', @TaiKhoanCo=N''{TaiKhoanCo}'', @Kemtheo=N''{Kemtheo}'', @Lydo=N''{Lydo}'', @HinhThuc=N''{HinhThuc}'''
+SET Para = '@DocumentID=N''{DocumentID}'', @MaChungTu=N''{MaChungTu}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Diachi=N''{Diachi}'', @Nguoigd=N''{Nguoigd}'', @DienThoaiDaiDien=N''{DienThoaiDaiDien}'', @Mail=N''{Mail}'', @Ngaytochuc=N''{NgayToChuc}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongtienRaw=N''{TongTienRaw}'', @Solan=N''{Solan}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @TaiKhoanNo=N''{TaiKhoanNo}'', @TaiKhoanCo=N''{TaiKhoanCo}'', @Kemtheo=N''{Kemtheo}'', @Lydo=N''{Lydo}'', @HinhThuc=N''{HinhThuc}'''
 WHERE List = 'frmBiennhancoccho' AND Func = 'Save';
+GO
+
+-- Đảm bảo cấu hình Form Đặt cọc trỏ vào đúng View và có Khóa chính là DocumentID
+UPDATE SY_FrmLstTbl 
+SET TableName = 'v_DanhSachPhieuCoc', PrimaryKey = 'DocumentID' 
+WHERE FormID = 'frmBiennhancoccho';
+GO
+
+-- Đảm bảo đổi tên _Ngaytochuc hoặc Ngaytochuc thành NgayToChuc
+IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = '_Ngaytochuc')
+BEGIN
+    IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'NgayToChuc')
+    BEGIN
+        DELETE FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'NgayToChuc';
+    END
+    UPDATE SY_FormatFields SET FieldName = 'NgayToChuc' WHERE FormName = 'frmBiennhancoccho' AND FieldName = '_Ngaytochuc';
+END
+GO
+IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Ngaytochuc')
+BEGIN
+    UPDATE SY_FormatFields SET FieldName = 'NgayToChuc' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Ngaytochuc';
+END
 GO
 
 PRINT N'Cập nhật toàn bộ phân hệ Đặt cọc thành công!';

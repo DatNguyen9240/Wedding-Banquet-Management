@@ -4996,6 +4996,15 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   background: rgba(60, 80, 224, 0.08);
 }
 
+.dropdown-table tbody tr.active {
+  background: rgba(99, 102, 241, 0.12) !important;
+}
+
+.dropdown-table tbody tr.active td {
+  color: var(--color-primary, #6366f1) !important;
+  font-weight: 600;
+}
+
 /* Mobile: Reduce font size and tighten spacing */
 @media (max-width: 768px) {
   .dropdown-table {

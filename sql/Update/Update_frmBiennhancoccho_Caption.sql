@@ -11,7 +11,7 @@ UPDATE SY_FormatFields SET CaptionVN = N'Người giao dịch' WHERE FormName = 
 UPDATE SY_FormatFields SET CaptionVN = N'Điện thoại đại diện' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DienThoaiDaiDien';
 UPDATE SY_FormatFields SET CaptionVN = N'Email' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Mail';
 UPDATE SY_FormatFields SET CaptionVN = N'Mã ca tiệc' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Thoigianid';
-UPDATE SY_FormatFields SET CaptionVN = N'Mã loại tiệc' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Loaihinhtiecid';
+UPDATE SY_FormatFields SET CaptionVN = N'Mã loại tiệc' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Loaitiecid';
 UPDATE SY_FormatFields SET CaptionVN = N'Bàn mặn chính thức' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanManchinhthuc';
 UPDATE SY_FormatFields SET CaptionVN = N'Bàn mặn dự phòng' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanManduphong';
 UPDATE SY_FormatFields SET CaptionVN = N'Bàn chay chính thức' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanChaychinhthuc';

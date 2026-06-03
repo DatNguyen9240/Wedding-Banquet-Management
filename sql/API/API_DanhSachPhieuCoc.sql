@@ -9,7 +9,12 @@ GO
 -- =============================================
 -- API: Lấy danh sách Màn hình Booking (Biên nhận cọc chỗ)
 -- =============================================
-CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachPhieuCoc]
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[API_DanhSachPhieuCoc]') AND type in (N'P', N'PC'))
+BEGIN
+    DROP PROCEDURE [dbo].[API_DanhSachPhieuCoc];
+END
+GO
+CREATE PROCEDURE [dbo].[API_DanhSachPhieuCoc]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
     @Keyword NVARCHAR(100) = NULL
@@ -18,7 +23,9 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
+        b.DocumentID AS [DocumentID],
         b.DocumentID AS [MaChungTu],
+        b.DocumentID AS [Sobiennhan], -- Hỗ trợ Workflow mapping tự động sang Hợp đồng
         b.SoBN AS [SoPhieu],
         
         -- Thông tin khách hàng chi tiết
@@ -31,9 +38,9 @@ BEGIN
         k.DienThoaiDaiDien AS [DienThoaiDaiDien],
         k.Mail AS [Mail],
         
-        -- Thông tin tiệc chi tiết
         b.Thoigianid AS [Thoigianid],
-        b.Loaitiecid AS [Loaihinhtiecid],
+        b.Loaitiecid AS [Loaitiecid],
+        b.Nhamngay AS [Nhamngay],
         b.SobanManchinhthuc AS [SobanManchinhthuc],
         b.SobanManduphong AS [SobanManduphong],
         b.SobanChaychinhthuc AS [SobanChaychinhthuc],
@@ -66,12 +73,9 @@ BEGIN
         -- Lấy sdt nếu không có bốc số chú rể / cô dâu / đại diện
         ISNULL(NULLIF(k.Dienthoai, ''), ISNULL(NULLIF(k.DTchure, ''), ISNULL(NULLIF(k.DTcodau, ''), k.DienThoaiDaiDien))) AS [DienThoai],
         
-        -- Cột ngày nguyên thủy cho Form Sửa
-        b.Ngaytochuc AS [_Ngaytochuc],
         b.Solan AS [Solan], -- Thêm cột Lần cọc để Form Sửa tự động điền (fill) vào dropdown
-        
-        -- Cột ngày hiển thị trên Lưới
-        CONVERT(VARCHAR(10), b.Ngaytochuc, 103) AS [Ngaytochuc],
+        b.Ngaytochuc AS [Ngaytochuc],
+        b.Ngaytochuc AS [NgayToChuc], -- Hỗ trợ Workflow mapping tự động sang Hợp đồng
         
         ISNULL(b.Tongsoban, 0) AS [SoBan],
         
@@ -87,6 +91,7 @@ BEGIN
         
         -- Tiền đã cọc (lấy từ TongTien)
         ISNULL(b.Tongtien, 0) AS [DaCocVND],
+        ISNULL(b.Tongtien, 0) AS [Sotiencoccho], -- Hỗ trợ Workflow mapping tự động sang Hợp đồng
         
         -- Danh sách chi tiết sảnh
         (

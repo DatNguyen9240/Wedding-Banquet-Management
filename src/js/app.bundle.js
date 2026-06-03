@@ -929,8 +929,18 @@ var WorkflowTransferPlugin = (function () {
 
     function _autoClickAdd() {
         setTimeout(function () {
-            var btnAdd = document.querySelector('button[title*="Thêm bản ghi mới"], button[title="Thêm"], .btn-primary:not(.btn-tool)');
-            if (btnAdd) btnAdd.click();
+            var buttons = Array.from(document.querySelectorAll('button'));
+            var btnAdd = buttons.find(function (b) {
+                var text = (b.innerText || '').trim();
+                var tooltip = b.getAttribute('data-tooltip') || b.title || '';
+                return text === 'Thêm' || tooltip.includes('Thêm');
+            });
+            if (btnAdd) {
+                btnAdd.click();
+            } else {
+                var fallbackBtn = document.querySelector('button[title*="Thêm bản ghi mới"], button[title="Thêm"], .btn-primary:not(.btn-tool)');
+                if (fallbackBtn) fallbackBtn.click();
+            }
         }, 800);
     }
 
@@ -942,6 +952,18 @@ var WorkflowTransferPlugin = (function () {
             icon: 'monetization_on',
             targetHash: '#/booking',
             storageKey: 'transfer_VisitorToBooking',
+            getTransferData: function (row) {
+                var data = Object.assign({}, row);
+                delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong;
+                return data;
+            }
+        },
+        'frmBiennhancoccho': {
+            id: 'btn-transfer-contract',
+            text: 'Tạo HĐ',
+            icon: 'assignment',
+            targetHash: '#/contract',
+            storageKey: 'transfer_BookingToContract',
             getTransferData: function (row) {
                 var data = Object.assign({}, row);
                 delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong;
@@ -993,13 +1015,20 @@ var WorkflowTransferPlugin = (function () {
     function _handleAutoFill() {
         var modalContent = document.querySelector('.modal-content');
         if (!modalContent) return;
-        var modalTitle = modalContent.querySelector('.modal-title');
+        var modalTitle = modalContent.querySelector('.modal-header h3, .modal-title, h3');
         if (!modalTitle || modalTitle.innerText.indexOf('Thêm') === -1) return;
 
         var dataV2B = sessionStorage.getItem('transfer_VisitorToBooking');
         if (dataV2B) {
             _fillData(JSON.parse(dataV2B), 'Khách Tham Quan');
             sessionStorage.removeItem('transfer_VisitorToBooking');
+            return;
+        }
+
+        var dataB2C = sessionStorage.getItem('transfer_BookingToContract');
+        if (dataB2C) {
+            _fillData(JSON.parse(dataB2C), 'Biên Nhận Đặt Cọc');
+            sessionStorage.removeItem('transfer_BookingToContract');
             return;
         }
 
@@ -1017,31 +1046,60 @@ var WorkflowTransferPlugin = (function () {
             if (!modalContent) return;
             var filled = false;
 
-            var tryFill = function (selectors, value) {
-                if (!value) return;
-                var els = modalContent.querySelectorAll(selectors);
-                if (els.length > 0) {
-                    els.forEach(function (el) {
-                        el.value = value;
-                        el.style.backgroundColor = '#f0fdf4';
-                        el.style.borderColor = '#10b981';
-                        el.dispatchEvent(new Event('change', { bubbles: true }));
-                    });
+            // Tìm tất cả phần tử nhập liệu trong form
+            var formElements = Array.from(modalContent.querySelectorAll('input, select, textarea'));
+            if (formElements.length === 0) return;
+
+            // Chuyển toàn bộ các keys của data sang chữ thường để so khớp không phân biệt hoa thường
+            var lowerData = {};
+            Object.keys(data).forEach(function (k) {
+                lowerData[k.toLowerCase()] = data[k];
+            });
+
+            formElements.forEach(function (el) {
+                var elName = el.name || el.getAttribute('name');
+                if (!elName) return;
+
+                var lowerName = elName.toLowerCase();
+                if (lowerData[lowerName] !== undefined && lowerData[lowerName] !== null) {
+                    var val = lowerData[lowerName];
+
+                    // Nếu phần tử là input date, định dạng lại thành YYYY-MM-DD
+                    if (el.type === 'date' && val) {
+                        var rawVal = String(val).trim();
+                        if (rawVal.indexOf('T') !== -1) {
+                            val = rawVal.split('T')[0];
+                        } else if (rawVal.indexOf('/') !== -1) {
+                            var parts = rawVal.split(' ')[0].split('/');
+                            if (parts.length === 3) {
+                                if (parts[0].length === 4) { // YYYY/MM/DD
+                                    val = parts[0] + '-' + parts[1] + '-' + parts[2];
+                                } else { // DD/MM/YYYY
+                                    val = parts[2] + '-' + parts[1] + '-' + parts[0];
+                                }
+                            }
+                        } else if (rawVal.indexOf('-') !== -1) {
+                            var parts = rawVal.split(' ')[0].split('-');
+                            if (parts.length === 3) {
+                                if (parts[0].length === 4) { // YYYY-MM-DD
+                                    val = parts[0] + '-' + parts[1] + '-' + parts[2];
+                                } else { // DD-MM-YYYY
+                                    val = parts[2] + '-' + parts[1] + '-' + parts[0];
+                                }
+                            }
+                        }
+                    }
+
+                    // Điền giá trị
+                    el.value = val;
+                    el.style.backgroundColor = '#f0fdf4';
+                    el.style.borderColor = '#10b981';
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (typeof el.fetchDataForValue === 'function') {
+                        el.fetchDataForValue();
+                    }
                     filled = true;
                 }
-            };
-
-            // Duyệt qua mapping động từ JSON data (keys chính là tên trường của form đích)
-            Object.keys(data).forEach(function (fieldName) {
-                var value = data[fieldName];
-                if (!value) return; // Bỏ qua nếu không có giá trị
-
-                // Tự động tạo selector thông minh bao phủ input, select, textarea
-                var selector = 'input[name="' + fieldName + '"], ' +
-                    'select[name="' + fieldName + '"], ' +
-                    'textarea[name="' + fieldName + '"]';
-
-                tryFill(selector, value);
             });
 
             if (filled && window.Toast) {
@@ -5109,14 +5167,28 @@ UIControls.createDataComboBox = function (options) {
         options.headers || [], displayData, options.colHighlightIndex !== undefined ? options.colHighlightIndex : (options.colFilterIndex || 0), options.colGroupIndex
       );
       var rows = tableWrapper.querySelectorAll('tbody tr');
+      var currentValue = (typeof options.getValue === 'function') ? options.getValue() : null;
       var currentInputVal = input.value.trim().toLowerCase();
 
       rows.forEach(function (row) {
         var dataRow = displayData[row.getAttribute('data-index')];
-        var rowVal = (dataRow[options.colFilterIndex || 0] || '').toString().toLowerCase();
+        var isRowActive = false;
 
-        if (currentInputVal && rowVal === currentInputVal) {
+        if (currentValue !== null && currentValue !== undefined && currentValue !== '') {
+          isRowActive = String(dataRow[0]).trim().toLowerCase() === String(currentValue).trim().toLowerCase();
+        } else {
+          var rowVal = (dataRow[options.colFilterIndex || 0] || '').toString().toLowerCase();
+          isRowActive = currentInputVal && (rowVal === currentInputVal);
+        }
+
+        if (isRowActive) {
           row.classList.add('active');
+          // Tự động cuộn đến dòng được chọn (chỉ khi không tìm kiếm)
+          if (!currentQuery) {
+            setTimeout(function () {
+              row.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+            }, 50);
+          }
         }
 
         row.addEventListener('click', function () {
@@ -7205,7 +7277,7 @@ var UITable = (function () {
         }
 
         // Heuristic Format
-        if (keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0) {
+        if ((keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0 || keyLower.indexOf('ngay') >= 0) && keyLower.indexOf('songay') === -1 && keyLower.indexOf('so_ngay') === -1) {
           header.align = 'center';
           col.align = 'center';
           col.render = function(v) { return typeof FormatUtils !== 'undefined' ? FormatUtils.date(v) : v; };

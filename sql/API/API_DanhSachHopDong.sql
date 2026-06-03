@@ -20,7 +20,7 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
-        h.Sohopdong AS [SoHopDong],
+        h.Sohopdong AS [Sohopdong],
         h.Sobiennhan,
         
         CASE 
@@ -34,7 +34,7 @@ BEGIN
         -- Lấy sdt nếu không có bốc số chú rể / cô dâu / đại diện
         ISNULL(NULLIF(k.Dienthoai, ''), ISNULL(NULLIF(k.DTchure, ''), ISNULL(NULLIF(k.DTcodau, ''), k.DienThoaiDaiDien))) AS [DienThoai],
         
-        CONVERT(VARCHAR(10), h.Ngaytochuc, 103) AS [NgayToChuc],
+        h.Ngaytochuc AS [NgayToChuc],
         
         ISNULL(h.TongSoBan, 0) AS [SoBan],
         

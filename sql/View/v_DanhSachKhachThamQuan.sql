@@ -16,8 +16,7 @@ SELECT
     k.Tenkh AS [TenKhachHang],    -- Cột thật chứa Tên để in ra Bảng
     ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
     
-    CONVERT(VARCHAR(10), t.Ngaytochuc, 103) AS [NgayDuKien], -- Hiển thị Lưới (dd/MM/yyyy)
-    t.Ngaytochuc AS [NgayToChucGoc], -- Ngày nguyên thủy (ISO) để load vào Datepicker của Form
+    t.Ngaytochuc AS [NgayDuKien], -- Hiển thị Lưới (dd/MM/yyyy)
     
     t.Nhamngay AS [NgayAmLich],
     t.GoiThucDonID AS [_GoiTiec], -- Cột ẩn chứa ID cho Form Sửa

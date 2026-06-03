@@ -1388,6 +1388,7 @@ window.DynamicFormEngine = (function () {
                 headers: ['ID', 'Tên'],
                 data: staticData,
                 colFilterIndex: 1,
+                getValue: function () { return hiddenInput.value; },
                 onSelect: function (r) { hiddenInput.value = r[0]; }
               });
               var newDisplayInput = newCombo.querySelector('input.ui-input');
@@ -1420,6 +1421,7 @@ window.DynamicFormEngine = (function () {
                   onF2: function () {
                     newCombo.querySelector('.ui-input').focus();
                   },
+                  getValue: function () { return hiddenInput.value; },
                   onSelect: function (r) { hiddenInput.value = r[0]; },
                   onChange: function (val) { hiddenInput.value = val; } // Hỗ trợ gõ tay khách mới
                 });
@@ -1631,6 +1633,7 @@ window.DynamicFormEngine = (function () {
               placeholder: '-- Vui lòng chọn --',
               headers: ['Mã', 'Tên'],
               disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
+              getValue: function () { return hiddenInput.value; },
               onSearch: function (q, page) {
                 return new Promise(function (resolve) {
                   var filtered = staticData;
@@ -1757,6 +1760,7 @@ window.DynamicFormEngine = (function () {
               onF2: function () {
                 lazyCombo.querySelector('.ui-input').focus();
               },
+              getValue: function () { return hiddenInput.value; },
               onSearch: searchApiCall,
               onChange: function (val) { hiddenInput.value = val; }, // Hỗ trợ gõ tay
               onSelect: function (row) {
