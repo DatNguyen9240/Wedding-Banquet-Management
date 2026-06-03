@@ -648,3 +648,31 @@ body.dark-theme .nav-item:hover span.icon {
     width: calc(50% - 5px) !important;
   }
 }
+
+/* ════ BACK BUTTON HEADER ════ */
+.btn-back-header {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.btn-back-header:hover {
+  background: var(--color-border);
+  border-color: var(--color-border-strong);
+  color: var(--color-primary);
+  transform: translateX(-2px);
+}
+
+.btn-back-header span {
+  font-size: 18px !important;
+}

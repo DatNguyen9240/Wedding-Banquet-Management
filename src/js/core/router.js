@@ -302,9 +302,14 @@ var Router = (function () {
               if (!route.hideHeader) {
                 var headerHtml =
                   '<div class="page-title-bar" id="global-header">' +
-                  '<div class="page-title-info">' +
-                  '<h1 class="page-title-heading">' + (route.title || 'Quản lý Dữ liệu') + '</h1>' +
-                  (route.subTitle ? '<span class="page-title-sub">' + route.subTitle + '</span>' : '') +
+                  '<div class="page-title-info" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-direction: row; min-width: 0;">' +
+                  '<button class="btn-back-header" onclick="history.back()" title="Quay lại">' +
+                  '<span class="material-symbols-outlined">arrow_back</span>' +
+                  '</button>' +
+                  '<div style="min-width: 0;">' +
+                  '<h1 class="page-title-heading" style="margin: 0;">' + (route.title || 'Quản lý Dữ liệu') + '</h1>' +
+                  (route.subTitle ? '<span class="page-title-sub" style="margin-top: 2px;">' + route.subTitle + '</span>' : '') +
+                  '</div>' +
                   '</div>' +
                   '<div class="page-title-actions" id="global-page-actions"></div>' +
                   '</div>';
