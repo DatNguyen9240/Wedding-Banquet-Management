@@ -89,8 +89,19 @@ BEGIN
             FOR XML PATH('')
         ), 1, 2, '') AS [SanhDat],
         
-        -- Tiền đã cọc (lấy từ TongTien)
-        ISNULL(b.Tongtien, 0) AS [DaCocVND],
+        -- Tiền đã cọc (lấy động theo Lần cọc từ Booking)
+        ISNULL(
+            CASE 
+                WHEN ISNULL(b.Solan, 1) = 2 THEN (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentID = b.DocumentIDcu)
+                ELSE b.Tongtien 
+            END, 0
+        ) AS [DaCocVND],
+        ISNULL(
+            CASE 
+                WHEN ISNULL(b.Solan, 1) = 2 THEN b.Tongtien
+                ELSE (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentIDcu = b.DocumentID AND Solan = 2)
+            END, 0
+        ) AS [Sotiencochopdong],
         
         -- Danh sách chi tiết sảnh
         (

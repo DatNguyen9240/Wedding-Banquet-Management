@@ -45,6 +45,7 @@ CREATE VIEW [dbo].[v_DanhSachPhieuCoc] AS
 SELECT 
     b.DocumentID,
     b.DocumentID AS MaChungTu,
+    b.Makh AS Makh,
     b.SoBN AS SoPhieu,
     b.Thoigianid,
     b.Loaitiecid,
@@ -189,7 +190,18 @@ BEGIN
             FOR XML PATH('')
         ), 1, 2, '') AS [SanhDat],
         
-        ISNULL(b.Tongtien, 0) AS [DaCocVND],
+        ISNULL(
+            CASE 
+                WHEN ISNULL(b.Solan, 1) = 2 THEN (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentID = b.DocumentIDcu)
+                ELSE b.Tongtien 
+            END, 0
+        ) AS [DaCocVND],
+        ISNULL(
+            CASE 
+                WHEN ISNULL(b.Solan, 1) = 2 THEN b.Tongtien
+                ELSE (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentIDcu = b.DocumentID AND Solan = 2)
+            END, 0
+        ) AS [Sotiencochopdong],
         
         (
             SELECT Sanhtiecid, IsSanhchinh 
@@ -275,7 +287,7 @@ CREATE PROCEDURE [dbo].[API_LuuPhieuCoc]
     @SobanManduphong INT = 0,
     @SobanChaychinhthuc INT = 0,
     @SobanChayduphong INT = 0,
-    @Tongtien DECIMAL(18,2) = 0,
+    @Tongtien NVARCHAR(50) = NULL,
     @Solan TINYINT = 1,
     @Ghichu NVARCHAR(500) = NULL,
     @Manv VARCHAR(50) = NULL,
@@ -302,11 +314,20 @@ BEGIN
         IF @_Ngaytochuc IS NOT NULL
             SET @Ngaytochuc = @_Ngaytochuc;
             
+        DECLARE @TongTienDecimal DECIMAL(18,2) = 0;
+
+        IF @Tongtien IS NOT NULL AND LTRIM(RTRIM(@Tongtien)) <> ''
+        BEGIN
+            DECLARE @CleanedTongTien NVARCHAR(50) = REPLACE(REPLACE(REPLACE(@Tongtien, '.', ''), ',', ''), ' ', '');
+            IF TRY_CAST(@CleanedTongTien AS DECIMAL(18,2)) IS NOT NULL
+                SET @TongTienDecimal = CAST(@CleanedTongTien AS DECIMAL(18,2));
+        END
+
         IF @TongtienRaw IS NOT NULL AND LTRIM(RTRIM(@TongtienRaw)) <> ''
         BEGIN
-            DECLARE @CleanedTongTien NVARCHAR(50) = REPLACE(REPLACE(REPLACE(@TongtienRaw, '.', ''), ',', ''), ' ', '');
-            IF TRY_CAST(@CleanedTongTien AS DECIMAL(18,2)) IS NOT NULL
-                SET @Tongtien = CAST(@CleanedTongTien AS DECIMAL(18,2));
+            DECLARE @CleanedTongTienRaw NVARCHAR(50) = REPLACE(REPLACE(REPLACE(@TongtienRaw, '.', ''), ',', ''), ' ', '');
+            IF TRY_CAST(@CleanedTongTienRaw AS DECIMAL(18,2)) IS NOT NULL
+                SET @TongTienDecimal = CAST(@CleanedTongTienRaw AS DECIMAL(18,2));
         END
 
         -- ==========================================================
@@ -497,7 +518,7 @@ BEGIN
             )
             VALUES (
                 @DocumentID, @SoBN, ISNULL(@DocumentDate, @Now), @Makh, @Solan, @Manv, @Loaitiecid,
-                @Ngaytochuc, @Nhamngay, @Tongtien, @Tongsoban, @SobanManchinhthuc, @SobanManduphong, @SobanChaychinhthuc, @SobanChayduphong,
+                @Ngaytochuc, @Nhamngay, @TongTienDecimal, @Tongsoban, @SobanManchinhthuc, @SobanManduphong, @SobanChaychinhthuc, @SobanChayduphong,
                 @Thoigianid, @Ghichu, 0, 0, '', @Now, @UserCreate,
                 @TaiKhoanNo, @TaiKhoanCo, @Kemtheo, @Lydo, @HinhThuc
             );
@@ -511,7 +532,7 @@ BEGIN
                 Loaitiecid = @Loaitiecid,
                 Ngaytochuc = @Ngaytochuc,
                 Nhamngay = @Nhamngay,
-                Tongtien = @Tongtien,
+                Tongtien = @TongTienDecimal,
                 Tongsoban = @Tongsoban,
                 SobanManchinhthuc = @SobanManchinhthuc,
                 SobanManduphong = @SobanManduphong,
@@ -601,7 +622,7 @@ GO
 PRINT N'Đang cấu hình định tuyến tham số API Save trong WA_API...';
 GO
 UPDATE WA_API
-SET Para = '@DocumentID=N''{DocumentID}'', @MaChungTu=N''{MaChungTu}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Diachi=N''{Diachi}'', @Nguoigd=N''{Nguoigd}'', @DienThoaiDaiDien=N''{DienThoaiDaiDien}'', @Mail=N''{Mail}'', @Ngaytochuc=N''{NgayToChuc}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @Tongtien=N''{DaCocVND}'', @Solan=N''{Solan}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @TaiKhoanNo=N''{TaiKhoanNo}'', @TaiKhoanCo=N''{TaiKhoanCo}'', @Kemtheo=N''{Kemtheo}'', @Lydo=N''{Lydo}'', @HinhThuc=N''{HinhThuc}'''
+SET Para = '@DocumentID=N''{DocumentID}'', @Makh=N''{Makh}'', @MaChungTu=N''{MaChungTu}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Diachi=N''{Diachi}'', @Nguoigd=N''{Nguoigd}'', @DienThoaiDaiDien=N''{DienThoaiDaiDien}'', @Mail=N''{Mail}'', @Ngaytochuc=N''{NgayToChuc}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @Tongtien=N''{DaCocVND}'', @Solan=N''{Solan}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @TaiKhoanNo=N''{TaiKhoanNo}'', @TaiKhoanCo=N''{TaiKhoanCo}'', @Kemtheo=N''{Kemtheo}'', @Lydo=N''{Lydo}'', @HinhThuc=N''{HinhThuc}'''
 WHERE List = 'frmBiennhancoccho' AND Func = 'Save';
 GO
 
@@ -731,6 +752,16 @@ UPDATE SY_FormatFields
 SET VisibleRule = 'Loaitiecid=blt000001|t01'
 WHERE FormName = 'frmBiennhancoccho' 
   AND FieldName IN ('Tenchure', 'Tencodau', 'DTchure', 'DTcodau');
+GO
+
+-- Đồng bộ hóa lại các trường giao diện từ View
+EXEC API_DongBoTruongGiaoDien @FormName = 'frmBiennhancoccho', @ObjectName = 'v_DanhSachPhieuCoc';
+GO
+
+-- Ẩn trường Makh khỏi Form nhập liệu nhưng giữ làm input ẩn
+UPDATE SY_FormatFields
+SET ShowInForm = 0, ShowInAdd = 0, ShowInEdit = 0
+WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Makh';
 GO
 
 PRINT N'Cập nhật toàn bộ phân hệ Đặt cọc thành công!';

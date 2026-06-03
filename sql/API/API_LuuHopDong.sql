@@ -24,22 +24,23 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @Mail NVARCHAR(100) = NULL,
     
     -- Thông tin Hợp đồng Tiệc
-    @Ngayhopdong DATETIME = NULL,
-    @Ngaytochuc DATETIME = NULL,
+    @Ngayhopdong NVARCHAR(100) = NULL,
+    @Ngaytochuc NVARCHAR(100) = NULL,
+    @_Ngaytochuc NVARCHAR(100) = NULL,
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(10) = NULL,
     @Thoigianid VARCHAR(20) = NULL,      -- Ca tiệc
     
-    @SobanManchinhthuc INT = 0,
-    @SobanManduphong INT = 0,
-    @SobanChaychinhthuc INT = 0,
-    @SobanChayduphong INT = 0,
-    @TongSoBan DECIMAL(18,2) = 0,
+    @SobanManchinhthuc NVARCHAR(100) = NULL,
+    @SobanManduphong NVARCHAR(100) = NULL,
+    @SobanChaychinhthuc NVARCHAR(100) = NULL,
+    @SobanChayduphong NVARCHAR(100) = NULL,
+    @TongSoBan NVARCHAR(100) = NULL,
     
-    @Tongtienhopdong DECIMAL(18,2) = 0,
-    @Sotiencoccho DECIMAL(18,2) = 0,
-    @Sotiencochopdong DECIMAL(18,2) = 0,
-    @Tongtiencoc DECIMAL(18,2) = 0,
+    @Tongtienhopdong NVARCHAR(100) = NULL,
+    @Sotiencoccho NVARCHAR(100) = NULL,
+    @Sotiencochopdong NVARCHAR(100) = NULL,
+    @Tongtiencoc NVARCHAR(100) = NULL,
     
     @Ghichu NVARCHAR(1000) = NULL,
     @Manv VARCHAR(20) = NULL,
@@ -51,10 +52,116 @@ AS
 BEGIN
     SET NOCOUNT ON;
     
+    DECLARE @Now DATETIME = GETDATE();
+
+    DECLARE @NgayHopDongParsed DATETIME = NULL;
+    DECLARE @NgayToChucParsed DATETIME = NULL;
+    DECLARE @_NgayToChucParsed DATETIME = NULL;
+
+    DECLARE @SobanManchinhthucVal INT = 0;
+    DECLARE @SobanManduphongVal INT = 0;
+    DECLARE @SobanChaychinhthucVal INT = 0;
+    DECLARE @SobanChayduphongVal INT = 0;
+    DECLARE @TongSoBanVal DECIMAL(18,2) = 0;
+    
+    DECLARE @TongtienhopdongVal DECIMAL(18,2) = 0;
+    DECLARE @SotiencocchoVal DECIMAL(18,2) = 0;
+    DECLARE @SotiencochopdongVal DECIMAL(18,2) = 0;
+    DECLARE @TongtiencocVal DECIMAL(18,2) = 0;
+
+    -- Đưa các chuỗi 'NULL'/'null' hoặc rỗng về NULL thực tế
+    IF (UPPER(LTRIM(RTRIM(@Ngayhopdong))) = 'NULL' OR LTRIM(RTRIM(@Ngayhopdong)) = '')
+        SET @Ngayhopdong = NULL;
+        
+    IF (UPPER(LTRIM(RTRIM(@Ngaytochuc))) = 'NULL' OR LTRIM(RTRIM(@Ngaytochuc)) = '')
+        SET @Ngaytochuc = NULL;
+
+    IF (UPPER(LTRIM(RTRIM(@_Ngaytochuc))) = 'NULL' OR LTRIM(RTRIM(@_Ngaytochuc)) = '')
+        SET @_Ngaytochuc = NULL;
+
+    -- Parse @Ngayhopdong từ các định dạng phổ biến
+    IF (@Ngayhopdong IS NOT NULL)
+    BEGIN
+        SET @NgayHopDongParsed = TRY_CAST(@Ngayhopdong AS DATETIME);
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 103); -- dd/mm/yyyy
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 105); -- dd-mm-yyyy
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 120); -- yyyy-mm-dd
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 111); -- yyyy/mm/dd
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 101); -- mm/dd/yyyy
+    END
+
+    -- Parse @Ngaytochuc từ các định dạng phổ biến
+    IF (@Ngaytochuc IS NOT NULL)
+    BEGIN
+        SET @NgayToChucParsed = TRY_CAST(@Ngaytochuc AS DATETIME);
+        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 103);
+        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 105);
+        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 120);
+        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 111);
+        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 101);
+    END
+
+    -- Parse @_Ngaytochuc từ các định dạng phổ biến
+    IF (@_Ngaytochuc IS NOT NULL)
+    BEGIN
+        SET @_NgayToChucParsed = TRY_CAST(@_Ngaytochuc AS DATETIME);
+        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 103);
+        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 105);
+        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 120);
+        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 111);
+        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 101);
+    END
+
+    -- Gộp kết quả parse từ các biến ngày tổ chức khác nhau
+    IF (@NgayToChucParsed IS NULL)
+        SET @NgayToChucParsed = @_NgayToChucParsed;
+
+    -- Chuẩn hóa và parse các tham số số học (bỏ dấu chấm/phẩy phân tách hàng ngàn)
+    SET @SobanManchinhthucVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanManchinhthuc, '0'), '.', ''), ',', '') AS INT);
+    SET @SobanManduphongVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanManduphong, '0'), '.', ''), ',', '') AS INT);
+    SET @SobanChaychinhthucVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanChaychinhthuc, '0'), '.', ''), ',', '') AS INT);
+    SET @SobanChayduphongVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanChayduphong, '0'), '.', ''), ',', '') AS INT);
+    
+    SET @TongSoBanVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@TongSoBan, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
+    SET @TongtienhopdongVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@Tongtienhopdong, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
+    SET @SotiencocchoVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@Sotiencoccho, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
+    SET @SotiencochopdongVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@Sotiencochopdong, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
+    SET @TongtiencocVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@Tongtiencoc, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
+
+    -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ (ví dụ: 'S01' -> '[{"Sanhtiecid":"S01", "IsSanhchinh":1}]')
+    IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
+    BEGIN
+        IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+        BEGIN
+            SET @JsonSanhTiec = '[{"Sanhtiecid":"' + @JsonSanhTiec + '", "IsSanhchinh":1}]';
+        END
+    END
+
+    -- Fallback 1: Nếu rỗng và là cập nhật hợp đồng cũ, lấy từ hợp đồng hiện tại
+    IF (@NgayToChucParsed IS NULL AND @Sohopdong IS NOT NULL AND @Sohopdong <> '')
+    BEGIN
+        SELECT TOP 1 @NgayToChucParsed = Ngaytochuc
+        FROM tbmk_Hopdong
+        WHERE Sohopdong = @Sohopdong;
+    END
+
+    -- Fallback 2: Nếu rỗng và có liên kết biên nhận cọc, lấy từ biên nhận cọc
+    IF (@NgayToChucParsed IS NULL AND @Sobiennhan IS NOT NULL AND @Sobiennhan <> '')
+    BEGIN
+        SELECT TOP 1 @NgayToChucParsed = Ngaytochuc
+        FROM tbmk_Biennhancoccho
+        WHERE DocumentID = @Sobiennhan OR SoBN = @Sobiennhan;
+    END
+
+    -- Kiểm tra Ngày tổ chức bắt buộc phải hợp lệ
+    IF (@NgayToChucParsed IS NULL)
+    BEGIN
+        SELECT 0 AS [Success], N'Lỗi: Ngày tổ chức không được để trống hoặc định dạng ngày không hợp lệ (Nhập vào: ''' + COALESCE(@Ngaytochuc, @_Ngaytochuc, 'NULL') + ''')' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+        RETURN;
+    END
+
     BEGIN TRY
         BEGIN TRANSACTION;
-
-        DECLARE @Now DATETIME = GETDATE();
 
         -- ==========================================================
         -- 0. KIỂM TRA TRÙNG LỊCH SẢNH (CONFLICT VALIDATION)
@@ -67,7 +174,7 @@ BEGIN
                 FROM tbmk_Hopdong h
                 INNER JOIN tbmk_Hopdongsanhtiec hs ON h.Sohopdong = hs.Sohopdong
                 INNER JOIN OPENJSON(@JsonSanhTiec) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
-                WHERE h.Ngaytochuc = @Ngaytochuc 
+                WHERE h.Ngaytochuc = @NgayToChucParsed 
                   AND h.Thoigianid = @Thoigianid
                   AND ISNULL(h.IsHuy, 0) = 0
                   AND h.Sohopdong != ISNULL(@Sohopdong, '')
@@ -79,7 +186,7 @@ BEGIN
                 FROM tbmk_Biennhancoccho b
                 INNER JOIN tbmk_Biennhancocchosanhtiec bs ON b.DocumentID = bs.DocumentID
                 INNER JOIN OPENJSON(@JsonSanhTiec) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
-                WHERE b.Ngaytochuc = @Ngaytochuc 
+                WHERE b.Ngaytochuc = @NgayToChucParsed 
                   AND b.Thoigianid = @Thoigianid
                   AND ISNULL(b.IsHuy, 0) = 0
                   AND ISNULL(b.IsKetthuc, 0) = 0
@@ -173,9 +280,9 @@ BEGIN
                 Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID
             )
             VALUES (
-                @Sohopdong, @Sobiennhan, ISNULL(@Ngayhopdong, @Now), @Ngaytochuc, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
-                @SobanManchinhthuc, @SobanManduphong, @SobanChaychinhthuc, @SobanChayduphong, @TongSoBan,
-                @Tongtienhopdong, @Sotiencoccho, @Sotiencochopdong, @Tongtiencoc,
+                @Sohopdong, @Sobiennhan, ISNULL(@NgayHopDongParsed, @Now), @NgayToChucParsed, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
+                @SobanManchinhthucVal, @SobanManduphongVal, @SobanChaychinhthucVal, @SobanChayduphongVal, @TongSoBanVal,
+                @TongtienhopdongVal, @SotiencocchoVal, @SotiencochopdongVal, @TongtiencocVal,
                 @Manv, @Ghichu, 0, 0, @Now, @UserCreate, ''
             );
 
@@ -194,20 +301,20 @@ BEGIN
             SET 
                 Sobiennhan = @Sobiennhan,
                 Makh = @Makh,
-                Ngayhopdong = @Ngayhopdong,
-                Ngaytochuc = @Ngaytochuc,
+                Ngayhopdong = @NgayHopDongParsed,
+                Ngaytochuc = @NgayToChucParsed,
                 Nhamngay = @Nhamngay,
                 Loaitiecid = @Loaitiecid,
                 Thoigianid = @Thoigianid,
-                SobanManchinhthuc = @SobanManchinhthuc,
-                SobanManduphong = @SobanManduphong,
-                SobanChaychinhthuc = @SobanChaychinhthuc,
-                SobanChayduphong = @SobanChayduphong,
-                TongSoBan = @TongSoBan,
-                Tongtienhopdong = @Tongtienhopdong,
-                Sotiencoccho = @Sotiencoccho,
-                Sotiencochopdong = @Sotiencochopdong,
-                Tongtiencoc = @Tongtiencoc,
+                SobanManchinhthuc = @SobanManchinhthucVal,
+                SobanManduphong = @SobanManduphongVal,
+                SobanChaychinhthuc = @SobanChaychinhthucVal,
+                SobanChayduphong = @SobanChayduphongVal,
+                TongSoBan = @TongSoBanVal,
+                Tongtienhopdong = @TongtienhopdongVal,
+                Sotiencoccho = @SotiencocchoVal,
+                Sotiencochopdong = @SotiencochopdongVal,
+                Tongtiencoc = @TongtiencocVal,
                 Ghichu = @Ghichu,
                 DateUpdate = @Now,
                 UserUpdate = @UserCreate
@@ -219,13 +326,6 @@ BEGIN
         -- ==========================================================
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
-            -- Nếu không phải dạng mảng JSON (ví dụ: chỉ là mã sảnh 'S01' chọn từ dropdown đơn giản)
-            -- thì tự động bọc thành JSON array hợp lệ để OPENJSON không bị lỗi
-            IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
-            BEGIN
-                SET @JsonSanhTiec = '[{"Sanhtiecid":"' + @JsonSanhTiec + '", "IsSanhchinh":1}]';
-            END
-
             -- Xóa sảnh cũ
             DELETE FROM tbmk_Hopdongsanhtiec WHERE Sohopdong = @Sohopdong;
 

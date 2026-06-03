@@ -75,8 +75,32 @@ window.DynamicFormEngine = (function () {
       if (i >= payloads.length) { onDone(successCount); return; }
       ApiClient.post(endpoint, payloads[i])
         .then(function (res) {
-          if (res && res.code === 0) successCount++;
-          _next(i + 1);
+          var isDbSuccess = true;
+          var dbMsg = '';
+          if (res && res.code === 0) {
+            if (res.Success !== undefined && (String(res.Success) === '0' || res.Success === false)) {
+              isDbSuccess = false;
+              dbMsg = res.Message || res.msg || 'Lưu dữ liệu thất bại';
+            } else if (res.records && res.records.length > 0) {
+              var firstRec = res.records[0];
+              if (firstRec.Success !== undefined && (String(firstRec.Success) === '0' || firstRec.Success === false)) {
+                isDbSuccess = false;
+                dbMsg = firstRec.Message || firstRec.msg || res.Message || 'Lưu dữ liệu thất bại';
+              }
+            }
+          } else {
+            isDbSuccess = false;
+            dbMsg = res ? res.msg : 'Lỗi kết nối';
+          }
+
+          if (isDbSuccess) {
+            successCount++;
+            _next(i + 1);
+          } else {
+            var err = new Error(dbMsg);
+            var stop = typeof onError === 'function' && onError(err, payloads[i], i) === false;
+            if (!stop) _next(i + 1);
+          }
         })
         .catch(function (err) {
           var stop = typeof onError === 'function' && onError(err, payloads[i], i) === false;
@@ -2271,6 +2295,27 @@ window.DynamicFormEngine = (function () {
     ApiClient.post(endpoint, finalPayload)
       .then(function (res) {
         if (res && res.code === 0) {
+          // Check DB level validation success
+          var isDbSuccess = true;
+          var dbMsg = '';
+          
+          if (res.Success !== undefined && (String(res.Success) === '0' || res.Success === false)) {
+            isDbSuccess = false;
+            dbMsg = res.Message || res.msg || MODULE_CONFIG.AlertSaveFailed;
+          } else if (res.records && res.records.length > 0) {
+            var firstRec = res.records[0];
+            if (firstRec.Success !== undefined && (String(firstRec.Success) === '0' || firstRec.Success === false)) {
+              isDbSuccess = false;
+              dbMsg = firstRec.Message || firstRec.msg || res.Message || MODULE_CONFIG.AlertSaveFailed;
+            }
+          }
+          
+          if (!isDbSuccess) {
+            Alert.error(MODULE_CONFIG.AlertTitleError, dbMsg);
+            _restoreSaveBtn();
+            return;
+          }
+
           UIToast.show(isEdit ? MODULE_CONFIG.ToastEdit : MODULE_CONFIG.ToastAdd, 'success');
           modal.closeNow();
           if (_isFormBuilder()) {

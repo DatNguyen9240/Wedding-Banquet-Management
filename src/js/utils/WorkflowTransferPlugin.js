@@ -45,6 +45,7 @@ var WorkflowTransferPlugin = (function () {
             storageKey: 'transfer_BookingToContract',
             getTransferData: function (row) {
                 var data = Object.assign({}, row);
+                data.Sobiennhan = row.DocumentID || row.SoBN || row.Id;
                 delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong;
                 return data;
             }

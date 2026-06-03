@@ -20,6 +20,7 @@ CREATE VIEW [dbo].[v_DanhSachPhieuCoc] AS
 SELECT 
     b.DocumentID,
     b.DocumentID AS MaChungTu,
+    b.Makh AS Makh,
     b.SoBN AS SoPhieu,
     b.Thoigianid,
     b.Loaitiecid,
@@ -56,7 +57,18 @@ SELECT
         INNER JOIN dmSanhtiec s ON bs.Sanhtiecid = s.Sanhtiecid 
         WHERE bs.DocumentID = b.DocumentID
     ) AS SanhDat,
-    ISNULL(b.Tongtien, 0) AS DaCocVND,
+    ISNULL(
+        CASE 
+            WHEN ISNULL(b.Solan, 1) = 2 THEN (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentID = b.DocumentIDcu)
+            ELSE b.Tongtien 
+        END, 0
+    ) AS DaCocVND,
+    ISNULL(
+        CASE 
+            WHEN ISNULL(b.Solan, 1) = 2 THEN b.Tongtien
+            ELSE (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentIDcu = b.DocumentID AND Solan = 2)
+        END, 0
+    ) AS Sotiencochopdong,
     
     -- Cột Lần cọc để Form Sửa tự động điền (fill) vào dropdown
     b.Solan AS [Solan],
@@ -100,4 +112,14 @@ GO
 UPDATE SY_FrmLstTbl 
 SET TableName = 'v_DanhSachPhieuCoc', PrimaryKey = 'DocumentID'
 WHERE FormID = 'frmBiennhancoccho';
+GO
+
+-- Đồng bộ hóa các trường giao diện
+EXEC API_DongBoTruongGiaoDien @FormName = 'frmBiennhancoccho', @ObjectName = 'v_DanhSachPhieuCoc';
+GO
+
+-- Cấu hình ẩn trường Makh khỏi Add/Edit nhưng vẫn sinh input ẩn
+UPDATE SY_FormatFields
+SET ShowInForm = 0, ShowInAdd = 0, ShowInEdit = 0
+WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Makh';
 GO
