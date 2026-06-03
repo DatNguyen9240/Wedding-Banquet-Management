@@ -475,7 +475,7 @@ body.dark-theme .calendar-days-header {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   padding: 12px;
-  width: 320px;
+  width: 340px;
   box-sizing: border-box;
   animation: popInCell var(--transition-fast) forwards;
 }
@@ -485,6 +485,8 @@ body.dark-theme .calendar-days-header {
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;
+  margin: 0 !important;
+  width: 100% !important;
 }
 
 .custom-datepicker-popup .calendar-header {
@@ -523,10 +525,11 @@ body.dark-theme .calendar-days-header {
 
 .custom-datepicker-popup .calendar-grid {
   gap: 0 !important;
+  border-radius: 6px !important;
 }
 
 .custom-datepicker-popup .calendar-day {
-  min-height: 44px !important;
+  min-height: 48px !important;
   padding: 4px !important;
   align-items: center !important;
   justify-content: center !important;
@@ -536,6 +539,7 @@ body.dark-theme .calendar-days-header {
   align-self: center !important;
   text-align: center !important;
   flex-direction: column !important;
+  align-items: center !important;
   gap: 0 !important;
 }
 
@@ -549,6 +553,7 @@ body.dark-theme .calendar-days-header {
   font-size: 9.5px !important;
   margin-top: 1px !important;
   display: block !important;
+  line-height: 1.1 !important;
 }
 
 /* Mobile Responsive Datepicker Popup Centering */

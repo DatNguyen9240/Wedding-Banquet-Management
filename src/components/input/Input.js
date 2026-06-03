@@ -164,8 +164,8 @@ var UIInput = (function () {
       var rect = visibleInput.getBoundingClientRect();
       var windowWidth = window.innerWidth;
       var windowHeight = window.innerHeight;
-      var popupWidth = 320;
-      var popupHeight = 350;
+      var popupWidth = 340;
+      var popupHeight = 380;
 
       if (windowWidth <= 576) {
         // Add a dim backdrop for mobile focus

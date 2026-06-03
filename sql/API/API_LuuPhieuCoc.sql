@@ -77,6 +77,100 @@ BEGIN
                 SET @Tongtien = CAST(@CleanedTongTien AS DECIMAL(18,2));
         END
 
+        -- ==========================================================
+        -- 0. KIỂM TRA ĐIỀU KIỆN CHẶN TRÙNG LỊCH & TRÙNG PHIẾU
+        -- ==========================================================
+        
+        -- Kiểm tra bắt buộc nhập các trường thông tin quan trọng
+        IF @Ngaytochuc IS NULL OR @Ngaytochuc <= '1900-01-01'
+        BEGIN
+            SELECT 0 AS [Success], N'Lỗi: Vui lòng chọn Ngày tổ chức tiệc!' AS [Message], NULL AS [DocumentID], NULL AS [Makh];
+            RETURN;
+        END
+
+        IF @Thoigianid IS NULL OR LTRIM(RTRIM(@Thoigianid)) = ''
+        BEGIN
+            SELECT 0 AS [Success], N'Lỗi: Vui lòng chọn Ca tiệc (Thời gian)!' AS [Message], NULL AS [DocumentID], NULL AS [Makh];
+            RETURN;
+        END
+
+        IF @JsonSanhTiec IS NULL OR LTRIM(RTRIM(@JsonSanhTiec)) = '' OR @JsonSanhTiec = '[]'
+        BEGIN
+            SELECT 0 AS [Success], N'Lỗi: Vui lòng chọn Sảnh tiệc!' AS [Message], NULL AS [DocumentID], NULL AS [Makh];
+            RETURN;
+        END
+
+        -- A. Kiểm tra trùng khách hàng đã có cọc hoạt động cùng ngày tổ chức
+        DECLARE @CheckMakh VARCHAR(50) = @Makh;
+        IF (@CheckMakh IS NULL OR @CheckMakh = '')
+        BEGIN
+            DECLARE @CheckSdt NVARCHAR(50) = ISNULL(NULLIF(@DTchure, ''), @DTcodau);
+            IF (@CheckSdt IS NOT NULL AND @CheckSdt <> '')
+            BEGIN
+                SELECT TOP 1 @CheckMakh = Makh
+                FROM dmkhachhang
+                WHERE (Dienthoai = @CheckSdt OR DTchure = @CheckSdt OR DTcodau = @CheckSdt)
+                  AND ISNULL(Tenchure, '') = ISNULL(@Tenchure, '') 
+                  AND ISNULL(Tencodau, '') = ISNULL(@Tencodau, '')
+                ORDER BY DateCreate ASC;
+            END
+        END
+
+        IF (@CheckMakh IS NOT NULL AND @CheckMakh <> '')
+        BEGIN
+            IF EXISTS (
+                SELECT 1 
+                FROM tbmk_Biennhancoccho
+                WHERE Makh = @CheckMakh
+                  AND Ngaytochuc = @Ngaytochuc
+                  AND ISNULL(IsHuy, 0) = 0
+                  AND ISNULL(IsKetthuc, 0) = 0
+                  AND DocumentID != ISNULL(@DocumentID, '')
+            )
+            BEGIN
+                SELECT 0 AS [Success], N'Lỗi: Khách hàng này đã có một phiếu cọc chỗ đang hoạt động vào ngày tổ chức này. Vui lòng chỉnh sửa phiếu cọc cũ thay vì tạo mới!' AS [Message], NULL AS [DocumentID], NULL AS [Makh];
+                RETURN;
+            END
+        END
+
+        -- B. Kiểm tra trùng lịch sảnh (Double Booking)
+        IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
+        BEGIN
+            DECLARE @JsonSanhTiecTemp NVARCHAR(MAX) = @JsonSanhTiec;
+            IF (LEFT(LTRIM(@JsonSanhTiecTemp), 1) != '[')
+            BEGIN
+                SET @JsonSanhTiecTemp = '[{"Sanhtiecid":"' + @JsonSanhTiecTemp + '", "IsSanhchinh":1}]';
+            END
+
+            IF EXISTS (
+                -- 1. Trùng với Hợp đồng khác đang hoạt động
+                SELECT 1 
+                FROM tbmk_Hopdong h
+                INNER JOIN tbmk_Hopdongsanhtiec hs ON h.Sohopdong = hs.Sohopdong
+                INNER JOIN OPENJSON(@JsonSanhTiecTemp) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
+                WHERE h.Ngaytochuc = @Ngaytochuc 
+                  AND h.Thoigianid = @Thoigianid
+                  AND ISNULL(h.IsHuy, 0) = 0
+                  
+                UNION ALL
+                
+                -- 2. Trùng với Biên nhận cọc chỗ khác đang hoạt động (chưa chuyển thành HĐ)
+                SELECT 1 
+                FROM tbmk_Biennhancoccho b
+                INNER JOIN tbmk_Biennhancocchosanhtiec bs ON b.DocumentID = bs.DocumentID
+                INNER JOIN OPENJSON(@JsonSanhTiecTemp) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
+                WHERE b.Ngaytochuc = @Ngaytochuc 
+                  AND b.Thoigianid = @Thoigianid
+                  AND ISNULL(b.IsHuy, 0) = 0
+                  AND ISNULL(b.IsKetthuc, 0) = 0
+                  AND b.DocumentID != ISNULL(@DocumentID, '')
+            )
+            BEGIN
+                SELECT 0 AS [Success], N'Lỗi: Sảnh bạn chọn đã được đặt cọc hoặc ký Hợp đồng trước đó trong ca tiệc này. Vui lòng kiểm tra lại!' AS [Message], NULL AS [DocumentID], NULL AS [Makh];
+                RETURN;
+            END
+        END
+
         BEGIN TRANSACTION;
 
         DECLARE @Now DATETIME = GETDATE();
