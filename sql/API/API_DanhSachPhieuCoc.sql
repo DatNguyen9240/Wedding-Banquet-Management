@@ -91,7 +91,6 @@ BEGIN
         
         -- Tiền đã cọc (lấy từ TongTien)
         ISNULL(b.Tongtien, 0) AS [DaCocVND],
-        ISNULL(b.Tongtien, 0) AS [Sotiencoccho], -- Hỗ trợ Workflow mapping tự động sang Hợp đồng
         
         -- Danh sách chi tiết sảnh
         (

@@ -47,7 +47,6 @@ SELECT
         WHERE bs.DocumentID = b.DocumentID
     ) AS SanhDat,
     ISNULL(b.Tongtien, 0) AS DaCocVND,
-    ISNULL(b.Tongtien, 0) AS [Sotiencoccho],
     
     b.Solan AS [Solan],
     b.TaiKhoanNo,
