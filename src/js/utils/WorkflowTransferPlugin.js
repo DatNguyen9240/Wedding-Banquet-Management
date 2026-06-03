@@ -140,7 +140,7 @@ var WorkflowTransferPlugin = (function () {
                 if (!elName) return;
 
                 var lowerName = elName.toLowerCase();
-                if (lowerData[lowerName] !== undefined && lowerData[lowerName] !== null) {
+                if (lowerData[lowerName] !== undefined && lowerData[lowerName] !== null && String(lowerData[lowerName]).trim() !== '') {
                     var val = lowerData[lowerName];
 
                     // Nếu phần tử là input date, định dạng lại thành YYYY-MM-DD

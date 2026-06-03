@@ -1061,7 +1061,7 @@ var WorkflowTransferPlugin = (function () {
                 if (!elName) return;
 
                 var lowerName = elName.toLowerCase();
-                if (lowerData[lowerName] !== undefined && lowerData[lowerName] !== null) {
+                if (lowerData[lowerName] !== undefined && lowerData[lowerName] !== null && String(lowerData[lowerName]).trim() !== '') {
                     var val = lowerData[lowerName];
 
                     // Nếu phần tử là input date, định dạng lại thành YYYY-MM-DD
@@ -6270,13 +6270,13 @@ var UIInput = (function () {
     input.className = 'ui-input';
     if (config.id) input.id = config.id;
     if (config.name) input.name = config.name;
-    
+
     var finalPlaceholder = config.placeholder;
     if (!finalPlaceholder && config.label && inputType !== 'checkbox' && inputType !== 'radio' && inputType !== 'date') {
       finalPlaceholder = 'Nhập ' + config.label.toLowerCase() + '...';
     }
     if (finalPlaceholder) input.placeholder = finalPlaceholder;
-    
+
     if (config.value !== undefined) input.value = config.value;
     if (config.disabled) input.disabled = true;
     if (config.readonly) input.readOnly = true;
@@ -6337,28 +6337,28 @@ var UIInput = (function () {
     obj.wrapper.classList.add('modern-checkbox-wrapper');
     obj.input.className = 'modern-checkbox';
     obj.input.style.cursor = 'pointer';
-    
+
     // Checkbox uses checked instead of value
     if (config.value === '1' || config.value === 1 || config.value === true || String(config.value).toLowerCase() === 'true') {
-        obj.input.checked = true;
+      obj.input.checked = true;
     }
-    
+
     // Thêm giá trị thực vào dataset để tự động serialize thành 1/0
     obj.input.value = obj.input.checked ? 1 : 0;
-    obj.input.onchange = function() {
-        this.value = this.checked ? 1 : 0;
+    obj.input.onchange = function () {
+      this.value = this.checked ? 1 : 0;
     };
-    
+
     // Đảo ngược thứ tự input và label cho đẹp
     var label = obj.wrapper.querySelector('label');
     if (label) {
-        // Xóa class cũ
-        label.className = '';
-        label.style.cursor = 'pointer';
-        // Đảo ngược thứ tự: input trước, label sau
-        obj.wrapper.insertBefore(obj.input, label);
+      // Xóa class cũ
+      label.className = '';
+      label.style.cursor = 'pointer';
+      // Đảo ngược thứ tự: input trước, label sau
+      obj.wrapper.insertBefore(obj.input, label);
     }
-    
+
     return obj.wrapper;
   }
 
@@ -6392,7 +6392,7 @@ var UIInput = (function () {
     eyeBtn.title = 'Hiện mật khẩu';
 
     var isVisible = false;
-    eyeBtn.addEventListener('click', function() {
+    eyeBtn.addEventListener('click', function () {
       isVisible = !isVisible;
       input.type = isVisible ? 'text' : 'password';
       eyeBtn.querySelector('.material-symbols-outlined').textContent = isVisible ? 'visibility' : 'visibility_off';
@@ -6401,8 +6401,8 @@ var UIInput = (function () {
     });
 
     // Hover effect
-    eyeBtn.addEventListener('mouseenter', function() { this.style.color = 'var(--color-text)'; });
-    eyeBtn.addEventListener('mouseleave', function() { this.style.color = 'var(--color-text-secondary)'; });
+    eyeBtn.addEventListener('mouseenter', function () { this.style.color = 'var(--color-text)'; });
+    eyeBtn.addEventListener('mouseleave', function () { this.style.color = 'var(--color-text-secondary)'; });
 
     inputWrap.appendChild(eyeBtn);
 
@@ -6439,12 +6439,12 @@ var UIInput = (function () {
     defaultOpt.innerText = '-- Vui lòng chọn --';
     select.appendChild(defaultOpt);
 
-    (options || []).forEach(function(opt) {
-        var o = document.createElement('option');
-        o.value = opt.value;
-        o.innerText = opt.label;
-        if (config.value == opt.value) o.selected = true;
-        select.appendChild(o);
+    (options || []).forEach(function (opt) {
+      var o = document.createElement('option');
+      o.value = opt.value;
+      o.innerText = opt.label;
+      if (config.value == opt.value) o.selected = true;
+      select.appendChild(o);
     });
 
     wrapper.appendChild(select);
@@ -6461,7 +6461,7 @@ var UIInput = (function () {
     var onIncrease = config.onIncrease || '';
     var onChange = config.onChange || '';
     var stopPropagation = config.stopPropagation ? 'event.stopPropagation(); ' : '';
-    
+
     var h = config.height || 32;
     var w = config.width || 96;
     var btnW = config.btnWidth || 30;
@@ -6521,7 +6521,7 @@ var UIInput = (function () {
    */
   function setupMoneyInput(inputEl, textEl) {
     if (!inputEl) return;
-    
+
     function refresh() {
       var raw = parseInt(inputEl.value.replace(/\D/g, ''), 10) || 0;
       inputEl.value = raw === 0 ? '' : raw.toLocaleString('vi-VN');
@@ -6532,14 +6532,14 @@ var UIInput = (function () {
       var pos = this.selectionStart;
       var oldLen = this.value.length;
       var raw = parseInt(this.value.replace(/\D/g, ''), 10) || 0;
-      
+
       this.value = raw === 0 ? '' : raw.toLocaleString('vi-VN');
-      
+
       var diff = this.value.length - oldLen;
       if (pos !== null) {
         this.setSelectionRange(pos + diff, pos + diff);
       }
-      
+
       if (textEl) textEl.innerText = raw === 0 ? '' : docSoTienVN(raw);
     });
 
