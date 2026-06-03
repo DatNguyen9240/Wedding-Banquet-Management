@@ -1655,7 +1655,7 @@ window.DynamicFormEngine = (function () {
             });
 
             var displayInput = lazyStaticCombo.querySelector('input.ui-input');
-            var matched = staticData.find(function (r) { return r[0] == field.value; });
+            var matched = staticData.find(function (r) { return String(r[0]) === String(field.value); });
             if (matched && displayInput) displayInput.value = matched[1];
 
             hiddenInput.fetchDataForValue = function () {

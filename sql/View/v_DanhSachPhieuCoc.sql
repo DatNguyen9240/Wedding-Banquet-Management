@@ -54,12 +54,27 @@ SELECT
         WHERE bs.DocumentID = b.DocumentID
     ) AS SanhDat,
     ISNULL(b.Tongtien, 0) AS DaCocVND,
+    
+    -- Cột Lần cọc để Form Sửa tự động điền (fill) vào dropdown
+    b.Solan AS [Solan],
+    
+    -- Thay đổi cột JsonSanhTiec thành Scalar ID (lấy sảnh đầu tiên/sảnh chính)
+    -- Điều này giúp DynamicFormEngine.js khi mở form Sửa tự động mapping value trùng khớp với Mã sảnh của Dropdown
+    (
+        SELECT TOP 1 Sanhtiecid 
+        FROM tbmk_Biennhancocchosanhtiec 
+        WHERE DocumentID = b.DocumentID 
+        ORDER BY IsSanhchinh DESC
+    ) AS JsonSanhTiec,
+    
+    -- Cột JSON đầy đủ dự phòng nếu cần dùng sau này
     (
         SELECT Sanhtiecid, IsSanhchinh 
         FROM tbmk_Biennhancocchosanhtiec 
         WHERE DocumentID = b.DocumentID 
         FOR JSON PATH
-    ) AS JsonSanhTiec,
+    ) AS [_JsonSanhTiec],
+    
     CASE
         WHEN b.IsHuy = 1 THEN N'Đã Hủy'
         WHEN b.IsKetthuc = 1 THEN N'Đã lên Hợp đồng'

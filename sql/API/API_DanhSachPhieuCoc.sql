@@ -67,6 +67,7 @@ BEGIN
         
         -- Cột ngày nguyên thủy cho Form Sửa
         b.Ngaytochuc AS [_Ngaytochuc],
+        b.Solan AS [Solan], -- Thêm cột Lần cọc để Form Sửa tự động điền (fill) vào dropdown
         
         -- Cột ngày hiển thị trên Lưới
         CONVERT(VARCHAR(10), b.Ngaytochuc, 103) AS [Ngaytochuc],
@@ -94,10 +95,10 @@ BEGIN
             FOR JSON PATH
         ) AS [_JsonSanhTiec],
         (
-            SELECT Sanhtiecid, IsSanhchinh 
+            SELECT TOP 1 Sanhtiecid 
             FROM tbmk_Biennhancocchosanhtiec 
             WHERE DocumentID = b.DocumentID 
-            FOR JSON PATH
+            ORDER BY IsSanhchinh DESC
         ) AS [JsonSanhTiec],
         
         -- Label trạng thái
