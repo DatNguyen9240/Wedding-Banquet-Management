@@ -58,6 +58,13 @@ SELECT
     -- Cột Lần cọc để Form Sửa tự động điền (fill) vào dropdown
     b.Solan AS [Solan],
     
+    -- Các cột mới cho việc in phiếu và nhập liệu
+    b.TaiKhoanNo,
+    b.TaiKhoanCo,
+    b.Kemtheo,
+    b.Lydo,
+    b.HinhThuc,
+    
     -- Thay đổi cột JsonSanhTiec thành Scalar ID (lấy sảnh đầu tiên/sảnh chính)
     -- Điều này giúp DynamicFormEngine.js khi mở form Sửa tự động mapping value trùng khớp với Mã sảnh của Dropdown
     (

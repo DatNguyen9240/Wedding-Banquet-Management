@@ -47,7 +47,14 @@ CREATE OR ALTER PROCEDURE [dbo].[API_LuuPhieuCoc]
     @MaChungTu VARCHAR(50) = NULL,
     @_Ngaytochuc DATETIME = NULL,
     @TongtienRaw DECIMAL(18,2) = NULL,
-    @Loaihinhtiecid VARCHAR(50) = NULL
+    @Loaihinhtiecid VARCHAR(50) = NULL,
+    
+    -- Các trường bổ sung phiếu thu
+    @TaiKhoanNo VARCHAR(50) = NULL,
+    @TaiKhoanCo VARCHAR(50) = NULL,
+    @Kemtheo NVARCHAR(255) = NULL,
+    @Lydo NVARCHAR(255) = NULL,
+    @HinhThuc NVARCHAR(100) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -167,12 +174,14 @@ BEGIN
             INSERT INTO tbmk_Biennhancoccho (
                 DocumentID, SoBN, DocumentDate, Makh, Solan, Manv, Loaitiecid,
                 Ngaytochuc, Nhamngay, Tongtien, Tongsoban, SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong,
-                Thoigianid, Ghichu, IsHuy, IsKetthuc, GoiThucDonID, DateCreate, UserCreate
+                Thoigianid, Ghichu, IsHuy, IsKetthuc, GoiThucDonID, DateCreate, UserCreate,
+                TaiKhoanNo, TaiKhoanCo, Kemtheo, Lydo, HinhThuc
             )
             VALUES (
                 @DocumentID, @SoBN, ISNULL(@DocumentDate, @Now), @Makh, @Solan, @Manv, @Loaitiecid,
                 @Ngaytochuc, @Nhamngay, @Tongtien, @Tongsoban, @SobanManchinhthuc, @SobanManduphong, @SobanChaychinhthuc, @SobanChayduphong,
-                @Thoigianid, @Ghichu, 0, 0, '', @Now, @UserCreate
+                @Thoigianid, @Ghichu, 0, 0, '', @Now, @UserCreate,
+                @TaiKhoanNo, @TaiKhoanCo, @Kemtheo, @Lydo, @HinhThuc
             );
         END
         ELSE
@@ -194,7 +203,12 @@ BEGIN
                 Thoigianid = @Thoigianid,
                 Ghichu = @Ghichu,
                 DateUpdate = @Now,
-                UserUpdate = @UserCreate
+                UserUpdate = @UserCreate,
+                TaiKhoanNo = @TaiKhoanNo,
+                TaiKhoanCo = @TaiKhoanCo,
+                Kemtheo = @Kemtheo,
+                Lydo = @Lydo,
+                HinhThuc = @HinhThuc
             WHERE DocumentID = @DocumentID;
         END
 

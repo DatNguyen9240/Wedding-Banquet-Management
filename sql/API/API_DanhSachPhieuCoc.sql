@@ -43,7 +43,8 @@ BEGIN
         -- Các trường bổ sung phục vụ in mẫu Phiếu Thu (phieu_thu.docx)
         (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com1') AS [TenNhaHang],
         (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com2') AS [DiaChiNhaHang],
-        N'Cọc giữ chỗ' AS [Lydo],
+
+        ISNULL(NULLIF(b.Lydo, ''), N'Cọc giữ chỗ lần ' + CAST(ISNULL(b.Solan, 1) AS NVARCHAR(10))) AS [Lydo],
         RIGHT('0' + CAST(d.Ngay AS VARCHAR(2)), 2) AS [Ngay],
         RIGHT('0' + CAST(d.Thang AS VARCHAR(2)), 2) AS [Thang],
         d.Nam AS [Nam],
@@ -53,10 +54,10 @@ BEGIN
         FORMAT(ISNULL(b.Tongtien, 0), 'N0', 'vi-VN') AS [Tongtien],
         ISNULL(b.Tongtien, 0) AS [TongtienRaw],
         [dbo].[fn_DocTienBangChu](ISNULL(b.Tongtien, 0)) AS [SoTienBangChu],
-        '' AS [TaiKhoanNo],
-        '' AS [TaiKhoanCo],
-        '' AS [Kemtheo],
-        N'Tiền mặt / Chuyển khoản' AS [HinhThuc],
+        ISNULL(b.TaiKhoanNo, '') AS [TaiKhoanNo],
+        ISNULL(b.TaiKhoanCo, '') AS [TaiKhoanCo],
+        ISNULL(b.Kemtheo, '') AS [Kemtheo],
+        ISNULL(NULLIF(b.HinhThuc, ''), N'Tiền mặt / Chuyển khoản') AS [HinhThuc],
         
         -- Ghép Tên 2 người, hoặc xài Tên Khách chung chung nếu không có
         c.FullName AS [TenKhachHang],
