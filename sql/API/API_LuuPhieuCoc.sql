@@ -150,9 +150,19 @@ BEGIN
         IF (@DocumentID IS NULL OR @DocumentID = '')
         BEGIN
             -- Phát sinh mã phiếu (DocumentID & SoBN)
-            -- SoBN thường theo định dạng: BNCC-YYMM-XXXX
-            DECLARE @SoBN VARCHAR(50) = 'BNCC' + FORMAT(@Now, 'yyMMddHHmmss');
-            SET @DocumentID = @SoBN; -- Tạm dùng SoBN làm DocumentID nếu không có logic AutoID phức tạp
+            DECLARE @TodayStr VARCHAR(8) = FORMAT(@Now, 'yyMMdd');
+            DECLARE @Counter INT;
+            
+            -- Đếm số phiếu cọc lập trong ngày để sinh số thứ tự tự động (ví dụ: 001, 002, ...)
+            SELECT @Counter = COUNT(*) + 1 
+            FROM tbmk_Biennhancoccho 
+            WHERE CONVERT(DATE, DateCreate) = CONVERT(DATE, @Now);
+
+            -- Ráp thành số phiếu: BNCC-260603-001
+            DECLARE @SoBN VARCHAR(50) = 'BNCC-' + @TodayStr + '-' + RIGHT('00' + CAST(@Counter AS VARCHAR), 3);
+            
+            -- DocumentID vẫn dùng mã thời gian để đảm bảo tính duy nhất tuyệt đối của khóa chính
+            SET @DocumentID = 'BNCC' + FORMAT(@Now, 'yyMMddHHmmss');
 
             INSERT INTO tbmk_Biennhancoccho (
                 DocumentID, SoBN, DocumentDate, Makh, Solan, Manv, Loaitiecid,
