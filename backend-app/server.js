@@ -272,7 +272,7 @@ app.post('/api/documents/generate', async (req, res) => {
 
             const docData = {
                 DocumentID: 'DOC_' + Date.now(),
-                TiecID: customerId || dataMap.Sohopdong || dataMap.MaChungTu || '',
+                TiecID: dataMap.SoHopDong,
                 FileName: finalFileName,
                 FileType: templateType,
                 VersionNo: 1,

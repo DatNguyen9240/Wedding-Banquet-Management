@@ -944,7 +944,7 @@ var WorkflowTransferPlugin = (function () {
             storageKey: 'transfer_VisitorToBooking',
             getTransferData: function (row) {
                 var data = Object.assign({}, row);
-                delete data.Id; delete data.AutoID; delete data.Sohopdong;
+                delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong;
                 return data;
             }
         },

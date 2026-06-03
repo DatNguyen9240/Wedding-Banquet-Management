@@ -8,8 +8,10 @@ GO
 
 -- =============================================
 -- API: Lấy danh sách Màn hình Hợp đồng (Contract)
--- =============================================
-ALTER PROCEDURE [dbo].[API_DanhSachHopDong]
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[API_DanhSachHopDong]') AND type in (N'P', N'PC'))
+    DROP PROCEDURE [dbo].[API_DanhSachHopDong]
+GO
+CREATE PROCEDURE [dbo].[API_DanhSachHopDong]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
     @Keyword NVARCHAR(100) = NULL
@@ -18,7 +20,7 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
-        h.Sohopdong,
+        h.Sohopdong AS [SoHopDong],
         h.Sobiennhan,
         
         CASE 
@@ -62,10 +64,10 @@ BEGIN
         CAST(YEAR(h.Ngayhopdong) AS VARCHAR) AS [NamLapHD],
 
         -- Thông tin Bên A
-        '...' AS [BenA_NguoiDaiDien],
-        '...' AS [BenA_ChucVu],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenA_NguoiDaiDien],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenA_ChucVu],
         ISNULL(h.UserCreate, '...') AS [BenA_NhanVienPhuTrach],
-        '...' AS [BenA_SDT_NhanVien],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com3') AS [BenA_SDT_NhanVien],
 
         -- Thông tin Bên B
         CASE 
@@ -74,7 +76,7 @@ BEGIN
             ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
         END AS [BenB_TenDaiDien],
         ISNULL(h.NguoinhanTT, CASE WHEN k.Tenchure <> '' AND k.Tencodau <> '' THEN k.Tenchure + ' & ' + k.Tencodau ELSE ISNULL(k.Tenkh, N'Khách vãng lai') END) AS [BenB_TenChuTiec],
-        '...' AS [BenB_CCCD],
+        ISNULL(NULLIF(k.CMNDDaiDien, ''), ISNULL(NULLIF(k.CMNDnguoidd, ''), ISNULL(NULLIF(k.CMNDchure, ''), '...'))) AS [BenB_CCCD],
         ISNULL(k.Diachi, '...') AS [BenB_DiaChi],
         ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [BenB_DienThoai],
 
@@ -84,8 +86,14 @@ BEGIN
         RIGHT('0' + CAST(DAY(h.Ngaytochuc) AS VARCHAR), 2) AS [Tiec_NgayDL],
         RIGHT('0' + CAST(MONTH(h.Ngaytochuc) AS VARCHAR), 2) AS [Tiec_ThangDL],
         CAST(YEAR(h.Ngaytochuc) AS VARCHAR) AS [Tiec_NamDL],
-        ISNULL(h.Nhamngay, '...') AS [Tiec_NgayAL],
-        '...' AS [Tiec_ThangAL],
+        CASE 
+            WHEN CHARINDEX('/', h.Nhamngay) > 0 THEN SUBSTRING(h.Nhamngay, 1, CHARINDEX('/', h.Nhamngay) - 1)
+            ELSE ISNULL(h.Nhamngay, '...')
+        END AS [Tiec_NgayAL],
+        CASE 
+            WHEN CHARINDEX('/', h.Nhamngay) > 0 THEN SUBSTRING(h.Nhamngay, CHARINDEX('/', h.Nhamngay) + 1, LEN(h.Nhamngay))
+            ELSE '...'
+        END AS [Tiec_ThangAL],
         '...' AS [Tiec_NamAL],
         
         (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [Tiec_SanhTiec],
