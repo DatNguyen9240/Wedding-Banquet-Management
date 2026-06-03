@@ -15,7 +15,7 @@ SET FieldName = 'Diachi'
 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DiaChi';
 
 -- 2. Cấu hình định tuyến cho Danh sách Đặt cọc (frmBiennhancoccho), các mẫu in, và dropdown lists
-DELETE FROM WA_API WHERE List IN ('API_DanhSachCaLam', 'API_DanhSachSanh', 'API_DanhSachLoaiHinhTiec') OR (List = 'frmBiennhancoccho' AND Func IN ('View', 'Save')) OR (List = 'frmBiennhancocchoancoccho' AND Func = 'View') OR (List = 'frmPhieuThu' AND Func = 'View');
+DELETE FROM WA_API WHERE List IN ('API_DanhSachCaLam', 'API_DanhSachSanh', 'API_DanhSachLoaiHinhTiec', 'API_TimNguoiGiaoDich') OR (List = 'frmBiennhancoccho' AND Func IN ('View', 'Save')) OR (List = 'frmBiennhancocchoancoccho' AND Func = 'View') OR (List = 'frmPhieuThu' AND Func = 'View');
 
 INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES 
@@ -60,10 +60,21 @@ VALUES
     'View',
     'API_DanhSachLoaiHinhTiec',
     NULL
+),
+(
+    'API_TimNguoiGiaoDich',
+    'View',
+    'API_TimNguoiGiaoDich',
+    '@Keyword=N''{Keyword}'', @Nguoigd=N''{Nguoigd}'', @DienThoaiDaiDien=N''{DienThoaiDaiDien}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'''
 );
 
--- Dọn dẹp trường Sotiencoccho dư thừa khỏi cấu hình Đặt cọc
+-- Dọn dẹp trường Sotiencoccho dư thừa khỏi cấu hình Đặt cọc và thêm định nghĩa Tenkh để dịch tiêu đề Tiếng Việt
 DELETE FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Sotiencoccho';
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Tenkh')
+BEGIN
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmBiennhancoccho', 'Tenkh', N'Người giao dịch', 0, 0, 0, 99, '6');
+END
 GO
 
 -- Ẩn các trường tính toán hoặc không cần nhập trên Form nhập liệu (Chỉ hiện ở Grid)
@@ -73,8 +84,8 @@ WHERE FormName = 'frmBiennhancoccho' AND FieldName IN ('TenKhachHang', 'DienThoa
 
 -- Cập nhật vị trí hiển thị (FormPosition: 12/6/4/3) và thứ tự sắp xếp (OrderNo)
 -- Nhóm 1: Thông tin liên hệ
-UPDATE SY_FormatFields SET CaptionVN = N'Người giao dịch', FormPosition = '6', OrderNo = 1, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Nguoigd';
-UPDATE SY_FormatFields SET CaptionVN = N'SĐT đại diện', FormPosition = '6', OrderNo = 2, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DienThoaiDaiDien';
+UPDATE SY_FormatFields SET CaptionVN = N'Người giao dịch', FormPosition = '6', OrderNo = 1, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_TimNguoiGiaoDich&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Nguoigd';
+UPDATE SY_FormatFields SET CaptionVN = N'SĐT đại diện', FormPosition = '6', OrderNo = 2, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, validateRule = 'trigger:/api/API_Gateway_Router?List=API_TimNguoiGiaoDich&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DienThoaiDaiDien';
 UPDATE SY_FormatFields SET CaptionVN = N'Tên chú rể', FormPosition = '6', OrderNo = 3, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Tenchure';
 UPDATE SY_FormatFields SET CaptionVN = N'Tên cô dâu', FormPosition = '6', OrderNo = 4, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Tencodau';
 UPDATE SY_FormatFields SET CaptionVN = N'SĐT chú rể', FormPosition = '6', OrderNo = 5, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DTchure';

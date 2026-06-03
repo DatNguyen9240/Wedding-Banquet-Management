@@ -1777,7 +1777,7 @@ window.DynamicFormEngine = (function () {
                     var form = hiddenInput.closest('.ui-modal') || hiddenInput.closest('body');
                     if (form) {
                       var targetInput = form.querySelector('[name="' + keyName + '" i]');
-                      if (targetInput && targetInput !== hiddenInput) {
+                      if (targetInput && targetInput !== hiddenInput && targetInput.value !== (row[index] || '')) {
                         // Điền giá trị
                         targetInput.value = row[index] || '';
                         // Kích hoạt sự kiện để UI update (nếu là ô chọn ngày, số lượng...)
@@ -1992,7 +1992,7 @@ window.DynamicFormEngine = (function () {
               var row = dataList[0];
               Object.keys(row).forEach(function (keyName) {
                 var targetInput = body.querySelector('[name="' + keyName + '" i]');
-                if (targetInput) {
+                if (targetInput && targetInput.value !== (row[keyName] || '')) {
                   targetInput.value = row[keyName] || '';
                   targetInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
