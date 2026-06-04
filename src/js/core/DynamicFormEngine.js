@@ -1569,6 +1569,7 @@ window.DynamicFormEngine = (function () {
     body.style.display = 'flex';
     body.style.flexDirection = 'column';
     body.style.gap = '14px';
+    body.setAttribute('data-form-name', MODULE_CONFIG.FormName || ''); // Plugin detection
 
     var currentModalFormState = {}; // Trạng thái form để truyền cho các Combobox gọi API
 
