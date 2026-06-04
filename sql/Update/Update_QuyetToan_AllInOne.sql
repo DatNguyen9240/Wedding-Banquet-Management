@@ -652,6 +652,10 @@ BEGIN
         td.LanThayDoi,
         td.Ghichu,
         td.Status,
+        td.JsonBanTiec,
+        td.JsonThucUong,
+        td.JsonDichVu,
+        td.JsonPhatSinh,
 
         kh.Tenkh AS [KhachHang],
         ISNULL(nv.Tennv, td.Manv) AS [NVKD],

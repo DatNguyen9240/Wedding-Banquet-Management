@@ -83,6 +83,15 @@ BEGIN
     ALTER TABLE tbmk_Thaydoi ADD DeletedBy VARCHAR(50) NULL;
     ALTER TABLE tbmk_Thaydoi ADD DeletedAt DATETIME NULL;
 END
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'JsonBanTiec')
+BEGIN
+    ALTER TABLE tbmk_Thaydoi ADD 
+        JsonBanTiec NVARCHAR(MAX) NULL,
+        JsonThucUong NVARCHAR(MAX) NULL,
+        JsonDichVu NVARCHAR(MAX) NULL,
+        JsonPhatSinh NVARCHAR(MAX) NULL;
+END
 GO
 
 -- -------------------------------------------------------------------------

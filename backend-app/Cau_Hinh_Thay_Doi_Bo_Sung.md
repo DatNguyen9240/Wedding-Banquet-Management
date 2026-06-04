@@ -42,5 +42,6 @@ Thông tin các form thay đổi bổ sung được đăng ký trong hệ thốn
 
 ## 3. Bản chất nghiệp vụ dữ liệu
 1.  **`frmThayDoiBoSung`** đứng ở vai trò quản lý danh sách các hợp đồng cần thay đổi. Vì liên kết trực tiếp với `tbmk_Hopdong` qua khóa `Sohopdong`, trang này hiển thị danh sách các Hợp đồng đang hoạt động.
-2.  Khi phát sinh thay đổi chi tiết, dữ liệu thay đổi sẽ được tạo mới và đẩy vào bảng **`tbmk_Thaydoi`** (lưu số phiếu thay đổi `Sothaydoi`, ngày thay đổi, lần thay đổi `LanThayDoi`,...) và chi tiết các dòng dịch vụ sửa đổi nằm ở bảng **`tbmk_Thaydoichitiet`**.
+2.  Khi phát sinh thay đổi chi tiết, dữ liệu thay đổi sẽ được tạo mới và đẩy vào bảng **`tbmk_Thaydoi`** (lưu số phiếu thay đổi `Sothaydoi`, ngày thay đổi, lần thay đổi `LanThayDoi`,...) và chi tiết các dòng dịch vụ sửa đổi được phân rã để lưu trữ ở các bảng con tương ứng bao gồm: **`tbmk_ThayDoiThucDonMan`**, **`tbmk_ThayDoiThucDonChay`**, **`tbmk_ThayDoiThucUong`**, và **`tbmk_ThayDoiDichVu`**.
 3.  Khi in BEO hoặc in Quyết toán tiệc, ta sẽ truy vấn `tbmk_Thaydoi` có `LanThayDoi` lớn nhất của `Sohopdong` tương ứng để lấy ra dữ liệu thực đơn/dịch vụ mới nhất.
+
