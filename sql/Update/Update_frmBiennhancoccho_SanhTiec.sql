@@ -152,13 +152,13 @@ GO
 IF NOT EXISTS (SELECT 1 FROM WA_API WHERE List = 'frmBiennhancoccho' AND Func = 'Delete')
 BEGIN
     INSERT INTO WA_API (List, Func, [SQL], Para)
-    VALUES ('frmBiennhancoccho', 'Delete', 'API_XoaPhieuCoc', '@DocumentIDs=N''{id}''');
+    VALUES ('frmBiennhancoccho', 'Delete', 'API_XoaPhieuCoc', '@DocumentIDs=N''{id}'', @UserName=N''{UserName}''');
 END
 ELSE
 BEGIN
     UPDATE WA_API
     SET [SQL] = 'API_XoaPhieuCoc',
-        Para = '@DocumentIDs=N''{id}'''
+        Para = '@DocumentIDs=N''{id}'', @UserName=N''{UserName}'''
     WHERE List = 'frmBiennhancoccho' AND Func = 'Delete';
 END
 GO

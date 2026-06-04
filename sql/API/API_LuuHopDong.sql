@@ -296,6 +296,18 @@ BEGIN
         END
         ELSE
         BEGIN
+            -- Kiểm tra xem hợp đồng đã có trạng thái "Đã Ký" hoặc "Đã Quyết Toán" chưa (Khóa thay đổi)
+            IF EXISTS (
+                SELECT 1 FROM tbmk_Hopdong 
+                WHERE Sohopdong = @Sohopdong 
+                  AND (Status IN ('SIGNED', 'COMPLETED') OR IsKetthuc = 1 OR IsHuy = 1)
+            )
+            BEGIN
+                ROLLBACK TRANSACTION;
+                SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã chốt (Đã ký hoặc Quyết toán). Vui lòng dùng chức năng Phụ lục!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+                RETURN;
+            END
+
             -- Cập nhật Hợp Đồng
             UPDATE tbmk_Hopdong
             SET 

@@ -105,7 +105,8 @@ SELECT
     END AS TrangThai
 
 FROM tbmk_Biennhancoccho b
-LEFT JOIN dmkhachhang k ON b.Makh = k.Makh;
+LEFT JOIN dmkhachhang k ON b.Makh = k.Makh
+WHERE ISNULL(b.IsDeleted, 0) = 0;
 GO
 
 -- Dạy cho Form Đặt Cọc biết: Hãy chọc vào cái View v_DanhSachPhieuCoc thay vì bảng gốc và dùng khóa chính DocumentID

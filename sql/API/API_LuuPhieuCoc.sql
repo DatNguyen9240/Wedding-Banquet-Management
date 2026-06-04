@@ -357,6 +357,17 @@ BEGIN
                   AND DocumentID <> @DocumentID
                 ORDER BY DateCreate DESC;
             END
+            -- Kiểm tra xem phiếu cọc đã có trạng thái "Đã lên Hợp đồng" hoặc "Đã Hủy" hoặc chốt cứng chưa (Khóa thay đổi)
+            IF EXISTS (
+                SELECT 1 FROM tbmk_Biennhancoccho 
+                WHERE DocumentID = @DocumentID 
+                  AND (Status IN ('SIGNED', 'COMPLETED') OR IsKetthuc = 1 OR IsHuy = 1)
+            )
+            BEGIN
+                ROLLBACK TRANSACTION;
+                SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa phiếu cọc đã chốt hoặc đã lên Hợp đồng!' AS [Message], NULL AS [DocumentID], NULL AS [Makh];
+                RETURN;
+            END
 
             -- Cập nhật phiếu cọc
             UPDATE tbmk_Biennhancoccho

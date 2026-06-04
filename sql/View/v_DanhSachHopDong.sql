@@ -143,7 +143,8 @@ SELECT
     ISNULL(h.Noidunguudai, '') AS [DS_KhuyenMai]
     
 FROM tbmk_Hopdong h
-LEFT JOIN dmkhachhang k ON h.Makh = k.Makh;
+LEFT JOIN dmkhachhang k ON h.Makh = k.Makh
+WHERE ISNULL(h.IsDeleted, 0) = 0;
 GO
 
 -- 1. Cập nhật Form Hợp Đồng chọc vào View này

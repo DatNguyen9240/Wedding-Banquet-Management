@@ -77,7 +77,8 @@ SELECT
     END AS TrangThai
 
 FROM tbmk_Biennhancoccho b
-LEFT JOIN dmkhachhang k ON b.Makh = k.Makh;
+LEFT JOIN dmkhachhang k ON b.Makh = k.Makh
+WHERE ISNULL(b.IsDeleted, 0) = 0;
 GO
 
 PRINT N'Đang đồng bộ và phục hồi các trường từ View...';

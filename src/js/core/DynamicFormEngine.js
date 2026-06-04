@@ -441,15 +441,6 @@ window.DynamicFormEngine = (function () {
           onEdit: MODULE_CONFIG.HideEditBtn ? false : (_hasPermission('EDIT') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectEdit);
 
-            // CHẶN CHỈNH SỬA NẾU HỢP ĐỒNG ĐÃ CHỐT
-            var hasSigned = selectedRows.find(function (r) {
-              var st = (r.TrangThai || '').toString().toLowerCase();
-              return st.includes('đã ký');
-            });
-            if (hasSigned) {
-              return Alert.warning('Bị khóa', 'Không thể sửa hợp đồng/phiếu đã chốt (Đã ký). Vui lòng dùng chức năng Phụ lục nếu muốn thay đổi!');
-            }
-
             if (selectedRows.length > 1) {
               _openBulkEditForm();
             } else {
@@ -458,15 +449,6 @@ window.DynamicFormEngine = (function () {
           } : 'DISABLED'),
           onDelete: MODULE_CONFIG.HideDeleteBtn ? false : _hasPermission('DELETE') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectDelete);
-
-            // CHẶN XÓA NẾU HỢP ĐỒNG ĐÃ CHỐT
-            var hasSigned = selectedRows.find(function (r) {
-              var st = (r.TrangThai || '').toString().toLowerCase();
-              return st.includes('đã ký') || st.includes('quyết toán') || st === 'signed' || st === 'completed';
-            });
-            if (hasSigned) {
-              return Alert.warning('Bị khóa', 'Tuyệt đối không được xóa hợp đồng/phiếu đã chốt (Đã ký / Đã quyết toán). Hệ thống yêu cầu lưu trữ chứng từ pháp lý!');
-            }
 
             // Hàm thực thi xóa gọi API
             var performDelete = function () {
@@ -500,7 +482,9 @@ window.DynamicFormEngine = (function () {
                   _updateSelectionCounter();
                   _loadData();
                 } else {
-                  Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertDeleteFailed);
+                  var failedResult = results.find(function (res) { return res && res.code !== 0; });
+                  var dbErrorMsg = (failedResult && (failedResult.msg || failedResult.Message)) || MODULE_CONFIG.AlertDeleteFailed;
+                  Alert.error(MODULE_CONFIG.AlertTitleError, dbErrorMsg);
                 }
               }).catch(function (err) {
                 Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertNetworkError);
