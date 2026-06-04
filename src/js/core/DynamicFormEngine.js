@@ -383,7 +383,7 @@ window.DynamicFormEngine = (function () {
             showInFilter: _bool(item.showInFilter, item.ShowInFilter),
             isReadOnlyEdit: _bool(item.isReadOnlyEdit, item.IsReadOnlyEdit),
             isReadOnlyAdd: _bool(item.isReadOnlyAdd, item.IsReadOnlyAdd),
-            position: item.FormPosition || item.formPosition || item.position || 'grid',
+            position: item.FormPosition || item.formPosition || item.position || '6',
             orderNo: item.OrderNo || item.orderNo || 0,
             renderRule: (item.renderRule || '').toLowerCase().trim(),
             dataSource: (item.dataSource || item.DataSource || '').trim(),
@@ -757,10 +757,11 @@ window.DynamicFormEngine = (function () {
     lastSelectedIdx = -1;
 
     if (typeof UITable !== 'undefined') {
-      // Chỉ hiển thị các cột có cấu hình position là 'grid'
+      // Chỉ hiển thị các cột có cấu hình position là 'grid' hoặc các số lưới (12, 8, 6, 4, 3)
       var dictionary = {};
       globalFormSchema.forEach(function (f) {
-        if (f.position === 'grid') {
+        var pos = String(f.position || '').trim();
+        if (pos && !isNaN(pos)) {
           dictionary[f.name] = f.label;
         }
       });
@@ -1913,9 +1914,10 @@ window.DynamicFormEngine = (function () {
         }
         inputEl.classList.add('ui-input-disabled');
       }
-      var span = String(field.position || 'body');
+      var span = String(field.position || 'hidden');
       if (span === 'grid') span = '6';
       if (span === 'body') span = '12';
+      if (span === 'hidden') span = '12';
       if (!['12', '8', '6', '4', '3'].includes(span)) span = '12';
 
       var wrapper = document.createElement('div');
@@ -2287,7 +2289,7 @@ window.DynamicFormEngine = (function () {
           // Check DB level validation success
           var isDbSuccess = true;
           var dbMsg = '';
-          
+
           if (res.Success !== undefined && (String(res.Success) === '0' || res.Success === false)) {
             isDbSuccess = false;
             dbMsg = res.Message || res.msg || MODULE_CONFIG.AlertSaveFailed;
@@ -2298,7 +2300,7 @@ window.DynamicFormEngine = (function () {
               dbMsg = firstRec.Message || firstRec.msg || res.Message || MODULE_CONFIG.AlertSaveFailed;
             }
           }
-          
+
           if (!isDbSuccess) {
             Alert.error(MODULE_CONFIG.AlertTitleError, dbMsg);
             _restoreSaveBtn();

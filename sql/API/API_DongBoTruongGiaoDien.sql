@@ -96,7 +96,7 @@ BEGIN
                 @FieldName = @FieldName,
                 @CaptionVN = @FieldName, -- Lấy tên cột làm nhãn tiếng Việt tạm
                 @FormatID = @ParsedFormat,
-                @FormPosition = 'grid',  -- Mặc định ở dạng lưới (grid)
+                @FormPosition = '6',  -- Mặc định ở dạng lưới một nửa (span 6)
                 @ShowInAdd = 1,
                 @ShowInEdit = 1,
                 @IsReadOnlyEdit = 0,
