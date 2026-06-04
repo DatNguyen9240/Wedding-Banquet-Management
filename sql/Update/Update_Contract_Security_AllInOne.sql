@@ -309,6 +309,7 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @Dienthoai NVARCHAR(50) = NULL,
     @Diachi NVARCHAR(500) = NULL,
     @Mail NVARCHAR(100) = NULL,
+    @BenB_CCCD NVARCHAR(50) = NULL,
     @Ngayhopdong NVARCHAR(100) = NULL,
     @Ngaytochuc NVARCHAR(100) = NULL,
     @_Ngaytochuc NVARCHAR(100) = NULL,
@@ -459,17 +460,17 @@ BEGIN
             IF (@Makh IS NULL OR @Makh = '')
             BEGIN
                 SET @Makh = 'KH' + FORMAT(@Now, 'yyMMddHHmmss');
-                INSERT INTO dmkhachhang (Makh, Tenkh, Tenchure, Tencodau, Dienthoai, Diachi, Mail, IsKhachhang, DateCreate, UserCreate)
-                VALUES (@Makh, CASE WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '') ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') END, @Tenchure, @Tencodau, @Dienthoai, @Diachi, @Mail, 1, @Now, @UserCreate);
+                INSERT INTO dmkhachhang (Makh, Tenkh, Tenchure, Tencodau, Dienthoai, Diachi, Mail, CMNDDaiDien, CMNDchure, CMNDcodau, IsKhachhang, DateCreate, UserCreate)
+                VALUES (@Makh, CASE WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '') ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') END, @Tenchure, @Tencodau, @Dienthoai, @Diachi, @Mail, @BenB_CCCD, @BenB_CCCD, @BenB_CCCD, 1, @Now, @UserCreate);
             END
             ELSE
             BEGIN
-                UPDATE dmkhachhang SET Tenchure = ISNULL(NULLIF(@Tenchure, ''), Tenchure), Tencodau = ISNULL(NULLIF(@Tencodau, ''), Tencodau), Diachi = ISNULL(NULLIF(@Diachi, ''), Diachi), Mail = ISNULL(NULLIF(@Mail, ''), Mail), DateUpdate = @Now, UserUpdate = @UserCreate WHERE Makh = @Makh;
+                UPDATE dmkhachhang SET Tenchure = ISNULL(NULLIF(@Tenchure, ''), Tenchure), Tencodau = ISNULL(NULLIF(@Tencodau, ''), Tencodau), Diachi = ISNULL(NULLIF(@Diachi, ''), Diachi), Mail = ISNULL(NULLIF(@Mail, ''), Mail), CMNDDaiDien = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDDaiDien), CMNDchure = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDchure), CMNDcodau = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDcodau), DateUpdate = @Now, UserUpdate = @UserCreate WHERE Makh = @Makh;
             END
         END
         ELSE
         BEGIN
-            UPDATE dmkhachhang SET Tenkh = CASE WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '') ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') END, Tenchure = @Tenchure, Tencodau = @Tencodau, Dienthoai = @Dienthoai, Diachi = @Diachi, Mail = @Mail, DateUpdate = @Now, UserUpdate = @UserCreate WHERE Makh = @Makh;
+            UPDATE dmkhachhang SET Tenkh = CASE WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '') ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') END, Tenchure = @Tenchure, Tencodau = @Tencodau, Dienthoai = @Dienthoai, Diachi = @Diachi, Mail = @Mail, CMNDDaiDien = @BenB_CCCD, CMNDchure = @BenB_CCCD, CMNDcodau = @BenB_CCCD, DateUpdate = @Now, UserUpdate = @UserCreate WHERE Makh = @Makh;
         END
 
         IF (@Sohopdong IS NULL OR @Sohopdong = '')

@@ -155,6 +155,7 @@ BEGIN
         -- Lọc ngày tổ chức nếu truyền TuNgay / DenNgay (bỏ qua nếu là chuỗi rỗng / 1900-01-01)
         AND (@TuNgay IS NULL OR CAST(@TuNgay AS DATE) <= '1900-01-01' OR b.Ngaytochuc >= @TuNgay)
         AND (@DenNgay IS NULL OR CAST(@DenNgay AS DATE) <= '1900-01-01' OR b.Ngaytochuc <= @DenNgay)
+        AND ISNULL(b.IsDeleted, 0) = 0
         
     ORDER BY 
         b.Ngaytochuc DESC, b.DocumentDate DESC;

@@ -136,6 +136,7 @@ BEGIN
             OR k.Tencodau LIKE N'%' + @Keyword + '%'
             OR k.Dienthoai LIKE '%' + @Keyword + '%'
         )
+        AND ISNULL(h.IsDeleted, 0) = 0
     ORDER BY 
         h.Sohopdong DESC;
         
