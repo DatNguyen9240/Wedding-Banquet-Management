@@ -27,6 +27,12 @@ var DocumentExportPlugin = (function () {
       label: 'Xuất Quyết Toán',
       icon: 'receipt',
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
+    },
+    'tbmk_Thaydoi': {
+      docType: 'de_nghi_thay_doi',
+      label: 'Xuất Phiếu Thay Đổi',
+      icon: 'edit_note',
+      altKeys: ['Sothaydoi', 'sothaydoi', 'SoThayDoi', 'Sohopdong', 'sohopdong']
     }
   };
 

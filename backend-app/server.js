@@ -149,7 +149,7 @@ app.get('/api/documents/fields/:type', async (req, res) => {
         const API_MAP = {
             'hop_dong': 'frmHopDong',
             'phieu_thu': 'frmPhieuThu',
-            'de_nghi_thay_doi': 'frmHopDong',
+            'de_nghi_thay_doi': 'tbmk_Thaydoi',
             'quyet_toan': 'frmQuyetToan',
         };
         const listName = API_MAP[type];
@@ -190,7 +190,7 @@ app.post('/api/documents/generate', async (req, res) => {
         const API_MAP = {
             'hop_dong': 'frmHopDong',
             'phieu_thu': 'frmPhieuThu',
-            'de_nghi_thay_doi': 'frmHopDong',
+            'de_nghi_thay_doi': 'tbmk_Thaydoi',
             'quyet_toan': 'frmQuyetToan',
         };
         const listName = API_MAP[templateType];
