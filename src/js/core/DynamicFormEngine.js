@@ -1446,6 +1446,8 @@ window.DynamicFormEngine = (function () {
             var comboEmpty = UIControls.createDataComboBox({ placeholder: 'Chưa có dữ liệu' });
             inputEl.replaceChild(comboEmpty, comboLoading);
           }
+        } else if (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn') {
+          inputEl = UIInput.createMoney(field);
         } else if (field.renderRule === 'nm' || field.renderRule === 'number') {
           inputEl = UIInput.createNumber(field);
         } else if (field.renderRule === 'rb' || field.renderRule === 'rulebuilder') {
@@ -1842,6 +1844,8 @@ window.DynamicFormEngine = (function () {
           formGroupWrapper.appendChild(comboEmpty);
           inputEl = formGroupWrapper;
         }
+      } else if (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn') {
+        inputEl = UIInput.createMoney(field);
       } else if (field.renderRule === 'nm' || field.renderRule === 'number') {
         inputEl = UIInput.createNumber(field);
       } else if (field.renderRule === 'rb' || field.renderRule === 'rulebuilder') {

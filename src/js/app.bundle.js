@@ -7455,7 +7455,12 @@ var UIInput = (function () {
     }
 
     var input = document.createElement('input');
-    input.type = inputType;
+    if (config.isMoney) {
+      input.type = 'text';
+      input.setAttribute('inputmode', 'numeric');
+    } else {
+      input.type = inputType;
+    }
     input.className = 'ui-input';
     if (config.id) input.id = config.id;
     if (config.name) input.name = config.name;
@@ -7471,6 +7476,14 @@ var UIInput = (function () {
     if (config.readonly) input.readOnly = true;
 
     wrapper.appendChild(input);
+
+    if (config.isMoney) {
+      var wordEl = document.createElement('div');
+      wordEl.className = 'money-words-text';
+      wordEl.style.cssText = 'font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;';
+      wrapper.appendChild(wordEl);
+      setupMoneyInput(input, wordEl);
+    }
 
     return { wrapper: wrapper, input: input };
   }
@@ -7491,6 +7504,14 @@ var UIInput = (function () {
     if (config.max !== undefined) obj.input.max = config.max;
     if (config.step !== undefined) obj.input.step = config.step;
     return obj.wrapper;
+  }
+
+  /**
+   * Ô nhập Tiền tệ (tự động format + đọc số thành chữ)
+   */
+  function createMoney(config) {
+    var conf = Object.assign({}, config, { isMoney: true });
+    return _createBaseWrapper(conf, 'text').wrapper;
   }
 
   /**
@@ -7922,6 +7943,7 @@ var UIInput = (function () {
   return {
     createText: createText,
     createNumber: createNumber,
+    createMoney: createMoney,
     createDate: createDate,
     createPassword: createPassword,
     createSwitch: createSwitch,

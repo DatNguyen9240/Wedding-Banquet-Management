@@ -22,7 +22,8 @@ BEGIN
             ('12', N'Đầy đủ 100% (Full)'),
             ('6',  N'Một nửa 50% (Half)'),
             ('4',  N'1/3 Chiều rộng'),
-            ('3',  N'1/4 Chiều rộng')
+            ('3',  N'1/4 Chiều rộng'),
+            ('hidden', N'Ẩn (Hidden)')
     ) AS PosList(MaViTri, TenViTri)
 
     -- Trả về kết quả và xử lý tìm kiếm

@@ -726,7 +726,7 @@ IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AN
 BEGIN
     UPDATE SY_FormatFields 
     SET CaptionVN = N'Số tiền cọc',
-        FormatID = 'n',
+        FormatID = 'mn',
         ShowInAdd = 1,
         ShowInEdit = 1,
         IsReadOnlyAdd = 0,
@@ -738,7 +738,7 @@ END
 ELSE
 BEGIN
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmBiennhancoccho', 'DaCocVND', N'Số tiền cọc', 'n', '6', 1, 14, 1, 1, 0, 0);
+    VALUES ('frmBiennhancoccho', 'DaCocVND', N'Số tiền cọc', 'mn', '6', 1, 14, 1, 1, 0, 0);
 END
 
 -- Nhóm 3: Số bàn (mỗi ô chiếm 1/4 dòng = df-col-3 để nằm gọn trên 1 hàng ngang)

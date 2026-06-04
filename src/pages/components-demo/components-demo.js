@@ -521,12 +521,82 @@ var ComponentsDemoPage = (function () {
   function _mountInputs() {
     var el = document.getElementById('demo-inputs');
     if (!el) return;
-    el.innerHTML = '<div class="row g-3"><div class="col-md-4"><div class="form-group"><label class="form-label">Text Input</label><input type="text" class="ui-input w-100" placeholder="Nhập văn bản..."></div></div><div class="col-md-4"><div class="form-group"><label class="form-label">Number Input</label><input type="number" class="ui-input w-100" placeholder="0" value="100"></div></div><div class="col-md-4"><div class="form-group"><label class="form-label">Date Input</label><input type="date" class="ui-input w-100"></div></div><div class="col-md-4"><div class="form-group"><label class="form-label">Select</label><select class="ui-input w-100"><option>Tiệc Cưới</option><option>Sinh Nhật</option><option>Hội Nghị</option></select></div></div><div class="col-md-4" id="demo-pw-slot"></div><div class="col-md-4"><div class="form-group"><label class="form-label">Readonly</label><input type="text" class="ui-input w-100" value="Không thể sửa" readonly style="background: rgba(148, 163, 184, 0.1);"></div></div><div class="col-12"><div class="form-group"><label class="form-label">Textarea</label><textarea class="ui-input w-100" rows="3" placeholder="Nhập ghi chú..." style="resize:vertical;"></textarea></div></div></div>';
-    // Chèn Password component (DOM) vào slot
-    var pwSlot = el.querySelector('#demo-pw-slot');
-    if (pwSlot) {
-      pwSlot.appendChild(UIInput.createPassword({ label: 'Password', placeholder: '***' }));
-    }
+    el.innerHTML = '';
+
+    var row = document.createElement('div');
+    row.className = 'row g-3';
+
+    // 1. Text Input
+    var col1 = document.createElement('div');
+    col1.className = 'col-md-4';
+    col1.appendChild(UIInput.createText({
+      label: 'Text Input',
+      placeholder: 'Nhập văn bản...'
+    }));
+    row.appendChild(col1);
+
+    // 2. Money Input (Đọc số thành chữ)
+    var col2 = document.createElement('div');
+    col2.className = 'col-md-4';
+    col2.appendChild(UIInput.createMoney({
+      label: 'Money Input (Đọc số tiền)',
+      value: '1000000',
+      placeholder: 'Nhập số tiền...'
+    }));
+    row.appendChild(col2);
+
+    // 3. Date Input
+    var col3 = document.createElement('div');
+    col3.className = 'col-md-4';
+    col3.appendChild(UIInput.createDate({
+      label: 'Date Input',
+      value: '2026-06-04'
+    }));
+    row.appendChild(col3);
+
+    // 4. Select
+    var col4 = document.createElement('div');
+    col4.className = 'col-md-4';
+    col4.appendChild(UIInput.createSelect({
+      label: 'Select (Loại Tiệc)',
+      value: 'TIECCUOI'
+    }, [
+      { value: 'TIECCUOI', label: 'Tiệc Cưới' },
+      { value: 'SINHNHAT', label: 'Sinh Nhật' },
+      { value: 'HOINGHI', label: 'Hội Nghị' }
+    ]));
+    row.appendChild(col4);
+
+    // 5. Password
+    var col5 = document.createElement('div');
+    col5.className = 'col-md-4';
+    col5.appendChild(UIInput.createPassword({
+      label: 'Password',
+      placeholder: '***'
+    }));
+    row.appendChild(col5);
+
+    // 6. Switch
+    var col6 = document.createElement('div');
+    col6.className = 'col-md-4';
+    col6.appendChild(UIInput.createSwitch({
+      label: 'Trạng thái hoạt động',
+      value: true
+    }));
+    row.appendChild(col6);
+
+    // 7. Textarea
+    var col7 = document.createElement('div');
+    col7.className = 'col-12';
+    col7.innerHTML = `
+      <div class="form-group">
+        <label class="form-label">Textarea</label>
+        <textarea class="ui-input w-100" rows="3" placeholder="Nhập ghi chú..." style="resize:vertical;"></textarea>
+      </div>
+    `;
+    row.appendChild(col7);
+
+    el.appendChild(row);
   }
 
   // ── 23. TREE VIEW ──

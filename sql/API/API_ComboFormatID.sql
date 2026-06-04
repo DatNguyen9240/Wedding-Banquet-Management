@@ -20,6 +20,7 @@ BEGIN
         VALUES 
             ('t',  N'Văn bản (Text)'),
             ('n',  N'Số (Number)'),
+            ('mn', N'Tiền tệ (Money)'),
             ('dt', N'Ngày (Date)'),
             ('sw', N'Bật/Tắt (Switch)'),
             ('sl', N'Danh sách chọn (Select)')
