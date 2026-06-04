@@ -32,6 +32,7 @@ BEGIN
             SELECT TOP 1 
                 Tenkh = ISNULL(NULLIF(Nguoigd, ''), ISNULL(Tenchure, N'Khách vãng lai')),
                 DienThoaiDaiDien = ISNULL(NULLIF(DienThoaiDaiDien, ''), ISNULL(DTchure, '')),
+                CCCD = CMNDDaiDien,
                 Tenchure, Tencodau, DTchure, DTcodau, Diachi, Mail,
                 Nguoigd = ISNULL(NULLIF(Nguoigd, ''), ISNULL(Tenchure, N'Khách vãng lai'))
             FROM dmkhachhang
@@ -43,6 +44,7 @@ BEGIN
             SELECT TOP 1 
                 Tenkh = ISNULL(NULLIF(Nguoigd, ''), ISNULL(Tenchure, N'Khách vãng lai')),
                 DienThoaiDaiDien = ISNULL(NULLIF(DienThoaiDaiDien, ''), ISNULL(DTchure, '')),
+                CCCD = CMNDDaiDien,
                 Tenchure, Tencodau, DTchure, DTcodau, Diachi, Mail,
                 Nguoigd = ISNULL(NULLIF(Nguoigd, ''), ISNULL(Tenchure, N'Khách vãng lai'))
             FROM dmkhachhang
@@ -56,6 +58,7 @@ BEGIN
         SELECT 
             ISNULL(NULLIF(Nguoigd, ''), ISNULL(Tenchure, N'Khách vãng lai')) AS [Tenkh],
             ISNULL(NULLIF(DienThoaiDaiDien, ''), ISNULL(DTchure, '')) AS [DienThoaiDaiDien],
+            CMNDDaiDien AS [CCCD],
             Tenchure, Tencodau, DTchure, DTcodau, Diachi, Mail,
             Nguoigd = ISNULL(NULLIF(Nguoigd, ''), ISNULL(Tenchure, N'Khách vãng lai'))
         FROM dmkhachhang
@@ -66,6 +69,7 @@ BEGIN
            OR Dienthoai LIKE '%' + @Keyword + '%'
            OR Nguoigd LIKE N'%' + @Keyword + '%'
            OR DienThoaiDaiDien LIKE '%' + @Keyword + '%'
+           OR CMNDDaiDien LIKE '%' + @Keyword + '%'
         ORDER BY DateCreate DESC;
     END
 END

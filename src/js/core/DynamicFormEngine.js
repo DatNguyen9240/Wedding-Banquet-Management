@@ -322,7 +322,7 @@ window.DynamicFormEngine = (function () {
             AlertSaveFailed: 'Lưu dữ liệu thất bại',
             AlertDeleteFailed: 'Xóa dữ liệu thất bại',
             AlertNetworkError: 'Lỗi kết nối mạng',
-            ModalWidth: '600px'
+            ModalWidth: '850px'
           });
         }
 
