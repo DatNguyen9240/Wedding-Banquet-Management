@@ -17,6 +17,6 @@ WHERE list = 'frmThayDoiBoSung' AND func = 'Save';
 UPDATE WA_API
 SET 
     SQL = 'API_XoaDong',
-    Para = '@List=N''frmThayDoiBoSung'', @Ids=N''{Ids}'', @UserName=N''{UserName}'''
+    Para = '@List=N''frmThayDoiBoSung'', @Ids=N''{Sothaydoi}'', @UserName=N''{UserName}'''
 WHERE list = 'frmThayDoiBoSung' AND func = 'Delete';
 GO

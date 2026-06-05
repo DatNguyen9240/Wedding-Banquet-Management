@@ -273,7 +273,9 @@ BEGIN
             END
         END
 
-        -- Nếu không phải khách hàng mới tạo, cập nhật lại thông tin mới nhất
+        -- Nếu không phải khách hàng mới tạo, chỉ cập nhật các trường CÓ GIÁ TRỊ MỚI
+        -- Dùng ISNULL(NULLIF(...,''), existing_col) để tránh ghi đè rỗng lên dữ liệu cũ
+        -- (tránh ảnh hưởng đến các phiếu/hợp đồng khác cùng khách)
         IF (@IsNewCustomer = 0)
         BEGIN
             UPDATE dmkhachhang
@@ -282,19 +284,19 @@ BEGIN
                             WHEN ISNULL(@Tenchure, '') <> '' AND ISNULL(@Tencodau, '') <> '' THEN @Tenchure + ' & ' + @Tencodau
                             WHEN ISNULL(@Tenchure, '') <> '' THEN @Tenchure
                             WHEN ISNULL(@Tencodau, '') <> '' THEN @Tencodau
-                            ELSE ISNULL(NULLIF(@Nguoigd, ''), N'Khách vãng lai')
+                            ELSE Tenkh  -- ← giữ nguyên nếu không truyền
                         END,
-                Tenchure = @Tenchure,
-                Tencodau = @Tencodau,
-                DTchure = @DTchure,
-                DTcodau = @DTcodau,
-                Dienthoai = ISNULL(NULLIF(@DTchure, ''), ISNULL(NULLIF(@DTcodau, ''), @DienThoaiDaiDien)),
-                Diachi = @Diachi,
-                Nguoigd = @Nguoigd,
-                DienThoaiDaiDien = @DienThoaiDaiDien,
-                Mail = @Mail,
-                DateUpdate = @Now,
-                UserUpdate = @UserCreate
+                Tenchure         = ISNULL(NULLIF(@Tenchure, ''), Tenchure),
+                Tencodau         = ISNULL(NULLIF(@Tencodau, ''), Tencodau),
+                DTchure          = ISNULL(NULLIF(@DTchure, ''), DTchure),
+                DTcodau          = ISNULL(NULLIF(@DTcodau, ''), DTcodau),
+                Dienthoai        = ISNULL(NULLIF(@DTchure, ''), ISNULL(NULLIF(@DTcodau, ''), ISNULL(NULLIF(@DienThoaiDaiDien, ''), Dienthoai))),
+                Diachi           = ISNULL(NULLIF(@Diachi, ''), Diachi),
+                Nguoigd          = ISNULL(NULLIF(@Nguoigd, ''), Nguoigd),
+                DienThoaiDaiDien = ISNULL(NULLIF(@DienThoaiDaiDien, ''), DienThoaiDaiDien),
+                Mail             = ISNULL(NULLIF(@Mail, ''), Mail),
+                DateUpdate       = @Now,
+                UserUpdate       = @UserCreate
             WHERE Makh = @Makh;
         END
 

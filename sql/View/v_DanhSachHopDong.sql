@@ -125,6 +125,9 @@ SELECT
     (SELECT TOP 1 s.SLBanMin FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [Sanh_QuyMoMin],
     (SELECT TOP 1 s.SLBanMax FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [Sanh_QuyMoMax],
     
+    -- Tên loại hình tiệc (computed từ dmLoaihinhtiec, dùng cho in ấn Word)
+    ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid), '') AS [Tiec_LoaiTiec],
+    
     ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanChaychinhthuc, 0) AS [Tiec_SoBanChinhThuc],
     ISNULL(h.SoBanTang, 0) AS [Tiec_SoBanTang],
     ISNULL(h.SobanManduphong, 0) + ISNULL(h.SobanChayduphong, 0) AS [Tiec_SoBanDuPhong],
@@ -199,7 +202,7 @@ WHERE FormName = 'frmHopDong'
     'BenB_TenDaiDien', 'BenB_TenChuTiec', 'BenB_DiaChi', 'BenB_DienThoai', 'BenB_ChucVu',
     'Tiec_GioBatDau', 'Tiec_NgayDL', 'Tiec_ThangDL', 'Tiec_NamDL',
     'Tiec_NgayAL', 'Tiec_ThangAL', 'Tiec_NamAL',
-    'Tiec_SanhTiec', 'Sanh_QuyMoMin', 'Sanh_QuyMoMax',
+    'Tiec_SanhTiec', 'Tiec_LoaiTiec', 'Sanh_QuyMoMin', 'Sanh_QuyMoMax',
     'Tiec_SoBanChinhThuc', 'Tiec_SoBanTang', 'Tiec_SoBanDuPhong', 'Tiec_SoKhach1Ban',
     'Coc_Lan1_SoTien', 'Coc_Lan1_BangChu', 'Coc_Ngay', 'Coc_Thang', 'Coc_Nam',
     'Coc_Lan2_SoTien', 'Coc_Lan2_BangChu',
@@ -214,6 +217,16 @@ WHERE FormName = 'frmHopDong' AND FieldName = 'TenKhachHang';
 UPDATE SY_FormatFields
 SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmHopDong' AND FieldName IN ('Makh', 'SoBan', 'SanhDat', 'TongTien', 'TrangThai', 'Sohopdong');
+
+-- CCCD Bên B: lấy từ dmkhachhang, chỉ nhập được khi Thêm mới (lần đầu), khoá khi Sửa
+UPDATE SY_FormatFields
+SET ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 1
+WHERE FormName = 'frmHopDong' AND FieldName = 'BenB_CCCD';
+
+-- Bên A (thông tin nhà hàng): lấy từ SY_Setup - không cho phép nhập/sửa trực tiếp trên form HĐ
+UPDATE SY_FormatFields
+SET ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
+WHERE FormName = 'frmHopDong' AND FieldName IN ('BenA_NguoiDaiDien', 'BenA_ChucVu');
 
 -- Cấu hình định dạng (FormatID) cho các trường
 UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail', 'BenB_CCCD', 'Nhamngay', 'Ghichu');

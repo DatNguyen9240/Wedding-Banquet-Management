@@ -255,22 +255,25 @@ BEGIN
         END
         ELSE
         BEGIN
+            -- Cập nhật khách hàng: chỉ ghi đè khi giá trị mới KHÔNG rỗng
+            -- tránh xóa thông tin cũ của các HĐ/phiếu cọc khác cùng khách
             UPDATE dmkhachhang
             SET 
                 Tenkh = CASE 
-                            WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '')
-                            ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') 
+                            WHEN ISNULL(@Tencodau, '') = '' THEN ISNULL(NULLIF(@Tenchure, ''), Tenkh)
+                            WHEN ISNULL(@Tenchure, '') = '' THEN ISNULL(NULLIF(@Tencodau, ''), Tenkh)
+                            ELSE @Tenchure + ' & ' + @Tencodau
                         END,
-                Tenchure = @Tenchure,
-                Tencodau = @Tencodau,
-                Dienthoai = @Dienthoai,
-                Diachi = @Diachi,
-                Mail = @Mail,
-                CMNDDaiDien = @BenB_CCCD,
-                CMNDchure = @BenB_CCCD,
-                CMNDcodau = @BenB_CCCD,
-                DateUpdate = @Now,
-                UserUpdate = @UserCreate
+                Tenchure    = ISNULL(NULLIF(@Tenchure, ''), Tenchure),
+                Tencodau    = ISNULL(NULLIF(@Tencodau, ''), Tencodau),
+                Dienthoai   = ISNULL(NULLIF(@Dienthoai, ''), Dienthoai),
+                Diachi      = ISNULL(NULLIF(@Diachi,    ''), Diachi),
+                Mail        = ISNULL(NULLIF(@Mail,      ''), Mail),
+                CMNDDaiDien = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDDaiDien),
+                CMNDchure   = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDchure),
+                CMNDcodau   = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDcodau),
+                DateUpdate  = @Now,
+                UserUpdate  = @UserCreate
             WHERE Makh = @Makh;
         END
 

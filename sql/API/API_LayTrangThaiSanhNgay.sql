@@ -53,6 +53,7 @@ BEGIN
         WHERE hs.Sanhtiecid = s.Sanhtiecid 
           AND CAST(h.Ngaytochuc AS DATE) = @NgayToChuc
           AND ISNULL(h.IsHuy, 0) = 0
+          AND ISNULL(h.IsKetthuc, 0) = 0  -- Đã Quyết toán → sảnh được giải phóng
         ORDER BY h.DateCreate DESC
     ) hd
 
