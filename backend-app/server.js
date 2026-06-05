@@ -180,11 +180,11 @@ app.get('/api/documents/fields/:type', async (req, res) => {
 
 app.post('/api/documents/generate', async (req, res) => {
     try {
-        let { outputFileName, templateType, customerId, rowData } = req.body;
+        let { outputFileName, templateType, customerId, rowData, convertFields, sqlListName, mergeColumns } = req.body;
         if (!templateType) return res.status(400).json({ success: false, message: 'Thiếu templateType.' });
         if (!outputFileName) outputFileName = 'Generated_' + templateType;
         outputFileName = outputFileName.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_');
-
+        
         // ── 1. Lấy thông tin nhà hàng từ Setup API ──────────────────────────
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
 
@@ -197,7 +197,7 @@ app.post('/api/documents/generate', async (req, res) => {
             'BEO_Hoi_Nghi': 'frmHopDong',
             'BEO_Tiec_Cuoi': 'frmHopDong',
         };
-        const listName = API_MAP[templateType];
+        const listName = sqlListName || API_MAP[templateType];
         let dataMap = { ...setup };
 
         let dbRow = null;
@@ -417,31 +417,15 @@ app.post('/api/documents/generate', async (req, res) => {
             dataMap.LichTrinh = list;
         }
 
-        // Đảm bảo LichTrinhSetup, LichTrinhToChuc, LichTrinhOut luôn có giá trị để tránh lỗi template nếu vẫn dùng biến cũ
-        if (!dataMap.LichTrinhSetup) dataMap.LichTrinhSetup = [];
-        if (!dataMap.LichTrinhToChuc) dataMap.LichTrinhToChuc = [];
-        if (!dataMap.LichTrinhOut) dataMap.LichTrinhOut = [];
-        if (dataMap.LuuY && typeof dataMap.LuuY === 'string') {
-            dataMap.LuuY = convertTextToWordXML(dataMap.LuuY);
-        }
-        if (dataMap.DichVuTinhPhi && typeof dataMap.DichVuTinhPhi === 'string') {
-            dataMap.DichVuTinhPhi = convertTextToWordXML(dataMap.DichVuTinhPhi);
-        }
-        if (dataMap.NoteKyThuat && typeof dataMap.NoteKyThuat === 'string') {
-            dataMap.NoteKyThuat = convertTextToWordXML(dataMap.NoteKyThuat);
-        }
-        if (dataMap.NoteBaoVe && typeof dataMap.NoteBaoVe === 'string') {
-            dataMap.NoteBaoVe = convertTextToWordXML(dataMap.NoteBaoVe);
-        }
-        if (dataMap.NoteBieuNgu && typeof dataMap.NoteBieuNgu === 'string') {
-            dataMap.NoteBieuNgu = convertTextToWordXML(dataMap.NoteBieuNgu);
-        }
-        if (dataMap.NoteLobby && typeof dataMap.NoteLobby === 'string') {
-            dataMap.NoteLobby = convertTextToWordXML(dataMap.NoteLobby);
-        }
-        if (dataMap.ThongTinSetup && typeof dataMap.ThongTinSetup === 'string') {
-            dataMap.ThongTinSetup = convertTextToWordXML(dataMap.ThongTinSetup, 'ThongTinSetup');
-        }
+
+        // Xác định danh sách các trường cần chuyển đổi thành XML Word
+        let fieldsToConvert = Array.isArray(convertFields) ? convertFields : [];
+        
+        fieldsToConvert.forEach(key => {
+            if (dataMap[key] && typeof dataMap[key] === 'string') {
+                dataMap[key] = convertTextToWordXML(dataMap[key]);
+            }
+        });
 
         console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
 
@@ -469,12 +453,26 @@ app.post('/api/documents/generate', async (req, res) => {
         // Đổ toàn bộ dataMap (Bên A + Bên B + Món ăn) vào template Word
         doc.render(dataMap);
 
-        // HẬU XỬ LÝ XML: Tự động gộp dọc (vertical merge) các ô trùng tên sảnh ở cột VỊ TRÍ
+        // HẬU XỬ LÝ XML: Tự động gộp dọc (vertical merge) các ô trùng tên sảnh ở các cột chỉ định
         try {
             let docXml = doc.getZip().file("word/document.xml").asText();
-            docXml = mergeTableColumn(docXml, "VỊ TRÍ");
+            
+            let colsToMerge = [];
+            if (Array.isArray(mergeColumns)) {
+                colsToMerge = mergeColumns;
+            } else if (typeof mergeColumns === 'string') {
+                colsToMerge = [mergeColumns];
+            } else {
+                // Mặc định gộp cột "VỊ TRÍ" nếu không truyền để tương thích ngược
+                colsToMerge = ["VỊ TRÍ"];
+            }
+            
+            colsToMerge.forEach(colName => {
+                docXml = mergeTableColumn(docXml, colName);
+            });
+            
             doc.getZip().file("word/document.xml", docXml);
-            console.log('[GENERATE] ✅ Đã tự động gộp dọc các ô sảnh trùng nhau ở cột VỊ TRÍ');
+            console.log(`[GENERATE] ✅ Đã tự động gộp dọc các ô trùng nhau ở cột: ${colsToMerge.join(', ')}`);
         } catch (xmlErr) {
             console.error('[GENERATE] Lỗi hậu xử lý XML gộp ô:', xmlErr.message);
         }
