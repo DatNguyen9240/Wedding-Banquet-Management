@@ -46,6 +46,7 @@ BEGIN
             OR v.Tenchure LIKE N'%' + @Keyword + '%'
             OR v.Tencodau LIKE N'%' + @Keyword + '%'
             OR v.DienThoai LIKE '%' + @Keyword + '%'
+            OR v.BenB_CCCD LIKE '%' + @Keyword + '%'
         )
     ORDER BY 
         v.Sohopdong DESC;
@@ -490,9 +491,9 @@ WHERE FormName = 'frmHopDong'
     'DaCocVND', 'Sotiencochopdong', 'Tongtiencoc'
   );
 
--- Số CCCD Bên B hiển thị ở cả Grid và Form (FormPosition = 'grid')
+-- Số CCCD Bên B ẩn khỏi giao diện Grid và Form (FormPosition = 'hidden')
 UPDATE SY_FormatFields
-SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = 'grid'
+SET ShowInForm = 0, ShowInAdd = 0, ShowInEdit = 0, ShowInFilter = 0, FormPosition = 'hidden'
 WHERE FormName = 'frmHopDong' AND FieldName = 'BenB_CCCD';
 
 -- Ghi chú bổ sung
@@ -514,7 +515,8 @@ WHERE FormName = 'frmHopDong'
     'Tiec_SoBanChinhThuc', 'Tiec_SoBanTang', 'Tiec_SoBanDuPhong', 'Tiec_SoKhach1Ban',
     'Coc_Lan1_SoTien', 'Coc_Lan1_BangChu', 'Coc_Ngay', 'Coc_Thang', 'Coc_Nam',
     'Coc_Lan2_SoTien', 'Coc_Lan2_BangChu',
-    'DieuKhoanBoSung', 'DS_KhuyenMai'
+    'DieuKhoanBoSung', 'DS_KhuyenMai',
+    'BenB_CCCD', 'BenA_NguoiDaiDien', 'BenA_ChucVu'
   );
 
 -- Đồng bộ hóa tên trường "Ngày tổ chức" về duy nhất "NgayToChuc" (chữ hoa chữ T)
@@ -566,14 +568,14 @@ UPDATE SY_FormatFields
 SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmHopDong' AND FieldName IN ('Makh', 'SoBan', 'SanhDat', 'TongTien', 'TrangThai', 'Sohopdong');
 
--- CCCD Bên B: lấy từ dmkhachhang, chỉ nhập được khi Thêm mới (lần đầu), khoá khi Sửa
+-- CCCD Bên B: lấy từ dmkhachhang, ẩn khỏi form
 UPDATE SY_FormatFields
-SET ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 1
+SET ShowInAdd = 0, ShowInEdit = 0, IsReadOnlyAdd = 0, IsReadOnlyEdit = 1
 WHERE FormName = 'frmHopDong' AND FieldName = 'BenB_CCCD';
 
--- Bên A (thông tin nhà hàng): lấy từ SY_Setup - không cho phép nhập/sửa trực tiếp trên form HĐ
+-- Bên A (thông tin nhà hàng): ẩn khỏi form HĐ
 UPDATE SY_FormatFields
-SET ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
+SET ShowInAdd = 0, ShowInEdit = 0, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmHopDong' AND FieldName IN ('BenA_NguoiDaiDien', 'BenA_ChucVu');
 
 UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail', 'BenB_CCCD', 'Ghichu');

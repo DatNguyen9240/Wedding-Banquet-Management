@@ -151,6 +151,8 @@ app.get('/api/documents/fields/:type', async (req, res) => {
             'phieu_thu': 'frmPhieuThu',
             'de_nghi_thay_doi': 'tbmk_Thaydoi',
             'quyet_toan': 'frmQuyetToan',
+            'BEO_Hoi_Nghi': 'frmHopDong',
+            'BEO_Tiec_Cuoi': 'frmHopDong',
         };
         const listName = API_MAP[type];
         if (!listName) return res.status(400).json({ success: false, message: 'Invalid type' });
@@ -192,6 +194,8 @@ app.post('/api/documents/generate', async (req, res) => {
             'phieu_thu': 'frmPhieuThu',
             'de_nghi_thay_doi': 'tbmk_Thaydoi',
             'quyet_toan': 'frmQuyetToan',
+            'BEO_Hoi_Nghi': 'frmHopDong',
+            'BEO_Tiec_Cuoi': 'frmHopDong',
         };
         const listName = API_MAP[templateType];
         let dataMap = { ...setup };

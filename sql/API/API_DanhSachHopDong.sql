@@ -37,6 +37,7 @@ BEGIN
             OR v.Tenchure LIKE N'%' + @Keyword + '%'
             OR v.Tencodau LIKE N'%' + @Keyword + '%'
             OR v.DienThoai LIKE '%' + @Keyword + '%'
+            OR v.BenB_CCCD LIKE '%' + @Keyword + '%'
         )
     ORDER BY 
         v.Sohopdong DESC;
