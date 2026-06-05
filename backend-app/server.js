@@ -232,37 +232,8 @@ app.post('/api/documents/generate', async (req, res) => {
             }
         }
 
-        // Tự động chuẩn hóa và tạo fallback cho cấu trúc DanhSachMenu
         if (!dataMap.DanhSachMenu) {
-            if (dataMap.ThucDon) {
-                if (typeof dataMap.ThucDon === 'string') {
-                    const lines = dataMap.ThucDon.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-                    const dishes = lines.map((line, idx) => {
-                        const cleanLine = line.replace(/^\d+[\s.\-:]+/, '');
-                        return { STT: idx + 1, TenMon: cleanLine };
-                    });
-                    dataMap.DanhSachMenu = [
-                        {
-                            TenMenu: dataMap.SoBan ? `${dataMap.SoBan} bàn` : 'tiêu chuẩn',
-                            DanhSachMon: dishes,
-                            GhiChuMenu: ''
-                        }
-                    ];
-                } else if (Array.isArray(dataMap.ThucDon)) {
-                    dataMap.DanhSachMenu = [
-                        {
-                            TenMenu: dataMap.SoBan ? `${dataMap.SoBan} bàn` : 'tiêu chuẩn',
-                            DanhSachMon: dataMap.ThucDon.map((item, idx) => ({
-                                STT: item.STT || (idx + 1),
-                                TenMon: item.TenMonAn || item.TenMon || (typeof item === 'string' ? item : '')
-                            })),
-                            GhiChuMenu: ''
-                        }
-                    ];
-                }
-            } else {
-                dataMap.DanhSachMenu = [];
-            }
+            dataMap.DanhSachMenu = [];
         }
 
         if (dataMap.DanhSachMenu && Array.isArray(dataMap.DanhSachMenu)) {
@@ -285,37 +256,8 @@ app.post('/api/documents/generate', async (req, res) => {
             });
         }
 
-        // Tự động chuẩn hóa và tạo fallback cho cấu trúc DanhSachThucUong
         if (!dataMap.DanhSachThucUong) {
-            if (dataMap.ThucUong) {
-                if (typeof dataMap.ThucUong === 'string') {
-                    const lines = dataMap.ThucUong.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-                    const drinks = lines.map((line, idx) => {
-                        const cleanLine = line.replace(/^\d+[\s.\-:]+/, '');
-                        return { STT: idx + 1, TenMonUong: cleanLine };
-                    });
-                    dataMap.DanhSachThucUong = [
-                        {
-                            TenThucUong: dataMap.SanhDat2 ? `${dataMap.SanhDat2}: TIỆC BÀN TRÒN` : '',
-                            DanhSachMonUong: drinks,
-                            GhiChuThucUong: ''
-                        }
-                    ];
-                } else if (Array.isArray(dataMap.ThucUong)) {
-                    dataMap.DanhSachThucUong = [
-                        {
-                            TenThucUong: dataMap.SanhDat2 ? `${dataMap.SanhDat2}: TIỆC BÀN TRÒN` : '',
-                            DanhSachMonUong: dataMap.ThucUong.map((item, idx) => ({
-                                STT: item.STT || (idx + 1),
-                                TenMonUong: item.TenMonUong || item.TenThucUong || (typeof item === 'string' ? item : '')
-                            })),
-                            GhiChuThucUong: ''
-                        }
-                    ];
-                }
-            } else {
-                dataMap.DanhSachThucUong = [];
-            }
+            dataMap.DanhSachThucUong = [];
         }
 
         if (dataMap.DanhSachThucUong && Array.isArray(dataMap.DanhSachThucUong)) {
@@ -368,53 +310,8 @@ app.post('/api/documents/generate', async (req, res) => {
         dataMap.NgaySetup = formatDate(dataMap.NgaySetup || dataMap.TuNgaySetup);
         dataMap.NgayOut = formatDate(dataMap.NgayOut || dataMap.NgayTraSanhDV);
 
-        // Fallback ngày nếu bị thiếu
-        if (dataMap.NgayToChuc && dataMap.NgayToChuc !== '...') {
-            const parts = dataMap.NgayToChuc.split('/');
-            const eventDate = new Date(parts[2], parts[1] - 1, parts[0]);
-            
-            if (!dataMap.NgaySetup || dataMap.NgaySetup === '...') {
-                const setupDate = new Date(eventDate.getTime() - 86400000);
-                dataMap.NgaySetup = formatDate(setupDate);
-            }
-            if (!dataMap.NgayOut || dataMap.NgayOut === '...') {
-                const outDate = new Date(eventDate.getTime() + 86400000);
-                dataMap.NgayOut = formatDate(outDate);
-            }
-        }
-
-        // Tạo mảng LichTrinh hợp nhất
         if (!dataMap.LichTrinh) {
-            const list = [];
-            
-            // 1. Setup
-            const setupList = dataMap.LichTrinhSetup || [];
-            if (setupList.length > 0) {
-                list.push({
-                    Ngay: dataMap.NgaySetup ? `Setup: ${dataMap.NgaySetup}` : 'Setup: ...',
-                    ChiTietLichTrinh: setupList
-                });
-            }
-
-            // 2. Tổ chức
-            const tochucList = dataMap.LichTrinhToChuc || [];
-            if (tochucList.length > 0) {
-                list.push({
-                    Ngay: dataMap.NgayToChuc ? `Tổ chức: ${dataMap.NgayToChuc}` : 'Tổ chức: ...',
-                    ChiTietLichTrinh: tochucList
-                });
-            }
-
-            // 3. Tháo dỡ
-            const outList = dataMap.LichTrinhOut || [];
-            if (outList.length > 0) {
-                list.push({
-                    Ngay: dataMap.NgayOut ? `Tháo dỡ: ${dataMap.NgayOut}` : 'Tháo dỡ: ...',
-                    ChiTietLichTrinh: outList
-                });
-            }
-
-            dataMap.LichTrinh = list;
+            dataMap.LichTrinh = [];
         }
 
 
