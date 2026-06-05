@@ -39,9 +39,13 @@ Tài liệu này chi tiết các vị trí cần điền dữ liệu động (Pl
 ## 5. Thực đơn tiệc cưới
 *   `{AnNheTruocTiec}`: Thông tin suất ăn nhẹ trước giờ tiệc cho gia đình (Ví dụ: `Súp + cơm cho 10 người`).
 *   `{BanhManDauGio}`: Loại bánh mặn phục vụ lúc đón khách (Ví dụ: `Bánh Danish Ham Cheese đầu giờ: 36 bàn`).
-*   Mảng: `{#ThucDon}` ... `{/ThucDon}`
-    *   `{STT}`: Số thứ tự món ăn.
-    *   `{TenMonAn}`: Tên món ăn (Ví dụ: `Gỏi ngó sen tôm thịt Chả ốc lá lốt`).
+*   Mảng: `{#DanhSachMenu}` ... `{/DanhSachMenu}` (Dành cho tiệc có một hoặc nhiều thực đơn song song/dọc)
+    *   `{TenMenu}`: Tên nhóm thực đơn (Ví dụ: `10 bàn` hoặc `01 bàn của Sếp`).
+    *   `{GhiChuMenu}`: Ghi chú riêng cho thực đơn đó.
+    *   Mảng con món ăn: `{#DanhSachMon}` ... `{/DanhSachMon}`
+        *   `{STT}`: Số thứ tự món (1, 2, 3...).
+        *   `{TenMon}`: Tên món ăn.
+*   *Lưu ý:* Hệ thống hỗ trợ tự động convert từ dữ liệu cũ `{ThucDon}` (dạng text chuỗi phẳng) sang mảng `DanhSachMenu` để đảm bảo tương thích ngược 100%.
 
 ---
 
@@ -50,6 +54,13 @@ Tài liệu này chi tiết các vị trí cần điền dữ liệu động (Pl
     *   `{TenDichVu}`: Tên dịch vụ tính phí (Ví dụ: `Thực đơn`, `Phí phục vụ`).
     *   `{ThanhTien}`: Giá trị hoặc thành tiền của dịch vụ đó.
 *   `{SobanTang}`: Số lượng bàn bắt đầu áp dụng phụ thu bàn tăng (Ví dụ: `40`).
+*   Mảng thức uống: `{#DanhSachThucUong}` ... `{/DanhSachThucUong}`
+    *   `{TenThucUong}`: Tiêu đề nhóm thức uống (Ví dụ: `QUEEN 5: TIỆC BÀN TRÒN`).
+    *   `{GhiChuThucUong}`: Ghi chú cho phần thức uống.
+    *   Mảng con món uống: `{#DanhSachMonUong}` ... `{/DanhSachMonUong}`
+        *   `{STT}`: Số thứ tự thức uống.
+        *   `{TenMonUong}`: Tên loại đồ uống (Ví dụ: `Bia Tiger lon bạc`).
+*   *Lưu ý:* Hệ thống hỗ trợ tự động convert từ dữ liệu đồ uống cũ `{ThucUong}` (dạng text chuỗi phẳng) sang mảng `DanhSachThucUong` để đảm bảo tương thích ngược 100%.
 
 ---
 

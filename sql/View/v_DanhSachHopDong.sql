@@ -6,6 +6,28 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+-- Ensure NoteBaoVe, NoteKyThuat, NoteBieuNgu columns exist on tbmk_Hopdong
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'NoteBaoVe')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD NoteBaoVe NVARCHAR(1000) NULL;
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'NoteKyThuat')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD NoteKyThuat NVARCHAR(1000) NULL;
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'NoteBieuNgu')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD NoteBieuNgu NVARCHAR(1000) NULL;
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'NoteLobby')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD NoteLobby NVARCHAR(1000) NULL;
+END
+GO
+
 -- =============================================
 IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong]'))
     DROP VIEW [dbo].[v_DanhSachHopDong]
@@ -25,8 +47,22 @@ SELECT
         ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
     END AS [TenKhachHang],
     
+    CASE 
+        WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL AND k.Tenchure <> '' AND k.Tencodau <> ''
+            THEN k.Tenchure + ' & ' + k.Tencodau
+        ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
+    END AS [TenCongTy],
+    
+    CASE 
+        WHEN ISNULL((SELECT MAX(td.LanThayDoi) FROM tbmk_Thaydoi td WHERE td.Sohopdong = h.Sohopdong AND ISNULL(td.IsDeleted, 0) = 0), 0) = 0
+            THEN N'PHIẾU ĐẶT TIỆC'
+        ELSE N'PHIẾU ĐẶT TIỆC THAY ĐỔI LẦN ' + CAST((SELECT MAX(td.LanThayDoi) FROM tbmk_Thaydoi td WHERE td.Sohopdong = h.Sohopdong AND ISNULL(td.IsDeleted, 0) = 0) AS NVARCHAR(10))
+    END AS [TieuDePhieu],
+    
     ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
     h.Ngaytochuc AS [NgayToChuc],
+    h.TuNgaySetup AS [TuNgaySetup],
+    h.NgayTraSanhDV AS [NgayTraSanhDV],
     
     ISNULL(h.TongSoBan, 0) AS [SoBan],
     
@@ -35,7 +71,16 @@ SELECT
         FROM tbmk_Hopdongsanhtiec hs 
         INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
         WHERE hs.Sohopdong = h.Sohopdong
+        ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid
     ) AS [SanhDat],
+    ISNULL((
+        SELECT s.Tensanhtiec 
+        FROM tbmk_Hopdongsanhtiec hs 
+        INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
+        WHERE hs.Sohopdong = h.Sohopdong 
+        ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid
+        OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY
+    ), '') AS [SanhDat2],
     
     ISNULL(h.Tongtienhopdong, 0) AS [TongTien],
     
@@ -97,7 +142,155 @@ SELECT
     '' AS [BenB_ChucVu],
 
     -- Thông tin Tiệc
+    ISNULL(h.TuGioDenGioSetup, '...') AS [SetupBatDau],
+    ISNULL(h.DenGioSetup, '...') AS [SetupKetThuc],
+    N'Vào hàng hóa' AS [SetupNoiDung1],
+    ISNULL(h.GhiChuSetup, N'SETUP: Không máy lạnh') AS [SetupNoiDung2],
+    N'RHS: Có ATAS, Led; không máy lạnh' AS [ToChucNoiDung],
+    N'Ra hàng hóa' AS [OutNoiDung],
     ISNULL(h.GioDienRaSuKien, '...') AS [Tiec_GioBatDau],
+
+    -- Các trường lịch trình động dạng JSON phục vụ in ấn BEO mới
+    (
+        SELECT 
+            t.BatDau AS [BatDau],
+            t.KetThuc AS [KetThuc],
+            t.Sanh AS [Sanh],
+            t.NoiDung AS [NoiDung]
+        FROM (
+            SELECT 
+                ISNULL(h.TuGioDenGioSetup, '...') AS BatDau, 
+                ISNULL(h.DenGioSetup, '...') AS KetThuc, 
+                s.Tensanhtiec AS Sanh, 
+                N'Vào hàng hóa' AS NoiDung
+            FROM tbmk_Hopdongsanhtiec hs 
+            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
+            WHERE hs.Sohopdong = h.Sohopdong
+
+            UNION ALL
+
+            SELECT 
+                N'13h00' AS BatDau, 
+                N'17h00' AS KetThuc, 
+                s.Tensanhtiec AS Sanh, 
+                ISNULL(h.GhiChuSetup, N'SETUP: Không máy lạnh') AS NoiDung
+            FROM tbmk_Hopdongsanhtiec hs 
+            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
+            WHERE hs.Sohopdong = h.Sohopdong
+        ) t
+        FOR JSON PATH
+    ) AS [LichTrinhSetup],
+
+    (
+        SELECT 
+            t.BatDau AS [BatDau],
+            t.KetThuc AS [KetThuc],
+            t.Sanh AS [Sanh],
+            t.NoiDung AS [NoiDung]
+        FROM (
+            -- RHS (Chạy ở Sảnh chính)
+            SELECT 
+                ISNULL(h.GioDienRaSuKien, '10h00') AS BatDau, 
+                ISNULL(h.GioKetThucSuKien, '12h00') AS KetThuc, 
+                s.Tensanhtiec AS Sanh, 
+                N'RHS: Có ATAS, Led; không máy lạnh' AS NoiDung
+            FROM tbmk_Hopdongsanhtiec hs 
+            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
+            WHERE hs.Sohopdong = h.Sohopdong AND hs.IsSanhchinh = 1
+
+            UNION ALL
+
+            -- HỘI NGHỊ (Chạy ở Sảnh chính)
+            SELECT 
+                N'13h00' AS BatDau, 
+                N'17h00' AS KetThuc, 
+                s.Tensanhtiec AS Sanh, 
+                N'HỘI NGHỊ' AS NoiDung
+            FROM tbmk_Hopdongsanhtiec hs 
+            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
+            WHERE hs.Sohopdong = h.Sohopdong AND hs.IsSanhchinh = 1
+
+            UNION ALL
+
+            -- TIỆC (Chạy ở Sảnh tiệc / Sảnh 2, nếu không có sảnh 2 thì chạy ở sảnh chính)
+            SELECT 
+                N'18h00' AS BatDau, 
+                N'22h00' AS KetThuc, 
+                ISNULL(
+                    (SELECT s2.Tensanhtiec 
+                     FROM tbmk_Hopdongsanhtiec hs2 
+                     INNER JOIN dmSanhtiec s2 ON hs2.Sanhtiecid = s2.Sanhtiecid 
+                     WHERE hs2.Sohopdong = h.Sohopdong AND hs2.IsSanhchinh = 0),
+                    (SELECT s3.Tensanhtiec 
+                     FROM tbmk_Hopdongsanhtiec hs3 
+                     INNER JOIN dmSanhtiec s3 ON hs3.Sanhtiecid = s3.Sanhtiecid 
+                     WHERE hs3.Sohopdong = h.Sohopdong AND hs3.IsSanhchinh = 1)
+                ) AS Sanh, 
+                N'TIỆC' AS NoiDung
+        ) t
+        FOR JSON PATH
+    ) AS [LichTrinhToChuc],
+
+    (
+        SELECT 
+            t.BatDau AS [BatDau],
+            t.KetThuc AS [KetThuc],
+            t.Sanh AS [Sanh],
+            t.NoiDung AS [NoiDung]
+        FROM (
+            SELECT 
+                N'Trước 10h sáng' AS BatDau, 
+                N'' AS KetThuc, 
+                s.Tensanhtiec AS Sanh, 
+                N'Ra hàng hóa' AS NoiDung
+            FROM tbmk_Hopdongsanhtiec hs 
+            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
+            WHERE hs.Sohopdong = h.Sohopdong
+        ) t
+        FOR JSON PATH
+    ) AS [LichTrinhOut],
+    
+    (
+        SELECT 
+            t.STT AS [STT],
+            t.SoTien AS [SoTien],
+            t.Ngay AS [Ngay],
+            t.NoiDung AS [NoiDung]
+        FROM (
+            SELECT 
+                1 AS STT, 
+                FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
+                ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), '...') AS Ngay,
+                N'Đặt cọc giữ chỗ' AS NoiDung
+            WHERE ISNULL(h.Sotiencoccho, 0) > 0
+
+            UNION ALL
+
+            SELECT 
+                2 AS STT, 
+                FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
+                ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), '...') AS Ngay,
+                N'Đặt cọc ký hợp đồng' AS NoiDung
+            WHERE ISNULL(h.Sotiencochopdong, 0) > 0
+
+            UNION ALL
+
+            SELECT 
+                CASE WHEN ISNULL(h.Sotiencochopdong, 0) > 0 THEN 3 ELSE 2 END AS STT, 
+                N'Thanh toán còn lại' AS SoTien, 
+                ISNULL(CONVERT(VARCHAR(10), h.Ngaytochuc, 103), '...') AS Ngay,
+                ISNULL(NULLIF(h.Ghichu, ''), 
+                    CASE 
+                        WHEN (SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid) LIKE N'%Hội Nghị%' 
+                            THEN N'Thanh toán sau tiệc 07 ngày' 
+                        ELSE N'Thanh toán cuối tiệc.' 
+                    END
+                ) AS NoiDung
+        ) t
+        ORDER BY t.STT
+        FOR JSON PATH
+    ) AS [LichTrinhThanhToan],
+    
     RIGHT('0' + CAST(DAY(h.Ngaytochuc) AS VARCHAR), 2) AS [Tiec_NgayDL],
     RIGHT('0' + CAST(MONTH(h.Ngaytochuc) AS VARCHAR), 2) AS [Tiec_ThangDL],
     CAST(YEAR(h.Ngaytochuc) AS VARCHAR) AS [Tiec_NamDL],
@@ -127,6 +320,29 @@ SELECT
     
     -- Tên loại hình tiệc (computed từ dmLoaihinhtiec, dùng cho in ấn Word)
     ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid), '') AS [Tiec_LoaiTiec],
+    ISNULL((
+        SELECT 
+            CASE 
+                -- Nếu có sảnh 2 và loại hình tiệc có 2 phần (dấu +)
+                WHEN ISNULL((SELECT s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), '') <> '' 
+                     AND CHARINDEX('+', lt.Tenloaitiec) > 0
+                    THEN 
+                        RTRIM(LTRIM(SUBSTRING(lt.Tenloaitiec, 1, CHARINDEX('+', lt.Tenloaitiec) - 1))) 
+                        + ' ' 
+                        + (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid)
+                        + ' + ' 
+                        + RTRIM(LTRIM(SUBSTRING(lt.Tenloaitiec, CHARINDEX('+', lt.Tenloaitiec) + 1, LEN(lt.Tenloaitiec)))) 
+                        + ' ' 
+                        + (SELECT s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY)
+                -- Nếu chỉ có 1 sảnh
+                ELSE 
+                    lt.Tenloaitiec 
+                    + ' ' 
+                    + ISNULL((SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid), '')
+            END
+        FROM dmLoaihinhtiec lt 
+        WHERE lt.Loaitiecid = h.Loaitiecid
+    ), '') AS [LoaiHinhSuKien],
     
     ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanChaychinhthuc, 0) AS [Tiec_SoBanChinhThuc],
     ISNULL(h.SoBanTang, 0) AS [Tiec_SoBanTang],
@@ -141,6 +357,41 @@ SELECT
     RIGHT('0' + CAST(DAY(h.Ngayhopdong) AS VARCHAR), 2) AS [Coc_Ngay],
     RIGHT('0' + CAST(MONTH(h.Ngayhopdong) AS VARCHAR), 2) AS [Coc_Thang],
     CAST(YEAR(h.Ngayhopdong) AS VARCHAR) AS [Coc_Nam],
+    
+    -- Các biến phục vụ hiển thị động Phương thức thanh toán (BEO)
+    FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + ' VNĐ' AS [Dot1_SoTien],
+    ISNULL(CONVERT(VARCHAR(10), (
+        SELECT TOP 1 b.DocumentDate 
+        FROM tbmk_Biennhancoccho b 
+        WHERE b.DocumentID = h.Sobiennhan
+    ), 103), '...') AS [Dot1_Ngay],
+    ISNULL((
+        SELECT TOP 1 NULLIF(b.HinhThuc, '') 
+        FROM tbmk_Biennhancoccho b 
+        WHERE b.DocumentID = h.Sobiennhan
+    ), N'Chuyển khoản') AS [Dot1_HinhThuc],
+    
+    FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ' AS [Dot2_SoTien],
+    N'Chuyển khoản' AS [Dot2_HinhThuc],
+    
+    ISNULL(NULLIF(h.Ghichu, ''), 
+        CASE 
+            WHEN (SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid) LIKE N'%Hội Nghị%' 
+                THEN N'Thanh toán sau tiệc 07 ngày' 
+            ELSE N'Thanh toán cuối tiệc.' 
+        END
+    ) AS [DotCuoi_GhiChu],
+    
+    ISNULL(h.NoteBaoVe, N'Danh sách vào + ra hàng hóa (BÁO SAU)') AS [NoteBaoVe],
+    ISNULL(h.NoteKyThuat, N'Căng banner cổng chính: 8.5m*1.2m' + CHAR(13) + CHAR(10) + N'Căng Background sân khấu: 6m*3.5m (' + ISNULL((SELECT s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh ASC OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), '...') + ')') AS [NoteKyThuat],
+    ISNULL(h.NoteBieuNgu, N'Phối hợp với khách') AS [NoteBieuNgu],
+    ISNULL(h.NoteLobby, N'Bàn Lễ Tân đón khách ' + ISNULL((SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC), '...') + 
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM tbmk_Hopdongsanhtiec hs WHERE hs.Sohopdong = h.Sohopdong AND hs.IsSanhchinh = 0)
+                THEN N' và ' + ISNULL((SELECT s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh ASC OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), '...')
+            ELSE N'' 
+        END
+    ) AS [NoteLobby],
     
     ISNULL(h.Ghichu, '') AS [DieuKhoanBoSung],
     ISNULL(h.Noidunguudai, '') AS [DS_KhuyenMai]

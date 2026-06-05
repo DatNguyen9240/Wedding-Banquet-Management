@@ -232,6 +232,216 @@ app.post('/api/documents/generate', async (req, res) => {
             }
         }
 
+        // Tự động chuẩn hóa và tạo fallback cho cấu trúc DanhSachMenu
+        if (!dataMap.DanhSachMenu) {
+            if (dataMap.ThucDon) {
+                if (typeof dataMap.ThucDon === 'string') {
+                    const lines = dataMap.ThucDon.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                    const dishes = lines.map((line, idx) => {
+                        const cleanLine = line.replace(/^\d+[\s.\-:]+/, '');
+                        return { STT: idx + 1, TenMon: cleanLine };
+                    });
+                    dataMap.DanhSachMenu = [
+                        {
+                            TenMenu: dataMap.SoBan ? `${dataMap.SoBan} bàn` : 'tiêu chuẩn',
+                            DanhSachMon: dishes,
+                            GhiChuMenu: ''
+                        }
+                    ];
+                } else if (Array.isArray(dataMap.ThucDon)) {
+                    dataMap.DanhSachMenu = [
+                        {
+                            TenMenu: dataMap.SoBan ? `${dataMap.SoBan} bàn` : 'tiêu chuẩn',
+                            DanhSachMon: dataMap.ThucDon.map((item, idx) => ({
+                                STT: item.STT || (idx + 1),
+                                TenMon: item.TenMonAn || item.TenMon || (typeof item === 'string' ? item : '')
+                            })),
+                            GhiChuMenu: ''
+                        }
+                    ];
+                }
+            } else {
+                dataMap.DanhSachMenu = [];
+            }
+        }
+
+        if (dataMap.DanhSachMenu && Array.isArray(dataMap.DanhSachMenu)) {
+            dataMap.DanhSachMenu = dataMap.DanhSachMenu.map(menu => {
+                let list = menu.DanhSachMon || menu.DanhSachMonAn || menu.DanhSachMón || [];
+                if (typeof list === 'string') {
+                    list = list.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map((line, idx) => {
+                        const cleanLine = line.replace(/^\d+[\s.\-:]+/, '');
+                        return { STT: idx + 1, TenMon: cleanLine };
+                    });
+                }
+                return {
+                    TenMenu: menu.TenMenu || menu.TenMenuAn || 'Thực đơn',
+                    GhiChuMenu: menu.GhiChuMenu || menu.GhiChu || menu.NoteMenu || '',
+                    DanhSachMon: Array.isArray(list) ? list.map((item, idx) => ({
+                        STT: item.STT || (idx + 1),
+                        TenMon: item.TenMon || item.TenMonAn || item.TenMonAnChinh || (typeof item === 'string' ? item : '')
+                    })) : []
+                };
+            });
+        }
+
+        // Tự động chuẩn hóa và tạo fallback cho cấu trúc DanhSachThucUong
+        if (!dataMap.DanhSachThucUong) {
+            if (dataMap.ThucUong) {
+                if (typeof dataMap.ThucUong === 'string') {
+                    const lines = dataMap.ThucUong.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                    const drinks = lines.map((line, idx) => {
+                        const cleanLine = line.replace(/^\d+[\s.\-:]+/, '');
+                        return { STT: idx + 1, TenMonUong: cleanLine };
+                    });
+                    dataMap.DanhSachThucUong = [
+                        {
+                            TenThucUong: dataMap.SanhDat2 ? `${dataMap.SanhDat2}: TIỆC BÀN TRÒN` : '',
+                            DanhSachMonUong: drinks,
+                            GhiChuThucUong: ''
+                        }
+                    ];
+                } else if (Array.isArray(dataMap.ThucUong)) {
+                    dataMap.DanhSachThucUong = [
+                        {
+                            TenThucUong: dataMap.SanhDat2 ? `${dataMap.SanhDat2}: TIỆC BÀN TRÒN` : '',
+                            DanhSachMonUong: dataMap.ThucUong.map((item, idx) => ({
+                                STT: item.STT || (idx + 1),
+                                TenMonUong: item.TenMonUong || item.TenThucUong || (typeof item === 'string' ? item : '')
+                            })),
+                            GhiChuThucUong: ''
+                        }
+                    ];
+                }
+            } else {
+                dataMap.DanhSachThucUong = [];
+            }
+        }
+
+        if (dataMap.DanhSachThucUong && Array.isArray(dataMap.DanhSachThucUong)) {
+            dataMap.DanhSachThucUong = dataMap.DanhSachThucUong.map(menu => {
+                let list = menu.DanhSachMonUong || menu.DanhSachMónUống || menu.DanhSachThucUong || [];
+                if (typeof list === 'string') {
+                    list = list.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map((line, idx) => {
+                        const cleanLine = line.replace(/^\d+[\s.\-:]+/, '');
+                        return { STT: idx + 1, TenMonUong: cleanLine };
+                    });
+                }
+                return {
+                    TenThucUong: menu.TenThucUong || menu.TenMenuThucUong || 'Thức uống',
+                    GhiChuThucUong: menu.GhiChuThucUong || menu.GhiChu || '',
+                    DanhSachMonUong: Array.isArray(list) ? list.map((item, idx) => ({
+                        STT: item.STT || (idx + 1),
+                        TenMonUong: item.TenMonUong || item.TenThucUong || item.TenMon || (typeof item === 'string' ? item : '')
+                    })) : []
+                };
+            });
+        }
+
+        // ── 2b. Chuẩn hóa và gộp lịch trình (LichTrinh) cho BEO Hội Nghị ──
+        const formatDate = (val) => {
+            if (!val) return null;
+            if (val instanceof Date) {
+                const d = val.getDate().toString().padStart(2, '0');
+                const m = (val.getMonth() + 1).toString().padStart(2, '0');
+                const y = val.getFullYear();
+                return `${d}/${m}/${y}`;
+            }
+            if (typeof val === 'string') {
+                const clean = val.trim();
+                // Nếu đã là định dạng DD/MM/YYYY, giữ nguyên
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(clean)) return clean;
+                // Nếu là chuỗi ISO hoặc định dạng YYYY-MM-DD
+                const parsed = new Date(clean);
+                if (!isNaN(parsed.getTime())) {
+                    const d = parsed.getDate().toString().padStart(2, '0');
+                    const m = (parsed.getMonth() + 1).toString().padStart(2, '0');
+                    const y = parsed.getFullYear();
+                    return `${d}/${m}/${y}`;
+                }
+            }
+            return val;
+        };
+
+        // Chuẩn hóa các ngày đơn lẻ
+        dataMap.NgayToChuc = formatDate(dataMap.NgayToChuc);
+        dataMap.NgaySetup = formatDate(dataMap.NgaySetup || dataMap.TuNgaySetup);
+        dataMap.NgayOut = formatDate(dataMap.NgayOut || dataMap.NgayTraSanhDV);
+
+        // Fallback ngày nếu bị thiếu
+        if (dataMap.NgayToChuc && dataMap.NgayToChuc !== '...') {
+            const parts = dataMap.NgayToChuc.split('/');
+            const eventDate = new Date(parts[2], parts[1] - 1, parts[0]);
+            
+            if (!dataMap.NgaySetup || dataMap.NgaySetup === '...') {
+                const setupDate = new Date(eventDate.getTime() - 86400000);
+                dataMap.NgaySetup = formatDate(setupDate);
+            }
+            if (!dataMap.NgayOut || dataMap.NgayOut === '...') {
+                const outDate = new Date(eventDate.getTime() + 86400000);
+                dataMap.NgayOut = formatDate(outDate);
+            }
+        }
+
+        // Tạo mảng LichTrinh hợp nhất
+        if (!dataMap.LichTrinh) {
+            const list = [];
+            
+            // 1. Setup
+            const setupList = dataMap.LichTrinhSetup || [];
+            if (setupList.length > 0) {
+                list.push({
+                    Ngay: dataMap.NgaySetup ? `Setup: ${dataMap.NgaySetup}` : 'Setup: ...',
+                    ChiTietLichTrinh: setupList
+                });
+            }
+
+            // 2. Tổ chức
+            const tochucList = dataMap.LichTrinhToChuc || [];
+            if (tochucList.length > 0) {
+                list.push({
+                    Ngay: dataMap.NgayToChuc ? `Tổ chức: ${dataMap.NgayToChuc}` : 'Tổ chức: ...',
+                    ChiTietLichTrinh: tochucList
+                });
+            }
+
+            // 3. Tháo dỡ
+            const outList = dataMap.LichTrinhOut || [];
+            if (outList.length > 0) {
+                list.push({
+                    Ngay: dataMap.NgayOut ? `Tháo dỡ: ${dataMap.NgayOut}` : 'Tháo dỡ: ...',
+                    ChiTietLichTrinh: outList
+                });
+            }
+
+            dataMap.LichTrinh = list;
+        }
+
+        // Đảm bảo LichTrinhSetup, LichTrinhToChuc, LichTrinhOut luôn có giá trị để tránh lỗi template nếu vẫn dùng biến cũ
+        if (!dataMap.LichTrinhSetup) dataMap.LichTrinhSetup = [];
+        if (!dataMap.LichTrinhToChuc) dataMap.LichTrinhToChuc = [];
+        if (!dataMap.LichTrinhOut) dataMap.LichTrinhOut = [];
+        if (dataMap.LuuY && typeof dataMap.LuuY === 'string') {
+            dataMap.LuuY = convertTextToWordXML(dataMap.LuuY);
+        }
+        if (dataMap.DichVuTinhPhi && typeof dataMap.DichVuTinhPhi === 'string') {
+            dataMap.DichVuTinhPhi = convertTextToWordXML(dataMap.DichVuTinhPhi);
+        }
+        if (dataMap.NoteKyThuat && typeof dataMap.NoteKyThuat === 'string') {
+            dataMap.NoteKyThuat = convertTextToWordXML(dataMap.NoteKyThuat);
+        }
+        if (dataMap.NoteBaoVe && typeof dataMap.NoteBaoVe === 'string') {
+            dataMap.NoteBaoVe = convertTextToWordXML(dataMap.NoteBaoVe);
+        }
+        if (dataMap.NoteBieuNgu && typeof dataMap.NoteBieuNgu === 'string') {
+            dataMap.NoteBieuNgu = convertTextToWordXML(dataMap.NoteBieuNgu);
+        }
+        if (dataMap.NoteLobby && typeof dataMap.NoteLobby === 'string') {
+            dataMap.NoteLobby = convertTextToWordXML(dataMap.NoteLobby);
+        }
+        if (dataMap.ThongTinSetup && typeof dataMap.ThongTinSetup === 'string') {
+            dataMap.ThongTinSetup = convertTextToWordXML(dataMap.ThongTinSetup, 'ThongTinSetup');
+        }
 
         console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
 
@@ -258,6 +468,16 @@ app.post('/api/documents/generate', async (req, res) => {
 
         // Đổ toàn bộ dataMap (Bên A + Bên B + Món ăn) vào template Word
         doc.render(dataMap);
+
+        // HẬU XỬ LÝ XML: Tự động gộp dọc (vertical merge) các ô trùng tên sảnh ở cột VỊ TRÍ
+        try {
+            let docXml = doc.getZip().file("word/document.xml").asText();
+            docXml = mergeTableColumn(docXml, "VỊ TRÍ");
+            doc.getZip().file("word/document.xml", docXml);
+            console.log('[GENERATE] ✅ Đã tự động gộp dọc các ô sảnh trùng nhau ở cột VỊ TRÍ');
+        } catch (xmlErr) {
+            console.error('[GENERATE] Lỗi hậu xử lý XML gộp ô:', xmlErr.message);
+        }
 
         const buf = doc.getZip().generate({
             type: "nodebuffer",
@@ -408,6 +628,210 @@ app.post('/api/documents/callback', async (req, res) => {
         return respondSuccess();
     }
 });
+
+
+// =========================================================================
+// HELPER: Tự động gộp các ô có giá trị trùng nhau liên tiếp theo chiều dọc
+// =========================================================================
+function getTableRanges(xml) {
+    const regex = /<w:tbl[\s>]|<\/w:tbl>/g;
+    const matches = [];
+    let match;
+    while ((match = regex.exec(xml)) !== null) {
+        matches.push({
+            index: match.index,
+            text: match[0],
+            length: match[0].length
+        });
+    }
+
+    const stack = [];
+    const tables = [];
+
+    for (const m of matches) {
+        if (m.text.startsWith('<w:tbl')) {
+            stack.push(m);
+        } else if (m.text === '<\/w:tbl>') {
+            if (stack.length > 0) {
+                const startMatch = stack.pop();
+                tables.push({
+                    start: startMatch.index,
+                    end: m.index + m.length,
+                    depth: stack.length
+                });
+            }
+        }
+    }
+    return tables;
+}
+
+function injectVMerge(cellXml, type) {
+    const vMergeTag = type === 'restart' ? '<w:vMerge w:val="restart"/>' : '<w:vMerge/>';
+    if (cellXml.match(/<w:tcPr>/)) {
+        if (cellXml.match(/<w:vMerge[^>]*>/)) return cellXml;
+        return cellXml.replace('<w:tcPr>', `<w:tcPr>${vMergeTag}`);
+    } else {
+        return cellXml.replace('<w:tc>', `<w:tc><w:tcPr>${vMergeTag}</w:tcPr>`);
+    }
+}
+
+function mergeFlatTable(tblXml, headerName) {
+    const rowRegex = /<w:tr(?:[^>]*)?>[\s\S]*?<\/w:tr>/g;
+    const rows = tblXml.match(rowRegex);
+    if (!rows || rows.length <= 1) return tblXml;
+
+    const headerRow = rows[0];
+    const cellsRegex = /<w:tc(?:[^>]*)?>[\s\S]*?<\/w:tc>/g;
+    const headerCells = headerRow.match(cellsRegex);
+    if (!headerCells) return tblXml;
+
+    let colIdx = -1;
+    for (let i = 0; i < headerCells.length; i++) {
+        const cellText = headerCells[i].replace(/<[^>]*>/g, '').trim();
+        if (cellText.toUpperCase() === headerName.toUpperCase()) {
+            colIdx = i;
+            break;
+        }
+    }
+
+    if (colIdx === -1) return tblXml;
+
+    let prevText = null;
+    let groupStartIdx = -1;
+    const rowCellsList = rows.map(row => row.match(cellsRegex) || []);
+
+    for (let r = 1; r < rows.length; r++) {
+        const cells = rowCellsList[r];
+        if (colIdx >= cells.length) continue;
+
+        const cellXml = cells[colIdx];
+        const cellText = cellXml.replace(/<[^>]*>/g, '').trim();
+
+        if (cells.length < headerCells.length || cellXml.includes('%%NESTED_TBL_')) {
+            prevText = null;
+            groupStartIdx = -1;
+            continue;
+        }
+
+        if (cellText && cellText === prevText) {
+            const startCells = rowCellsList[groupStartIdx];
+            let startCell = startCells[colIdx];
+            if (!startCell.includes('w:vMerge')) {
+                startCell = injectVMerge(startCell, 'restart');
+                startCells[colIdx] = startCell;
+            }
+
+            let currentCell = cellXml;
+            currentCell = injectVMerge(currentCell, 'continue');
+            cells[colIdx] = currentCell;
+        } else {
+            prevText = cellText;
+            groupStartIdx = r;
+        }
+    }
+
+    const updatedRows = rows.map((row, r) => {
+        const cells = rowCellsList[r];
+        let cIdx = 0;
+        return row.replace(/<w:tc(?:[^>]*)?>[\s\S]*?<\/w:tc>/g, () => {
+            return cells[cIdx++];
+        });
+    });
+
+    const tblPrefix = tblXml.match(/^<w:tbl(?:[^>]*)?>[\s\S]*?(?=<w:tr(?:[^>]*)?>)/)[0];
+    return tblPrefix + updatedRows.join('') + '</w:tbl>';
+}
+
+function processSingleTable(tblXml, headerName) {
+    const nestedRanges = getTableRanges(tblXml);
+    const children = nestedRanges.filter(r => r.depth === 1);
+
+    const placeholders = [];
+    children.sort((a, b) => b.start - a.start);
+    let flatTblXml = tblXml;
+    for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        const childXml = flatTblXml.substring(child.start, child.end);
+        const processedChildXml = processSingleTable(childXml, headerName);
+        
+        const placeholder = `%%NESTED_TBL_${i}%%`;
+        placeholders.push({ placeholder, content: processedChildXml });
+        
+        flatTblXml = flatTblXml.substring(0, child.start) + placeholder + flatTblXml.substring(child.end);
+    }
+
+    let mergedTblXml = mergeFlatTable(flatTblXml, headerName);
+
+    for (const p of placeholders) {
+        mergedTblXml = mergedTblXml.replace(p.placeholder, p.content);
+    }
+
+    return mergedTblXml;
+}
+
+function mergeTableColumn(xml, headerName) {
+    const tables = getTableRanges(xml);
+    const topLevelTables = tables.filter(t => t.depth === 0);
+
+    topLevelTables.sort((a, b) => b.start - a.start);
+
+    let resultXml = xml;
+    for (const t of topLevelTables) {
+        const tableXml = resultXml.substring(t.start, t.end);
+        const processedTableXml = processSingleTable(tableXml, headerName);
+        resultXml = resultXml.substring(0, t.start) + processedTableXml + resultXml.substring(t.end);
+    }
+    return resultXml;
+}
+
+function convertTextToWordXML(text, fieldName = '') {
+    if (!text) return "";
+    const lines = text.split(/\r?\n/);
+    let xml = "";
+    const isSetupField = fieldName === 'ThongTinSetup';
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        // A line is considered a header if it doesn't start with a bullet character
+        // and either ends with ":" or contains section keywords like Queen, Sảnh, Phía, Cổng, Lobby, v.v.
+        const isHeader = !/^[-\*\+\•\d]/.test(line) && (line.endsWith(':') || /Queen|Sảnh|Sanh|Phía|Phia|Cổng|Cong|Lobby|Bảo vệ|Bao ve|Kỹ thuật|Ky thuat|Biểu ngữ|Bieu ngu|Setup|Sân khấu|San khau/i.test(line));
+        
+        // Escape XML entities
+        const escapedLine = line
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&apos;");
+            
+        // Check if the line contains warning keywords for red styling
+        // Keywords: 'out', 'out hàng', 'out khach', 'gấp', 'gap', 'đặc biệt', 'dac biet', 'phạt', 'phat'
+        const isWarningLine = /out|gấp|gap|đặc biệt|dac biet|phạt|phat/i.test(line);
+        
+        if (isHeader) {
+            if (isSetupField) {
+                // SẮP XẾP headers are Black, Bold, Underlined
+                xml += `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:u w:val="single"/><w:sz w:val="20"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
+            } else {
+                // LƯU Ý / other headers are Red, Bold, Underlined
+                xml += `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:u w:val="single"/><w:color w:val="FF0000"/><w:sz w:val="20"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
+            }
+        } else if (isWarningLine) {
+            // Warning lines are Red, Underlined, and size 10pt (20 dxa)
+            xml += `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:u w:val="single"/><w:color w:val="FF0000"/><w:sz w:val="20"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
+        } else {
+            // Normal lines are Black
+            xml += `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="20"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
+        }
+        
+        if (i < lines.length - 1) {
+            xml += `<w:r><w:br/></w:r>`;
+        }
+    }
+    return xml;
+}
 
 
 // ==========================================
