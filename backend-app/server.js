@@ -143,19 +143,9 @@ app.get('/api/documents', (req, res) => {
 /**
  * 1.5 Lấy danh sách các biến dữ liệu cho một loại mẫu
  */
-app.get('/api/documents/fields/:type', async (req, res) => {
+app.get('/api/documents/fields/:listName', async (req, res) => {
     try {
-        const type = req.params.type;
-        const API_MAP = {
-            'hop_dong': 'frmHopDong',
-            'phieu_thu': 'frmPhieuThu',
-            'de_nghi_thay_doi': 'tbmk_Thaydoi',
-            'quyet_toan': 'frmQuyetToan',
-            'BEO_Hoi_Nghi': 'frmHopDong',
-            'BEO_Tiec_Cuoi': 'frmHopDong',
-        };
-        const listName = API_MAP[type];
-        if (!listName) return res.status(400).json({ success: false, message: 'Invalid type' });
+        const listName = req.params.listName;
 
         // Lấy 1 dòng dữ liệu mẫu từ SQL API để quét tự động 100% cột
         let sampleRow = {};
@@ -182,28 +172,20 @@ app.post('/api/documents/generate', async (req, res) => {
     try {
         let { outputFileName, templateType, customerId, rowData, convertFields, sqlListName, mergeColumns } = req.body;
         if (!templateType) return res.status(400).json({ success: false, message: 'Thiếu templateType.' });
+        if (!sqlListName) return res.status(400).json({ success: false, message: 'Thiếu sqlListName để truy vấn.' });
         if (!outputFileName) outputFileName = 'Generated_' + templateType;
         outputFileName = outputFileName.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_');
         
         // ── 1. Lấy thông tin nhà hàng từ Setup API ──────────────────────────
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
 
-        // ── 2. Map data từ rowData (frontend) hoặc fallback SQL API ─────────
-        const API_MAP = {
-            'hop_dong': 'frmHopDong',
-            'phieu_thu': 'frmPhieuThu',
-            'de_nghi_thay_doi': 'tbmk_Thaydoi',
-            'quyet_toan': 'frmQuyetToan',
-            'BEO_Hoi_Nghi': 'frmHopDong',
-            'BEO_Tiec_Cuoi': 'frmHopDong',
-        };
-        const listName = sqlListName || API_MAP[templateType];
+        // ── 2. Map data từ rowData (frontend) hoặc SQL API ─────────
         let dataMap = { ...setup };
 
         let dbRow = null;
-        if (listName && customerId) {
+        if (customerId) {
             try {
-                dbRow = await fetchFromSQLAPI(listName, customerId, req.headers.authorization);
+                dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization);
                 console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API thành công');
             } catch (e) {
                 console.error('[GENERATE] Lỗi SQL API:', e.message);
@@ -232,168 +214,6 @@ app.post('/api/documents/generate', async (req, res) => {
             }
         }
 
-        if (!dataMap.DanhSachMenu) {
-            dataMap.DanhSachMenu = [];
-        }
-
-        if (dataMap.DanhSachMenu && Array.isArray(dataMap.DanhSachMenu)) {
-            dataMap.DanhSachMenu = dataMap.DanhSachMenu.map(menu => {
-                let list = menu.DanhSachMon || menu.DanhSachMonAn || menu.DanhSachMón || [];
-                if (typeof list === 'string') {
-                    list = list.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map((line, idx) => {
-                        const cleanLine = line.replace(/^\d+[\s.\-:]+/, '');
-                        return { STT: idx + 1, TenMon: cleanLine };
-                    });
-                }
-                return {
-                    TenMenu: menu.TenMenu || menu.TenMenuAn || 'Thực đơn',
-                    GhiChuMenu: menu.GhiChuMenu || menu.GhiChu || menu.NoteMenu || '',
-                    DanhSachMon: Array.isArray(list) ? list.map((item, idx) => ({
-                        STT: item.STT || (idx + 1),
-                        TenMon: item.TenMon || item.TenMonAn || item.TenMonAnChinh || (typeof item === 'string' ? item : '')
-                    })) : []
-                };
-            });
-        }
-
-        if (!dataMap.DanhSachThucUong) {
-            dataMap.DanhSachThucUong = [];
-        }
-
-        if (dataMap.DanhSachThucUong && Array.isArray(dataMap.DanhSachThucUong)) {
-            dataMap.DanhSachThucUong = dataMap.DanhSachThucUong.map(menu => {
-                let list = menu.DanhSachMonUong || menu.DanhSachMónUống || menu.DanhSachThucUong || [];
-                if (typeof list === 'string') {
-                    list = list.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map((line, idx) => {
-                        const cleanLine = line.replace(/^\d+[\s.\-:]+/, '');
-                        return { STT: idx + 1, TenMonUong: cleanLine };
-                    });
-                }
-                return {
-                    TenThucUong: menu.TenThucUong || menu.TenMenuThucUong || 'Thức uống',
-                    GhiChuThucUong: menu.GhiChuThucUong || menu.GhiChu || '',
-                    DanhSachMonUong: Array.isArray(list) ? list.map((item, idx) => ({
-                        STT: item.STT || (idx + 1),
-                        TenMonUong: item.TenMonUong || item.TenThucUong || item.TenMon || (typeof item === 'string' ? item : '')
-                    })) : []
-                };
-            });
-        }
-
-        // ── 2b. Chuẩn hóa và gộp lịch trình (LichTrinh) ──
-        const formatDate = (val) => {
-            if (!val) return null;
-            if (val instanceof Date) {
-                const d = val.getDate().toString().padStart(2, '0');
-                const m = (val.getMonth() + 1).toString().padStart(2, '0');
-                const y = val.getFullYear();
-                return `${d}/${m}/${y}`;
-            }
-            if (typeof val === 'string') {
-                const clean = val.trim();
-                if (/^\d{2}\/\d{2}\/\d{4}$/.test(clean)) return clean;
-                const parsed = new Date(clean);
-                if (!isNaN(parsed.getTime())) {
-                    const d = parsed.getDate().toString().padStart(2, '0');
-                    const m = (parsed.getMonth() + 1).toString().padStart(2, '0');
-                    const y = parsed.getFullYear();
-                    return `${d}/${m}/${y}`;
-                }
-            }
-            return val;
-        };
-
-        // Chuẩn hóa các ngày đơn lẻ
-        dataMap.NgayToChuc = formatDate(dataMap.NgayToChuc);
-        dataMap.NgaySetup = formatDate(dataMap.NgaySetup || dataMap.TuNgaySetup);
-        dataMap.NgayOut = formatDate(dataMap.NgayOut || dataMap.NgayTraSanhDV);
-
-        // Khởi tạo mảng Lịch Trình động
-        dataMap.LichTrinh = [];
-
-        // Quét động tất cả các cột trả về từ Database bắt đầu bằng "LichTrinh" (trừ LichTrinhThanhToan)
-        Object.keys(dataMap).forEach(key => {
-            if (key.startsWith('LichTrinh') && key !== 'LichTrinhThanhToan' && key !== 'LichTrinh') {
-                const category = key.substring('LichTrinh'.length); // Setup, ToChuc, Out, v.v.
-                const val = dataMap[key];
-                
-                let scheduleArray = null;
-                if (Array.isArray(val)) {
-                    scheduleArray = val;
-                } else if (typeof val === 'string' && val.trim()) {
-                    try {
-                        const parsed = JSON.parse(val);
-                        if (Array.isArray(parsed)) {
-                            scheduleArray = parsed;
-                        }
-                    } catch (e) {}
-                }
-
-                // Tìm cột ngày tương ứng động (ví dụ: NgaySetup, NgayToChuc, NgayOut, NgayXYZ)
-                let dateVal = dataMap[`Ngay${category}`] || dataMap[`Ngay_${category}`];
-                if (category === 'Setup') {
-                    dateVal = dateVal || dataMap.NgaySetup || dataMap.TuNgaySetup;
-                } else if (category === 'Out') {
-                    dateVal = dateVal || dataMap.NgayOut || dataMap.NgayTraSanhDV;
-                }
-                const formattedDate = formatDate(dateVal) || '...';
-
-                // Tên hiển thị nhãn của danh mục lịch trình
-                const categoryLabels = {
-                    'Setup': 'Setup',
-                    'ToChuc': 'Tổ chức',
-                    'Out': 'Tháo dỡ'
-                };
-                const label = categoryLabels[category] || category;
-
-                if (scheduleArray && scheduleArray.length > 0) {
-                    dataMap.LichTrinh.push({
-                        categoryKey: category,
-                        Ngay: `${label}: ${formattedDate}`,
-                        ChiTietLichTrinh: scheduleArray.map(item => ({
-                            BatDau: item.BatDau || '',
-                            KetThuc: item.KetThuc || '',
-                            Sanh: item.Sanh || '',
-                            NoiDung: item.NoiDung || ''
-                        }))
-                    });
-                } else if (dateVal) {
-                    // Fallback tương thích ngược khi chưa có dữ liệu JSON động
-                    let fallbackItem = { BatDau: '', KetThuc: '', Sanh: dataMap.SanhDat || '...', NoiDung: '' };
-                    if (category === 'Setup') {
-                        fallbackItem.BatDau = dataMap.TuGioDenGioSetup || '...';
-                        fallbackItem.KetThuc = dataMap.DenGioSetup || '...';
-                        fallbackItem.NoiDung = dataMap.GhiChuSetup || 'Vào hàng hóa & Setup';
-                    } else if (category === 'ToChuc') {
-                        fallbackItem.BatDau = dataMap.GioBatDau || '...';
-                        fallbackItem.KetThuc = dataMap.GioKetThuc || '...';
-                        fallbackItem.NoiDung = 'HỘI NGHỊ / TIỆC CHÍNH';
-                    } else if (category === 'Out') {
-                        fallbackItem.BatDau = 'Trước 10h sáng';
-                        fallbackItem.NoiDung = 'Tháo dỡ & Ra hàng hóa';
-                    }
-                    dataMap.LichTrinh.push({
-                        categoryKey: category,
-                        Ngay: `${label}: ${formattedDate}`,
-                        ChiTietLichTrinh: [fallbackItem]
-                    });
-                }
-            }
-        });
-
-        // Sắp xếp thứ tự hiển thị ưu tiên: Setup -> Tổ chức -> Tháo dỡ -> Các phần khác
-        const categoryWeights = {
-            'Setup': 1,
-            'ToChuc': 2,
-            'Out': 3
-        };
-        dataMap.LichTrinh.sort((a, b) => {
-            const wA = categoryWeights[a.categoryKey] || 99;
-            const wB = categoryWeights[b.categoryKey] || 99;
-            return wA - wB;
-        });
-
-
         // Xác định danh sách các trường cần chuyển đổi thành XML Word
         let fieldsToConvert = Array.isArray(convertFields) ? convertFields : [];
         
@@ -405,12 +225,19 @@ app.post('/api/documents/generate', async (req, res) => {
 
         console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
 
-        // ── 3. Đọc template DOCX ─────────────────────────────────────────────
-        const docxTemplatePath = path.join(SAMPLES_DIR, `${templateType}.docx`);
-        if (!fs.existsSync(docxTemplatePath)) {
+        // ── 3. Đọc template DOCX (Tìm kiếm đệ quy) ───────────────────────────
+        const docxTemplatePath = findTemplatePath(SAMPLES_DIR, templateType);
+        if (!docxTemplatePath) {
             return res.status(404).json({
                 success: false,
-                message: `Không tìm thấy template '${templateType}.docx' trong samples/. Vui lòng tạo file Word mẫu!`
+                message: `Không tìm thấy template '${templateType}' trong samples/ hoặc các thư mục con.`
+            });
+        }
+
+        if (docxTemplatePath.toLowerCase().endsWith('.doc')) {
+            return res.status(400).json({
+                success: false,
+                message: `Mẫu biểu '${templateType}' đang là định dạng legacy (.doc). Vui lòng lưu thành định dạng .docx trước khi chạy!`
             });
         }
 
@@ -805,6 +632,27 @@ function convertTextToWordXML(text, fieldName = '') {
         }
     }
     return xml;
+}
+
+function findTemplatePath(baseDir, templateName) {
+    const cleanName = templateName.replace(/\.docx?$/i, '');
+    const findRecursive = (dir) => {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                const found = findRecursive(fullPath);
+                if (found) return found;
+            } else if (entry.isFile()) {
+                const entryBaseName = entry.name.replace(/\.docx?$/i, '');
+                if (entryBaseName.normalize().toLowerCase() === cleanName.normalize().toLowerCase()) {
+                    return fullPath;
+                }
+            }
+        }
+        return null;
+    };
+    return findRecursive(baseDir);
 }
 
 
