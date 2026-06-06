@@ -295,14 +295,17 @@ app.post('/api/documents/generate', async (req, res) => {
             // Tính toán mã băm SHA-256 từ nội dung file vật lý
             const fileHash = crypto.createHash('sha256').update(buf).digest('hex');
 
+            // Tìm mã tiệc case-insensitive từ dataMap hoặc customerId làm fallback
+            const tiecId = dataMap.Sohopdong || dataMap.SoHopDong || dataMap.sohopdong || customerId || '';
+
             const docData = {
-                DocumentID: 'DOC_' + Date.now(),
-                TiecID: dataMap.SoHopDong,
-                FileName: finalFileName,
-                FileType: templateType,
+                TiecID: tiecId,
+                DocType: templateType,
                 VersionNo: 1,
-                Status: 'SIGNED', // Vừa in xong chốt cứng luôn
-                FileHash: fileHash // Lưu mã băm chống giả mạo
+                FilePath: finalFileName,
+                FileHash: fileHash,
+                Status: 'ACTIVE',
+                GeneratedBy: req.body.UserName || 'system'
             };
             const payload = {
                 List: 'Tiec_Documents',
@@ -342,9 +345,10 @@ app.delete('/api/documents/:fileName', async (req, res) => {
                     Func: 'Edit', // Cập nhật lại Status
                     UserName: req.body.UserName || 'system',
                     data: {
-                        FileName: fileName, // Dùng tên file để tìm record
+                        FilePath: fileName, // Dùng FilePath làm khóa tìm kiếm
                         Status: 'DELETED',
-                        IsDeleted: 1
+                        DeletedBy: req.body.UserName || 'system',
+                        DeletedAt: new Date().toISOString()
                     }
                 };
                 await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload);

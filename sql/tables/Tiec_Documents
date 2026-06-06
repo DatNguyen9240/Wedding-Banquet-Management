@@ -13,7 +13,7 @@ GO
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Tiec_Documents')
 BEGIN
     CREATE TABLE Tiec_Documents (
-        DocumentID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        DocumentID INT IDENTITY(1,1) PRIMARY KEY,
         TiecID VARCHAR(50) NOT NULL,            -- Mã Hợp đồng (Sohopdong) hoặc Mã chứng từ liên kết
         DocType VARCHAR(50) NOT NULL,           -- Phân loại: HOP_DONG, BIEN_COC, QUYET_TOAN, PHU_LUC
         VersionNo INT DEFAULT 1,                -- Số thứ tự phiên bản xuất file
