@@ -311,7 +311,7 @@ app.post('/api/documents/generate', async (req, res) => {
                 List: 'Tiec_Documents',
                 Func: 'Save',
                 UserName: req.body.UserName || 'system',
-                data: docData
+                JsonData: JSON.stringify(docData)
             };
             await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload);
             console.log(`[AUDIT] ✅ Đã lưu vết Sổ lưu trữ cho file ${finalFileName}`);
@@ -344,12 +344,12 @@ app.delete('/api/documents/:fileName', async (req, res) => {
                     List: 'Tiec_Documents',
                     Func: 'Edit', // Cập nhật lại Status
                     UserName: req.body.UserName || 'system',
-                    data: {
+                    JsonData: JSON.stringify({
                         FilePath: fileName, // Dùng FilePath làm khóa tìm kiếm
                         Status: 'DELETED',
                         DeletedBy: req.body.UserName || 'system',
                         DeletedAt: new Date().toISOString()
-                    }
+                    })
                 };
                 await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload);
                 console.log(`[AUDIT] 🪦 Đã dán nhãn XÓA cho file ${fileName} trong CSDL`);
