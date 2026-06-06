@@ -280,7 +280,7 @@ app.post('/api/documents/generate', async (req, res) => {
             });
         }
 
-        // ── 2b. Chuẩn hóa và gộp lịch trình (LichTrinh) cho BEO Hội Nghị ──
+        // ── 2b. Chuẩn hóa và gộp lịch trình (LichTrinh) ──
         const formatDate = (val) => {
             if (!val) return null;
             if (val instanceof Date) {
@@ -291,9 +291,7 @@ app.post('/api/documents/generate', async (req, res) => {
             }
             if (typeof val === 'string') {
                 const clean = val.trim();
-                // Nếu đã là định dạng DD/MM/YYYY, giữ nguyên
                 if (/^\d{2}\/\d{2}\/\d{4}$/.test(clean)) return clean;
-                // Nếu là chuỗi ISO hoặc định dạng YYYY-MM-DD
                 const parsed = new Date(clean);
                 if (!isNaN(parsed.getTime())) {
                     const d = parsed.getDate().toString().padStart(2, '0');
@@ -310,9 +308,90 @@ app.post('/api/documents/generate', async (req, res) => {
         dataMap.NgaySetup = formatDate(dataMap.NgaySetup || dataMap.TuNgaySetup);
         dataMap.NgayOut = formatDate(dataMap.NgayOut || dataMap.NgayTraSanhDV);
 
-        if (!dataMap.LichTrinh) {
-            dataMap.LichTrinh = [];
-        }
+        // Khởi tạo mảng Lịch Trình động
+        dataMap.LichTrinh = [];
+
+        // Quét động tất cả các cột trả về từ Database bắt đầu bằng "LichTrinh" (trừ LichTrinhThanhToan)
+        Object.keys(dataMap).forEach(key => {
+            if (key.startsWith('LichTrinh') && key !== 'LichTrinhThanhToan' && key !== 'LichTrinh') {
+                const category = key.substring('LichTrinh'.length); // Setup, ToChuc, Out, v.v.
+                const val = dataMap[key];
+                
+                let scheduleArray = null;
+                if (Array.isArray(val)) {
+                    scheduleArray = val;
+                } else if (typeof val === 'string' && val.trim()) {
+                    try {
+                        const parsed = JSON.parse(val);
+                        if (Array.isArray(parsed)) {
+                            scheduleArray = parsed;
+                        }
+                    } catch (e) {}
+                }
+
+                // Tìm cột ngày tương ứng động (ví dụ: NgaySetup, NgayToChuc, NgayOut, NgayXYZ)
+                let dateVal = dataMap[`Ngay${category}`] || dataMap[`Ngay_${category}`];
+                if (category === 'Setup') {
+                    dateVal = dateVal || dataMap.NgaySetup || dataMap.TuNgaySetup;
+                } else if (category === 'Out') {
+                    dateVal = dateVal || dataMap.NgayOut || dataMap.NgayTraSanhDV;
+                }
+                const formattedDate = formatDate(dateVal) || '...';
+
+                // Tên hiển thị nhãn của danh mục lịch trình
+                const categoryLabels = {
+                    'Setup': 'Setup',
+                    'ToChuc': 'Tổ chức',
+                    'Out': 'Tháo dỡ'
+                };
+                const label = categoryLabels[category] || category;
+
+                if (scheduleArray && scheduleArray.length > 0) {
+                    dataMap.LichTrinh.push({
+                        categoryKey: category,
+                        Ngay: `${label}: ${formattedDate}`,
+                        ChiTietLichTrinh: scheduleArray.map(item => ({
+                            BatDau: item.BatDau || '',
+                            KetThuc: item.KetThuc || '',
+                            Sanh: item.Sanh || '',
+                            NoiDung: item.NoiDung || ''
+                        }))
+                    });
+                } else if (dateVal) {
+                    // Fallback tương thích ngược khi chưa có dữ liệu JSON động
+                    let fallbackItem = { BatDau: '', KetThuc: '', Sanh: dataMap.SanhDat || '...', NoiDung: '' };
+                    if (category === 'Setup') {
+                        fallbackItem.BatDau = dataMap.TuGioDenGioSetup || '...';
+                        fallbackItem.KetThuc = dataMap.DenGioSetup || '...';
+                        fallbackItem.NoiDung = dataMap.GhiChuSetup || 'Vào hàng hóa & Setup';
+                    } else if (category === 'ToChuc') {
+                        fallbackItem.BatDau = dataMap.GioBatDau || '...';
+                        fallbackItem.KetThuc = dataMap.GioKetThuc || '...';
+                        fallbackItem.NoiDung = 'HỘI NGHỊ / TIỆC CHÍNH';
+                    } else if (category === 'Out') {
+                        fallbackItem.BatDau = 'Trước 10h sáng';
+                        fallbackItem.NoiDung = 'Tháo dỡ & Ra hàng hóa';
+                    }
+                    dataMap.LichTrinh.push({
+                        categoryKey: category,
+                        Ngay: `${label}: ${formattedDate}`,
+                        ChiTietLichTrinh: [fallbackItem]
+                    });
+                }
+            }
+        });
+
+        // Sắp xếp thứ tự hiển thị ưu tiên: Setup -> Tổ chức -> Tháo dỡ -> Các phần khác
+        const categoryWeights = {
+            'Setup': 1,
+            'ToChuc': 2,
+            'Out': 3
+        };
+        dataMap.LichTrinh.sort((a, b) => {
+            const wA = categoryWeights[a.categoryKey] || 99;
+            const wB = categoryWeights[b.categoryKey] || 99;
+            return wA - wB;
+        });
 
 
         // Xác định danh sách các trường cần chuyển đổi thành XML Word
