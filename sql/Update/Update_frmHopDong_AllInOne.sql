@@ -925,6 +925,112 @@ UPDATE SY_FormatFields SET CaptionVN = N'Số bàn' WHERE FormName = 'frmHopDong
 UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
 UPDATE SY_FormatFields SET CaptionVN = N'Tổng tiền' WHERE FormName = 'frmHopDong' AND FieldName = 'TongTien';
 UPDATE SY_FormatFields SET CaptionVN = N'Trạng thái' WHERE FormName = 'frmHopDong' AND FieldName = 'TrangThai';
+-- Cập nhật và tự động thêm CaptionVN cho các cột trường bổ sung của Hợp đồng
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LoaiHinhSuKien')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'LoaiHinhSuKien', N'Loại hình sự kiện', 0, 0, 0, 95, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Loại hình sự kiện' WHERE FormName = 'frmHopDong' AND FieldName = 'LoaiHinhSuKien';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhSetup')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, DataSource, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'LichTrinhSetup', N'Lịch trình setup (JSON)', 'js', N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', 0, 0, 0, 96, '12');
+ELSE
+    UPDATE SY_FormatFields 
+    SET CaptionVN = N'Lịch trình setup (JSON)',
+        FormatID = 'js',
+        DataSource = N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]'
+    WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhSetup';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhToChuc')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, DataSource, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'LichTrinhToChuc', N'Lịch trình tổ chức (JSON)', 'js', N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', 0, 0, 0, 97, '12');
+ELSE
+    UPDATE SY_FormatFields 
+    SET CaptionVN = N'Lịch trình tổ chức (JSON)',
+        FormatID = 'js',
+        DataSource = N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]'
+    WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhToChuc';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhOut')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, DataSource, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'LichTrinhOut', N'Lịch trình out (JSON)', 'js', N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', 0, 0, 0, 98, '12');
+ELSE
+    UPDATE SY_FormatFields 
+    SET CaptionVN = N'Lịch trình out (JSON)',
+        FormatID = 'js',
+        DataSource = N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]'
+    WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhOut';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhThanhToan')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, DataSource, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'LichTrinhThanhToan', N'Lịch trình thanh toán (JSON)', 'js', N'[{"key":"STT","label":"Đợt","type":"number","width":"60px"},{"key":"SoTien","label":"Số tiền","type":"text","width":"150px"},{"key":"Ngay","label":"Ngày","type":"text","width":"120px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', 0, 0, 0, 99, '12');
+ELSE
+    UPDATE SY_FormatFields 
+    SET CaptionVN = N'Lịch trình thanh toán (JSON)',
+        FormatID = 'js',
+        DataSource = N'[{"key":"STT","label":"Đợt","type":"number","width":"60px"},{"key":"SoTien","label":"Số tiền","type":"text","width":"150px"},{"key":"Ngay","label":"Ngày","type":"text","width":"120px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]'
+    WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhThanhToan';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'Dot1_SoTien')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'Dot1_SoTien', N'Số tiền đợt 1', 0, 0, 0, 100, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Số tiền đợt 1' WHERE FormName = 'frmHopDong' AND FieldName = 'Dot1_SoTien';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'Dot1_Ngay')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'Dot1_Ngay', N'Ngày thu đợt 1', 0, 0, 0, 101, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Ngày thu đợt 1' WHERE FormName = 'frmHopDong' AND FieldName = 'Dot1_Ngay';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'Dot1_HinhThuc')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'Dot1_HinhThuc', N'Hình thức thu đợt 1', 0, 0, 0, 102, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Hình thức thu đợt 1' WHERE FormName = 'frmHopDong' AND FieldName = 'Dot1_HinhThuc';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'Dot2_SoTien')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'Dot2_SoTien', N'Số tiền đợt 2', 0, 0, 0, 103, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Số tiền đợt 2' WHERE FormName = 'frmHopDong' AND FieldName = 'Dot2_SoTien';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'Dot2_HinhThuc')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'Dot2_HinhThuc', N'Hình thức thu đợt 2', 0, 0, 0, 104, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Hình thức thu đợt 2' WHERE FormName = 'frmHopDong' AND FieldName = 'Dot2_HinhThuc';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'DotCuoi_GhiChu')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'DotCuoi_GhiChu', N'Ghi chú đợt cuối', 0, 0, 0, 105, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú đợt cuối' WHERE FormName = 'frmHopDong' AND FieldName = 'DotCuoi_GhiChu';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBaoVe')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'NoteBaoVe', N'Ghi chú bảo vệ', 0, 0, 0, 106, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú bảo vệ' WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBaoVe';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NoteKyThuat')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'NoteKyThuat', N'Ghi chú kỹ thuật', 0, 0, 0, 107, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú kỹ thuật' WHERE FormName = 'frmHopDong' AND FieldName = 'NoteKyThuat';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBieuNgu')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'NoteBieuNgu', N'Ghi chú biểu ngữ', 0, 0, 0, 108, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú biểu ngữ' WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBieuNgu';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NoteLobby')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
+    VALUES ('frmHopDong', 'NoteLobby', N'Ghi chú đón khách (Lobby)', 0, 0, 0, 109, '6');
+ELSE
+    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú đón khách (Lobby)' WHERE FormName = 'frmHopDong' AND FieldName = 'NoteLobby';
 
 -- Cấu hình thứ tự hiển thị (OrderNo) trên Form
 UPDATE SY_FormatFields SET OrderNo = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'Sohopdong';

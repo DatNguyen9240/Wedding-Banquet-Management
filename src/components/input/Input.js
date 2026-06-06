@@ -177,19 +177,92 @@ var UIInput = (function () {
     // Custom calendar popup picker
     var popup = null;
     var calendarInstance = null;
+    var _scrollTargets = [];
+    var _scrollHandler = null;
 
-    function openPopup() {
-      if (popup) return;
-      popup = document.createElement('div');
-      popup.className = 'custom-datepicker-popup';
+    function isElementClipped(el) {
+      var rect = el.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        return true;
+      }
+      var node = el.parentElement;
+      while (node && node !== document.documentElement) {
+        var style = window.getComputedStyle(node);
+        var ov = style.overflow + style.overflowY + style.overflowX;
+        if (/auto|scroll/.test(ov)) {
+          var parentRect = node.getBoundingClientRect();
+          if (rect.bottom < parentRect.top || rect.top > parentRect.bottom) {
+            return true;
+          }
+        }
+        node = node.parentElement;
+      }
+      return false;
+    }
 
+    function updatePosition() {
+      if (!popup) return;
       var rect = visibleInput.getBoundingClientRect();
       var windowWidth = window.innerWidth;
       var windowHeight = window.innerHeight;
       var popupWidth = 340;
       var popupHeight = 380;
 
-      if (windowWidth <= 576) {
+      // Close if the input is scrolled out of view/container bounds
+      if (isElementClipped(visibleInput)) {
+        closePopup();
+        return;
+      }
+
+      // Calculate vertical position (flip if not enough space below)
+      var topPos = rect.bottom + 4;
+      if (rect.bottom + popupHeight > windowHeight && rect.top - popupHeight > 0) {
+        topPos = rect.top - popupHeight - 4;
+      }
+
+      // Calculate horizontal position
+      var leftPos = rect.left;
+      if (rect.left + popupWidth > windowWidth) {
+        leftPos = rect.right - popupWidth;
+      }
+      leftPos = Math.max(10, leftPos);
+
+      popup.style.top = topPos + 'px';
+      popup.style.left = leftPos + 'px';
+    }
+
+    function attachScrollListeners() {
+      if (_scrollHandler) return;
+      _scrollHandler = function () {
+        updatePosition();
+      };
+      _scrollTargets = (UIControls.utils && typeof UIControls.utils.getScrollableAncestors === 'function')
+        ? UIControls.utils.getScrollableAncestors(inputContainer)
+        : [window];
+      _scrollTargets.forEach(function (target) {
+        target.addEventListener('scroll', _scrollHandler, { passive: true, capture: false });
+      });
+      window.addEventListener('resize', _scrollHandler, { passive: true });
+    }
+
+    function detachScrollListeners() {
+      if (!_scrollHandler) return;
+      _scrollTargets.forEach(function (target) {
+        target.removeEventListener('scroll', _scrollHandler, { capture: false });
+      });
+      window.removeEventListener('resize', _scrollHandler);
+      _scrollHandler = null;
+      _scrollTargets = [];
+    }
+
+    function openPopup() {
+      if (popup) return;
+      popup = document.createElement('div');
+      popup.className = 'custom-datepicker-popup';
+
+      var isMobile = (window.innerWidth <= 576);
+
+      if (isMobile) {
         // Add a dim backdrop for mobile focus
         var backdrop = document.createElement('div');
         backdrop.id = 'datepicker-mobile-backdrop';
@@ -199,29 +272,13 @@ var UIInput = (function () {
         backdrop.style.zIndex = '99999998';
         backdrop.addEventListener('click', closePopup);
         document.body.appendChild(backdrop);
-      } else {
-        // Desktop/Tablet layout: Position relative to input using fixed
+        
         popup.style.position = 'fixed';
         popup.style.zIndex = '99999999';
-        
-        // Calculate horizontal position
-        var leftPos = rect.left;
-        if (rect.left + popupWidth > windowWidth) {
-          leftPos = windowWidth - popupWidth - 12;
-          if (leftPos < 0) leftPos = 4;
-        }
-        
-        // Calculate vertical position (open above if not enough space below)
-        var topPos = rect.bottom + 4;
-        if (rect.bottom + popupHeight > windowHeight && rect.top - popupHeight > 0) {
-          topPos = rect.top - popupHeight - 4;
-        }
-        
-        popup.style.top = topPos + 'px';
-        popup.style.left = leftPos + 'px';
-
-        // Close on scroll for fixed positioning consistency
-        window.addEventListener('scroll', closePopup, { passive: true });
+      } else {
+        // Desktop/Tablet layout: Position relative to input using fixed (non-clipped)
+        popup.style.position = 'fixed';
+        popup.style.zIndex = '99999999';
       }
 
       if (typeof UICalendar !== 'undefined') {
@@ -245,6 +302,11 @@ var UIInput = (function () {
 
       document.body.appendChild(popup);
 
+      if (!isMobile) {
+        updatePosition();
+        attachScrollListeners();
+      }
+
       if (calendarInstance && calendarInstance.setSelectedDate) {
         calendarInstance.setSelectedDate(hiddenInput.value || null);
       }
@@ -257,7 +319,7 @@ var UIInput = (function () {
     function closePopup() {
       if (!popup) return;
       document.removeEventListener('click', outsideClickListener);
-      window.removeEventListener('scroll', closePopup);
+      detachScrollListeners();
       var backdrop = document.getElementById('datepicker-mobile-backdrop');
       if (backdrop && backdrop.parentNode) {
         backdrop.parentNode.removeChild(backdrop);

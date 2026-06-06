@@ -7607,19 +7607,92 @@ var UIInput = (function () {
     // Custom calendar popup picker
     var popup = null;
     var calendarInstance = null;
+    var _scrollTargets = [];
+    var _scrollHandler = null;
 
-    function openPopup() {
-      if (popup) return;
-      popup = document.createElement('div');
-      popup.className = 'custom-datepicker-popup';
+    function isElementClipped(el) {
+      var rect = el.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        return true;
+      }
+      var node = el.parentElement;
+      while (node && node !== document.documentElement) {
+        var style = window.getComputedStyle(node);
+        var ov = style.overflow + style.overflowY + style.overflowX;
+        if (/auto|scroll/.test(ov)) {
+          var parentRect = node.getBoundingClientRect();
+          if (rect.bottom < parentRect.top || rect.top > parentRect.bottom) {
+            return true;
+          }
+        }
+        node = node.parentElement;
+      }
+      return false;
+    }
 
+    function updatePosition() {
+      if (!popup) return;
       var rect = visibleInput.getBoundingClientRect();
       var windowWidth = window.innerWidth;
       var windowHeight = window.innerHeight;
       var popupWidth = 340;
       var popupHeight = 380;
 
-      if (windowWidth <= 576) {
+      // Close if the input is scrolled out of view/container bounds
+      if (isElementClipped(visibleInput)) {
+        closePopup();
+        return;
+      }
+
+      // Calculate vertical position (flip if not enough space below)
+      var topPos = rect.bottom + 4;
+      if (rect.bottom + popupHeight > windowHeight && rect.top - popupHeight > 0) {
+        topPos = rect.top - popupHeight - 4;
+      }
+
+      // Calculate horizontal position
+      var leftPos = rect.left;
+      if (rect.left + popupWidth > windowWidth) {
+        leftPos = rect.right - popupWidth;
+      }
+      leftPos = Math.max(10, leftPos);
+
+      popup.style.top = topPos + 'px';
+      popup.style.left = leftPos + 'px';
+    }
+
+    function attachScrollListeners() {
+      if (_scrollHandler) return;
+      _scrollHandler = function () {
+        updatePosition();
+      };
+      _scrollTargets = (UIControls.utils && typeof UIControls.utils.getScrollableAncestors === 'function')
+        ? UIControls.utils.getScrollableAncestors(inputContainer)
+        : [window];
+      _scrollTargets.forEach(function (target) {
+        target.addEventListener('scroll', _scrollHandler, { passive: true, capture: false });
+      });
+      window.addEventListener('resize', _scrollHandler, { passive: true });
+    }
+
+    function detachScrollListeners() {
+      if (!_scrollHandler) return;
+      _scrollTargets.forEach(function (target) {
+        target.removeEventListener('scroll', _scrollHandler, { capture: false });
+      });
+      window.removeEventListener('resize', _scrollHandler);
+      _scrollHandler = null;
+      _scrollTargets = [];
+    }
+
+    function openPopup() {
+      if (popup) return;
+      popup = document.createElement('div');
+      popup.className = 'custom-datepicker-popup';
+
+      var isMobile = (window.innerWidth <= 576);
+
+      if (isMobile) {
         // Add a dim backdrop for mobile focus
         var backdrop = document.createElement('div');
         backdrop.id = 'datepicker-mobile-backdrop';
@@ -7629,29 +7702,13 @@ var UIInput = (function () {
         backdrop.style.zIndex = '99999998';
         backdrop.addEventListener('click', closePopup);
         document.body.appendChild(backdrop);
-      } else {
-        // Desktop/Tablet layout: Position relative to input using fixed
+        
         popup.style.position = 'fixed';
         popup.style.zIndex = '99999999';
-        
-        // Calculate horizontal position
-        var leftPos = rect.left;
-        if (rect.left + popupWidth > windowWidth) {
-          leftPos = windowWidth - popupWidth - 12;
-          if (leftPos < 0) leftPos = 4;
-        }
-        
-        // Calculate vertical position (open above if not enough space below)
-        var topPos = rect.bottom + 4;
-        if (rect.bottom + popupHeight > windowHeight && rect.top - popupHeight > 0) {
-          topPos = rect.top - popupHeight - 4;
-        }
-        
-        popup.style.top = topPos + 'px';
-        popup.style.left = leftPos + 'px';
-
-        // Close on scroll for fixed positioning consistency
-        window.addEventListener('scroll', closePopup, { passive: true });
+      } else {
+        // Desktop/Tablet layout: Position relative to input using fixed (non-clipped)
+        popup.style.position = 'fixed';
+        popup.style.zIndex = '99999999';
       }
 
       if (typeof UICalendar !== 'undefined') {
@@ -7675,6 +7732,11 @@ var UIInput = (function () {
 
       document.body.appendChild(popup);
 
+      if (!isMobile) {
+        updatePosition();
+        attachScrollListeners();
+      }
+
       if (calendarInstance && calendarInstance.setSelectedDate) {
         calendarInstance.setSelectedDate(hiddenInput.value || null);
       }
@@ -7687,7 +7749,7 @@ var UIInput = (function () {
     function closePopup() {
       if (!popup) return;
       document.removeEventListener('click', outsideClickListener);
-      window.removeEventListener('scroll', closePopup);
+      detachScrollListeners();
       var backdrop = document.getElementById('datepicker-mobile-backdrop');
       if (backdrop && backdrop.parentNode) {
         backdrop.parentNode.removeChild(backdrop);
@@ -8646,9 +8708,92 @@ var UITable = (function () {
         var header = { label: headerLabel, sortable: true, field: key };
         var col = { field: key };
 
-        // Default render: Tooltip
+        // Default render: JSON-aware or Tooltip
         col.render = function(v) { 
           if (v == null || v === '') return '';
+          var str = String(v).trim();
+          if ((str.startsWith('[') && str.endsWith(']')) || (str.startsWith('{') && str.endsWith('}'))) {
+            try {
+              var parsed = JSON.parse(str);
+              if (parsed && typeof parsed === 'object') {
+                return (function renderParsedJson(parsed) {
+                  if (Array.isArray(parsed)) {
+                    if (parsed.length === 0) return '<span style="color: var(--color-text-muted, #94a3b8); font-style: italic;">Trống</span>';
+                    
+                    // Check if it's a schedule (BatDau/KetThuc/NoiDung/Sanh)
+                    var isSchedule = parsed.some(function(item) {
+                      return item && (item.BatDau !== undefined || item.KetThuc !== undefined || item.Sanh !== undefined || item.NoiDung !== undefined);
+                    });
+                    
+                    // Check if it's payment (STT/SoTien/Ngay/NoiDung)
+                    var isPayment = parsed.some(function(item) {
+                      return item && (item.STT !== undefined || item.SoTien !== undefined || item.Ngay !== undefined || item.NoiDung !== undefined);
+                    });
+                    
+                    if (isSchedule) {
+                      var html = '<div class="json-schedule-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; padding: 2px 0;">';
+                      parsed.forEach(function(item) {
+                        var timeStr = (item.BatDau || '') + (item.KetThuc ? ' - ' + item.KetThuc : '');
+                        var hallStr = item.Sanh ? '<span style="background: rgba(59, 130, 246, 0.1); color: #2563eb; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px;">' + item.Sanh + '</span>' : '';
+                        var timeBadge = timeStr ? '<span style="background: rgba(16, 185, 129, 0.1); color: #059669; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px; white-space: nowrap;">' + timeStr + '</span>' : '';
+                        var contentStr = item.NoiDung ? '<span style="color: var(--color-text-primary, #1e293b); font-weight: 500;">' + item.NoiDung + '</span>' : '';
+                        html += '<div class="schedule-row" style="display: flex; align-items: center; flex-wrap: wrap; gap: 2px;">' + timeBadge + hallStr + contentStr + '</div>';
+                      });
+                      html += '</div>';
+                      return html;
+                    }
+                    
+                    if (isPayment) {
+                      var html = '<div class="json-payment-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; padding: 2px 0;">';
+                      parsed.forEach(function(item) {
+                        var sttStr = item.STT ? '<span style="background: rgba(124, 58, 237, 0.1); color: #7c3aed; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px;">Đợt ' + item.STT + '</span>' : '';
+                        var moneyStr = item.SoTien ? '<span style="color: #ef4444; font-weight: 600; margin-right: 4px;">' + item.SoTien + '</span>' : '';
+                        var dateStr = item.Ngay ? '<span style="color: var(--color-text-secondary, #64748b); margin-right: 4px;">(' + item.Ngay + ')</span>' : '';
+                        var contentStr = item.NoiDung ? '<span style="color: var(--color-text-primary, #1e293b); font-style: italic;">' + item.NoiDung + '</span>' : '';
+                        html += '<div class="payment-row" style="display: flex; align-items: center; flex-wrap: wrap; gap: 2px;">' + sttStr + moneyStr + dateStr + contentStr + '</div>';
+                      });
+                      html += '</div>';
+                      return html;
+                    }
+                    
+                    // Generic simple array
+                    var isSimpleArray = parsed.every(function(item) {
+                      return typeof item !== 'object';
+                    });
+                    if (isSimpleArray) {
+                      return parsed.join(', ');
+                    }
+                    
+                    // Generic complex array
+                    var html = '<div class="json-generic-table" style="font-size: 11px; display: flex; flex-direction: column; gap: 2px;">';
+                    parsed.forEach(function(item) {
+                      var itemHtml = [];
+                      for (var k in item) {
+                        if (item.hasOwnProperty(k)) {
+                          itemHtml.push('<strong>' + k + ':</strong> ' + item[k]);
+                        }
+                      }
+                      html += '<div style="border-bottom: 1px dashed var(--color-border, #e2e8f0); padding-bottom: 2px;">' + itemHtml.join(' | ') + '</div>';
+                    });
+                    html += '</div>';
+                    return html;
+                  } else {
+                    // Single object
+                    var html = '<div class="json-generic-object" style="font-size: 11px; display: flex; flex-direction: column; gap: 2px;">';
+                    for (var k in parsed) {
+                      if (parsed.hasOwnProperty(k)) {
+                        html += '<div><strong>' + k + ':</strong> ' + parsed[k] + '</div>';
+                      }
+                    }
+                    html += '</div>';
+                    return html;
+                  }
+                })(parsed);
+              }
+            } catch (e) {
+              // Ignore and fallback
+            }
+          }
           var safeVal = String(v).replace(/"/g, '&quot;');
           return '<span title="' + safeVal + '">' + safeVal + '</span>'; 
         };

@@ -1565,6 +1565,244 @@ window.DynamicFormEngine = (function () {
     btnSave.onclick = function () { _saveGridData(rows, modal, body, btnSave, isAdd); };
   }
 
+  function createJsonGridEditor(field, isReadOnly) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'form-group json-grid-editor-wrapper';
+    wrapper.style.width = '100%';
+    wrapper.style.marginBottom = '16px';
+    
+    if (field.label) {
+      var lbl = document.createElement('label');
+      lbl.innerText = field.label;
+      lbl.style.fontWeight = '600';
+      lbl.style.marginBottom = '6px';
+      lbl.style.display = 'block';
+      if (field.required) {
+        var req = document.createElement('span');
+        req.innerText = ' *';
+        req.style.color = 'var(--color-danger)';
+        lbl.appendChild(req);
+      }
+      wrapper.appendChild(lbl);
+    }
+
+    var hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = field.name;
+    hiddenInput.value = field.value || '[]';
+    wrapper.appendChild(hiddenInput);
+
+    // Parse initial value
+    var dataList = [];
+    try {
+      if (field.value) {
+        dataList = JSON.parse(field.value);
+      }
+    } catch (e) {
+      console.warn('Failed to parse JSON for ' + field.name, e);
+    }
+    if (!Array.isArray(dataList)) {
+      dataList = [];
+    }
+
+    // Parse columns dynamically from field.dataSource if configured in database
+    var cols = [];
+    if (field.dataSource) {
+      var ds = field.dataSource.trim();
+      if (ds.startsWith('[') && ds.endsWith(']')) {
+        try {
+          cols = JSON.parse(ds);
+        } catch (e) {
+          console.error('Failed to parse columns JSON from database metadata (DataSource) for field ' + field.name, e);
+        }
+      } else if (ds.indexOf('|') >= 0) {
+        // Support shorthand format in DB: key1|label1|type1|width1,key2|label2|type2|width2
+        var parts = ds.split(',');
+        parts.forEach(function (p) {
+          var sub = p.split('|');
+          if (sub.length >= 2) {
+            cols.push({
+              key: sub[0].trim(),
+              label: sub[1].trim(),
+              type: (sub[2] || 'text').trim(),
+              width: (sub[3] || 'auto').trim()
+            });
+          }
+        });
+      }
+    }
+
+    if (!cols || cols.length === 0) {
+      console.error('DynamicFormEngine: JSON grid field "' + field.name + '" requires a column schema defined in the database (DataSource).');
+      cols = [];
+    }
+
+    var tableContainer = document.createElement('div');
+    tableContainer.style.cssText = 'border: 1px solid var(--color-border, #e2e8f0); border-radius: 6px; overflow: hidden; background: var(--color-surface, #fff); margin-top: 6px;';
+    
+    var table = document.createElement('table');
+    table.className = 'table table-hover mb-0';
+    table.style.cssText = 'width: 100%; border-collapse: collapse; margin-bottom: 0;';
+    
+    var thead = document.createElement('thead');
+    thead.style.cssText = 'background: var(--color-bg-secondary, #f8fafc); border-bottom: 1px solid var(--color-border, #e2e8f0);';
+    var trHead = document.createElement('tr');
+    
+    cols.forEach(function(col) {
+      var th = document.createElement('th');
+      th.innerText = col.label;
+      th.style.cssText = 'padding: 8px 12px; font-size: 12px; font-weight: 600; text-align: left; color: var(--color-text-secondary, #64748b);' + (col.width !== 'auto' ? ' width: ' + col.width + ';' : '');
+      trHead.appendChild(th);
+    });
+    
+    // Action column header
+    var thAction = document.createElement('th');
+    thAction.style.cssText = 'padding: 8px 12px; width: 50px; text-align: center;';
+    trHead.appendChild(thAction);
+    
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+    
+    var tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+    tableContainer.appendChild(table);
+    wrapper.appendChild(tableContainer);
+    
+    function updateHiddenValue() {
+      var rows = tbody.querySelectorAll('tr');
+      var list = [];
+      rows.forEach(function(tr) {
+        var obj = {};
+        cols.forEach(function(col) {
+          var input = tr.querySelector('[data-key="' + col.key + '"]');
+          if (input) {
+            var val = input.value.trim();
+            if (col.type === 'number') {
+              obj[col.key] = parseInt(val, 10) || 0;
+            } else {
+              obj[col.key] = val;
+            }
+          }
+        });
+        // Check if row has any non-empty data
+        var hasData = Object.keys(obj).some(function(k) {
+          return obj[k] !== '' && obj[k] !== 0;
+        });
+        if (hasData) {
+          list.push(obj);
+        }
+      });
+      hiddenInput.value = JSON.stringify(list);
+      hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    
+    function addRow(itemData) {
+      var tr = document.createElement('tr');
+      tr.style.cssText = 'border-bottom: 1px solid var(--color-border, #e2e8f0);';
+      
+      cols.forEach(function(col) {
+        var td = document.createElement('td');
+        td.style.cssText = 'padding: 4px 8px; vertical-align: middle;';
+        
+        var input;
+        if (col.type === 'select') {
+          input = document.createElement('select');
+          input.className = 'ui-input';
+          input.dataset.key = col.key;
+          input.style.cssText = 'width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--color-border, #cbd5e1); border-radius: 4px; font-size: 12px; background: var(--color-input-bg, #fff); color: var(--color-text, #1e293b);';
+          
+          var optionsList = [];
+          if (col.options) {
+            if (typeof col.options === 'string') {
+              var opts = col.options.split(',');
+              opts.forEach(function (opt) {
+                var p = opt.split('|');
+                optionsList.push({ value: p[0].trim(), label: (p[1] || p[0]).trim() });
+              });
+            } else if (Array.isArray(col.options)) {
+              optionsList = col.options;
+            }
+          }
+          optionsList.forEach(function (opt) {
+            var o = document.createElement('option');
+            o.value = opt.value;
+            o.textContent = opt.label;
+            input.appendChild(o);
+          });
+          input.value = itemData ? (itemData[col.key] !== undefined ? itemData[col.key] : '') : '';
+        } else {
+          input = document.createElement('input');
+          input.type = col.type === 'number' ? 'number' : 'text';
+          input.className = 'ui-input';
+          input.dataset.key = col.key;
+          input.value = itemData ? (itemData[col.key] !== undefined ? itemData[col.key] : '') : '';
+          input.style.cssText = 'width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--color-border, #cbd5e1); border-radius: 4px; font-size: 12px; background: var(--color-input-bg, #fff); color: var(--color-text, #1e293b);';
+        }
+        
+        if (isReadOnly) {
+          input.disabled = true;
+        } else {
+          input.addEventListener('change', updateHiddenValue);
+          if (col.type !== 'select') {
+            input.addEventListener('input', updateHiddenValue);
+          }
+        }
+        td.appendChild(input);
+        tr.appendChild(td);
+      });
+      
+      // Action button column
+      var tdAction = document.createElement('td');
+      tdAction.style.cssText = 'padding: 4px 8px; text-align: center; vertical-align: middle;';
+      
+      var btnDel = document.createElement('button');
+      btnDel.type = 'button';
+      btnDel.className = 'btn btn-sm btn-tool text-danger';
+      btnDel.style.cssText = 'padding: 4px; display: inline-flex; align-items: center; justify-content: center; border: none; background: transparent; cursor: pointer;';
+      btnDel.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">delete</span>';
+      if (isReadOnly) {
+        btnDel.disabled = true;
+        btnDel.style.opacity = '0.5';
+        btnDel.style.cursor = 'not-allowed';
+      } else {
+        btnDel.onclick = function() {
+          tr.remove();
+          updateHiddenValue();
+        };
+      }
+      
+      tdAction.appendChild(btnDel);
+      tr.appendChild(tdAction);
+      tbody.appendChild(tr);
+    }
+    
+    // Add existing rows
+    dataList.forEach(function(item) {
+      addRow(item);
+    });
+    
+    // If empty, add a default empty row
+    if (dataList.length === 0 && !isReadOnly) {
+      addRow(null);
+    }
+    
+    if (!isReadOnly) {
+      // Add "Add row" button
+      var btnAdd = document.createElement('button');
+      btnAdd.type = 'button';
+      btnAdd.className = 'btn btn-outline-primary btn-sm';
+      btnAdd.style.cssText = 'margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 4px 10px; height: 28px;';
+      btnAdd.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">add</span> Thêm dòng mới';
+      btnAdd.onclick = function() {
+        addRow(null);
+        updateHiddenValue();
+      };
+      wrapper.appendChild(btnAdd);
+    }
+    
+    return wrapper;
+  }
+
   function _openModal(isEdit, row) {
     if (isEdit && !row) return;
 
@@ -1849,6 +2087,41 @@ window.DynamicFormEngine = (function () {
         inputEl = UIInput.createMoney(field);
       } else if (field.renderRule === 'nm' || field.renderRule === 'number') {
         inputEl = UIInput.createNumber(field);
+      } else if (field.renderRule === 'json' || field.renderRule === 'js') {
+        var isReadOnly = ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd));
+        inputEl = createJsonGridEditor(field, isReadOnly);
+      } else if (field.renderRule === 'textarea' || field.name.toLowerCase().indexOf('note') >= 0 || field.name.toLowerCase().indexOf('ghichu') >= 0) {
+        var formGroupWrapper = document.createElement('div');
+        formGroupWrapper.className = 'form-group';
+        formGroupWrapper.style.width = '100%';
+        if (field.label) {
+          var lbl = document.createElement('label');
+          lbl.innerText = field.label;
+          lbl.style.fontWeight = '600';
+          lbl.style.marginBottom = '6px';
+          lbl.style.display = 'block';
+          if (field.required) {
+            var req = document.createElement('span');
+            req.innerText = ' *';
+            req.style.color = 'var(--color-danger)';
+            lbl.appendChild(req);
+          }
+          formGroupWrapper.appendChild(lbl);
+        }
+        var textarea = document.createElement('textarea');
+        textarea.className = 'ui-input';
+        textarea.name = field.name;
+        textarea.value = field.value || '';
+        textarea.style.minHeight = '80px';
+        textarea.style.padding = '8px 12px';
+        textarea.style.width = '100%';
+        textarea.style.border = '1px solid var(--color-border, #cbd5e1)';
+        textarea.style.borderRadius = '4px';
+        textarea.style.background = 'var(--color-input-bg, #fff)';
+        textarea.style.color = 'var(--color-text, #1e293b)';
+        if (field.placeholder) textarea.placeholder = field.placeholder;
+        formGroupWrapper.appendChild(textarea);
+        inputEl = formGroupWrapper;
       } else if (field.renderRule === 'rb' || field.renderRule === 'rulebuilder') {
         var wrapper = document.createElement('div');
         wrapper.className = 'form-group';
@@ -2064,9 +2337,18 @@ window.DynamicFormEngine = (function () {
     footer.appendChild(btnCancel);
     footer.appendChild(btnSave);
 
+    var modalWidth = MODULE_CONFIG.ModalWidth || '850px';
+    var hasJsonField = formSchema.some(function (f) {
+      var isVisible = isEdit ? f.showInEdit : f.showInAdd;
+      return (String(isVisible) === '1' || isVisible === true) && (f.renderRule === 'json' || f.renderRule === 'js');
+    });
+    if (hasJsonField) {
+      modalWidth = '1300px';
+    }
+
     var modal = UIModal.show({
       title: isEdit ? MODULE_CONFIG.TitleEdit : MODULE_CONFIG.TitleAdd,
-      width: MODULE_CONFIG.ModalWidth,
+      width: modalWidth,
       content: body,
       footer: footer
     });
@@ -2191,7 +2473,14 @@ window.DynamicFormEngine = (function () {
     for (var i = 0; i < globalFormSchema.length; i++) {
       var field = globalFormSchema[i];
       var val = formInputData[field.name];
-      if (field.required && !val) {
+      var isJsonField = (field.renderRule === 'json' || field.renderRule === 'js');
+      var isEmptyJson = false;
+      if (isJsonField) {
+        if (!val || val === '[]' || val === 'null' || val === '{}') {
+          isEmptyJson = true;
+        }
+      }
+      if (field.required && (!val || isEmptyJson)) {
         Alert.warning(MODULE_CONFIG.WarnMissingInfo, MODULE_CONFIG.WarnMissingInput.replace('{0}', field.label));
         isInvalid = true;
         break;
