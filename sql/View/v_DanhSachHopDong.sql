@@ -27,6 +27,11 @@ BEGIN
     ALTER TABLE tbmk_Hopdong ADD NoteLobby NVARCHAR(1000) NULL;
 END
 GO
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'JsonLichTrinh')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD JsonLichTrinh NVARCHAR(MAX) NULL;
+END
+GO
 
 -- =============================================
 IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong]'))
@@ -107,6 +112,7 @@ SELECT
     h.Sotiencochopdong,
     h.Tongtiencoc,
     h.Ghichu,
+    h.JsonLichTrinh,
     (
         SELECT TOP 1 hs.Sanhtiecid 
         FROM tbmk_Hopdongsanhtiec hs 
@@ -151,68 +157,67 @@ SELECT
     ISNULL(h.GioDienRaSuKien, '...') AS [Tiec_GioBatDau],
 
     -- Các trường lịch trình động dạng JSON phục vụ in ấn BEO mới
-    (
+    -- Nếu đã có JsonLichTrinh lưu trong DB thì ưu tiên lấy, ngược lại dùng fallback tự sinh
+    ISNULL(NULLIF(h.JsonLichTrinh, ''), (
         SELECT 
             t.BatDau AS [BatDau],
             t.KetThuc AS [KetThuc],
             t.Sanh AS [Sanh],
             t.NoiDung AS [NoiDung]
         FROM (
+            -- SETUP 1
             SELECT 
                 ISNULL(h.TuGioDenGioSetup, '...') AS BatDau, 
                 ISNULL(h.DenGioSetup, '...') AS KetThuc, 
                 s.Tensanhtiec AS Sanh, 
-                N'Vào hàng hóa' AS NoiDung
+                N'Vào hàng hóa' AS NoiDung,
+                1 AS STT
             FROM tbmk_Hopdongsanhtiec hs 
             INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
             WHERE hs.Sohopdong = h.Sohopdong
 
             UNION ALL
 
+            -- SETUP 2
             SELECT 
                 N'13h00' AS BatDau, 
                 N'17h00' AS KetThuc, 
                 s.Tensanhtiec AS Sanh, 
-                ISNULL(h.GhiChuSetup, N'SETUP: Không máy lạnh') AS NoiDung
+                ISNULL(h.GhiChuSetup, N'SETUP: Không máy lạnh') AS NoiDung,
+                2 AS STT
             FROM tbmk_Hopdongsanhtiec hs 
             INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
             WHERE hs.Sohopdong = h.Sohopdong
-        ) t
-        FOR JSON PATH
-    ) AS [LichTrinhSetup],
 
-    (
-        SELECT 
-            t.BatDau AS [BatDau],
-            t.KetThuc AS [KetThuc],
-            t.Sanh AS [Sanh],
-            t.NoiDung AS [NoiDung]
-        FROM (
-            -- RHS (Chạy ở Sảnh chính)
+            UNION ALL
+
+            -- TOCHUC 1: RHS (Chạy ở Sảnh chính)
             SELECT 
                 ISNULL(h.GioDienRaSuKien, '10h00') AS BatDau, 
                 ISNULL(h.GioKetThucSuKien, '12h00') AS KetThuc, 
                 s.Tensanhtiec AS Sanh, 
-                N'RHS: Có ATAS, Led; không máy lạnh' AS NoiDung
+                N'RHS: Có ATAS, Led; không máy lạnh' AS NoiDung,
+                3 AS STT
             FROM tbmk_Hopdongsanhtiec hs 
             INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
             WHERE hs.Sohopdong = h.Sohopdong AND hs.IsSanhchinh = 1
 
             UNION ALL
 
-            -- HỘI NGHỊ (Chạy ở Sảnh chính)
+            -- TOCHUC 2: HỘI NGHỊ (Chạy ở Sảnh chính)
             SELECT 
                 N'13h00' AS BatDau, 
                 N'17h00' AS KetThuc, 
                 s.Tensanhtiec AS Sanh, 
-                N'HỘI NGHỊ' AS NoiDung
+                N'HỘI NGHỊ' AS NoiDung,
+                4 AS STT
             FROM tbmk_Hopdongsanhtiec hs 
             INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
             WHERE hs.Sohopdong = h.Sohopdong AND hs.IsSanhchinh = 1
 
             UNION ALL
 
-            -- TIỆC (Chạy ở Sảnh tiệc / Sảnh 2, nếu không có sảnh 2 thì chạy ở sảnh chính)
+            -- TOCHUC 3: TIỆC
             SELECT 
                 N'18h00' AS BatDau, 
                 N'22h00' AS KetThuc, 
@@ -226,29 +231,25 @@ SELECT
                      INNER JOIN dmSanhtiec s3 ON hs3.Sanhtiecid = s3.Sanhtiecid 
                      WHERE hs3.Sohopdong = h.Sohopdong AND hs3.IsSanhchinh = 1)
                 ) AS Sanh, 
-                N'TIỆC' AS NoiDung
-        ) t
-        FOR JSON PATH
-    ) AS [LichTrinhToChuc],
+                N'TIỆC' AS NoiDung,
+                5 AS STT
 
-    (
-        SELECT 
-            t.BatDau AS [BatDau],
-            t.KetThuc AS [KetThuc],
-            t.Sanh AS [Sanh],
-            t.NoiDung AS [NoiDung]
-        FROM (
+            UNION ALL
+
+            -- OUT
             SELECT 
                 N'Trước 10h sáng' AS BatDau, 
                 N'' AS KetThuc, 
                 s.Tensanhtiec AS Sanh, 
-                N'Ra hàng hóa' AS NoiDung
+                N'Ra hàng hóa' AS NoiDung,
+                6 AS STT
             FROM tbmk_Hopdongsanhtiec hs 
             INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
             WHERE hs.Sohopdong = h.Sohopdong
         ) t
+        ORDER BY t.STT
         FOR JSON PATH
-    ) AS [LichTrinhOut],
+    )) AS [LichTrinh],
     
     (
         SELECT 
@@ -418,7 +419,7 @@ VALUES (
     'frmHopDong',
     'Save',
     'API_LuuHopDong',
-    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenB_CCCD=N''{BenB_CCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'''
+    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenB_CCCD=N''{BenB_CCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @JsonLichTrinh=N''{JsonLichTrinh}'''
 );
 GO
 
@@ -483,6 +484,7 @@ WHERE FormName = 'frmHopDong' AND FieldName IN ('BenA_NguoiDaiDien', 'BenA_ChucV
 UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail', 'BenB_CCCD', 'Nhamngay', 'Ghichu');
 UPDATE SY_FormatFields SET FormatID = 'd' WHERE FormName = 'frmHopDong' AND FieldName IN ('Ngayhopdong');
 UPDATE SY_FormatFields SET FormatID = 'sl' WHERE FormName = 'frmHopDong' AND FieldName IN ('Loaitiecid', 'Thoigianid', 'JsonSanhTiec');
+UPDATE SY_FormatFields SET FormatID = 'js', DataSource = N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', FormPosition = '12' WHERE FormName = 'frmHopDong' AND FieldName = 'JsonLichTrinh';
 UPDATE SY_FormatFields SET FormatID = 'n' WHERE FormName = 'frmHopDong' AND FieldName IN ('SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong', 'DaCocVND', 'Sotiencochopdong', 'Tongtiencoc');
 
 -- Cấu hình DataSource cho các Dropdown
@@ -561,6 +563,7 @@ UPDATE SY_FormatFields SET CaptionVN = N'Tiền cọc chỗ (Lần 1)' WHERE For
 UPDATE SY_FormatFields SET CaptionVN = N'Tiền cọc hợp đồng (Lần 2)' WHERE FormName = 'frmHopDong' AND FieldName = 'Sotiencochopdong';
 UPDATE SY_FormatFields SET CaptionVN = N'Tổng tiền cọc', ValidateRule = 'formula:{DaCocVND} + {Sotiencochopdong}' WHERE FormName = 'frmHopDong' AND FieldName = 'Tongtiencoc';
 UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú bổ sung' WHERE FormName = 'frmHopDong' AND FieldName = 'Ghichu';
+UPDATE SY_FormatFields SET CaptionVN = N'Lịch trình BEO (JSON)', ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonLichTrinh';
 
 -- Cập nhật tên tiếng Việt thân thiện cho các cột gốc (Grid mặc định)
 UPDATE SY_FormatFields SET CaptionVN = N'Số hợp đồng' WHERE FormName = 'frmHopDong' AND FieldName = 'Sohopdong';
@@ -601,4 +604,5 @@ UPDATE SY_FormatFields SET OrderNo = 23 WHERE FormName = 'frmHopDong' AND FieldN
 UPDATE SY_FormatFields SET OrderNo = 24 WHERE FormName = 'frmHopDong' AND FieldName = 'TongTien';
 UPDATE SY_FormatFields SET OrderNo = 25 WHERE FormName = 'frmHopDong' AND FieldName = 'TrangThai';
 UPDATE SY_FormatFields SET OrderNo = 26 WHERE FormName = 'frmHopDong' AND FieldName = 'Ghichu';
+UPDATE SY_FormatFields SET OrderNo = 27 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonLichTrinh';
 GO

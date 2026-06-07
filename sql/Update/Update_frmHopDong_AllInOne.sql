@@ -34,6 +34,11 @@ BEGIN
     ALTER TABLE tbmk_Hopdong ADD NoteLobby NVARCHAR(1000) NULL;
 END
 GO
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'JsonLichTrinh')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD JsonLichTrinh NVARCHAR(MAX) NULL;
+END
+GO
 
 -- =========================================================================
 -- 1. STORED PROCEDURE: API_DanhSachHopDong
@@ -125,7 +130,10 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @NoteLobby NVARCHAR(1000) = NULL,
     
     -- Danh sach Sanh dat (Dang JSON: [{"Sanhtiecid":"S01", "IsSanhchinh": 1}, ...])
-    @JsonSanhTiec NVARCHAR(MAX) = NULL 
+    @JsonSanhTiec NVARCHAR(MAX) = NULL,
+    
+    -- Danh sach Lich trinh BEO (Dang JSON)
+    @JsonLichTrinh NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -288,14 +296,14 @@ BEGIN
                 SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong, TongSoBan,
                 Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongtiencoc,
                 Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID,
-                NoteBaoVe, NoteKyThuat, NoteBieuNgu, NoteLobby
+                NoteBaoVe, NoteKyThuat, NoteBieuNgu, NoteLobby, JsonLichTrinh
             )
             VALUES (
                 @Sohopdong, @Sobiennhan, ISNULL(@NgayHopDongParsed,@Now), @NgayToChucParsed, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
                 @SobanManchinhthucVal, @SobanManduphongVal, @SobanChaychinhthucVal, @SobanChayduphongVal, @TongSoBanVal,
                 @TongtienhopdongVal, @SotiencocchoVal, @SotiencochopdongVal, @TongtiencocVal,
                 @Manv, @Ghichu, 0, 0, @Now, @UserCreate, '',
-                @NoteBaoVe, @NoteKyThuat, @NoteBieuNgu, @NoteLobby
+                @NoteBaoVe, @NoteKyThuat, @NoteBieuNgu, @NoteLobby, @JsonLichTrinh
             );
             IF (@Sobiennhan IS NOT NULL AND @Sobiennhan != '')
                 UPDATE tbmk_Biennhancoccho SET IsKetthuc=1, DateUpdate=@Now, UserUpdate=@UserCreate WHERE DocumentID=@Sobiennhan;
@@ -316,7 +324,8 @@ BEGIN
                 TongSoBan=@TongSoBanVal, Tongtienhopdong=@TongtienhopdongVal,
                 Sotiencoccho=@SotiencocchoVal, Sotiencochopdong=@SotiencochopdongVal,
                 Tongtiencoc=@TongtiencocVal, Ghichu=@Ghichu, DateUpdate=@Now, UserUpdate=@UserCreate,
-                NoteBaoVe=@NoteBaoVe, NoteKyThuat=@NoteKyThuat, NoteBieuNgu=@NoteBieuNgu, NoteLobby=@NoteLobby
+                NoteBaoVe=@NoteBaoVe, NoteKyThuat=@NoteKyThuat, NoteBieuNgu=@NoteBieuNgu, NoteLobby=@NoteLobby,
+                JsonLichTrinh=@JsonLichTrinh
             WHERE Sohopdong=@Sohopdong;
         END
 
@@ -430,6 +439,7 @@ SELECT
         WHERE hs.Sohopdong = h.Sohopdong 
         ORDER BY hs.IsSanhchinh DESC
     ) AS [JsonSanhTiec],
+    h.JsonLichTrinh,
     
     -- ==========================================
     -- CÁC CỘT DỮ LIỆU ĐƯỢC FORMAT SẴN CHO IN ẤN 
@@ -717,7 +727,7 @@ VALUES (
     'frmHopDong',
     'Save',
     'API_LuuHopDong',
-    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenB_CCCD=N''{BenB_CCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'''
+    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenB_CCCD=N''{BenB_CCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @JsonLichTrinh=N''{JsonLichTrinh}'''
 );
 GO
 
@@ -739,7 +749,7 @@ SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPositio
 WHERE FormName = 'frmHopDong'
   AND FieldName IN (
     'Tenchure', 'Tencodau', 'Diachi', 'Mail',
-    'Ngayhopdong', 'NgayToChuc', 'Nhamngay', 'Loaitiecid', 'Thoigianid', 'JsonSanhTiec',
+    'Ngayhopdong', 'NgayToChuc', 'Nhamngay', 'Loaitiecid', 'Thoigianid', 'JsonSanhTiec', 'JsonLichTrinh',
     'SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong',
     'DaCocVND', 'Sotiencochopdong', 'Tongtiencoc'
   );
@@ -932,35 +942,8 @@ IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND F
 ELSE
     UPDATE SY_FormatFields SET CaptionVN = N'Loại hình sự kiện' WHERE FormName = 'frmHopDong' AND FieldName = 'LoaiHinhSuKien';
 
-IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhSetup')
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, DataSource, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
-    VALUES ('frmHopDong', 'LichTrinhSetup', N'Lịch trình setup (JSON)', 'js', N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', 0, 0, 0, 96, '12');
-ELSE
-    UPDATE SY_FormatFields 
-    SET CaptionVN = N'Lịch trình setup (JSON)',
-        FormatID = 'js',
-        DataSource = N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]'
-    WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhSetup';
-
-IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhToChuc')
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, DataSource, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
-    VALUES ('frmHopDong', 'LichTrinhToChuc', N'Lịch trình tổ chức (JSON)', 'js', N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', 0, 0, 0, 97, '12');
-ELSE
-    UPDATE SY_FormatFields 
-    SET CaptionVN = N'Lịch trình tổ chức (JSON)',
-        FormatID = 'js',
-        DataSource = N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]'
-    WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhToChuc';
-
-IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhOut')
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, DataSource, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
-    VALUES ('frmHopDong', 'LichTrinhOut', N'Lịch trình out (JSON)', 'js', N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', 0, 0, 0, 98, '12');
-ELSE
-    UPDATE SY_FormatFields 
-    SET CaptionVN = N'Lịch trình out (JSON)',
-        FormatID = 'js',
-        DataSource = N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]'
-    WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhOut';
+-- Xoá các cột Lịch trình cũ khỏi SY_FormatFields
+DELETE FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName IN ('LichTrinhSetup', 'LichTrinhToChuc', 'LichTrinhOut');
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhThanhToan')
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, DataSource, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
@@ -1097,8 +1080,18 @@ GO
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NoteLobby')
 BEGIN
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, OrderNo, ControlType, Width, IsRequire, IsVisible, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmHopDong', 'NoteLobby', N'Ghi chú Khu vực Lobby', 33, 'TEXTAREA', 200, 0, 1, 1, 1, 0, 0)
+    VALUES ('frmHopDong', 'NoteLobby', N'Ghi chú Khu vực Đón khách (Lobby)', 33, 'TEXTAREA', 200, 0, 1, 1, 1, 0, 0)
 END
+GO
+
+-- Configure format for JsonLichTrinh as Master-Detail Grid
+UPDATE SY_FormatFields 
+SET FormatID = 'js',
+    DataSource = N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"100px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"100px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"180px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]',
+    FormPosition = '12',
+    CaptionVN = N'Lịch trình BEO (JSON)',
+    OrderNo = 27
+WHERE FormName = 'frmHopDong' AND FieldName = 'JsonLichTrinh';
 GO
 
 UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú Bảo Vệ (Hàng hóa)', OrderNo = 30, ControlType = 'TEXTAREA', IsVisible = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBaoVe';
