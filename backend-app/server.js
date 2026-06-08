@@ -137,8 +137,38 @@ app.get('/api/documents', (req, res) => {
     }
 });
 
-
-
+/**
+ * Lấy danh sách Mẫu gốc (Templates)
+ */
+app.get('/api/documents/templates', (req, res) => {
+    try {
+        let results = [];
+        const scanDir = (dir) => {
+            if (!fs.existsSync(dir)) return;
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+                const fullPath = path.join(dir, file);
+                const stat = fs.statSync(fullPath);
+                if (stat.isDirectory()) {
+                    scanDir(fullPath);
+                } else if (file.endsWith('.docx') || file.endsWith('.html')) {
+                    // Trả về tên file và đường dẫn tương đối để dễ hiển thị
+                    results.push({
+                        fileName: file,
+                        relPath: path.relative(SAMPLES_DIR, fullPath).replace(/\\/g, '/'),
+                        size: (stat.size / 1024).toFixed(2) + ' KB',
+                        updatedAt: stat.mtime
+                    });
+                }
+            }
+        };
+        scanDir(SAMPLES_DIR);
+        res.json({ success: true, data: results });
+    } catch (error) {
+        console.error('[API] Lỗi lấy danh sách template:', error.message);
+        res.status(500).json({ success: false, message: 'Lỗi server khi lấy template.' });
+    }
+});
 
 /**
  * 1.5 Lấy danh sách các biến dữ liệu cho một loại mẫu
