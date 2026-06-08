@@ -5,6 +5,9 @@ services:
     container_name: backend_app
     ports:
       - "8081:8081"
+    volumes:
+      - ./backend-app/uploads:/app/uploads
+      - ./backend-app/samples:/app/samples
     restart: always
 
   onlyoffice:
