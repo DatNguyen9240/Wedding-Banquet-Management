@@ -14,25 +14,29 @@ var DocumentExportPlugin = (function () {
       docType: 'hop_dong',
       label: 'Xuất Hợp Đồng',
       icon: 'description',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
+      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+      sqlListName: 'API_DanhSachHopDong'
     },
     'frmBiennhancoccho': {
       docType: 'phieu_thu',
       label: 'Xuất Phiếu Thu',
       icon: 'receipt_long',
-      altKeys: ['MaChungTu', 'maChungTu', 'DocumentID', 'SoPhieu']
+      altKeys: ['MaChungTu', 'maChungTu', 'DocumentID', 'SoPhieu'],
+      sqlListName: 'API_DanhSachPhieuCoc'
     },
     'frmQuyetToan': {
       docType: 'quyet_toan',
       label: 'Xuất Quyết Toán',
       icon: 'receipt',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
+      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+      sqlListName: 'API_DanhSachQuyetToan'
     },
     'tbmk_Thaydoi': {
       docType: 'de_nghi_thay_doi',
       label: 'Xuất Phiếu Thay Đổi',
       icon: 'edit_note',
-      altKeys: ['Sothaydoi', 'sothaydoi', 'SoThayDoi', 'Sohopdong', 'sohopdong']
+      altKeys: ['Sothaydoi', 'sothaydoi', 'SoThayDoi', 'Sohopdong', 'sohopdong'],
+      sqlListName: 'API_DanhSachThayDoi'
     }
   };
 
@@ -56,6 +60,12 @@ var DocumentExportPlugin = (function () {
       return;
     }
 
+    // Đọc tên file mẫu từ DB (đã cấu hình trong bảng dmLoaihinhtiec)
+    var actualDocType = config.docType;
+    if (config.docType === 'hop_dong' && row.TemplateFile) {
+        actualDocType = row.TemplateFile;
+    }
+
     var btn = document.getElementById('btn-export-doc-' + config.docType);
     var originalHTML = btn ? btn.innerHTML : '';
     if (btn) {
@@ -74,10 +84,11 @@ var DocumentExportPlugin = (function () {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        templateType: config.docType,
+        templateType: actualDocType,
         customerId: docId,
-        outputFileName: config.docType + '_' + docId,
-        rowData: row
+        outputFileName: actualDocType + '_' + docId,
+        rowData: row,
+        sqlListName: config.sqlListName
       })
     })
       .then(function (res) { return res.json(); })

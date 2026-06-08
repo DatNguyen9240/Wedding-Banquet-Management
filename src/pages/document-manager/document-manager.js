@@ -222,7 +222,7 @@ var DocumentManagerPage = (function () {
         var config = {
           document: {
             fileType: 'docx',
-            key: fileName + '_' + Date.now(),
+            key: fileName.replace(/[^a-zA-Z0-9_\-\.]/g, '') + '_' + Date.now(),
             title: fileName,
             url: fileUrl,
             permissions: { edit: false, download: true, print: true }

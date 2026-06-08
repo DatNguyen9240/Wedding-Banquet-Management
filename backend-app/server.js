@@ -174,7 +174,8 @@ app.post('/api/documents/generate', async (req, res) => {
         if (!templateType) return res.status(400).json({ success: false, message: 'Thiếu templateType.' });
         if (!sqlListName) return res.status(400).json({ success: false, message: 'Thiếu sqlListName để truy vấn.' });
         if (!outputFileName) outputFileName = 'Generated_' + templateType;
-        outputFileName = outputFileName.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, '_');
+        // Lọc bỏ tất cả ký tự đặc biệt, dấu ngoặc, dấu cộng để ONLYOFFICE không bị lỗi 400 Bad Request
+        outputFileName = outputFileName.replace(/[\/\\:*?"<>|()+]/g, '_').replace(/\s+/g, '_');
         
         // ── 1. Lấy thông tin nhà hàng từ Setup API ──────────────────────────
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));

@@ -291,3 +291,135 @@
 - {TenKhachHang}
 - {YKienKhac}
 
+
+## samples\hop_dong.docx
+**Các Vòng Lặp (Bảng/Danh sách):**
+- (Không có)
+**Các Biến Cố Định (Text):**
+- {BenA_ChucVu}
+- {BenA_NguoiDaiDien}
+- {BenA_NhanVienPhuTrach}
+- {BenA_SDT_NhanVien}
+- {BenB_CCCD}
+- {BenB_ChucVu}
+- {BenB_DiaChi}
+- {BenB_DienThoai}
+- {BenB_TenChuTiec}
+- {BenB_TenDaiDien}
+- {Coc_Lan1_BangChu}
+- {Coc_Lan1_SoTien}
+- {Coc_Nam}
+- {Coc_Ngay}
+- {Coc_Thang}
+- {DS_KhuyenMai}
+- {DieuKhoanBoSung}
+- {NamLapHD}
+- {NgayLapHD}
+- {Sanh_QuyMoMax}
+- {Sanh_QuyMoMin}
+- {Sohopdong}
+- {ThangLapHD}
+- {Tiec_GioBatDau}
+- {Tiec_NamAL}
+- {Tiec_NamDL}
+- {Tiec_NgayAL}
+- {Tiec_NgayDL}
+- {Tiec_SanhTiec}
+- {Tiec_SoBanChinhThuc}
+- {Tiec_SoBanDuPhong}
+- {Tiec_SoBanTang}
+- {Tiec_SoKhach1Ban}
+- {Tiec_ThangAL}
+- {Tiec_ThangDL}
+
+## samples\BEO_Tiec_Cuoi.docx
+**Các Vòng Lặp (Bảng/Danh sách):**
+- {#DanhSachMenu}
+- {#DanhSachMon}
+- {#DanhSachMonUong}
+- {#DanhSachThucUong}
+- {#LichTrinhThanhToan}
+**Các Biến Cố Định (Text):**
+- {AnNheTruocTiec}
+- {BanhManDauGio}
+- {BenA_NhanVienPhuTrach}
+- {BenA_SDT_NhanVien}
+- {BenB_DiaChi}
+- {BieuNguCD}
+- {BieuNguCR}
+- {DichVuKhuyenMai}
+- {DoiTuongKhach}
+- {GhiChuMenu}
+- {GhiChuThucUong}
+- {GioBatDau}
+- {GioKetThuc}
+- {NgayHopDong}
+- {NgayRaBEO}
+- {NgayToChuc}
+- {NoiDung}
+- {STT}
+- {SanhDat}
+- {Sdtchure}
+- {Sdtcodau}
+- {SetupNoGhe}
+- {SoTien}
+- {SobanManchinhthuc}
+- {SobanManduphong}
+- {Sohopdong}
+- {TenLe}
+- {TenMenu}
+- {TenMon}
+- {TenMonUong}
+- {TenThucUong}
+- {Tenchure}
+- {Tencodau}
+- {TieuDePhieu}
+
+## samples\phu_luc_hop_dong.docx
+**Các Vòng Lặp (Bảng/Danh sách):**
+- {#DichVuBaoGia}
+- {#DichVuTinhPhi}
+- {#MenuTiec}
+**Các Biến Cố Định (Text):**
+- {BenB_CCCD}
+- {BenB_DiaChi}
+- {BenB_DienThoai}
+- {BenB_TenChuTiec}
+- {BenB_TenDaiDien}
+- {ChuongTrinhBia}
+- {ChuongTrinhLe}
+- {DVT}
+- {DonGia}
+- {GhiChu}
+- {GiaTriHopDongTamTinh}
+- {HanThanhToan_Dot2}
+- {HinhThucThanhToan}
+- {Menu_TongCong}
+- {NgayKyHopDong}
+- {NhanVienPhuTrach}
+- {NoiDung}
+- {SL}
+- {STT}
+- {Sanh_QuyMoMax}
+- {Sanh_QuyMoMin}
+- {SoBanChinhThuc}
+- {SoBanDuPhong}
+- {SoBanTang}
+- {SoHopDong}
+- {SoLuong}
+- {SoPhuLuc}
+- {TenDichVu}
+- {TenMonAn}
+- {ThanhTien}
+- {ThanhToan_Dot2}
+- {ThoaThuanChung}
+- {Tiec_GioBatDau}
+- {Tiec_Nam}
+- {Tiec_NamAL}
+- {Tiec_Ngay}
+- {Tiec_NgayAL}
+- {Tiec_SanhTiec}
+- {Tiec_Thang}
+- {Tiec_ThangAL}
+- {TongTien}
+
