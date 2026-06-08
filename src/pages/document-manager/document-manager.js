@@ -219,17 +219,19 @@ var DocumentManagerPage = (function () {
         '</div>';
 
       _ensureOnlyOfficeApi().then(function () {
+        var callbackUrl = DOC_CONFIG.BASE_API + '/callback?isTemplate=0&fileName=' + encodeURIComponent(fileName);
         var config = {
           document: {
             fileType: 'docx',
             key: fileName.replace(/[^a-zA-Z0-9_\-\.]/g, '') + '_' + Date.now(),
             title: fileName,
             url: fileUrl,
-            permissions: { edit: false, download: true, print: true }
+            permissions: { edit: true, download: true, print: true }
           },
           documentType: 'word',
           editorConfig: {
-            mode: 'view',
+            mode: 'edit',
+            callbackUrl: callbackUrl,
             lang: 'vi',
             user: { id: 'user_' + Date.now(), name: _getCurrentUserName() },
             customization: { compactHeader: true, toolbarNoTabs: false, hideRightMenu: true }
