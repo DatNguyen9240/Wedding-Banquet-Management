@@ -114,10 +114,15 @@ SELECT
     h.Ghichu,
     h.JsonLichTrinh,
     (
-        SELECT TOP 1 hs.Sanhtiecid 
+        SELECT 
+            hs.Sanhtiecid AS [Sanhtiecid],
+            CAST(ISNULL(hs.IsSanhchinh, 0) AS BIT) AS [IsSanhchinh],
+            hs.KieuSetup AS [KieuSetup],
+            hs.Ghichuct AS [Ghichuct]
         FROM tbmk_Hopdongsanhtiec hs 
         WHERE hs.Sohopdong = h.Sohopdong 
-        ORDER BY hs.IsSanhchinh DESC
+        ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid ASC
+        FOR JSON PATH
     ) AS [JsonSanhTiec],
     
     -- ==========================================
@@ -291,6 +296,38 @@ SELECT
         ORDER BY t.STT
         FOR JSON PATH
     ) AS [LichTrinhThanhToan],
+    
+    (
+        SELECT 
+            CASE WHEN hs.IsSanhchinh = 1 THEN N'Hội nghị / Tiệc chính' ELSE N'Tiệc' END AS [LoaiPhong],
+            s.Tensanhtiec AS [TenSanh],
+            ISNULL(CAST(s.ChieuRong AS NVARCHAR), '...') AS [ChieuRong],
+            ISNULL(CAST(s.ChieuDai AS NVARCHAR), '...') AS [ChieuDai],
+            ISNULL(CAST(s.ChieuCaoTran AS NVARCHAR), '...') AS [ChieuCaoTran],
+            ISNULL(s.KTSanKhau, '...') AS [KTSanKhau],
+            CASE 
+                WHEN hs.KieuSetup = 'ClassRoom' THEN ISNULL(s.ClassRoom, 0)
+                WHEN hs.KieuSetup = 'Theater' THEN ISNULL(s.Theater, 0)
+                WHEN hs.KieuSetup = 'Cluster' THEN ISNULL(s.ClusterHalfRound, 0)
+                ELSE ISNULL(s.SLBanMax * 10, 0)
+            END AS [SucchuaMax],
+            ISNULL(s.SLBanMin * 10, 0) AS [SucchuaMin],
+            CASE 
+                WHEN hs.KieuSetup = 'ClassRoom' THEN N'Lớp học'
+                WHEN hs.KieuSetup = 'Theater' THEN N'Nhà hát'
+                WHEN hs.KieuSetup = 'Cluster' THEN N'Bàn tròn xoay 1 phía'
+                ELSE N'Bàn tròn (Banquet)'
+            END + 
+            CASE 
+                WHEN ISNULL(hs.Ghichuct, '') <> '' THEN N' (' + hs.Ghichuct + N')'
+                ELSE N''
+            END AS [SetupBanGhe]
+        FROM tbmk_Hopdongsanhtiec hs
+        INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid
+        WHERE hs.Sohopdong = h.Sohopdong
+        ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid ASC
+        FOR JSON PATH
+    ) AS [DanhSachSanh],
     
     RIGHT('0' + CAST(DAY(h.Ngaytochuc) AS VARCHAR), 2) AS [Tiec_NgayDL],
     RIGHT('0' + CAST(MONTH(h.Ngaytochuc) AS VARCHAR), 2) AS [Tiec_ThangDL],

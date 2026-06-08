@@ -356,6 +356,7 @@ BEGIN
             -- Insert sảnh mới từ JSON
             INSERT INTO tbmk_Hopdongsanhtiec (
                 UserAutoid, Sohopdong, Sanhtiecid, IsSanhchinh, 
+                KieuSetup, Ghichuct,
                 DateCreate, UserCreate
             )
             SELECT 
@@ -363,6 +364,8 @@ BEGIN
                 @Sohopdong, 
                 JSON_VALUE(value, '$.Sanhtiecid'),
                 ISNULL(CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0),
+                JSON_VALUE(value, '$.KieuSetup'),
+                JSON_VALUE(value, '$.Ghichuct'),
                 @Now,
                 @UserCreate
             FROM OPENJSON(@JsonSanhTiec);
