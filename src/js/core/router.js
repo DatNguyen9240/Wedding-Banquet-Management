@@ -13,9 +13,6 @@ var Router = (function () {
     { path: '/components-demo', template: 'src/pages/components-demo/components-demo.html', script: 'src/pages/components-demo/components-demo.js', perm: 'uidemo', title: 'Bản test Component', pageFn: 'ComponentsDemoPage' },
     { path: '/appearance', template: 'src/pages/appearance/appearance.html', script: 'src/pages/appearance/appearance.js', perm: '', title: 'Cấu hình Giao diện', pageFn: 'AppearancePage' },
     { path: '/document-manager', template: 'src/pages/document-manager/document-manager.html', script: 'src/pages/document-manager/document-manager.js', perm: '', title: 'Workspace Tài Liệu', pageFn: 'DocumentManagerPage', hideHeader: true },
-    { path: '/booking', template: 'src/pages/booking/booking.html', script: 'src/pages/booking/booking.js', perm: 'frmBiennhancoccho', title: 'Phiếu Cọc', pageFn: 'BookingPage' },
-    { path: '/contract', template: 'src/pages/contract/contract.html', script: 'src/pages/contract/contract.js', perm: 'frmHopDong', title: 'Hợp Đồng Tiệc', pageFn: 'ContractPage' },
-    { path: '/checkout', template: 'src/pages/checkout/checkout.html', script: 'src/pages/checkout/checkout.js', perm: 'frmQuyetToan', title: 'Quyết Toán Tiệc', pageFn: 'CheckoutPage' },
 
     { path: '/categories', template: 'src/pages/categories/categories.html', script: 'src/pages/categories/categories.js', perm: '', title: '', pageFn: 'CategoriesPage' },
     { path: '/inventory', template: 'src/pages/inventory/inventory.html', script: 'src/pages/inventory/inventory.js', perm: '', title: 'Kho & Định lượng', pageFn: 'InventoryPage' },
@@ -305,9 +302,14 @@ var Router = (function () {
               if (!route.hideHeader) {
                 var headerHtml =
                   '<div class="page-title-bar" id="global-header">' +
-                  '<div class="page-title-info">' +
-                  '<h1 class="page-title-heading">' + (route.title || 'Quản lý Dữ liệu') + '</h1>' +
-                  (route.subTitle ? '<span class="page-title-sub">' + route.subTitle + '</span>' : '') +
+                  '<div class="page-title-info" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-direction: row; min-width: 0;">' +
+                  '<button class="btn-back-header" onclick="history.back()" title="Quay lại">' +
+                  '<span class="material-symbols-outlined">arrow_back</span>' +
+                  '</button>' +
+                  '<div style="min-width: 0;">' +
+                  '<h1 class="page-title-heading" style="margin: 0;">' + (route.title || 'Quản lý Dữ liệu') + '</h1>' +
+                  (route.subTitle ? '<span class="page-title-sub" style="margin-top: 2px;">' + route.subTitle + '</span>' : '') +
+                  '</div>' +
                   '</div>' +
                   '<div class="page-title-actions" id="global-page-actions"></div>' +
                   '</div>';

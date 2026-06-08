@@ -25,22 +25,35 @@ var UIInput = (function () {
     }
 
     var input = document.createElement('input');
-    input.type = inputType;
+    if (config.isMoney) {
+      input.type = 'text';
+      input.setAttribute('inputmode', 'numeric');
+    } else {
+      input.type = inputType;
+    }
     input.className = 'ui-input';
     if (config.id) input.id = config.id;
     if (config.name) input.name = config.name;
-    
+
     var finalPlaceholder = config.placeholder;
     if (!finalPlaceholder && config.label && inputType !== 'checkbox' && inputType !== 'radio' && inputType !== 'date') {
       finalPlaceholder = 'Nhập ' + config.label.toLowerCase() + '...';
     }
     if (finalPlaceholder) input.placeholder = finalPlaceholder;
-    
+
     if (config.value !== undefined) input.value = config.value;
     if (config.disabled) input.disabled = true;
     if (config.readonly) input.readOnly = true;
 
     wrapper.appendChild(input);
+
+    if (config.isMoney) {
+      var wordEl = document.createElement('div');
+      wordEl.className = 'money-words-text';
+      wordEl.style.cssText = 'font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;';
+      wrapper.appendChild(wordEl);
+      setupMoneyInput(input, wordEl);
+    }
 
     return { wrapper: wrapper, input: input };
   }
@@ -64,6 +77,14 @@ var UIInput = (function () {
   }
 
   /**
+   * Ô nhập Tiền tệ (tự động format + đọc số thành chữ)
+   */
+  function createMoney(config) {
+    var conf = Object.assign({}, config, { isMoney: true });
+    return _createBaseWrapper(conf, 'text').wrapper;
+  }
+
+  /**
    * Ô chọn Ngày
    */
   function createDate(config) {
@@ -84,7 +105,249 @@ var UIInput = (function () {
         config.value = rawVal.split(' ')[0];
       }
     }
-    return _createBaseWrapper(config, 'date').wrapper;
+
+    var obj = _createBaseWrapper(config, 'text');
+    var visibleInput = obj.input;
+
+    // Remove name to prevent duplicate submission of the text representation
+    visibleInput.removeAttribute('name');
+    var elementId = config.id || config.name;
+    if (elementId) visibleInput.id = elementId + '_visible';
+    visibleInput.readOnly = true;
+    visibleInput.style.cursor = 'pointer';
+    visibleInput.placeholder = config.placeholder || 'Chọn ngày...';
+
+    // Format display value
+    var initialDate = config.value || '';
+    if (initialDate) {
+      var p = initialDate.split('-');
+      if (p.length === 3) {
+        visibleInput.value = p[2] + '/' + p[1] + '/' + p[0];
+      }
+    }
+
+    // Create the actual hidden input for form value collection
+    var hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    if (config.name) hiddenInput.name = config.name;
+    if (elementId) hiddenInput.id = elementId;
+    hiddenInput.value = initialDate;
+    obj.wrapper.appendChild(hiddenInput);
+
+    // Sync from hidden input value back to visible input value
+    hiddenInput.addEventListener('change', function () {
+      var val = hiddenInput.value;
+      if (val) {
+        var p = val.split('-');
+        if (p.length === 3) {
+          visibleInput.value = p[2] + '/' + p[1] + '/' + p[0];
+        } else {
+          visibleInput.value = val;
+        }
+      } else {
+        visibleInput.value = '';
+      }
+    });
+
+    // Remove the native input direct placement to wrap it nicely
+    if (visibleInput.parentNode) {
+      visibleInput.parentNode.removeChild(visibleInput);
+    }
+
+    // Input Group wrapper
+    var inputContainer = document.createElement('div');
+    inputContainer.style.position = 'relative';
+    inputContainer.style.display = 'flex';
+    inputContainer.style.alignItems = 'center';
+    inputContainer.appendChild(visibleInput);
+
+    // Icon
+    var icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined';
+    icon.innerText = 'calendar_today';
+    icon.style.position = 'absolute';
+    icon.style.right = '12px';
+    icon.style.color = 'var(--color-text-secondary)';
+    icon.style.pointerEvents = 'none';
+    icon.style.fontSize = '20px';
+    inputContainer.appendChild(icon);
+
+    obj.wrapper.appendChild(inputContainer);
+
+    // Custom calendar popup picker
+    var popup = null;
+    var calendarInstance = null;
+    var _scrollTargets = [];
+    var _scrollHandler = null;
+
+    function isElementClipped(el) {
+      var rect = el.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        return true;
+      }
+      var node = el.parentElement;
+      while (node && node !== document.documentElement) {
+        var style = window.getComputedStyle(node);
+        var ov = style.overflow + style.overflowY + style.overflowX;
+        if (/auto|scroll/.test(ov)) {
+          var parentRect = node.getBoundingClientRect();
+          if (rect.bottom < parentRect.top || rect.top > parentRect.bottom) {
+            return true;
+          }
+        }
+        node = node.parentElement;
+      }
+      return false;
+    }
+
+    function updatePosition() {
+      if (!popup) return;
+      var rect = visibleInput.getBoundingClientRect();
+      var windowWidth = window.innerWidth;
+      var windowHeight = window.innerHeight;
+      var popupWidth = 340;
+      var popupHeight = 380;
+
+      // Close if the input is scrolled out of view/container bounds
+      if (isElementClipped(visibleInput)) {
+        closePopup();
+        return;
+      }
+
+      // Calculate vertical position (flip if not enough space below)
+      var topPos = rect.bottom + 4;
+      if (rect.bottom + popupHeight > windowHeight && rect.top - popupHeight > 0) {
+        topPos = rect.top - popupHeight - 4;
+      }
+
+      // Calculate horizontal position
+      var leftPos = rect.left;
+      if (rect.left + popupWidth > windowWidth) {
+        leftPos = rect.right - popupWidth;
+      }
+      leftPos = Math.max(10, leftPos);
+
+      popup.style.top = topPos + 'px';
+      popup.style.left = leftPos + 'px';
+    }
+
+    function attachScrollListeners() {
+      if (_scrollHandler) return;
+      _scrollHandler = function () {
+        updatePosition();
+      };
+      _scrollTargets = (UIControls.utils && typeof UIControls.utils.getScrollableAncestors === 'function')
+        ? UIControls.utils.getScrollableAncestors(inputContainer)
+        : [window];
+      _scrollTargets.forEach(function (target) {
+        target.addEventListener('scroll', _scrollHandler, { passive: true, capture: false });
+      });
+      window.addEventListener('resize', _scrollHandler, { passive: true });
+    }
+
+    function detachScrollListeners() {
+      if (!_scrollHandler) return;
+      _scrollTargets.forEach(function (target) {
+        target.removeEventListener('scroll', _scrollHandler, { capture: false });
+      });
+      window.removeEventListener('resize', _scrollHandler);
+      _scrollHandler = null;
+      _scrollTargets = [];
+    }
+
+    function openPopup() {
+      if (popup) return;
+      popup = document.createElement('div');
+      popup.className = 'custom-datepicker-popup';
+
+      var isMobile = (window.innerWidth <= 576);
+
+      if (isMobile) {
+        // Add a dim backdrop for mobile focus
+        var backdrop = document.createElement('div');
+        backdrop.id = 'datepicker-mobile-backdrop';
+        backdrop.style.position = 'fixed';
+        backdrop.style.inset = '0';
+        backdrop.style.background = 'rgba(0, 0, 0, 0.4)';
+        backdrop.style.zIndex = '99999998';
+        backdrop.addEventListener('click', closePopup);
+        document.body.appendChild(backdrop);
+        
+        popup.style.position = 'fixed';
+        popup.style.zIndex = '99999999';
+      } else {
+        // Desktop/Tablet layout: Position relative to input using fixed (non-clipped)
+        popup.style.position = 'fixed';
+        popup.style.zIndex = '99999999';
+      }
+
+      if (typeof UICalendar !== 'undefined') {
+        calendarInstance = UICalendar.create({
+          selectedDate: hiddenInput.value || null,
+          onSelect: function (dateStr) {
+            hiddenInput.value = dateStr;
+            var p = dateStr.split('-');
+            if (p.length === 3) {
+              visibleInput.value = p[2] + '/' + p[1] + '/' + p[0];
+            }
+            hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+            hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+            closePopup();
+          }
+        });
+        popup.appendChild(calendarInstance);
+      } else {
+        popup.innerText = 'UICalendar not loaded';
+      }
+
+      document.body.appendChild(popup);
+
+      if (!isMobile) {
+        updatePosition();
+        attachScrollListeners();
+      }
+
+      if (calendarInstance && calendarInstance.setSelectedDate) {
+        calendarInstance.setSelectedDate(hiddenInput.value || null);
+      }
+
+      setTimeout(function () {
+        document.addEventListener('click', outsideClickListener);
+      }, 0);
+    }
+
+    function closePopup() {
+      if (!popup) return;
+      document.removeEventListener('click', outsideClickListener);
+      detachScrollListeners();
+      var backdrop = document.getElementById('datepicker-mobile-backdrop');
+      if (backdrop && backdrop.parentNode) {
+        backdrop.parentNode.removeChild(backdrop);
+      }
+      if (popup.parentNode) {
+        popup.parentNode.removeChild(popup);
+      }
+      popup = null;
+      calendarInstance = null;
+    }
+
+    function outsideClickListener(e) {
+      if (!document.body.contains(e.target)) return;
+      if (popup && !popup.contains(e.target) && e.target !== visibleInput) {
+        closePopup();
+      }
+    }
+
+    visibleInput.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (popup) {
+        closePopup();
+      } else {
+        openPopup();
+      }
+    });
+
+    return obj.wrapper;
   }
 
   /**
@@ -96,28 +359,28 @@ var UIInput = (function () {
     obj.wrapper.classList.add('modern-checkbox-wrapper');
     obj.input.className = 'modern-checkbox';
     obj.input.style.cursor = 'pointer';
-    
+
     // Checkbox uses checked instead of value
     if (config.value === '1' || config.value === 1 || config.value === true || String(config.value).toLowerCase() === 'true') {
-        obj.input.checked = true;
+      obj.input.checked = true;
     }
-    
+
     // Thêm giá trị thực vào dataset để tự động serialize thành 1/0
     obj.input.value = obj.input.checked ? 1 : 0;
-    obj.input.onchange = function() {
-        this.value = this.checked ? 1 : 0;
+    obj.input.onchange = function () {
+      this.value = this.checked ? 1 : 0;
     };
-    
+
     // Đảo ngược thứ tự input và label cho đẹp
     var label = obj.wrapper.querySelector('label');
     if (label) {
-        // Xóa class cũ
-        label.className = '';
-        label.style.cursor = 'pointer';
-        // Đảo ngược thứ tự: input trước, label sau
-        obj.wrapper.insertBefore(obj.input, label);
+      // Xóa class cũ
+      label.className = '';
+      label.style.cursor = 'pointer';
+      // Đảo ngược thứ tự: input trước, label sau
+      obj.wrapper.insertBefore(obj.input, label);
     }
-    
+
     return obj.wrapper;
   }
 
@@ -151,7 +414,7 @@ var UIInput = (function () {
     eyeBtn.title = 'Hiện mật khẩu';
 
     var isVisible = false;
-    eyeBtn.addEventListener('click', function() {
+    eyeBtn.addEventListener('click', function () {
       isVisible = !isVisible;
       input.type = isVisible ? 'text' : 'password';
       eyeBtn.querySelector('.material-symbols-outlined').textContent = isVisible ? 'visibility' : 'visibility_off';
@@ -160,8 +423,8 @@ var UIInput = (function () {
     });
 
     // Hover effect
-    eyeBtn.addEventListener('mouseenter', function() { this.style.color = 'var(--color-text)'; });
-    eyeBtn.addEventListener('mouseleave', function() { this.style.color = 'var(--color-text-secondary)'; });
+    eyeBtn.addEventListener('mouseenter', function () { this.style.color = 'var(--color-text)'; });
+    eyeBtn.addEventListener('mouseleave', function () { this.style.color = 'var(--color-text-secondary)'; });
 
     inputWrap.appendChild(eyeBtn);
 
@@ -198,12 +461,12 @@ var UIInput = (function () {
     defaultOpt.innerText = '-- Vui lòng chọn --';
     select.appendChild(defaultOpt);
 
-    (options || []).forEach(function(opt) {
-        var o = document.createElement('option');
-        o.value = opt.value;
-        o.innerText = opt.label;
-        if (config.value == opt.value) o.selected = true;
-        select.appendChild(o);
+    (options || []).forEach(function (opt) {
+      var o = document.createElement('option');
+      o.value = opt.value;
+      o.innerText = opt.label;
+      if (config.value == opt.value) o.selected = true;
+      select.appendChild(o);
     });
 
     wrapper.appendChild(select);
@@ -220,7 +483,7 @@ var UIInput = (function () {
     var onIncrease = config.onIncrease || '';
     var onChange = config.onChange || '';
     var stopPropagation = config.stopPropagation ? 'event.stopPropagation(); ' : '';
-    
+
     var h = config.height || 32;
     var w = config.width || 96;
     var btnW = config.btnWidth || 30;
@@ -280,7 +543,7 @@ var UIInput = (function () {
    */
   function setupMoneyInput(inputEl, textEl) {
     if (!inputEl) return;
-    
+
     function refresh() {
       var raw = parseInt(inputEl.value.replace(/\D/g, ''), 10) || 0;
       inputEl.value = raw === 0 ? '' : raw.toLocaleString('vi-VN');
@@ -291,14 +554,14 @@ var UIInput = (function () {
       var pos = this.selectionStart;
       var oldLen = this.value.length;
       var raw = parseInt(this.value.replace(/\D/g, ''), 10) || 0;
-      
+
       this.value = raw === 0 ? '' : raw.toLocaleString('vi-VN');
-      
+
       var diff = this.value.length - oldLen;
       if (pos !== null) {
         this.setSelectionRange(pos + diff, pos + diff);
       }
-      
+
       if (textEl) textEl.innerText = raw === 0 ? '' : docSoTienVN(raw);
     });
 
@@ -312,6 +575,7 @@ var UIInput = (function () {
   return {
     createText: createText,
     createNumber: createNumber,
+    createMoney: createMoney,
     createDate: createDate,
     createPassword: createPassword,
     createSwitch: createSwitch,

@@ -7,7 +7,7 @@ BEGIN
         ff.FieldName AS [name], 
         ff.CaptionVN AS [label],
         ISNULL(ff.IsRequired, 0) AS [required], 
-        ISNULL(ff.FormPosition, 'grid') AS [position],
+        ISNULL(ff.FormPosition, '6') AS [position],
         
         -- Trả về thêm cấu hình cấp độ Form để loại bỏ hoàn toàn AppModules.js
         ISNULL(l.PrimaryKey, '') AS [primaryKey],

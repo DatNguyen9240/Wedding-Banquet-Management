@@ -11,20 +11,25 @@ GO
 -- Chức năng: Nối (JOIN) bảng tbmk_Biennhancoccho với bảng Khách hàng
 -- Mục đích: Làm Data Source (TableName) cho màn hình Form Động frmBiennhancoccho
 -- =============================================
-CREATE OR ALTER VIEW [dbo].[v_DanhSachPhieuCoc] AS
+IF EXISTS(SELECT * FROM sys.views WHERE name = 'v_DanhSachPhieuCoc' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    DROP VIEW [dbo].[v_DanhSachPhieuCoc];
+END
+GO
+CREATE VIEW [dbo].[v_DanhSachPhieuCoc] AS
 SELECT 
     b.DocumentID,
     b.DocumentID AS MaChungTu,
+    b.Makh AS Makh,
     b.SoBN AS SoPhieu,
     b.Thoigianid,
-    b.Loaitiecid AS Loaihinhtiecid,
+    b.Loaitiecid,
+    b.Nhamngay,
     b.SobanManchinhthuc,
     b.SobanChaychinhthuc,
     b.SobanManduphong,
     b.SobanChayduphong,
     b.Ghichu,
-    -- Ngày tổ chức gốc chuẩn Date để Form Đặt Cọc bind vào Datepicker
-    b.Ngaytochuc AS [_Ngaytochuc],
     
     -- Lôi thông tin khách hàng từ bảng khác đắp vào đây
     k.Tenchure,
@@ -44,8 +49,7 @@ SELECT
     
     ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS DienThoai,
     
-    -- Cột hiển thị định dạng đẹp dd/MM/yyyy trên Lưới
-    CONVERT(VARCHAR(10), b.Ngaytochuc, 103) AS [Ngaytochuc],
+    b.Ngaytochuc AS [NgayToChuc],
     ISNULL(b.Tongsoban, 0) AS SoBan,
     (
         SELECT TOP 1 s.Tensanhtiec 
@@ -53,13 +57,46 @@ SELECT
         INNER JOIN dmSanhtiec s ON bs.Sanhtiecid = s.Sanhtiecid 
         WHERE bs.DocumentID = b.DocumentID
     ) AS SanhDat,
-    ISNULL(b.Tongtien, 0) AS DaCocVND,
+    ISNULL(
+        CASE 
+            WHEN ISNULL(b.Solan, 1) = 2 THEN (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentID = b.DocumentIDcu)
+            ELSE b.Tongtien 
+        END, 0
+    ) AS DaCocVND,
+    ISNULL(
+        CASE 
+            WHEN ISNULL(b.Solan, 1) = 2 THEN b.Tongtien
+            ELSE (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentIDcu = b.DocumentID AND Solan = 2)
+        END, 0
+    ) AS Sotiencochopdong,
+    
+    -- Cột Lần cọc để Form Sửa tự động điền (fill) vào dropdown
+    b.Solan AS [Solan],
+    
+    -- Các cột mới cho việc in phiếu và nhập liệu
+    b.TaiKhoanNo,
+    b.TaiKhoanCo,
+    b.Kemtheo,
+    b.Lydo,
+    b.HinhThuc,
+    
+    -- Thay đổi cột JsonSanhTiec thành Scalar ID (lấy sảnh đầu tiên/sảnh chính)
+    -- Điều này giúp DynamicFormEngine.js khi mở form Sửa tự động mapping value trùng khớp với Mã sảnh của Dropdown
+    (
+        SELECT TOP 1 Sanhtiecid 
+        FROM tbmk_Biennhancocchosanhtiec 
+        WHERE DocumentID = b.DocumentID 
+        ORDER BY IsSanhchinh DESC
+    ) AS JsonSanhTiec,
+    
+    -- Cột JSON đầy đủ dự phòng nếu cần dùng sau này
     (
         SELECT Sanhtiecid, IsSanhchinh 
         FROM tbmk_Biennhancocchosanhtiec 
         WHERE DocumentID = b.DocumentID 
         FOR JSON PATH
-    ) AS JsonSanhTiec,
+    ) AS [_JsonSanhTiec],
+    
     CASE
         WHEN b.IsHuy = 1 THEN N'Đã Hủy'
         WHEN b.IsKetthuc = 1 THEN N'Đã lên Hợp đồng'
@@ -68,11 +105,22 @@ SELECT
     END AS TrangThai
 
 FROM tbmk_Biennhancoccho b
-LEFT JOIN dmkhachhang k ON b.Makh = k.Makh;
+LEFT JOIN dmkhachhang k ON b.Makh = k.Makh
+WHERE ISNULL(b.IsDeleted, 0) = 0;
 GO
 
--- Dạy cho Form Đặt Cọc biết: Hãy chọc vào cái View v_DanhSachPhieuCoc thay vì bảng gốc
+-- Dạy cho Form Đặt Cọc biết: Hãy chọc vào cái View v_DanhSachPhieuCoc thay vì bảng gốc và dùng khóa chính DocumentID
 UPDATE SY_FrmLstTbl 
-SET TableName = 'v_DanhSachPhieuCoc' 
+SET TableName = 'v_DanhSachPhieuCoc', PrimaryKey = 'DocumentID'
 WHERE FormID = 'frmBiennhancoccho';
+GO
+
+-- Đồng bộ hóa các trường giao diện
+EXEC API_DongBoTruongGiaoDien @FormName = 'frmBiennhancoccho', @ObjectName = 'v_DanhSachPhieuCoc';
+GO
+
+-- Cấu hình ẩn trường Makh khỏi Add/Edit nhưng vẫn sinh input ẩn
+UPDATE SY_FormatFields
+SET ShowInForm = 0, ShowInAdd = 0, ShowInEdit = 0
+WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Makh';
 GO

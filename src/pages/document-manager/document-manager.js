@@ -37,7 +37,7 @@ var DocumentManagerPage = (function () {
       }
       var script = document.createElement('script');
       script.id = '__onlyoffice_api__';
-      script.src = ONLYOFFICE_API;
+      script.src = ONLYOFFICE_API + '?v=' + Date.now();
       script.onload = function () { resolve(); };
       script.onerror = function () { reject(new Error('Không thể tải OnlyOffice API')); };
       document.head.appendChild(script);
@@ -90,9 +90,13 @@ var DocumentManagerPage = (function () {
       // ── Sidebar ──
       '<aside class="docmgr-sidebar">',
       '<div class="docmgr-sidebar-hd">',
-      '<div class="docmgr-brand">',
+      '<div class="docmgr-brand" style="margin-bottom:1rem;">',
       '<span class="material-symbols-outlined">folder_open</span>',
       'Workspace Tài Liệu',
+      '</div>',
+      '<div style="display:flex;gap:0.5rem;background:var(--color-surface-elevated,#f1f5f9);padding:0.3rem;border-radius:8px;">',
+      '<button id="docmgr-tab-uploads" style="flex:1;padding:0.5rem;border:none;border-radius:6px;background:#fff;color:var(--color-primary,#4f46e5);font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);">Của Khách</button>',
+      '<button id="docmgr-tab-templates" style="flex:1;padding:0.5rem;border:none;border-radius:6px;background:transparent;color:var(--color-text-secondary,#64748b);font-weight:500;cursor:pointer;">Mẫu Gốc</button>',
       '</div>',
       '</div>',
       '<div class="docmgr-list" id="docmgr-list">',
@@ -118,6 +122,23 @@ var DocumentManagerPage = (function () {
     ].join('');
 
     _container.innerHTML = html;
+    
+    // Xử lý chuyển tab
+    var tabUploads = _qs('#docmgr-tab-uploads');
+    var tabTemplates = _qs('#docmgr-tab-templates');
+    
+    tabUploads.addEventListener('click', function() {
+      tabUploads.style.cssText = 'flex:1;padding:0.5rem;border:none;border-radius:6px;background:#fff;color:var(--color-primary,#4f46e5);font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);';
+      tabTemplates.style.cssText = 'flex:1;padding:0.5rem;border:none;border-radius:6px;background:transparent;color:var(--color-text-secondary,#64748b);font-weight:500;cursor:pointer;';
+      _loadDocuments();
+    });
+    
+    tabTemplates.addEventListener('click', function() {
+      tabTemplates.style.cssText = 'flex:1;padding:0.5rem;border:none;border-radius:6px;background:#fff;color:var(--color-primary,#4f46e5);font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);';
+      tabUploads.style.cssText = 'flex:1;padding:0.5rem;border:none;border-radius:6px;background:transparent;color:var(--color-text-secondary,#64748b);font-weight:500;cursor:pointer;';
+      _loadTemplates();
+    });
+
     _loadDocuments();
   }
 
@@ -173,6 +194,44 @@ var DocumentManagerPage = (function () {
       });
   }
 
+  // ── Load danh sách Mẫu Gốc (Templates) ──────────────────────────────
+  function _loadTemplates() {
+    fetch(API_BASE + '/templates')
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        var list = _qs('#docmgr-list');
+        if (!list) return;
+        if (!json.data || json.data.length === 0) {
+          list.innerHTML = '<div style="text-align:center;padding:2rem;color:#94a3b8;">Chưa có mẫu gốc nào</div>';
+          return;
+        }
+        list.innerHTML = '';
+        json.data.forEach(function (doc) {
+          var dateStr = new Date(doc.updatedAt).toLocaleDateString('vi-VN');
+          var div = document.createElement('div');
+          // doc.relPath là đường dẫn tương đối (VD: bieu mau/abc.docx)
+          div.className = 'docmgr-item' + (_currentFile === doc.relPath ? ' active' : '');
+          div.innerHTML =
+            '<div class="docmgr-item-title" title="' + _escHtml(doc.fileName) + '">' +
+            '<span class="material-symbols-outlined" style="font-size:16px;color:#f59e0b;flex-shrink:0;margin-top:2px;">description</span>' +
+            '<span style="word-break:break-all;">' + _escHtml(doc.fileName) + '</span>' +
+            '</div>' +
+            '<div class="docmgr-item-meta">' +
+            '<span>' + _escHtml(doc.size || '') + '</span>' +
+            '<span>' + dateStr + '</span>' +
+            '</div>';
+
+          div.addEventListener('click', function () { _openTemplateEditor(doc.relPath, doc.fileName); });
+          list.appendChild(div);
+        });
+      })
+      .catch(function (err) {
+        console.error('[DocumentManager]', err);
+        var list = _qs('#docmgr-list');
+        if (list) list.innerHTML = '<div style="text-align:center;padding:2rem;color:#ef4444;">Lỗi kết nối Server!</div>';
+      });
+  }
+
   // ── Xem tài liệu (iframe — file .doc là HTML) ─────────────────────────
   function _openEditor(fileName) {
     _currentFile = fileName;
@@ -192,6 +251,55 @@ var DocumentManagerPage = (function () {
 
     var fileUrl = DOC_CONFIG.UPLOADS_URL + encodeURIComponent(fileName);
 
+    // Nếu là file .docx -> Dùng OnlyOffice để view
+    if (fileName.endsWith('.docx')) {
+      area.innerHTML =
+        '<div style="display:flex;flex-direction:column;height:100%;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;' +
+        'padding:.6rem 1rem;background:var(--color-surface, #ffffff);border-bottom:1px solid var(--color-border, #e2e8f0);">' +
+        '<span style="color:var(--color-text-secondary, #64748b);font-size:.82rem;font-family:monospace;">' +
+        '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">description</span> ' +
+        fileName +
+        '</span>' +
+        '<div style="display:flex;gap:.5rem;">' +
+        '<a href="' + fileUrl + '" download="' + fileName + '" ' +
+        'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
+        'background:var(--color-primary-light, rgba(79,70,229,0.1));color:var(--color-primary, #4f46e5);text-decoration:none;font-size:.8rem;">' +
+        '<span class="material-symbols-outlined" style="font-size:14px;">download</span> Tải về' +
+        '</a>' +
+        '</div>' +
+        '</div>' +
+        '<div id="docmgr-oo-viewer" style="flex:1;width:100%;"></div>' +
+        '</div>';
+
+      _ensureOnlyOfficeApi().then(function () {
+        var callbackUrl = DOC_CONFIG.BASE_API + '/callback?isTemplate=0&fileName=' + encodeURIComponent(fileName);
+        var config = {
+          document: {
+            fileType: 'docx',
+            key: fileName.replace(/[^a-zA-Z0-9_\-\.]/g, '') + '_' + Date.now(),
+            title: fileName,
+            url: fileUrl,
+            permissions: { edit: true, download: true, print: true }
+          },
+          documentType: 'word',
+          editorConfig: {
+            mode: 'edit',
+            callbackUrl: callbackUrl,
+            lang: 'vi',
+            user: { id: 'user_' + Date.now(), name: _getCurrentUserName() },
+            customization: { compactHeader: true, toolbarNoTabs: false, hideRightMenu: true }
+          }
+        };
+        _docEditor = new DocsAPI.DocEditor('docmgr-oo-viewer', config);
+      }).catch(function (err) {
+        var v = _qs('#docmgr-oo-viewer');
+        if (v) v.innerHTML = '<div class="docmgr-onerror">⚠️ Lỗi tải OnlyOffice: ' + err.message + '</div>';
+      });
+
+      return;
+    }
+
     // File .doc của hệ thống là HTML-based → dùng iframe render trực tiếp
     // Không cần OnlyOffice, không cần Docker
     area.innerHTML =
@@ -209,11 +317,6 @@ var DocumentManagerPage = (function () {
       'background:var(--color-primary-light, rgba(79,70,229,0.1));color:var(--color-primary, #4f46e5);text-decoration:none;font-size:.8rem;">' +
       '<span class="material-symbols-outlined" style="font-size:14px;">download</span> Tải về' +
       '</a>' +
-      '<button id="docmgr-btn-edit-tpl" ' +
-      'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
-      'background:var(--color-surface-elevated, #f1f5f9);color:var(--color-text, #1e293b);border:1px solid var(--color-border, #e2e8f0);cursor:pointer;font-size:.8rem;">' +
-      '<span class="material-symbols-outlined" style="font-size:14px;">edit</span> Chỉnh sửa template' +
-      '</button>' +
       '</div>' +
       '</div>' +
       // Container cho Iframe (srcdoc sẽ được inject bằng fetch bên dưới)
@@ -242,21 +345,16 @@ var DocumentManagerPage = (function () {
         }
       });
 
-    // Gắn sự kiện cho nút Chỉnh sửa Template
-    var btnEditTpl = _qs('#docmgr-btn-edit-tpl');
-    if (btnEditTpl) {
-      btnEditTpl.addEventListener('click', function () {
-        _openTemplateEditor(fileName);
-      });
-    }
   }
 
   // ── Chỉnh sửa Template ────────────────────────────────────────────────
-  function _openTemplateEditor(fileName) {
-    var type = fileName.includes('hop_dong') ? 'hop_dong' : (fileName.includes('dat_coc') ? 'dat_coc' : 'quyet_toan');
-    var templateName = type + '.html';
+  function _openTemplateEditor(relPath, fileName) {
+    _currentFile = relPath;
+    _loadTemplates(); // Re-render list để cập nhật class .active
+    
+    var empty = _qs('#docmgr-empty');
+    if (empty) empty.style.display = 'none';
 
-    // Đóng giao diện xem tài liệu cũ
     var area = _qs('#docmgr-editor-area');
     if (!area) return;
 
@@ -269,16 +367,22 @@ var DocumentManagerPage = (function () {
 
     _ensureOnlyOfficeApi()
       .then(function () {
-        // [QUAN TRỌNG] Trỏ tới Node.js Backend từ OnlyOffice (Document Server).
-        // Trên production có thể sử dụng trực tiếp IP Server thay vì host.docker.internal.
-        var fileUrl = DOC_CONFIG.SAMPLES_URL + templateName;
-        var callbackUrl = DOC_CONFIG.BASE_API + '/callback?isTemplate=1&fileName=' + templateName;
+        // fileUrl phải là đường dẫn tuyệt đối tải file từ thư mục samples
+        // relPath có thể chứa thư mục con, ví dụ "FILE MAU HOP DONG CÒN LẠI/abc.docx"
+        var fileUrl = DOC_CONFIG.SAMPLES_URL + encodeURI(relPath);
+        var callbackUrl = DOC_CONFIG.BASE_API + '/callback?isTemplate=1&fileName=' + encodeURIComponent(relPath);
+
+        // Sinh key an toàn cho OnlyOffice
+        var safeKey = 'tpl_' + fileName.replace(/[^a-zA-Z0-9_\-\.]/g, '') + '_' + Date.now();
+        var ext = fileName.endsWith('.docx') ? 'docx' : 'html';
+        // Xác định loại form để load biến dữ liệu (kéo thả). Mặc định là hop_dong
+        var type = fileName.toLowerCase().includes('phieu_thu') ? 'phieu_thu' : (fileName.toLowerCase().includes('quyet_toan') ? 'quyet_toan' : 'hop_dong');
 
         var config = {
           document: {
-            fileType: 'html',
-            key: type + '_' + Date.now(),
-            title: templateName,
+            fileType: ext,
+            key: safeKey,
+            title: fileName,
             url: fileUrl,
             permissions: {
               edit: true,

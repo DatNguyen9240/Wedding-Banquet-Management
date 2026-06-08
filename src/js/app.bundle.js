@@ -344,19 +344,29 @@ var DocumentExportPlugin = (function () {
       docType: 'hop_dong',
       label: 'Xuất Hợp Đồng',
       icon: 'description',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
+      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+      sqlListName: 'API_DanhSachHopDong'
     },
     'frmBiennhancoccho': {
-      docType: 'dat_coc',
-      label: 'Xuất Biên Nhận Cọc',
+      docType: 'phieu_thu',
+      label: 'Xuất Phiếu Thu',
       icon: 'receipt_long',
-      altKeys: ['MaChungTu', 'maChungTu', 'DocumentID', 'SoPhieu']
+      altKeys: ['MaChungTu', 'maChungTu', 'DocumentID', 'SoPhieu'],
+      sqlListName: 'API_DanhSachPhieuCoc'
     },
     'frmQuyetToan': {
       docType: 'quyet_toan',
       label: 'Xuất Quyết Toán',
       icon: 'receipt',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
+      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+      sqlListName: 'API_DanhSachQuyetToan'
+    },
+    'tbmk_Thaydoi': {
+      docType: 'de_nghi_thay_doi',
+      label: 'Xuất Phiếu Thay Đổi',
+      icon: 'edit_note',
+      altKeys: ['Sothaydoi', 'sothaydoi', 'SoThayDoi', 'Sohopdong', 'sohopdong'],
+      sqlListName: 'API_DanhSachThayDoi'
     }
   };
 
@@ -380,6 +390,12 @@ var DocumentExportPlugin = (function () {
       return;
     }
 
+    // Đọc tên file mẫu từ DB (đã cấu hình trong bảng dmLoaihinhtiec)
+    var actualDocType = config.docType;
+    if (config.docType === 'hop_dong' && row.TemplateFile) {
+        actualDocType = row.TemplateFile;
+    }
+
     var btn = document.getElementById('btn-export-doc-' + config.docType);
     var originalHTML = btn ? btn.innerHTML : '';
     if (btn) {
@@ -398,10 +414,11 @@ var DocumentExportPlugin = (function () {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        templateType: config.docType,
+        templateType: actualDocType,
         customerId: docId,
-        outputFileName: config.docType + '_' + docId,
-        rowData: row
+        outputFileName: actualDocType + '_' + docId,
+        rowData: row,
+        sqlListName: config.sqlListName
       })
     })
       .then(function (res) { return res.json(); })
@@ -451,7 +468,19 @@ var DocumentExportPlugin = (function () {
           }
           return;
         }
-        _generateDocument(selectedRows[0], config);
+
+        var row = selectedRows[0];
+        var st = (row.Status || row.TrangThai || '').toString().toLowerCase();
+        if (st.includes('đã ký')) {
+          if (typeof Alert !== 'undefined') {
+            Alert.warning('Bị khóa', 'Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
+          } else {
+            alert('Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
+          }
+          return;
+        }
+
+        _generateDocument(row, config);
       }
     }];
   }
@@ -917,8 +946,18 @@ var WorkflowTransferPlugin = (function () {
 
     function _autoClickAdd() {
         setTimeout(function () {
-            var btnAdd = document.querySelector('button[title*="Thêm bản ghi mới"], button[title="Thêm"], .btn-primary:not(.btn-tool)');
-            if (btnAdd) btnAdd.click();
+            var buttons = Array.from(document.querySelectorAll('button'));
+            var btnAdd = buttons.find(function (b) {
+                var text = (b.innerText || '').trim();
+                var tooltip = b.getAttribute('data-tooltip') || b.title || '';
+                return text === 'Thêm' || tooltip.includes('Thêm');
+            });
+            if (btnAdd) {
+                btnAdd.click();
+            } else {
+                var fallbackBtn = document.querySelector('button[title*="Thêm bản ghi mới"], button[title="Thêm"], .btn-primary:not(.btn-tool)');
+                if (fallbackBtn) fallbackBtn.click();
+            }
         }, 800);
     }
 
@@ -930,12 +969,23 @@ var WorkflowTransferPlugin = (function () {
             icon: 'monetization_on',
             targetHash: '#/booking',
             storageKey: 'transfer_VisitorToBooking',
-            getTransferData: function(row) {
-                return {
-                    Tenkh: row.TenKhachHang || row.Tenkh || row.Tenchure || row.Tencodau || '',
-                    Dienthoai: row.DienThoai || row.Dienthoai || row.DTchure || row.DTcodau || '',
-                    Ngaytochuc: row._Ngaytochuc || row.NgayToChucGoc || row.NgayDuKien || row.Ngaytochuc || ''
-                };
+            getTransferData: function (row) {
+                var data = Object.assign({}, row);
+                delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong;
+                return data;
+            }
+        },
+        'frmBiennhancoccho': {
+            id: 'btn-transfer-contract',
+            text: 'Tạo HĐ',
+            icon: 'assignment',
+            targetHash: '#/contract',
+            storageKey: 'transfer_BookingToContract',
+            getTransferData: function (row) {
+                var data = Object.assign({}, row);
+                data.Sobiennhan = row.DocumentID || row.SoBN || row.Id;
+                delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong;
+                return data;
             }
         },
         'frmHopDong': {
@@ -944,12 +994,10 @@ var WorkflowTransferPlugin = (function () {
             icon: 'receipt_long',
             targetHash: '#/checkout',
             storageKey: 'transfer_ContractToCheckout',
-            getTransferData: function(row) {
-                return {
-                    Sohopdong: row.Sohopdong || row.AutoID || '',
-                    Tenkh: row.Tenkh || row.Tenchure || row.Tencodau || '',
-                    Ngaytochuc: row._Ngaytochuc || row.Ngaytochuc || ''
-                };
+            getTransferData: function (row) {
+                var data = Object.assign({}, row);
+                delete data.Id; delete data.AutoID;
+                return data;
             }
         }
     };
@@ -963,14 +1011,14 @@ var WorkflowTransferPlugin = (function () {
             text: config.text,
             icon: config.icon,
             type: 'tool',
-            onClick: function() {
+            onClick: function () {
                 var selectedRows = getSelectedRows();
                 if (!selectedRows || selectedRows.length !== 1) {
                     if (window.Alert) Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng duy nhất để ' + config.text + '.');
                     else alert('Vui lòng chọn 1 dòng!');
                     return;
                 }
-                
+
                 var transferData = config.getTransferData(selectedRows[0]);
                 sessionStorage.setItem(config.storageKey, JSON.stringify(transferData));
                 window.location.hash = config.targetHash;
@@ -985,13 +1033,20 @@ var WorkflowTransferPlugin = (function () {
     function _handleAutoFill() {
         var modalContent = document.querySelector('.modal-content');
         if (!modalContent) return;
-        var modalTitle = modalContent.querySelector('.modal-title');
+        var modalTitle = modalContent.querySelector('.modal-header h3, .modal-title, h3');
         if (!modalTitle || modalTitle.innerText.indexOf('Thêm') === -1) return;
 
         var dataV2B = sessionStorage.getItem('transfer_VisitorToBooking');
         if (dataV2B) {
             _fillData(JSON.parse(dataV2B), 'Khách Tham Quan');
             sessionStorage.removeItem('transfer_VisitorToBooking');
+            return;
+        }
+
+        var dataB2C = sessionStorage.getItem('transfer_BookingToContract');
+        if (dataB2C) {
+            _fillData(JSON.parse(dataB2C), 'Biên Nhận Đặt Cọc');
+            sessionStorage.removeItem('transfer_BookingToContract');
             return;
         }
 
@@ -1009,24 +1064,75 @@ var WorkflowTransferPlugin = (function () {
             if (!modalContent) return;
             var filled = false;
 
-            var tryFill = function(selectors, value) {
-                if (!value) return;
-                var el = modalContent.querySelector(selectors);
-                if (el && !el.value) {
-                    el.value = value;
-                    el.style.backgroundColor = '#f0fdf4';
-                    el.style.borderColor = '#10b981';
+            // Tìm tất cả phần tử nhập liệu trong form
+            var formElements = Array.from(modalContent.querySelectorAll('input, select, textarea'));
+            if (formElements.length === 0) return;
+
+            // Chuyển toàn bộ các keys của data sang chữ thường để so khớp không phân biệt hoa thường
+            var lowerData = {};
+            Object.keys(data).forEach(function (k) {
+                lowerData[k.toLowerCase()] = data[k];
+            });
+
+            formElements.forEach(function (el) {
+                var elName = el.name || el.getAttribute('name');
+                if (!elName) return;
+
+                var lowerName = elName.toLowerCase();
+                if (lowerData[lowerName] !== undefined && lowerData[lowerName] !== null && String(lowerData[lowerName]).trim() !== '') {
+                    var val = lowerData[lowerName];
+
+                    // Nếu phần tử là input date, định dạng lại thành YYYY-MM-DD
+                    if (el.type === 'date' && val) {
+                        var rawVal = String(val).trim();
+                        if (rawVal.indexOf('T') !== -1) {
+                            val = rawVal.split('T')[0];
+                        } else if (rawVal.indexOf('/') !== -1) {
+                            var parts = rawVal.split(' ')[0].split('/');
+                            if (parts.length === 3) {
+                                if (parts[0].length === 4) { // YYYY/MM/DD
+                                    val = parts[0] + '-' + parts[1] + '-' + parts[2];
+                                } else { // DD/MM/YYYY
+                                    val = parts[2] + '-' + parts[1] + '-' + parts[0];
+                                }
+                            }
+                        } else if (rawVal.indexOf('-') !== -1) {
+                            var parts = rawVal.split(' ')[0].split('-');
+                            if (parts.length === 3) {
+                                if (parts[0].length === 4) { // YYYY-MM-DD
+                                    val = parts[0] + '-' + parts[1] + '-' + parts[2];
+                                } else { // DD-MM-YYYY
+                                    val = parts[2] + '-' + parts[1] + '-' + parts[0];
+                                }
+                            }
+                        }
+                    }
+
+                    // Điền giá trị
+                    el.value = val;
+                    el.style.setProperty('background-color', '#f0fdf4', 'important');
+                    el.style.setProperty('border-color', '#10b981', 'important');
+
+                    // Nếu là input custom (hidden input đồng bộ với các control hiển thị khác như Datepicker, ComboBox)
+                    if (el.type === 'hidden') {
+                        var formGroup = el.closest('.form-group');
+                        if (formGroup) {
+                            var visibleInputs = formGroup.querySelectorAll('input:not([type="hidden"]), select, textarea');
+                            visibleInputs.forEach(function (visibleEl) {
+                                visibleEl.style.setProperty('background-color', '#f0fdf4', 'important');
+                                visibleEl.style.setProperty('border-color', '#10b981', 'important');
+                            });
+                        }
+                    }
+
                     el.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (typeof el.fetchDataForValue === 'function') {
+                        el.fetchDataForValue();
+                    }
                     filled = true;
                 }
-            };
+            });
 
-            tryFill('input[name="Tenkh"], input[name="Tenchure"], input[name="Tencodau"]', data.Tenkh);
-            tryFill('input[name="Dienthoai"], input[name="DTchure"], input[name="DTcodau"]', data.Dienthoai);
-            tryFill('input[name="_Ngaytochuc"], input[name="Ngaytochuc"], input[name="Ngaydukien"]', data.Ngaytochuc);
-            tryFill('input[name="SanhTiec"], select[name="Tensanh"]', data.SanhTiec);
-            tryFill('input[name="Sohopdong"]', data.Sohopdong);
-            
             if (filled && window.Toast) {
                 Toast.success('Đã tự động điền thông tin từ ' + sourceName + '!');
             }
@@ -1035,12 +1141,12 @@ var WorkflowTransferPlugin = (function () {
 
     function init() {
         if (_observer) _observer.disconnect();
-        
+
         // Chỉ observe để auto-fill (chờ modal xuất hiện)
         _observer = new MutationObserver(function () {
             _handleAutoFill();
         });
-        
+
         _observer.observe(document.body, { childList: true, subtree: true });
     }
 
@@ -1053,6 +1159,1175 @@ var WorkflowTransferPlugin = (function () {
 
     return { getExtraButtons: getExtraButtons };
 })();
+
+
+/* --- FoodSelectionPlugin.js --- */
+/**
+ * FoodSelectionPlugin
+ * ─────────────────────────────────────────────────────────────────────
+ * Plugin quản lý việc Chọn Thực đơn & Dịch vụ dưới dạng lưới thẻ Card.
+ * Tự động tích hợp vào các form động (frmHopDong, tbmk_Thaydoi, frmQuyetToan)
+ * thông qua MutationObserver để ẩn các trường JSON thô và thay thế bằng UI đẹp mắt.
+ */
+var FoodSelectionPlugin = (function () {
+  var catalogCache = null; // Bộ nhớ đệm danh mục món ăn từ API
+  var activeModal = null; // Modal form đang sửa/thêm
+  
+  // Trạng thái các món đang chọn (lưu tạm)
+  var selectedFoodsMan = [];
+  var selectedFoodsChay = [];
+  var selectedThucUong = [];
+  var selectedDichVu = [];
+
+  // Thêm styles cho giao diện plugin
+  function _injectStyles() {
+    if (document.getElementById('food-selection-plugin-styles')) return;
+    var style = document.createElement('style');
+    style.id = 'food-selection-plugin-styles';
+    style.innerHTML = `
+      .food-plugin-wrapper {
+        margin-top: 15px;
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        background: var(--color-surface);
+        padding: 20px;
+        box-shadow: var(--shadow-sm);
+      }
+      .food-plugin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 12px;
+      }
+      .food-plugin-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--color-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      /* Selector Modal Styles */
+      .food-modal-tabs {
+        display: flex;
+        gap: 8px;
+        border-bottom: 2px solid var(--color-border);
+        padding-bottom: 0;
+        margin-bottom: 16px;
+      }
+      .food-modal-tab-btn {
+        background: none;
+        border: none;
+        padding: 10px 18px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .food-modal-tab-btn:hover {
+        color: var(--color-primary);
+      }
+      .food-modal-tab-btn.active {
+        color: var(--color-primary);
+        border-bottom-color: var(--color-primary);
+      }
+      .food-grid-container {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .food-card {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: 8px;
+        background: var(--color-surface);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        min-height: 85px;
+        box-shadow: var(--shadow-sm);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .food-card:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      }
+      @media (max-width: 1400px) {
+        .food-grid-container {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 1100px) {
+        .food-grid-container {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 900px) {
+        .food-grid-container {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 768px) {
+        .food-grid-container {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 6px !important;
+        }
+        .food-card {
+          padding: 6px !important;
+          min-height: 80px !important;
+        }
+      }
+      .food-card .food-card-title {
+        font-size: 12px;
+        line-height: 1.2;
+        margin: 4px 0;
+      }
+      /* Selected Drawer */
+      .selected-drawer {
+        position: absolute;
+        bottom: 64px;
+        left: 16px;
+        right: 16px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border-strong);
+        border-radius: 12px 12px 0 0;
+        box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.18);
+        z-index: 105;
+        display: flex;
+        flex-direction: column;
+        max-height: 320px;
+        transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .selected-drawer.collapsed {
+        transform: translateY(30px);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .drawer-header {
+        padding: 12px 18px;
+        border-bottom: 1px solid var(--color-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--color-background);
+        border-radius: 12px 12px 0 0;
+      }
+      .close-drawer-btn {
+        cursor: pointer;
+        color: var(--color-text-secondary);
+        transition: color 0.15s ease;
+      }
+      .close-drawer-btn:hover {
+        color: var(--color-primary);
+      }
+      .drawer-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+      .modal-bottom-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: var(--color-surface);
+        border-top: 1px solid var(--color-border-strong);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px;
+        z-index: 100;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+      }
+      @media (max-width: 600px) {
+        .modal-main-container {
+          height: 100% !important;
+          padding-bottom: 110px !important;
+        }
+        .modal-bottom-bar {
+          height: 110px !important;
+          flex-direction: column !important;
+          justify-content: space-around !important;
+          padding: 10px 10px !important;
+          align-items: stretch !important;
+        }
+        .selected-drawer {
+          bottom: 110px !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Khởi chạy API tải danh mục
+  function _loadCatalog() {
+    if (catalogCache) return Promise.resolve(catalogCache);
+
+    if (typeof ContractService !== 'undefined' && typeof ContractService.getFoods === 'function') {
+      return ContractService.getFoods({ Keyword: '', PhanLoai: '', IsChay: -1 })
+        .then(function (items) {
+          catalogCache = items;
+          return catalogCache;
+        })
+        .catch(function (err) {
+          console.error('[FoodSelectionPlugin] Lỗi tải catalog từ ContractService:', err);
+          return [];
+        });
+    }
+
+    return Promise.resolve([]);
+  }
+
+  // Ánh xạ danh sách thô từ DB sang thông tin đầy đủ từ danh mục
+  function _mapRawItems(rawList, defaultIsChay) {
+    if (!Array.isArray(rawList)) return [];
+    return rawList.map(function (rawItem) {
+      var maMon = rawItem.Mahang || rawItem.MaMon || '';
+      var catalogItem = catalogCache ? catalogCache.find(function (c) { return (c.Mahang || c.MaMon) === maMon; }) : null;
+
+      var isChayVal = defaultIsChay;
+      if (catalogItem && catalogItem.IsChay !== undefined) isChayVal = catalogItem.IsChay;
+      else if (rawItem.IsChay !== undefined) isChayVal = rawItem.IsChay;
+      else if (rawItem.TenHang && rawItem.TenHang.toLowerCase().includes('chay')) isChayVal = 1;
+
+      return {
+        MaMon: maMon,
+        Mahang: maMon,
+        TenMon: rawItem.TenHang || rawItem.TenMon || (catalogItem ? (catalogItem.Tenhang || catalogItem.TenMon) : ''),
+        TenHang: rawItem.TenHang || rawItem.TenMon || (catalogItem ? (catalogItem.Tenhang || catalogItem.TenMon) : ''),
+        PhanLoai: rawItem.PhanLoai || (catalogItem ? catalogItem.PhanLoai : 'Khác'),
+        DvtID: rawItem.DvtID || (catalogItem ? catalogItem.DvtID : 'Đĩa'),
+        DonGia: parseFloat(rawItem.Dongia || rawItem.DonGia || (catalogItem ? catalogItem.Dongia : 0) || 0),
+        Dongia: parseFloat(rawItem.Dongia || rawItem.DonGia || (catalogItem ? catalogItem.Dongia : 0) || 0),
+        SoLuong: parseFloat(rawItem.Soluong || rawItem.SoLuong || 1),
+        Soluong: parseFloat(rawItem.Soluong || rawItem.SoLuong || 1),
+        IsChay: isChayVal,
+        IsKhuyenmai: rawItem.IsKhuyenmai ? 1 : 0
+      };
+    });
+  }
+
+  // Đọc dữ liệu từ các input ẩn của Form
+  function _readInputs(modal) {
+    var inpBanTiec = modal.querySelector('[name="JsonBanTiec"]');
+    var inpThucUong = modal.querySelector('[name="JsonThucUong"]');
+    var inpDichVu = modal.querySelector('[name="JsonDichVu"]');
+
+    var rawBanTiec = [];
+    var rawThucUong = [];
+    var rawDichVu = [];
+
+    try { if (inpBanTiec && inpBanTiec.value) rawBanTiec = JSON.parse(inpBanTiec.value); } catch (e) {}
+    try { if (inpThucUong && inpThucUong.value) rawThucUong = JSON.parse(inpThucUong.value); } catch (e) {}
+    try { if (inpDichVu && inpDichVu.value) rawDichVu = JSON.parse(inpDichVu.value); } catch (e) {}
+
+    var mappedBanTiec = _mapRawItems(rawBanTiec, 0);
+    
+    // Tách món mặn & món chay
+    selectedFoodsMan = mappedBanTiec.filter(function (x) { return x.IsChay === 0 || x.IsChay === false; });
+    selectedFoodsChay = mappedBanTiec.filter(function (x) { return x.IsChay === 1 || x.IsChay === true; });
+
+    selectedThucUong = _mapRawItems(rawThucUong, 0);
+    selectedDichVu = _mapRawItems(rawDichVu, 0);
+  }
+
+  // Ghi dữ liệu ngược lại các input ẩn và phát sự kiện change
+  function _writeInputs(modal) {
+    var inpBanTiec = modal.querySelector('[name="JsonBanTiec"]');
+    var inpThucUong = modal.querySelector('[name="JsonThucUong"]');
+    var inpDichVu = modal.querySelector('[name="JsonDichVu"]');
+
+    // Nối món mặn & món chay
+    var listBanTiec = selectedFoodsMan.concat(selectedFoodsChay).map(function (x) {
+      return {
+        Mahang: x.MaMon,
+        TenHang: x.TenMon,
+        DvtID: x.DvtID || 'Đĩa',
+        Soluong: x.SoLuong || 1,
+        Dongia: x.DonGia,
+        Giamgia: 0,
+        Sotiengiamgia: 0
+      };
+    });
+
+    var listThucUong = selectedThucUong.map(function (x) {
+      return {
+        Mahang: x.MaMon,
+        IsKhuyenmai: x.IsKhuyenmai ? 1 : 0,
+        Soluong: x.SoLuong || 1,
+        Dongia: x.DonGia,
+        Giamgia: 0,
+        Sotiengiamgia: 0,
+        Soluongle: 0,
+        Dongiale: 0,
+        Ghichuthucuong: ''
+      };
+    });
+
+    var listDichVu = selectedDichVu.map(function (x) {
+      return {
+        Mahang: x.MaMon,
+        Soluong: x.SoLuong || 1,
+        Dongia: x.DonGia,
+        Giamgia: 0,
+        Sotiengiamgia: 0
+      };
+    });
+
+    if (inpBanTiec) {
+      inpBanTiec.value = JSON.stringify(listBanTiec);
+      inpBanTiec.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (inpThucUong) {
+      inpThucUong.value = JSON.stringify(listThucUong);
+      inpThucUong.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (inpDichVu) {
+      inpDichVu.value = JSON.stringify(listDichVu);
+      inpDichVu.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    _renderSummaryTables();
+  }
+
+  // Vẽ các bảng hiển thị tóm tắt trong Form cha
+  function _renderSummaryTables() {
+    var container = activeModal.querySelector('.food-selection-tables-wrapper');
+    if (!container) return;
+
+    var activeTab = container.dataset.activeTab || 'man';
+
+    var renderTabButton = function (tabId, label, count) {
+      var cls = activeTab === tabId ? 'active' : '';
+      return `<button type="button" class="food-modal-tab-btn ${cls}" onclick="FoodSelectionPlugin.switchSummaryTab('${tabId}')">${label} (${count})</button>`;
+    };
+
+    var contentHtml = '';
+    var totalText = '0 đ';
+
+    if (activeTab === 'man') {
+      var total = selectedFoodsMan.reduce(function (sum, item) { return sum + item.DonGia; }, 0);
+      totalText = total.toLocaleString('vi-VN') + ' đ';
+      contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 60px;">STT</th>
+            <th>Phân Loại</th>
+            <th>Tên Món Ăn</th>
+            <th class="text-end" style="width: 140px;">Đơn Giá</th>
+            <th class="text-center" style="width: 60px;">Xóa</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      if (selectedFoodsMan.length === 0) {
+        contentHtml += '<tr><td colspan="5" class="text-center text-muted py-3">Chưa chọn món mặn nào.</td></tr>';
+      } else {
+        selectedFoodsMan.forEach(function (item, idx) {
+          contentHtml += `<tr>
+            <td class="text-center">${idx + 1}</td>
+            <td><span class="badge bg-light text-dark">${item.PhanLoai}</span></td>
+            <td class="fw-medium">${item.TenMon}</td>
+            <td class="text-end text-danger fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
+            <td class="text-center">
+              <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('man', ${idx})">delete</span>
+            </td>
+          </tr>`;
+        });
+      }
+      contentHtml += `</tbody></table>`;
+
+    } else if (activeTab === 'chay') {
+      var total = selectedFoodsChay.reduce(function (sum, item) { return sum + item.DonGia; }, 0);
+      totalText = total.toLocaleString('vi-VN') + ' đ';
+      contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 60px;">STT</th>
+            <th>Phân Loại</th>
+            <th>Tên Món Chay</th>
+            <th class="text-end" style="width: 140px;">Đơn Giá</th>
+            <th class="text-center" style="width: 60px;">Xóa</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      if (selectedFoodsChay.length === 0) {
+        contentHtml += '<tr><td colspan="5" class="text-center text-muted py-3">Chưa chọn món chay nào.</td></tr>';
+      } else {
+        selectedFoodsChay.forEach(function (item, idx) {
+          contentHtml += `<tr>
+            <td class="text-center">${idx + 1}</td>
+            <td><span class="badge bg-light text-dark">${item.PhanLoai}</span></td>
+            <td class="fw-medium">${item.TenMon}</td>
+            <td class="text-end text-success fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
+            <td class="text-center">
+              <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('chay', ${idx})">delete</span>
+            </td>
+          </tr>`;
+        });
+      }
+      contentHtml += `</tbody></table>`;
+
+    } else if (activeTab === 'drink') {
+      var total = selectedThucUong.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
+      totalText = total.toLocaleString('vi-VN') + ' đ';
+      contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 60px;">STT</th>
+            <th>Tên Đồ Uống / Dịch Vụ Phục Vụ</th>
+            <th class="text-end" style="width: 130px;">Đơn Giá</th>
+            <th class="text-center" style="width: 120px;">Số Lượng</th>
+            <th class="text-end" style="width: 140px;">Thành Tiền</th>
+            <th class="text-center" style="width: 60px;">Xóa</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      if (selectedThucUong.length === 0) {
+        contentHtml += '<tr><td colspan="6" class="text-center text-muted py-3">Chưa chọn thức uống nào.</td></tr>';
+      } else {
+        selectedThucUong.forEach(function (item, idx) {
+          var sub = item.DonGia * item.SoLuong;
+          contentHtml += `<tr>
+            <td class="text-center">${idx + 1}</td>
+            <td class="fw-medium">${item.TenMon}</td>
+            <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
+            <td class="text-center">
+              <div class="d-inline-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('drink', ${idx}, -1)">-</button>
+                <span style="min-width: 24px; display:inline-block;" class="fw-bold">${item.SoLuong}</span>
+                <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('drink', ${idx}, 1)">+</button>
+              </div>
+            </td>
+            <td class="text-end text-danger fw-semibold">${sub.toLocaleString('vi-VN')} đ</td>
+            <td class="text-center">
+              <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('drink', ${idx})">delete</span>
+            </td>
+          </tr>`;
+        });
+      }
+      contentHtml += `</tbody></table>`;
+
+    } else if (activeTab === 'service') {
+      var total = selectedDichVu.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
+      totalText = total.toLocaleString('vi-VN') + ' đ';
+      contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 60px;">STT</th>
+            <th>Tên Dịch Vụ & Nghi Lễ Đi Kèm</th>
+            <th class="text-end" style="width: 130px;">Đơn Giá</th>
+            <th class="text-center" style="width: 120px;">Số Lượng</th>
+            <th class="text-end" style="width: 140px;">Thành Tiền</th>
+            <th class="text-center" style="width: 60px;">Xóa</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      if (selectedDichVu.length === 0) {
+        contentHtml += '<tr><td colspan="6" class="text-center text-muted py-3">Chưa chọn dịch vụ nào.</td></tr>';
+      } else {
+        selectedDichVu.forEach(function (item, idx) {
+          var sub = item.DonGia * item.SoLuong;
+          contentHtml += `<tr>
+            <td class="text-center">${idx + 1}</td>
+            <td class="fw-medium">${item.TenMon}</td>
+            <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
+            <td class="text-center">
+              <div class="d-inline-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('service', ${idx}, -1)">-</button>
+                <span style="min-width: 24px; display:inline-block;" class="fw-bold">${item.SoLuong}</span>
+                <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('service', ${idx}, 1)">+</button>
+              </div>
+            </td>
+            <td class="text-end text-danger fw-semibold">${sub.toLocaleString('vi-VN')} đ</td>
+            <td class="text-center">
+              <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('service', ${idx})">delete</span>
+            </td>
+          </tr>`;
+        });
+      }
+      contentHtml += `</tbody></table>`;
+    }
+
+    var grandTotal = 
+      selectedFoodsMan.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
+      selectedFoodsChay.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
+      selectedThucUong.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0) +
+      selectedDichVu.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
+
+    var headerTabs = container.querySelector('.food-modal-tabs');
+    if (headerTabs) {
+      headerTabs.innerHTML = 
+        renderTabButton('man', 'Món mặn', selectedFoodsMan.length) +
+        renderTabButton('chay', 'Món chay', selectedFoodsChay.length) +
+        renderTabButton('drink', 'Thức uống', selectedThucUong.length) +
+        renderTabButton('service', 'Dịch vụ', selectedDichVu.length);
+    }
+
+    var gridBody = container.querySelector('.food-summary-grid-body');
+    if (gridBody) gridBody.innerHTML = contentHtml;
+
+    var tabTotal = container.querySelector('.food-tab-total');
+    if (tabTotal) tabTotal.innerText = totalText;
+
+    var sumTotal = container.querySelector('.food-sum-total');
+    if (sumTotal) sumTotal.innerText = grandTotal.toLocaleString('vi-VN') + ' đ';
+  }
+
+  // Chuyển tab tóm tắt ngoài form cha
+  function switchSummaryTab(tabId) {
+    var container = activeModal.querySelector('.food-selection-tables-wrapper');
+    if (container) {
+      container.dataset.activeTab = tabId;
+      _renderSummaryTables();
+    }
+  }
+
+  // Thay đổi số lượng ngoài form cha
+  function changeQty(type, index, delta) {
+    if (type === 'drink') {
+      var item = selectedThucUong[index];
+      item.SoLuong = Math.max(1, item.SoLuong + delta);
+    } else if (type === 'service') {
+      var item = selectedDichVu[index];
+      item.SoLuong = Math.max(1, item.SoLuong + delta);
+    }
+    _writeInputs(activeModal);
+  }
+
+  // Xóa món ngoài form cha
+  function removeItem(type, index) {
+    if (type === 'man') selectedFoodsMan.splice(index, 1);
+    else if (type === 'chay') selectedFoodsChay.splice(index, 1);
+    else if (type === 'drink') selectedThucUong.splice(index, 1);
+    else if (type === 'service') selectedDichVu.splice(index, 1);
+
+    _writeInputs(activeModal);
+    if (window.Toast) Toast.success('Đã xóa món ăn khỏi thực đơn!');
+  }
+
+  // Mở popup modal chọn món tập trung (Có Tabs trượt)
+  function openSelectionModal() {
+    _loadCatalog().then(function (catalog) {
+      _showSelectorModal(catalog);
+    });
+  }
+
+  // Vẽ chi tiết popup chọn món
+  function _showSelectorModal(catalog) {
+    var modalTab = 'man'; // Mặc định là món mặn
+    var searchKeyword = '';
+
+    // Sao chép sâu mảng tạm để tránh thay đổi trực tiếp trước khi ấn "Hoàn tất"
+    var tempFoodsMan = JSON.parse(JSON.stringify(selectedFoodsMan));
+    var tempFoodsChay = JSON.parse(JSON.stringify(selectedFoodsChay));
+    var tempThucUong = JSON.parse(JSON.stringify(selectedThucUong));
+    var tempDichVu = JSON.parse(JSON.stringify(selectedDichVu));
+
+    var modalContent = document.createElement('div');
+    modalContent.className = 'modal-main-container';
+    modalContent.style.cssText = 'position: relative; display: flex; flex-direction: column; height: calc(85vh - 60px); min-height: 500px; margin: -16px; padding: 16px; padding-bottom: 80px;';
+
+    modalContent.innerHTML = `
+      <!-- Modal Tabs Switcher -->
+      <div class="food-modal-tabs">
+        <button type="button" class="food-modal-tab-btn active" data-tab="man">
+          <span class="material-symbols-outlined" style="font-size:20px">restaurant</span> Món Mặn
+        </button>
+        <button type="button" class="food-modal-tab-btn" data-tab="chay">
+          <span class="material-symbols-outlined" style="font-size:20px">eco</span> Món Chay
+        </button>
+        <button type="button" class="food-modal-tab-btn" data-tab="drink">
+          <span class="material-symbols-outlined" style="font-size:20px">local_bar</span> Thức Uống
+        </button>
+        <button type="button" class="food-modal-tab-btn" data-tab="service">
+          <span class="material-symbols-outlined" style="font-size:20px">content_cut</span> Dịch Vụ
+        </button>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="d-flex gap-2 mb-3">
+        <input type="text" id="modal-food-search" class="ui-input" placeholder="Tìm kiếm theo tên hoặc mã hàng..." style="flex-grow: 1; border-radius: 8px; padding: 8px 12px; height: 38px;">
+        <button type="button" id="btn-modal-food-search" class="btn btn-primary d-flex align-items-center gap-1" style="height:38px; border-radius:8px;">
+          <span class="material-symbols-outlined" style="font-size:20px">search</span> Tìm
+        </button>
+      </div>
+
+      <!-- Food Grid Wrapper -->
+      <div id="modal-food-grid-wrapper" style="flex: 1; overflow-y: auto; padding: 16px; background: var(--color-background); border-radius: 12px; border: 1px solid var(--color-border);">
+        <div class="text-center py-4 text-muted">Đang tải dữ liệu...</div>
+      </div>
+
+      <!-- Popover Drawer selected items -->
+      <div id="modal-selected-drawer" class="selected-drawer collapsed">
+        <div class="drawer-header">
+          <span class="fw-bold d-flex align-items-center gap-2" style="font-size: 14px; color: var(--color-text);">
+            <span class="material-symbols-outlined" style="color:var(--color-primary); font-size:20px">assignment</span>
+            Danh sách đã chọn trong tab này
+          </span>
+          <span class="material-symbols-outlined close-drawer-btn" id="drawer-toggle-arrow">expand_less</span>
+        </div>
+        <div id="modal-sidebar-list" class="drawer-body">
+          <div class="text-center py-4 text-muted">Chưa chọn món nào</div>
+        </div>
+      </div>
+
+      <!-- Bottom Bar -->
+      <div class="modal-bottom-bar">
+        <div>
+          <button type="button" id="btn-toggle-drawer" class="btn btn-outline-primary d-flex align-items-center gap-2" style="height: 38px; border-radius: 8px; font-weight:600;">
+            <span class="material-symbols-outlined">shopping_cart</span>
+            <span>Đã chọn: <strong id="modal-sidebar-count">0</strong> món</span>
+          </button>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <div class="text-end">
+            <span class="text-muted" style="font-size: 12px; display: block; line-height: 1;">Tổng cộng:</span>
+            <span class="fw-bold text-danger" id="modal-sidebar-total" style="font-size: 18px;">0 đ</span>
+          </div>
+          <button type="button" id="btn-modal-confirm" class="btn btn-success d-flex align-items-center gap-2" style="height: 40px; border-radius: 8px; font-weight:700;">
+            <span class="material-symbols-outlined">check_circle</span> Hoàn Tất & Đóng
+          </button>
+        </div>
+      </div>
+    `;
+
+    var m = UIModal.show({
+      title: 'Hộp thoại Chọn thực đơn & Dịch vụ tiệc',
+      width: '950px',
+      content: modalContent
+    });
+
+    // Helper: Trả về danh sách tương ứng với tab hiện tại
+    function getTempListByTab(tab) {
+      if (tab === 'man') return tempFoodsMan;
+      if (tab === 'chay') return tempFoodsChay;
+      if (tab === 'drink') return tempThucUong;
+      if (tab === 'service') return tempDichVu;
+      return [];
+    }
+
+    // Phân loại các sản phẩm trong Catalog
+    function filterCatalogByTab(tab, keyword) {
+      var kw = (keyword || '').toLowerCase().trim();
+      return catalog.filter(function (item) {
+        var name = (item.Tenhang || item.TenMon || '').toLowerCase();
+        var code = (item.Mahang || item.MaMon || '').toLowerCase();
+        if (kw && !name.includes(kw) && !code.includes(kw)) return false;
+
+        // Phân loại
+        var isChay = item.IsChay === 1 || item.IsChay === true;
+        var pLoai = item.PhanLoai || item.Phanloai || item.Tennhomhang || 'Khác';
+
+        var isDrink = pLoai.includes('Bia') || pLoai.includes('Nước') || pLoai.includes('Thức uống') || pLoai.includes('Uống');
+        var isService = pLoai.includes('Dịch vụ') || pLoai.includes('Nghi lễ');
+
+        if (tab === 'man') return !isChay && !isDrink && !isService;
+        if (tab === 'chay') return isChay && !isDrink && !isService;
+        if (tab === 'drink') return isDrink;
+        if (tab === 'service') return isService;
+
+        return false;
+      });
+    }
+
+    // Vẽ danh sách Card món ăn lên Grid
+    function renderGrid() {
+      var gridWrapper = modalContent.querySelector('#modal-food-grid-wrapper');
+      if (!gridWrapper) return;
+
+      var filtered = filterCatalogByTab(modalTab, searchKeyword);
+      if (filtered.length === 0) {
+        gridWrapper.innerHTML = '<div class="text-center py-5 text-muted">Không tìm thấy mặt hàng nào phù hợp.</div>';
+        return;
+      }
+
+      // Nhóm theo nhóm hàng hóa
+      var groups = {};
+      filtered.forEach(function (item) {
+        var groupName = item.PhanLoai || item.Phanloai || item.Tennhomhang || 'Khác';
+        if (!groups[groupName]) groups[groupName] = [];
+        groups[groupName].push(item);
+      });
+
+      var html = '';
+      Object.keys(groups).forEach(function (groupName) {
+        var groupItems = groups[groupName];
+        html += `
+          <div class="food-category-section mb-4">
+            <div style="font-size: 14px; font-weight: 700; color: var(--color-text); border-bottom: 2px solid var(--color-primary); padding-bottom: 6px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+              <span class="d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined text-primary" style="font-size:20px">folder</span>
+                <span>${groupName}</span>
+              </span>
+              <span class="badge bg-light text-dark" style="font-size:11px;">${groupItems.length} sản phẩm</span>
+            </div>
+            <div class="food-grid-container">
+        `;
+
+        groupItems.forEach(function (item) {
+          var code = item.Mahang || item.MaMon;
+          var name = item.Tenhang || item.TenMon;
+          var price = item.Dongia || item.DonGia || 0;
+          var unit = item.DvtID || 'Đĩa';
+
+          var currentList = getTempListByTab(modalTab);
+          var isSelected = currentList.some(function (x) { return x.MaMon === code; });
+
+          var cardStyle = isSelected ? 'border-color: var(--color-primary); background-color: rgba(79, 70, 229, 0.04);' : '';
+          var btnStyle = isSelected ? 'background: #10B981; border: none; color: white;' : 'background: var(--color-primary); border: none; color: white;';
+          var iconName = isSelected ? 'check' : 'add';
+
+          html += `
+            <div class="food-card" id="card-${code}" style="${cardStyle}">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <span class="badge bg-light text-muted" style="font-family: monospace; font-size:10px; padding: 2px 4px;">${code}</span>
+                <span class="text-muted" style="font-size: 11px;">ĐVT: ${unit}</span>
+              </div>
+              <div class="fw-bold food-card-title" style="color: var(--color-text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${name}">
+                ${name}
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; border-top: 1px dashed var(--color-border);">
+                <span class="fw-bold text-danger" style="font-size: 12px;">${price.toLocaleString('vi-VN')} đ</span>
+                <button type="button" class="btn rounded-circle p-0 d-inline-flex align-items-center justify-content-center btn-card-toggle" data-code="${code}" style="width: 24px; height: 24px; min-width: 24px; ${btnStyle}">
+                  <span class="material-symbols-outlined" style="font-size: 14px;">${iconName}</span>
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `</div></div>`;
+      });
+
+      gridWrapper.innerHTML = html;
+
+      // Đăng ký sự kiện Click cho các nút Card
+      gridWrapper.querySelectorAll('.btn-card-toggle').forEach(function (btn) {
+        btn.onclick = function (e) {
+          e.preventDefault();
+          var code = this.getAttribute('data-code');
+          var catalogItem = catalog.find(function (c) { return (c.Mahang || c.MaMon) === code; });
+          if (catalogItem) {
+            toggleItemSelect(catalogItem);
+          }
+        };
+      });
+    }
+
+    // Toggle chọn/bỏ chọn sản phẩm
+    function toggleItemSelect(item) {
+      var code = item.Mahang || item.MaMon;
+      var currentList = getTempListByTab(modalTab);
+      var idx = currentList.findIndex(function (x) { return x.MaMon === code; });
+
+      var card = modalContent.querySelector('#card-' + code);
+      var btn = card ? card.querySelector('.btn-card-toggle') : null;
+
+      if (idx > -1) {
+        currentList.splice(idx, 1);
+        if (card) {
+          card.style.borderColor = '';
+          card.style.backgroundColor = '';
+        }
+        if (btn) {
+          btn.style.background = 'var(--color-primary)';
+          btn.querySelector('.material-symbols-outlined').innerText = 'add';
+        }
+      } else {
+        var newItem = {
+          MaMon: code,
+          Mahang: code,
+          TenMon: item.Tenhang || item.TenMon,
+          TenHang: item.Tenhang || item.TenMon,
+          PhanLoai: item.PhanLoai || item.Phanloai || item.Tennhomhang || 'Khác',
+          DvtID: item.DvtID || 'Đĩa',
+          DonGia: parseFloat(item.Dongia || item.DonGia || 0),
+          Dongia: parseFloat(item.Dongia || item.DonGia || 0),
+          SoLuong: 1,
+          Soluong: 1,
+          IsChay: modalTab === 'chay' ? 1 : 0,
+          IsKhuyenmai: 0
+        };
+        currentList.push(newItem);
+        if (card) {
+          card.style.borderColor = 'var(--color-primary)';
+          card.style.backgroundColor = 'rgba(79, 70, 229, 0.04)';
+        }
+        if (btn) {
+          btn.style.background = '#10B981';
+          btn.querySelector('.material-symbols-outlined').innerText = 'check';
+        }
+      }
+
+      updateTotals();
+      renderDrawer();
+    }
+
+    // Vẽ danh sách ngăn kéo Drawer đã chọn
+    function renderDrawer() {
+      var drawerBody = modalContent.querySelector('#modal-sidebar-list');
+      if (!drawerBody) return;
+
+      var currentList = getTempListByTab(modalTab);
+      if (currentList.length === 0) {
+        drawerBody.innerHTML = '<div class="text-center py-4 text-muted">Chưa chọn món nào trong tab này.</div>';
+        return;
+      }
+
+      var html = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 50px;">STT</th>
+            <th>Tên Mặt Hàng</th>
+            <th class="text-end" style="width: 120px;">Đơn Giá</th>
+            <th class="text-center" style="width: 100px;">Số Lượng</th>
+            <th class="text-end" style="width: 120px;">Thành Tiền</th>
+            <th class="text-center" style="width: 50px;">Xóa</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      currentList.forEach(function (item, idx) {
+        var sub = item.DonGia * item.SoLuong;
+        var qtyControl = '';
+
+        if (modalTab === 'drink' || modalTab === 'service') {
+          qtyControl = `
+            <div class="d-inline-flex align-items-center gap-1">
+              <button type="button" class="btn btn-sm btn-light px-2 py-0 btn-drawer-qty" data-idx="${idx}" data-delta="-1">-</button>
+              <span class="fw-bold">${item.SoLuong}</span>
+              <button type="button" class="btn btn-sm btn-light px-2 py-0 btn-drawer-qty" data-idx="${idx}" data-delta="1">+</button>
+            </div>
+          `;
+        } else {
+          qtyControl = `<span class="fw-bold">${item.SoLuong}</span>`;
+        }
+
+        html += `
+          <tr>
+            <td class="text-center">${idx + 1}</td>
+            <td class="fw-semibold">${item.TenMon}</td>
+            <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
+            <td class="text-center">${qtyControl}</td>
+            <td class="text-end fw-bold text-danger">${sub.toLocaleString('vi-VN')} đ</td>
+            <td class="text-center">
+              <span class="material-symbols-outlined text-danger cursor-pointer btn-drawer-remove" data-idx="${idx}" style="font-size:18px">delete</span>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table>`;
+      drawerBody.innerHTML = html;
+
+      // Event listeners cho các nút tăng giảm số lượng trong drawer
+      drawerBody.querySelectorAll('.btn-drawer-qty').forEach(function (btn) {
+        btn.onclick = function () {
+          var idx = parseInt(this.getAttribute('data-idx'));
+          var delta = parseInt(this.getAttribute('data-delta'));
+          currentList[idx].SoLuong = Math.max(1, currentList[idx].SoLuong + delta);
+          currentList[idx].Soluong = currentList[idx].SoLuong;
+          updateTotals();
+          renderDrawer();
+          renderGrid();
+        };
+      });
+
+      // Event listener cho nút xóa trong drawer
+      drawerBody.querySelectorAll('.btn-drawer-remove').forEach(function (btn) {
+        btn.onclick = function () {
+          var idx = parseInt(this.getAttribute('data-idx'));
+          var removed = currentList[idx];
+          currentList.splice(idx, 1);
+          
+          updateTotals();
+          renderDrawer();
+          renderGrid();
+        };
+      });
+    }
+
+    // Cập nhật tổng số lượng & tổng tiền ở Bottom Bar
+    function updateTotals() {
+      var total = 
+        tempFoodsMan.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
+        tempFoodsChay.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
+        tempThucUong.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0) +
+        tempDichVu.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
+
+      var activeList = getTempListByTab(modalTab);
+
+      var countEl = modalContent.querySelector('#modal-sidebar-count');
+      var totalEl = modalContent.querySelector('#modal-sidebar-total');
+
+      if (countEl) countEl.innerText = activeList.length;
+      if (totalEl) totalEl.innerText = total.toLocaleString('vi-VN') + ' đ';
+    }
+
+    // Chuyển đổi tab chọn món trong popup
+    modalContent.querySelectorAll('.food-modal-tab-btn').forEach(function (btn) {
+      btn.onclick = function () {
+        modalContent.querySelectorAll('.food-modal-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+        this.classList.add('active');
+        modalTab = this.getAttribute('data-tab');
+
+        // Reset bộ lọc tìm kiếm
+        var searchInp = modalContent.querySelector('#modal-food-search');
+        if (searchInp) searchInp.value = '';
+        searchKeyword = '';
+
+        // Đóng drawer khi đổi tab
+        var drawer = modalContent.querySelector('#modal-selected-drawer');
+        if (drawer) drawer.classList.add('collapsed');
+
+        renderGrid();
+        updateTotals();
+        renderDrawer();
+      };
+    });
+
+    // Sự kiện Tìm kiếm
+    var btnSearch = modalContent.querySelector('#btn-modal-food-search');
+    var txtSearch = modalContent.querySelector('#modal-food-search');
+
+    if (btnSearch && txtSearch) {
+      var doSearch = function () {
+        searchKeyword = txtSearch.value;
+        renderGrid();
+      };
+      btnSearch.onclick = doSearch;
+      txtSearch.onkeydown = function (e) {
+        if (e.key === 'Enter') doSearch();
+      };
+    }
+
+    // Toggle Drawer slide-up
+    var btnToggle = modalContent.querySelector('#btn-toggle-drawer');
+    var drawer = modalContent.querySelector('#modal-selected-drawer');
+    var arrow = modalContent.querySelector('#drawer-toggle-arrow');
+
+    if (btnToggle && drawer) {
+      btnToggle.onclick = function () {
+        if (drawer.classList.contains('collapsed')) {
+          drawer.classList.remove('collapsed');
+          if (arrow) arrow.innerText = 'expand_more';
+        } else {
+          drawer.classList.add('collapsed');
+          if (arrow) arrow.innerText = 'expand_less';
+        }
+      };
+    }
+    if (arrow && drawer) {
+      arrow.onclick = function () {
+        drawer.classList.add('collapsed');
+        if (arrow) arrow.innerText = 'expand_less';
+      };
+    }
+
+    // Xác nhận và Đóng Modal
+    var btnConfirm = modalContent.querySelector('#btn-modal-confirm');
+    btnConfirm.onclick = function () {
+      // Sao chép lại danh sách tạm vào danh sách chính thức
+      selectedFoodsMan = tempFoodsMan;
+      selectedFoodsChay = tempFoodsChay;
+      selectedThucUong = tempThucUong;
+      selectedDichVu = tempDichVu;
+
+      _writeInputs(activeModal);
+      m.closeNow();
+      if (window.Toast) Toast.success('Đã cập nhật danh sách thực đơn & dịch vụ thành công!');
+    };
+
+    // Khởi chạy vẽ ban đầu trong Modal
+    renderGrid();
+    updateTotals();
+    renderDrawer();
+  }
+
+  // Danh sách form name cần kích hoạt plugin
+  var SUPPORTED_FORMS = ['tbmk_Thaydoi', 'frmThayDoiBoSung'];
+
+  // Tự inject hidden input JSON nếu chưa có trong form
+  function _ensureHiddenInputs(modalContent, row) {
+    var jsonFields = ['JsonBanTiec', 'JsonThucUong', 'JsonDichVu', 'JsonPhatSinh'];
+    jsonFields.forEach(function (name) {
+      if (!modalContent.querySelector('[name="' + name + '"]')) {
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = name;
+        inp.value = (row && row[name]) ? row[name] : '[]';
+        modalContent.appendChild(inp);
+      } else {
+        // Nếu đã có nhưng rỗng, cố gắng lấy từ row
+        var existing = modalContent.querySelector('[name="' + name + '"]');
+        if ((!existing.value || existing.value === '') && row && row[name]) {
+          existing.value = row[name];
+        }
+      }
+    });
+  }
+
+  // Intercept và vẽ Block Thực đơn vào Edit Form của DynamicFormEngine
+  function _interceptForm(modalContent, row) {
+    // Ngăn không inject 2 lần
+    if (modalContent.dataset.foodPluginDone === '1') return;
+    modalContent.dataset.foodPluginDone = '1';
+
+    activeModal = modalContent;
+    // Tự động nới rộng Modal để đủ chỗ hiển thị bảng
+    if (activeModal && activeModal.style) {
+      activeModal.style.width = '1000px';
+      activeModal.style.maxWidth = '95vw';
+    }
+
+    _injectStyles();
+
+    // 1. Đảm bảo các hidden input JSON tồn tại (tự tạo nếu chưa có)
+    _ensureHiddenInputs(modalContent, row);
+
+    // 2. Quét đọc dữ liệu hiện có
+    _readInputs(modalContent);
+
+    // 3. Ẩn các Form Group của trường JSON thô nếu đang hiển thị
+    var rawInputNames = ['JsonBanTiec', 'JsonThucUong', 'JsonDichVu', 'JsonPhatSinh'];
+    rawInputNames.forEach(function (name) {
+      var inp = modalContent.querySelector('[name="' + name + '"]');
+      if (inp) {
+        var col = inp.closest('.df-col-12, .df-col-6, .df-col-4, .form-group');
+        if (col) col.style.display = 'none';
+      }
+    });
+
+    // 4. Tìm vùng grid - ưu tiên div[data-form-name] (body của DFE), hoặc .ui-modal-body > div
+    var grid = modalContent.querySelector('[data-form-name]');
+    if (!grid) {
+      // Fallback: tìm div flex chứa các trường form trong .ui-modal-body
+      var modalBody = modalContent.querySelector('.ui-modal-body') || modalContent.querySelector('.card-body');
+      if (modalBody) {
+        grid = modalBody.querySelector('div');
+      }
+    }
+    if (!grid) {
+      grid = modalContent; // Last resort
+    }
+
+    if (!grid.querySelector('.food-selection-tables-wrapper')) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'df-col-12 food-plugin-wrapper food-selection-tables-wrapper';
+      wrapper.dataset.activeTab = 'man';
+
+      wrapper.innerHTML = `
+        <div class="food-plugin-header">
+          <h5 class="food-plugin-title">
+            <span class="material-symbols-outlined">restaurant_menu</span>
+            Thực đơn & Dịch vụ đính kèm
+          </h5>
+          <button type="button" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" onclick="FoodSelectionPlugin.openSelectionModal()">
+            <span class="material-symbols-outlined" style="font-size:18px;">add_circle</span> Thiết lập Thực đơn & Dịch vụ
+          </button>
+        </div>
+
+        <!-- Switch Tab hiển thị trong Form -->
+        <div class="food-modal-tabs">
+          <!-- Tải động từ render -->
+        </div>
+
+        <!-- Bảng danh sách mặt hàng -->
+        <div class="table-responsive food-summary-grid-body" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px;">
+          <!-- Tải động từ render -->
+        </div>
+
+        <!-- Footer tóm tắt tiền -->
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid var(--color-border);">
+          <div style="font-size:13px; color:var(--color-text-secondary);">
+            Tổng cộng Tab: <strong class="food-tab-total text-danger" style="font-size:14px;">0 đ</strong>
+          </div>
+          <div style="font-size:14px; font-weight:700;">
+            Tổng cộng Hợp đồng: <strong class="food-sum-total text-danger" style="font-size:16px;">0 đ</strong>
+          </div>
+        </div>
+      `;
+
+      grid.appendChild(wrapper);
+      _renderSummaryTables();
+    }
+  }
+
+  // Khởi chạy MutationObserver để lắng nghe sự kiện xuất hiện modal mới
+  var _observer = null;
+  function init() {
+    if (_observer) _observer.disconnect();
+
+    _observer = new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        mutation.addedNodes.forEach(function (node) {
+          if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+          // UIModal thêm .modal-overlay vào #modal-container
+          // Bên trong có .modal-content > .ui-modal-body > body[data-form-name]
+          var formBody = null;
+
+          // Cách 1: Tìm element có data-form-name
+          var bodyWithFormName = node.querySelector('[data-form-name]');
+          if (bodyWithFormName) {
+            var formName = bodyWithFormName.getAttribute('data-form-name');
+            if (SUPPORTED_FORMS.indexOf(formName) !== -1) {
+              formBody = bodyWithFormName;
+            }
+          }
+
+          // Cách 2: Fallback - tìm [name="JsonBanTiec"] đã có sẵn
+          if (!formBody) {
+            var modalContent = node.querySelector('.modal-content') ||
+                               (node.classList && node.classList.contains('modal-content') ? node : null);
+            if (modalContent) {
+              var hasJsonField = modalContent.querySelector('[name="JsonBanTiec"]');
+              if (hasJsonField) {
+                formBody = modalContent;
+              }
+            }
+          }
+
+          if (formBody) {
+            // Lấy .modal-content để dùng làm activeModal
+            var modalContentEl = formBody.closest('.modal-content') || formBody;
+            _loadCatalog();
+            // Đợi một tick để DFE hoàn thành render form rồi mới inject
+            setTimeout(function () {
+              _interceptForm(modalContentEl, null);
+            }, 50);
+          }
+        });
+      });
+    });
+
+    _observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // Auto-init khi load plugin
+  init();
+
+  return {
+    openSelectionModal: openSelectionModal,
+    switchSummaryTab: switchSummaryTab,
+    removeItem: removeItem,
+    changeQty: changeQty
+  };
+})();
+
 
 
 /* --- EventBus.js --- */
@@ -1747,7 +3022,7 @@ var BookingService = (function () {
 
   /**
    * Xóa biên nhận cọc qua Gateway (Batch)
-   * @param {Object} payload
+   * @param {Object} payload - { DocumentIDs: 'ID1,ID2' }
    * @returns {Promise}
    */
   function remove(payload) {
@@ -1759,7 +3034,7 @@ var BookingService = (function () {
       var routerPayload = {
         List: 'frmBiennhancoccho',
         Func: 'Delete',
-        JsonData: JSON.stringify(payload)
+        JsonData: JSON.stringify(payload) // Truyền { DocumentIDs: 'ID1,ID2' }
       };
 
       ApiClient.post(endpoint, routerPayload)
@@ -1933,10 +3208,9 @@ var ContractService = (function () {
   /**
    * Lấy lịch sử phụ lục hợp đồng
    * @param {string} sohopdong
-   * @param {string} sothaydoi
    * @returns {Promise<Array>}
    */
-  function getPhuLucHistory(sohopdong, sothaydoi) {
+  function getPhuLucHistory(sohopdong) {
     return new Promise(function (resolve, reject) {
       var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.ROUTER)
         ? API_CONFIG.ENDPOINTS.ROUTER
@@ -1945,8 +3219,7 @@ var ContractService = (function () {
       var payload = {
         List: 'tbmk_Thaydoi',
         Func: 'View',
-        Keyword: sohopdong || '',
-        JsonData: JSON.stringify({ Sothaydoi: sothaydoi || '' })
+        Keyword: sohopdong || ''
       };
 
       ApiClient.post(endpoint, payload)
@@ -5094,14 +6367,28 @@ UIControls.createDataComboBox = function (options) {
         options.headers || [], displayData, options.colHighlightIndex !== undefined ? options.colHighlightIndex : (options.colFilterIndex || 0), options.colGroupIndex
       );
       var rows = tableWrapper.querySelectorAll('tbody tr');
+      var currentValue = (typeof options.getValue === 'function') ? options.getValue() : null;
       var currentInputVal = input.value.trim().toLowerCase();
 
       rows.forEach(function (row) {
         var dataRow = displayData[row.getAttribute('data-index')];
-        var rowVal = (dataRow[options.colFilterIndex || 0] || '').toString().toLowerCase();
+        var isRowActive = false;
 
-        if (currentInputVal && rowVal === currentInputVal) {
+        if (currentValue !== null && currentValue !== undefined && currentValue !== '') {
+          isRowActive = String(dataRow[0]).trim().toLowerCase() === String(currentValue).trim().toLowerCase();
+        } else {
+          var rowVal = (dataRow[options.colFilterIndex || 0] || '').toString().toLowerCase();
+          isRowActive = currentInputVal && (rowVal === currentInputVal);
+        }
+
+        if (isRowActive) {
           row.classList.add('active');
+          // Tự động cuộn đến dòng được chọn (chỉ khi không tìm kiếm)
+          if (!currentQuery) {
+            setTimeout(function () {
+              row.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+            }, 50);
+          }
         }
 
         row.addEventListener('click', function () {
@@ -6179,22 +7466,35 @@ var UIInput = (function () {
     }
 
     var input = document.createElement('input');
-    input.type = inputType;
+    if (config.isMoney) {
+      input.type = 'text';
+      input.setAttribute('inputmode', 'numeric');
+    } else {
+      input.type = inputType;
+    }
     input.className = 'ui-input';
     if (config.id) input.id = config.id;
     if (config.name) input.name = config.name;
-    
+
     var finalPlaceholder = config.placeholder;
     if (!finalPlaceholder && config.label && inputType !== 'checkbox' && inputType !== 'radio' && inputType !== 'date') {
       finalPlaceholder = 'Nhập ' + config.label.toLowerCase() + '...';
     }
     if (finalPlaceholder) input.placeholder = finalPlaceholder;
-    
+
     if (config.value !== undefined) input.value = config.value;
     if (config.disabled) input.disabled = true;
     if (config.readonly) input.readOnly = true;
 
     wrapper.appendChild(input);
+
+    if (config.isMoney) {
+      var wordEl = document.createElement('div');
+      wordEl.className = 'money-words-text';
+      wordEl.style.cssText = 'font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;';
+      wrapper.appendChild(wordEl);
+      setupMoneyInput(input, wordEl);
+    }
 
     return { wrapper: wrapper, input: input };
   }
@@ -6218,6 +7518,14 @@ var UIInput = (function () {
   }
 
   /**
+   * Ô nhập Tiền tệ (tự động format + đọc số thành chữ)
+   */
+  function createMoney(config) {
+    var conf = Object.assign({}, config, { isMoney: true });
+    return _createBaseWrapper(conf, 'text').wrapper;
+  }
+
+  /**
    * Ô chọn Ngày
    */
   function createDate(config) {
@@ -6238,7 +7546,249 @@ var UIInput = (function () {
         config.value = rawVal.split(' ')[0];
       }
     }
-    return _createBaseWrapper(config, 'date').wrapper;
+
+    var obj = _createBaseWrapper(config, 'text');
+    var visibleInput = obj.input;
+
+    // Remove name to prevent duplicate submission of the text representation
+    visibleInput.removeAttribute('name');
+    var elementId = config.id || config.name;
+    if (elementId) visibleInput.id = elementId + '_visible';
+    visibleInput.readOnly = true;
+    visibleInput.style.cursor = 'pointer';
+    visibleInput.placeholder = config.placeholder || 'Chọn ngày...';
+
+    // Format display value
+    var initialDate = config.value || '';
+    if (initialDate) {
+      var p = initialDate.split('-');
+      if (p.length === 3) {
+        visibleInput.value = p[2] + '/' + p[1] + '/' + p[0];
+      }
+    }
+
+    // Create the actual hidden input for form value collection
+    var hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    if (config.name) hiddenInput.name = config.name;
+    if (elementId) hiddenInput.id = elementId;
+    hiddenInput.value = initialDate;
+    obj.wrapper.appendChild(hiddenInput);
+
+    // Sync from hidden input value back to visible input value
+    hiddenInput.addEventListener('change', function () {
+      var val = hiddenInput.value;
+      if (val) {
+        var p = val.split('-');
+        if (p.length === 3) {
+          visibleInput.value = p[2] + '/' + p[1] + '/' + p[0];
+        } else {
+          visibleInput.value = val;
+        }
+      } else {
+        visibleInput.value = '';
+      }
+    });
+
+    // Remove the native input direct placement to wrap it nicely
+    if (visibleInput.parentNode) {
+      visibleInput.parentNode.removeChild(visibleInput);
+    }
+
+    // Input Group wrapper
+    var inputContainer = document.createElement('div');
+    inputContainer.style.position = 'relative';
+    inputContainer.style.display = 'flex';
+    inputContainer.style.alignItems = 'center';
+    inputContainer.appendChild(visibleInput);
+
+    // Icon
+    var icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined';
+    icon.innerText = 'calendar_today';
+    icon.style.position = 'absolute';
+    icon.style.right = '12px';
+    icon.style.color = 'var(--color-text-secondary)';
+    icon.style.pointerEvents = 'none';
+    icon.style.fontSize = '20px';
+    inputContainer.appendChild(icon);
+
+    obj.wrapper.appendChild(inputContainer);
+
+    // Custom calendar popup picker
+    var popup = null;
+    var calendarInstance = null;
+    var _scrollTargets = [];
+    var _scrollHandler = null;
+
+    function isElementClipped(el) {
+      var rect = el.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        return true;
+      }
+      var node = el.parentElement;
+      while (node && node !== document.documentElement) {
+        var style = window.getComputedStyle(node);
+        var ov = style.overflow + style.overflowY + style.overflowX;
+        if (/auto|scroll/.test(ov)) {
+          var parentRect = node.getBoundingClientRect();
+          if (rect.bottom < parentRect.top || rect.top > parentRect.bottom) {
+            return true;
+          }
+        }
+        node = node.parentElement;
+      }
+      return false;
+    }
+
+    function updatePosition() {
+      if (!popup) return;
+      var rect = visibleInput.getBoundingClientRect();
+      var windowWidth = window.innerWidth;
+      var windowHeight = window.innerHeight;
+      var popupWidth = 340;
+      var popupHeight = 380;
+
+      // Close if the input is scrolled out of view/container bounds
+      if (isElementClipped(visibleInput)) {
+        closePopup();
+        return;
+      }
+
+      // Calculate vertical position (flip if not enough space below)
+      var topPos = rect.bottom + 4;
+      if (rect.bottom + popupHeight > windowHeight && rect.top - popupHeight > 0) {
+        topPos = rect.top - popupHeight - 4;
+      }
+
+      // Calculate horizontal position
+      var leftPos = rect.left;
+      if (rect.left + popupWidth > windowWidth) {
+        leftPos = rect.right - popupWidth;
+      }
+      leftPos = Math.max(10, leftPos);
+
+      popup.style.top = topPos + 'px';
+      popup.style.left = leftPos + 'px';
+    }
+
+    function attachScrollListeners() {
+      if (_scrollHandler) return;
+      _scrollHandler = function () {
+        updatePosition();
+      };
+      _scrollTargets = (UIControls.utils && typeof UIControls.utils.getScrollableAncestors === 'function')
+        ? UIControls.utils.getScrollableAncestors(inputContainer)
+        : [window];
+      _scrollTargets.forEach(function (target) {
+        target.addEventListener('scroll', _scrollHandler, { passive: true, capture: false });
+      });
+      window.addEventListener('resize', _scrollHandler, { passive: true });
+    }
+
+    function detachScrollListeners() {
+      if (!_scrollHandler) return;
+      _scrollTargets.forEach(function (target) {
+        target.removeEventListener('scroll', _scrollHandler, { capture: false });
+      });
+      window.removeEventListener('resize', _scrollHandler);
+      _scrollHandler = null;
+      _scrollTargets = [];
+    }
+
+    function openPopup() {
+      if (popup) return;
+      popup = document.createElement('div');
+      popup.className = 'custom-datepicker-popup';
+
+      var isMobile = (window.innerWidth <= 576);
+
+      if (isMobile) {
+        // Add a dim backdrop for mobile focus
+        var backdrop = document.createElement('div');
+        backdrop.id = 'datepicker-mobile-backdrop';
+        backdrop.style.position = 'fixed';
+        backdrop.style.inset = '0';
+        backdrop.style.background = 'rgba(0, 0, 0, 0.4)';
+        backdrop.style.zIndex = '99999998';
+        backdrop.addEventListener('click', closePopup);
+        document.body.appendChild(backdrop);
+        
+        popup.style.position = 'fixed';
+        popup.style.zIndex = '99999999';
+      } else {
+        // Desktop/Tablet layout: Position relative to input using fixed (non-clipped)
+        popup.style.position = 'fixed';
+        popup.style.zIndex = '99999999';
+      }
+
+      if (typeof UICalendar !== 'undefined') {
+        calendarInstance = UICalendar.create({
+          selectedDate: hiddenInput.value || null,
+          onSelect: function (dateStr) {
+            hiddenInput.value = dateStr;
+            var p = dateStr.split('-');
+            if (p.length === 3) {
+              visibleInput.value = p[2] + '/' + p[1] + '/' + p[0];
+            }
+            hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+            hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+            closePopup();
+          }
+        });
+        popup.appendChild(calendarInstance);
+      } else {
+        popup.innerText = 'UICalendar not loaded';
+      }
+
+      document.body.appendChild(popup);
+
+      if (!isMobile) {
+        updatePosition();
+        attachScrollListeners();
+      }
+
+      if (calendarInstance && calendarInstance.setSelectedDate) {
+        calendarInstance.setSelectedDate(hiddenInput.value || null);
+      }
+
+      setTimeout(function () {
+        document.addEventListener('click', outsideClickListener);
+      }, 0);
+    }
+
+    function closePopup() {
+      if (!popup) return;
+      document.removeEventListener('click', outsideClickListener);
+      detachScrollListeners();
+      var backdrop = document.getElementById('datepicker-mobile-backdrop');
+      if (backdrop && backdrop.parentNode) {
+        backdrop.parentNode.removeChild(backdrop);
+      }
+      if (popup.parentNode) {
+        popup.parentNode.removeChild(popup);
+      }
+      popup = null;
+      calendarInstance = null;
+    }
+
+    function outsideClickListener(e) {
+      if (!document.body.contains(e.target)) return;
+      if (popup && !popup.contains(e.target) && e.target !== visibleInput) {
+        closePopup();
+      }
+    }
+
+    visibleInput.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (popup) {
+        closePopup();
+      } else {
+        openPopup();
+      }
+    });
+
+    return obj.wrapper;
   }
 
   /**
@@ -6250,28 +7800,28 @@ var UIInput = (function () {
     obj.wrapper.classList.add('modern-checkbox-wrapper');
     obj.input.className = 'modern-checkbox';
     obj.input.style.cursor = 'pointer';
-    
+
     // Checkbox uses checked instead of value
     if (config.value === '1' || config.value === 1 || config.value === true || String(config.value).toLowerCase() === 'true') {
-        obj.input.checked = true;
+      obj.input.checked = true;
     }
-    
+
     // Thêm giá trị thực vào dataset để tự động serialize thành 1/0
     obj.input.value = obj.input.checked ? 1 : 0;
-    obj.input.onchange = function() {
-        this.value = this.checked ? 1 : 0;
+    obj.input.onchange = function () {
+      this.value = this.checked ? 1 : 0;
     };
-    
+
     // Đảo ngược thứ tự input và label cho đẹp
     var label = obj.wrapper.querySelector('label');
     if (label) {
-        // Xóa class cũ
-        label.className = '';
-        label.style.cursor = 'pointer';
-        // Đảo ngược thứ tự: input trước, label sau
-        obj.wrapper.insertBefore(obj.input, label);
+      // Xóa class cũ
+      label.className = '';
+      label.style.cursor = 'pointer';
+      // Đảo ngược thứ tự: input trước, label sau
+      obj.wrapper.insertBefore(obj.input, label);
     }
-    
+
     return obj.wrapper;
   }
 
@@ -6305,7 +7855,7 @@ var UIInput = (function () {
     eyeBtn.title = 'Hiện mật khẩu';
 
     var isVisible = false;
-    eyeBtn.addEventListener('click', function() {
+    eyeBtn.addEventListener('click', function () {
       isVisible = !isVisible;
       input.type = isVisible ? 'text' : 'password';
       eyeBtn.querySelector('.material-symbols-outlined').textContent = isVisible ? 'visibility' : 'visibility_off';
@@ -6314,8 +7864,8 @@ var UIInput = (function () {
     });
 
     // Hover effect
-    eyeBtn.addEventListener('mouseenter', function() { this.style.color = 'var(--color-text)'; });
-    eyeBtn.addEventListener('mouseleave', function() { this.style.color = 'var(--color-text-secondary)'; });
+    eyeBtn.addEventListener('mouseenter', function () { this.style.color = 'var(--color-text)'; });
+    eyeBtn.addEventListener('mouseleave', function () { this.style.color = 'var(--color-text-secondary)'; });
 
     inputWrap.appendChild(eyeBtn);
 
@@ -6352,12 +7902,12 @@ var UIInput = (function () {
     defaultOpt.innerText = '-- Vui lòng chọn --';
     select.appendChild(defaultOpt);
 
-    (options || []).forEach(function(opt) {
-        var o = document.createElement('option');
-        o.value = opt.value;
-        o.innerText = opt.label;
-        if (config.value == opt.value) o.selected = true;
-        select.appendChild(o);
+    (options || []).forEach(function (opt) {
+      var o = document.createElement('option');
+      o.value = opt.value;
+      o.innerText = opt.label;
+      if (config.value == opt.value) o.selected = true;
+      select.appendChild(o);
     });
 
     wrapper.appendChild(select);
@@ -6374,7 +7924,7 @@ var UIInput = (function () {
     var onIncrease = config.onIncrease || '';
     var onChange = config.onChange || '';
     var stopPropagation = config.stopPropagation ? 'event.stopPropagation(); ' : '';
-    
+
     var h = config.height || 32;
     var w = config.width || 96;
     var btnW = config.btnWidth || 30;
@@ -6434,7 +7984,7 @@ var UIInput = (function () {
    */
   function setupMoneyInput(inputEl, textEl) {
     if (!inputEl) return;
-    
+
     function refresh() {
       var raw = parseInt(inputEl.value.replace(/\D/g, ''), 10) || 0;
       inputEl.value = raw === 0 ? '' : raw.toLocaleString('vi-VN');
@@ -6445,14 +7995,14 @@ var UIInput = (function () {
       var pos = this.selectionStart;
       var oldLen = this.value.length;
       var raw = parseInt(this.value.replace(/\D/g, ''), 10) || 0;
-      
+
       this.value = raw === 0 ? '' : raw.toLocaleString('vi-VN');
-      
+
       var diff = this.value.length - oldLen;
       if (pos !== null) {
         this.setSelectionRange(pos + diff, pos + diff);
       }
-      
+
       if (textEl) textEl.innerText = raw === 0 ? '' : docSoTienVN(raw);
     });
 
@@ -6466,6 +8016,7 @@ var UIInput = (function () {
   return {
     createText: createText,
     createNumber: createNumber,
+    createMoney: createMoney,
     createDate: createDate,
     createPassword: createPassword,
     createSwitch: createSwitch,
@@ -7141,12 +8692,22 @@ var UITable = (function () {
     var dynamicHeaders = [];
     var dynamicColumns = [];
 
-    // Lấy keys từ data, nếu data rỗng thì lấy từ dictionary
+    // Lấy keys: ưu tiên lọc theo dictionary nếu dictionary không rỗng để chỉ hiện các cột được cấu hình.
+    // Nếu dictionary rỗng hoặc không khớp khóa nào, ta mới lấy toàn bộ keys từ data.
     var keys = [];
-    if (data && data.length > 0) {
+    var hasDictionary = dictionary && Object.keys(dictionary).length > 0;
+    if (hasDictionary) {
+      var dataKeys = (data && data.length > 0) ? Object.keys(data[0]) : [];
+      Object.keys(dictionary).forEach(function(key) {
+        if (dataKeys.length === 0 || dataKeys.indexOf(key) >= 0) {
+          keys.push(key);
+        }
+      });
+      if (keys.length === 0) {
+        keys = dataKeys;
+      }
+    } else if (data && data.length > 0) {
       keys = Object.keys(data[0]);
-    } else if (dictionary && Object.keys(dictionary).length > 0) {
-      keys = Object.keys(dictionary);
     }
 
     if (keys.length > 0) {
@@ -7158,9 +8719,92 @@ var UITable = (function () {
         var header = { label: headerLabel, sortable: true, field: key };
         var col = { field: key };
 
-        // Default render: Tooltip
+        // Default render: JSON-aware or Tooltip
         col.render = function(v) { 
           if (v == null || v === '') return '';
+          var str = String(v).trim();
+          if ((str.startsWith('[') && str.endsWith(']')) || (str.startsWith('{') && str.endsWith('}'))) {
+            try {
+              var parsed = JSON.parse(str);
+              if (parsed && typeof parsed === 'object') {
+                return (function renderParsedJson(parsed) {
+                  if (Array.isArray(parsed)) {
+                    if (parsed.length === 0) return '<span style="color: var(--color-text-muted, #94a3b8); font-style: italic;">Trống</span>';
+                    
+                    // Check if it's a schedule (BatDau/KetThuc/NoiDung/Sanh)
+                    var isSchedule = parsed.some(function(item) {
+                      return item && (item.BatDau !== undefined || item.KetThuc !== undefined || item.Sanh !== undefined || item.NoiDung !== undefined);
+                    });
+                    
+                    // Check if it's payment (STT/SoTien/Ngay/NoiDung)
+                    var isPayment = parsed.some(function(item) {
+                      return item && (item.STT !== undefined || item.SoTien !== undefined || item.Ngay !== undefined || item.NoiDung !== undefined);
+                    });
+                    
+                    if (isSchedule) {
+                      var html = '<div class="json-schedule-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; padding: 2px 0;">';
+                      parsed.forEach(function(item) {
+                        var timeStr = (item.BatDau || '') + (item.KetThuc ? ' - ' + item.KetThuc : '');
+                        var hallStr = item.Sanh ? '<span style="background: rgba(59, 130, 246, 0.1); color: #2563eb; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px;">' + item.Sanh + '</span>' : '';
+                        var timeBadge = timeStr ? '<span style="background: rgba(16, 185, 129, 0.1); color: #059669; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px; white-space: nowrap;">' + timeStr + '</span>' : '';
+                        var contentStr = item.NoiDung ? '<span style="color: var(--color-text-primary, #1e293b); font-weight: 500;">' + item.NoiDung + '</span>' : '';
+                        html += '<div class="schedule-row" style="display: flex; align-items: center; flex-wrap: wrap; gap: 2px;">' + timeBadge + hallStr + contentStr + '</div>';
+                      });
+                      html += '</div>';
+                      return html;
+                    }
+                    
+                    if (isPayment) {
+                      var html = '<div class="json-payment-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; padding: 2px 0;">';
+                      parsed.forEach(function(item) {
+                        var sttStr = item.STT ? '<span style="background: rgba(124, 58, 237, 0.1); color: #7c3aed; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px;">Đợt ' + item.STT + '</span>' : '';
+                        var moneyStr = item.SoTien ? '<span style="color: #ef4444; font-weight: 600; margin-right: 4px;">' + item.SoTien + '</span>' : '';
+                        var dateStr = item.Ngay ? '<span style="color: var(--color-text-secondary, #64748b); margin-right: 4px;">(' + item.Ngay + ')</span>' : '';
+                        var contentStr = item.NoiDung ? '<span style="color: var(--color-text-primary, #1e293b); font-style: italic;">' + item.NoiDung + '</span>' : '';
+                        html += '<div class="payment-row" style="display: flex; align-items: center; flex-wrap: wrap; gap: 2px;">' + sttStr + moneyStr + dateStr + contentStr + '</div>';
+                      });
+                      html += '</div>';
+                      return html;
+                    }
+                    
+                    // Generic simple array
+                    var isSimpleArray = parsed.every(function(item) {
+                      return typeof item !== 'object';
+                    });
+                    if (isSimpleArray) {
+                      return parsed.join(', ');
+                    }
+                    
+                    // Generic complex array
+                    var html = '<div class="json-generic-table" style="font-size: 11px; display: flex; flex-direction: column; gap: 2px;">';
+                    parsed.forEach(function(item) {
+                      var itemHtml = [];
+                      for (var k in item) {
+                        if (item.hasOwnProperty(k)) {
+                          itemHtml.push('<strong>' + k + ':</strong> ' + item[k]);
+                        }
+                      }
+                      html += '<div style="border-bottom: 1px dashed var(--color-border, #e2e8f0); padding-bottom: 2px;">' + itemHtml.join(' | ') + '</div>';
+                    });
+                    html += '</div>';
+                    return html;
+                  } else {
+                    // Single object
+                    var html = '<div class="json-generic-object" style="font-size: 11px; display: flex; flex-direction: column; gap: 2px;">';
+                    for (var k in parsed) {
+                      if (parsed.hasOwnProperty(k)) {
+                        html += '<div><strong>' + k + ':</strong> ' + parsed[k] + '</div>';
+                      }
+                    }
+                    html += '</div>';
+                    return html;
+                  }
+                })(parsed);
+              }
+            } catch (e) {
+              // Ignore and fallback
+            }
+          }
           var safeVal = String(v).replace(/"/g, '&quot;');
           return '<span title="' + safeVal + '">' + safeVal + '</span>'; 
         };
@@ -7180,7 +8824,7 @@ var UITable = (function () {
         }
 
         // Heuristic Format
-        if (keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0) {
+        if ((keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0 || keyLower.indexOf('ngay') >= 0) && keyLower.indexOf('songay') === -1 && keyLower.indexOf('so_ngay') === -1) {
           header.align = 'center';
           col.align = 'center';
           col.render = function(v) { return typeof FormatUtils !== 'undefined' ? FormatUtils.date(v) : v; };
@@ -9008,7 +10652,7 @@ var UICalendar = (function () {
       // Header
       var header = document.createElement('div');
       header.className = 'calendar-header';
-      
+
       var titleContainer = document.createElement('div');
       titleContainer.className = 'calendar-month-picker';
 
@@ -9023,9 +10667,9 @@ var UICalendar = (function () {
       icon.style.color = 'var(--color-text-secondary)';
       titleContainer.appendChild(icon);
 
-      titleContainer.onclick = function() {
+      titleContainer.onclick = function () {
         if (document.getElementById('custom-month-picker-overlay')) return;
-        
+
         var overlay = document.createElement('div');
         overlay.id = 'custom-month-picker-overlay';
         overlay.style.position = 'fixed';
@@ -9033,45 +10677,45 @@ var UICalendar = (function () {
         overlay.style.left = '0';
         overlay.style.width = '100%';
         overlay.style.height = '100%';
-        overlay.style.zIndex = '9999';
-        
+        overlay.style.zIndex = '999999999';
+
         var dropdown = document.createElement('div');
         dropdown.className = 'calendar-dropdown-picker';
         var rect = titleContainer.getBoundingClientRect();
         dropdown.style.top = (rect.bottom + 8) + 'px';
         dropdown.style.left = rect.left + 'px';
-        dropdown.onclick = function(ev) { ev.stopPropagation(); };
-        
+        dropdown.onclick = function (ev) { ev.stopPropagation(); };
+
         var yearHeader = document.createElement('div');
         yearHeader.className = 'calendar-dropdown-header';
-        
+
         var btnPrevYear = document.createElement('button');
         btnPrevYear.className = 'btn btn-outline d-flex align-items-center justify-content-center p-0 rounded-circle';
         btnPrevYear.style.width = '32px'; btnPrevYear.style.height = '32px';
         btnPrevYear.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">chevron_left</span>';
-        
+
         var yearLabel = document.createElement('div');
         yearLabel.className = 'calendar-dropdown-year-label';
         yearLabel.innerText = year;
-        
+
         var btnNextYear = document.createElement('button');
         btnNextYear.className = 'btn btn-outline d-flex align-items-center justify-content-center p-0 rounded-circle';
         btnNextYear.style.width = '32px'; btnNextYear.style.height = '32px';
         btnNextYear.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">chevron_right</span>';
-        
+
         var tempYear = year;
-        
-        btnPrevYear.onclick = function() { tempYear--; yearLabel.innerText = tempYear; loadSummaryAndRender(); };
-        btnNextYear.onclick = function() { tempYear++; yearLabel.innerText = tempYear; loadSummaryAndRender(); };
-        
+
+        btnPrevYear.onclick = function () { tempYear--; yearLabel.innerText = tempYear; loadSummaryAndRender(); };
+        btnNextYear.onclick = function () { tempYear++; yearLabel.innerText = tempYear; loadSummaryAndRender(); };
+
         yearHeader.appendChild(btnPrevYear);
         yearHeader.appendChild(yearLabel);
         yearHeader.appendChild(btnNextYear);
         dropdown.appendChild(yearHeader);
-        
+
         var monthsGrid = document.createElement('div');
         monthsGrid.className = 'calendar-dropdown-months-grid';
-        
+
         function renderMonths() {
           monthsGrid.innerHTML = '';
           var monthNames = ['Thg 1', 'Thg 2', 'Thg 3', 'Thg 4', 'Thg 5', 'Thg 6', 'Thg 7', 'Thg 8', 'Thg 9', 'Thg 10', 'Thg 11', 'Thg 12'];
@@ -9086,7 +10730,7 @@ var UICalendar = (function () {
               dot.className = 'month-event-dot';
               mBtn.appendChild(dot);
             }
-            mBtn.onclick = function() {
+            mBtn.onclick = function () {
               document.body.removeChild(overlay);
               currentYear = tempYear;
               currentMonth = m;
@@ -9100,7 +10744,7 @@ var UICalendar = (function () {
         // Load summary for current tempYear when navigating years
         function loadSummaryAndRender() {
           if (config.monthSummary && !config.monthSummary[tempYear] && typeof config.onLoadYearSummary === 'function') {
-            config.onLoadYearSummary(tempYear).then(function(s) {
+            config.onLoadYearSummary(tempYear).then(function (s) {
               config.monthSummary[tempYear] = s;
               renderMonths();
             });
@@ -9108,26 +10752,26 @@ var UICalendar = (function () {
             renderMonths();
           }
         }
-        
+
         loadSummaryAndRender();
         dropdown.appendChild(monthsGrid);
         overlay.appendChild(dropdown);
-        overlay.onclick = function() { document.body.removeChild(overlay); };
+        overlay.onclick = function () { document.body.removeChild(overlay); };
         document.body.appendChild(overlay);
       };
 
       header.appendChild(titleContainer);
-      
+
       var controls = document.createElement('div');
       controls.className = 'd-flex align-items-center gap-2';
-      
+
       var btnPrev = document.createElement('button');
       btnPrev.className = 'btn btn-outline d-flex align-items-center justify-content-center p-0 rounded-circle';
       btnPrev.style.width = '36px';
       btnPrev.style.height = '36px';
       btnPrev.title = 'Tháng trước';
       btnPrev.innerHTML = '<span class="material-symbols-outlined fs-5">chevron_left</span>';
-      btnPrev.onclick = function() {
+      btnPrev.onclick = function () {
         var m = month - 1;
         var y = year;
         if (m < 0) { m = 11; y--; }
@@ -9139,7 +10783,7 @@ var UICalendar = (function () {
       var btnToday = document.createElement('button');
       btnToday.className = 'btn btn-outline px-3 py-1 fw-bold rounded-pill';
       btnToday.innerText = 'Hôm nay';
-      btnToday.onclick = function() {
+      btnToday.onclick = function () {
         var y = today.getFullYear();
         var m = today.getMonth();
         currentYear = y; currentMonth = m;
@@ -9153,7 +10797,7 @@ var UICalendar = (function () {
       btnNext.style.height = '36px';
       btnNext.title = 'Tháng sau';
       btnNext.innerHTML = '<span class="material-symbols-outlined fs-5">chevron_right</span>';
-      btnNext.onclick = function() {
+      btnNext.onclick = function () {
         var m = month + 1;
         var y = year;
         if (m > 11) { m = 0; y++; }
@@ -9172,7 +10816,7 @@ var UICalendar = (function () {
       var daysHeader = document.createElement('div');
       daysHeader.className = 'calendar-days-header';
 
-      ['TH 2', 'TH 3', 'TH 4', 'TH 5', 'TH 6', 'TH 7', 'CN'].forEach(function(d) {
+      ['TH 2', 'TH 3', 'TH 4', 'TH 5', 'TH 6', 'TH 7', 'CN'].forEach(function (d) {
         var dDiv = document.createElement('div');
         dDiv.className = 'calendar-day-header';
         if (d === 'CN') dDiv.classList.add('sunday');
@@ -9190,7 +10834,7 @@ var UICalendar = (function () {
       var firstDay = jsFirstDay === 0 ? 6 : jsFirstDay - 1;
       var daysInMonth = new Date(year, month + 1, 0).getDate();
       var daysInPrevMonth = new Date(year, month, 0).getDate();
-      
+
       var cellIndex = 0;
 
       // Helper function to generate Lunar date HTML using native Intl API
@@ -9199,7 +10843,7 @@ var UICalendar = (function () {
           var formatter = new Intl.DateTimeFormat('vi-VN-u-ca-chinese', { day: 'numeric', month: 'numeric' });
           var parts = formatter.formatToParts(new Date(y, m, d));
           var lDay = '', lMonth = '';
-          parts.forEach(function(p) {
+          parts.forEach(function (p) {
             if (p.type === 'day') lDay = p.value;
             if (p.type === 'month') lMonth = p.value;
           });
@@ -9222,7 +10866,7 @@ var UICalendar = (function () {
         var empty = document.createElement('div');
         empty.className = 'calendar-day empty-day animate-pop';
         empty.style.animationDelay = (cellIndex * 0.015) + 's';
-        
+
         var dNum = document.createElement('div');
         dNum.className = 'calendar-day-number';
         var prevDateNum = daysInPrevMonth - firstDay + i + 1;
@@ -9231,9 +10875,18 @@ var UICalendar = (function () {
         if (prevM < 0) { prevM = 11; prevY--; }
         dNum.innerHTML = '<span class="solar-date">' + prevDateNum + '</span>' + _getLunarDateHTML(prevY, prevM, prevDateNum);
         empty.appendChild(dNum);
-        
-        empty.onclick = (function(d, pY, pM) {
-          return function() {
+
+        if (config.selectedDate) {
+          var selDateObj = typeof config.selectedDate === 'string' ? new Date(config.selectedDate) : config.selectedDate;
+          if (selDateObj && !isNaN(selDateObj.getTime())) {
+            if (selDateObj.getFullYear() === prevY && selDateObj.getMonth() === prevM && selDateObj.getDate() === prevDateNum) {
+              empty.classList.add('selected');
+            }
+          }
+        }
+
+        empty.onclick = (function (d, pY, pM) {
+          return function () {
             if (typeof config.onSelect === 'function') {
               var dateStr = pY + '-' + (pM + 1).toString().padStart(2, '0') + '-' + d.toString().padStart(2, '0');
               config.onSelect(dateStr, null);
@@ -9250,9 +10903,18 @@ var UICalendar = (function () {
         var dayCell = document.createElement('div');
         dayCell.className = 'calendar-day animate-pop';
         dayCell.style.animationDelay = (cellIndex * 0.015) + 's';
-        
+
         if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === i) {
           dayCell.classList.add('today');
+        }
+
+        if (config.selectedDate) {
+          var selDateObj = typeof config.selectedDate === 'string' ? new Date(config.selectedDate) : config.selectedDate;
+          if (selDateObj && !isNaN(selDateObj.getTime())) {
+            if (selDateObj.getFullYear() === year && selDateObj.getMonth() === month && selDateObj.getDate() === i) {
+              dayCell.classList.add('selected');
+            }
+          }
         }
 
         var dayNum = document.createElement('div');
@@ -9263,53 +10925,53 @@ var UICalendar = (function () {
         // Thêm events
         var evtDiv = document.createElement('div');
         evtDiv.className = 'calendar-events';
-        
+
         var dayEvents = config.events ? config.events[i] : null;
-        
+
         if (dayEvents && dayEvents.length > 0) {
-           var cocCount = 0;
-           var hdCount = 0;
-           
-           dayEvents.forEach(function(e) {
-              if (e.rawData) {
-                 var lp = e.rawData.LoaiPhieu !== undefined ? e.rawData.LoaiPhieu : e.rawData.loaiPhieu;
-                 if (lp === 1) cocCount++;
-                 else hdCount++;
-              }
-           });
+          var cocCount = 0;
+          var hdCount = 0;
 
-           // Render Desktop Summary Labels với chấm tròn chỉ thị
-           if (cocCount > 0) {
-              var cocLabel = document.createElement('div');
-              cocLabel.className = 'calendar-event-label success';
-              cocLabel.title = 'Có ' + cocCount + ' Biên nhận cọc chỗ';
-              cocLabel.innerHTML = '<span class="dot"></span><span>' + cocCount + ' Cọc Chỗ</span>';
-              evtDiv.appendChild(cocLabel);
-           }
-           if (hdCount > 0) {
-              var hdLabel = document.createElement('div');
-              hdLabel.className = 'calendar-event-label primary';
-              hdLabel.title = 'Có ' + hdCount + ' Hợp đồng';
-              hdLabel.innerHTML = '<span class="dot"></span><span>' + hdCount + ' Hợp Đồng</span>';
-              evtDiv.appendChild(hdLabel);
-           }
+          dayEvents.forEach(function (e) {
+            if (e.rawData) {
+              var lp = e.rawData.LoaiPhieu !== undefined ? e.rawData.LoaiPhieu : e.rawData.loaiPhieu;
+              if (lp === 1) cocCount++;
+              else hdCount++;
+            }
+          });
 
-           // Render Mobile Dots
-           if (cocCount > 0) {
-              var dotCoc = document.createElement('div');
-              dotCoc.className = 'calendar-event-dot success';
-              dayCell.appendChild(dotCoc);
-           }
-           if (hdCount > 0) {
-              var dotHd = document.createElement('div');
-              dotHd.className = 'calendar-event-dot primary';
-              dayCell.appendChild(dotHd);
-           }
+          // Render Desktop Summary Labels với chấm tròn chỉ thị
+          if (cocCount > 0) {
+            var cocLabel = document.createElement('div');
+            cocLabel.className = 'calendar-event-label success';
+            cocLabel.title = 'Có ' + cocCount + ' Biên nhận cọc chỗ';
+            cocLabel.innerHTML = '<span class="dot"></span><span>' + cocCount + ' Cọc Chỗ</span>';
+            evtDiv.appendChild(cocLabel);
+          }
+          if (hdCount > 0) {
+            var hdLabel = document.createElement('div');
+            hdLabel.className = 'calendar-event-label primary';
+            hdLabel.title = 'Có ' + hdCount + ' Hợp đồng';
+            hdLabel.innerHTML = '<span class="dot"></span><span>' + hdCount + ' Hợp Đồng</span>';
+            evtDiv.appendChild(hdLabel);
+          }
+
+          // Render Mobile Dots
+          if (cocCount > 0) {
+            var dotCoc = document.createElement('div');
+            dotCoc.className = 'calendar-event-dot success';
+            dayCell.appendChild(dotCoc);
+          }
+          if (hdCount > 0) {
+            var dotHd = document.createElement('div');
+            dotHd.className = 'calendar-event-dot primary';
+            dayCell.appendChild(dotHd);
+          }
         }
         dayCell.appendChild(evtDiv);
 
-        dayCell.onclick = (function(d, evts) {
-          return function() {
+        dayCell.onclick = (function (d, evts) {
+          return function () {
             if (typeof config.onSelect === 'function') {
               var dateStr = year + '-' + (month + 1).toString().padStart(2, '0') + '-' + d.toString().padStart(2, '0');
               config.onSelect(dateStr, evts);
@@ -9328,7 +10990,7 @@ var UICalendar = (function () {
         var emptyEnd = document.createElement('div');
         emptyEnd.className = 'calendar-day empty-day animate-pop';
         emptyEnd.style.animationDelay = (cellIndex * 0.015) + 's';
-        
+
         var dNumEnd = document.createElement('div');
         dNumEnd.className = 'calendar-day-number';
         var nextDateNum = i + 1;
@@ -9337,9 +10999,18 @@ var UICalendar = (function () {
         if (nextM > 11) { nextM = 0; nextY++; }
         dNumEnd.innerHTML = '<span class="solar-date">' + nextDateNum + '</span>' + _getLunarDateHTML(nextY, nextM, nextDateNum);
         emptyEnd.appendChild(dNumEnd);
-        
-        emptyEnd.onclick = (function(d, nY, nM) {
-          return function() {
+
+        if (config.selectedDate) {
+          var selDateObj = typeof config.selectedDate === 'string' ? new Date(config.selectedDate) : config.selectedDate;
+          if (selDateObj && !isNaN(selDateObj.getTime())) {
+            if (selDateObj.getFullYear() === nextY && selDateObj.getMonth() === nextM && selDateObj.getDate() === nextDateNum) {
+              emptyEnd.classList.add('selected');
+            }
+          }
+        }
+
+        emptyEnd.onclick = (function (d, nY, nM) {
+          return function () {
             if (typeof config.onSelect === 'function') {
               var dateStr = nY + '-' + (nM + 1).toString().padStart(2, '0') + '-' + d.toString().padStart(2, '0');
               config.onSelect(dateStr, null);
@@ -9355,12 +11026,24 @@ var UICalendar = (function () {
     }
 
     render(currentYear, currentMonth);
-    
-    wrapper.updateEvents = function(newEvents) {
+
+    wrapper.updateEvents = function (newEvents) {
       config.events = newEvents;
       render(currentYear, currentMonth);
     };
-    
+
+    wrapper.setSelectedDate = function (newDate) {
+      config.selectedDate = newDate;
+      if (newDate) {
+        var d = typeof newDate === 'string' ? new Date(newDate) : newDate;
+        if (d && !isNaN(d.getTime())) {
+          currentYear = d.getFullYear();
+          currentMonth = d.getMonth();
+        }
+      }
+      render(currentYear, currentMonth);
+    };
+
     return wrapper;
   }
 

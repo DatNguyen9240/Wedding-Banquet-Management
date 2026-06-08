@@ -14,19 +14,29 @@ var DocumentExportPlugin = (function () {
       docType: 'hop_dong',
       label: 'Xuất Hợp Đồng',
       icon: 'description',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
+      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+      sqlListName: 'API_DanhSachHopDong'
     },
     'frmBiennhancoccho': {
-      docType: 'dat_coc',
-      label: 'Xuất Biên Nhận Cọc',
+      docType: 'phieu_thu',
+      label: 'Xuất Phiếu Thu',
       icon: 'receipt_long',
-      altKeys: ['MaChungTu', 'maChungTu', 'DocumentID', 'SoPhieu']
+      altKeys: ['MaChungTu', 'maChungTu', 'DocumentID', 'SoPhieu'],
+      sqlListName: 'API_DanhSachPhieuCoc'
     },
     'frmQuyetToan': {
       docType: 'quyet_toan',
       label: 'Xuất Quyết Toán',
       icon: 'receipt',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong']
+      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+      sqlListName: 'API_DanhSachQuyetToan'
+    },
+    'tbmk_Thaydoi': {
+      docType: 'de_nghi_thay_doi',
+      label: 'Xuất Phiếu Thay Đổi',
+      icon: 'edit_note',
+      altKeys: ['Sothaydoi', 'sothaydoi', 'SoThayDoi', 'Sohopdong', 'sohopdong'],
+      sqlListName: 'API_DanhSachThayDoi'
     }
   };
 
@@ -50,6 +60,12 @@ var DocumentExportPlugin = (function () {
       return;
     }
 
+    // Đọc tên file mẫu từ DB (đã cấu hình trong bảng dmLoaihinhtiec)
+    var actualDocType = config.docType;
+    if (config.docType === 'hop_dong' && row.TemplateFile) {
+        actualDocType = row.TemplateFile;
+    }
+
     var btn = document.getElementById('btn-export-doc-' + config.docType);
     var originalHTML = btn ? btn.innerHTML : '';
     if (btn) {
@@ -68,10 +84,11 @@ var DocumentExportPlugin = (function () {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        templateType: config.docType,
+        templateType: actualDocType,
         customerId: docId,
-        outputFileName: config.docType + '_' + docId,
-        rowData: row
+        outputFileName: actualDocType + '_' + docId,
+        rowData: row,
+        sqlListName: config.sqlListName
       })
     })
       .then(function (res) { return res.json(); })
@@ -121,7 +138,19 @@ var DocumentExportPlugin = (function () {
           }
           return;
         }
-        _generateDocument(selectedRows[0], config);
+
+        var row = selectedRows[0];
+        var st = (row.Status || row.TrangThai || '').toString().toLowerCase();
+        if (st.includes('đã ký')) {
+          if (typeof Alert !== 'undefined') {
+            Alert.warning('Bị khóa', 'Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
+          } else {
+            alert('Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
+          }
+          return;
+        }
+
+        _generateDocument(row, config);
       }
     }];
   }

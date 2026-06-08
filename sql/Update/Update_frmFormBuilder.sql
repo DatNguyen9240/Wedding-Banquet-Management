@@ -36,7 +36,7 @@ UPDATE SY_FormatFields SET FormatID = 'sl', DataSource = N'STATIC:t|Văn bản (
 WHERE FormName = 'frmFormBuilder' AND FieldName = 'FormatID';
 
 -- Khung chọn Kích thước hiển thị (Select)
-UPDATE SY_FormatFields SET FormatID = 'sl', DataSource = N'STATIC:12|Đầy đủ 100% (Full),6|Một nửa 50% (Half),4|1/3 Chiều rộng,3|1/4 Chiều rộng' 
+UPDATE SY_FormatFields SET FormatID = 'sl', DataSource = N'STATIC:12|Đầy đủ 100% (Full),6|Một nửa 50% (Half),4|1/3 Chiều rộng,3|1/4 Chiều rộng,hidden|Chỉ hiện trên Form (100%)' 
 WHERE FormName = 'frmFormBuilder' AND FieldName = 'FormPosition';
 
 -- Cột số thứ tự
@@ -67,5 +67,10 @@ WHERE FormName = 'frmFormBuilder' AND FieldName IN (
     'ShowInFilter', 'DataSource', 'VisibleRule', 'ValidateRule', 'DependsOn',
     'ShowInAdd', 'ShowInEdit', 'IsReadOnlyAdd', 'IsReadOnlyEdit'
 );
+
+-- 6. MIGRATION: Chuyển đổi toàn bộ vị trí 'grid' cũ sang '6' để đồng bộ với cơ chế kiểm tra số động trong JS
+UPDATE SY_FormatFields 
+SET FormPosition = '6' 
+WHERE FormPosition = 'grid';
 
 GO

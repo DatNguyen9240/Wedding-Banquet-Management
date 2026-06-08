@@ -7,10 +7,16 @@
 
 // 1. Tham số môi trường (Environment Variables)
 const ENV_VARS = {
-    API_BASE: 'https://qlt.bms79.com', // Domain backend thực tế
-    DOC_NODE_IP: (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
-        ? '192.168.68.241'      // Server Node.js mặc định dự phòng khi chạy localhost
-        : (typeof window !== 'undefined' ? window.location.hostname : '192.168.68.241')
+    API_BASE: 'https://qlt.bms79.com', // Domain backend thực tế (SQL Server API Gateway)
+
+    // Cấu hình máy chạy Node.js Backend (server.js - Port 8081)
+    // LƯU Ý: Nếu chạy Node.js Backend trên máy cá nhân (Local) và Docker OnlyOffice trên máy khác,
+    // bạn PHẢI đổi BACKEND_HOST thành IP LAN hoặc IP Public của máy bạn (không dùng localhost/127.0.0.1)
+    // để Docker OnlyOffice có thể kết nối ngược lại tải file và lưu callback.
+    BACKEND_HOST: '103.190.38.46',
+
+    // Cấu hình máy chạy Docker OnlyOffice (Document Server - Port 8082)
+    ONLYOFFICE_HOST: '103.190.38.46',
 };
 
 // 2. Cấu hình API chi tiết
@@ -26,11 +32,11 @@ window.API_CONFIG = {
         },
 
         DOCUMENT_MANAGER: {
-            NODE_IP: ENV_VARS.DOC_NODE_IP,
-            BASE_API: 'http://' + ENV_VARS.DOC_NODE_IP + ':8081/api/documents',
-            ONLYOFFICE_API: 'http://' + ENV_VARS.DOC_NODE_IP + ':8082/web-apps/apps/api/documents/api.js',
-            UPLOADS_URL: 'http://' + ENV_VARS.DOC_NODE_IP + ':8081/uploads/',
-            SAMPLES_URL: 'http://' + ENV_VARS.DOC_NODE_IP + ':8081/samples/'
+            NODE_IP: ENV_VARS.BACKEND_HOST,
+            BASE_API: 'http://' + ENV_VARS.BACKEND_HOST + ':8081/api/documents',
+            ONLYOFFICE_API: 'http://' + ENV_VARS.ONLYOFFICE_HOST + ':8082/web-apps/apps/api/documents/api.js',
+            UPLOADS_URL: 'http://' + ENV_VARS.BACKEND_HOST + ':8081/uploads/',
+            SAMPLES_URL: 'http://' + ENV_VARS.BACKEND_HOST + ':8081/samples/'
         },
 
         PERMISSIONS: {

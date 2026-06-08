@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -15,9 +15,8 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
-        Loaitiecid AS Loaihinhtiecid,
-        Tenloaitiec AS Tenloaihinhtiec,
-        ISNULL(isHoiNghi, 0) AS isHoiNghi
+        Loaitiecid AS [Mã loại],
+        Tenloaitiec AS [Loại hình tiệc]
     FROM dmLoaihinhtiec
     ORDER BY Tenloaitiec ASC;
 END

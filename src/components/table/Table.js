@@ -382,12 +382,22 @@ var UITable = (function () {
     var dynamicHeaders = [];
     var dynamicColumns = [];
 
-    // Lấy keys từ data, nếu data rỗng thì lấy từ dictionary
+    // Lấy keys: ưu tiên lọc theo dictionary nếu dictionary không rỗng để chỉ hiện các cột được cấu hình.
+    // Nếu dictionary rỗng hoặc không khớp khóa nào, ta mới lấy toàn bộ keys từ data.
     var keys = [];
-    if (data && data.length > 0) {
+    var hasDictionary = dictionary && Object.keys(dictionary).length > 0;
+    if (hasDictionary) {
+      var dataKeys = (data && data.length > 0) ? Object.keys(data[0]) : [];
+      Object.keys(dictionary).forEach(function(key) {
+        if (dataKeys.length === 0 || dataKeys.indexOf(key) >= 0) {
+          keys.push(key);
+        }
+      });
+      if (keys.length === 0) {
+        keys = dataKeys;
+      }
+    } else if (data && data.length > 0) {
       keys = Object.keys(data[0]);
-    } else if (dictionary && Object.keys(dictionary).length > 0) {
-      keys = Object.keys(dictionary);
     }
 
     if (keys.length > 0) {
@@ -399,9 +409,92 @@ var UITable = (function () {
         var header = { label: headerLabel, sortable: true, field: key };
         var col = { field: key };
 
-        // Default render: Tooltip
+        // Default render: JSON-aware or Tooltip
         col.render = function(v) { 
           if (v == null || v === '') return '';
+          var str = String(v).trim();
+          if ((str.startsWith('[') && str.endsWith(']')) || (str.startsWith('{') && str.endsWith('}'))) {
+            try {
+              var parsed = JSON.parse(str);
+              if (parsed && typeof parsed === 'object') {
+                return (function renderParsedJson(parsed) {
+                  if (Array.isArray(parsed)) {
+                    if (parsed.length === 0) return '<span style="color: var(--color-text-muted, #94a3b8); font-style: italic;">Trống</span>';
+                    
+                    // Check if it's a schedule (BatDau/KetThuc/NoiDung/Sanh)
+                    var isSchedule = parsed.some(function(item) {
+                      return item && (item.BatDau !== undefined || item.KetThuc !== undefined || item.Sanh !== undefined || item.NoiDung !== undefined);
+                    });
+                    
+                    // Check if it's payment (STT/SoTien/Ngay/NoiDung)
+                    var isPayment = parsed.some(function(item) {
+                      return item && (item.STT !== undefined || item.SoTien !== undefined || item.Ngay !== undefined || item.NoiDung !== undefined);
+                    });
+                    
+                    if (isSchedule) {
+                      var html = '<div class="json-schedule-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; padding: 2px 0;">';
+                      parsed.forEach(function(item) {
+                        var timeStr = (item.BatDau || '') + (item.KetThuc ? ' - ' + item.KetThuc : '');
+                        var hallStr = item.Sanh ? '<span style="background: rgba(59, 130, 246, 0.1); color: #2563eb; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px;">' + item.Sanh + '</span>' : '';
+                        var timeBadge = timeStr ? '<span style="background: rgba(16, 185, 129, 0.1); color: #059669; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px; white-space: nowrap;">' + timeStr + '</span>' : '';
+                        var contentStr = item.NoiDung ? '<span style="color: var(--color-text-primary, #1e293b); font-weight: 500;">' + item.NoiDung + '</span>' : '';
+                        html += '<div class="schedule-row" style="display: flex; align-items: center; flex-wrap: wrap; gap: 2px;">' + timeBadge + hallStr + contentStr + '</div>';
+                      });
+                      html += '</div>';
+                      return html;
+                    }
+                    
+                    if (isPayment) {
+                      var html = '<div class="json-payment-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; padding: 2px 0;">';
+                      parsed.forEach(function(item) {
+                        var sttStr = item.STT ? '<span style="background: rgba(124, 58, 237, 0.1); color: #7c3aed; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px;">Đợt ' + item.STT + '</span>' : '';
+                        var moneyStr = item.SoTien ? '<span style="color: #ef4444; font-weight: 600; margin-right: 4px;">' + item.SoTien + '</span>' : '';
+                        var dateStr = item.Ngay ? '<span style="color: var(--color-text-secondary, #64748b); margin-right: 4px;">(' + item.Ngay + ')</span>' : '';
+                        var contentStr = item.NoiDung ? '<span style="color: var(--color-text-primary, #1e293b); font-style: italic;">' + item.NoiDung + '</span>' : '';
+                        html += '<div class="payment-row" style="display: flex; align-items: center; flex-wrap: wrap; gap: 2px;">' + sttStr + moneyStr + dateStr + contentStr + '</div>';
+                      });
+                      html += '</div>';
+                      return html;
+                    }
+                    
+                    // Generic simple array
+                    var isSimpleArray = parsed.every(function(item) {
+                      return typeof item !== 'object';
+                    });
+                    if (isSimpleArray) {
+                      return parsed.join(', ');
+                    }
+                    
+                    // Generic complex array
+                    var html = '<div class="json-generic-table" style="font-size: 11px; display: flex; flex-direction: column; gap: 2px;">';
+                    parsed.forEach(function(item) {
+                      var itemHtml = [];
+                      for (var k in item) {
+                        if (item.hasOwnProperty(k)) {
+                          itemHtml.push('<strong>' + k + ':</strong> ' + item[k]);
+                        }
+                      }
+                      html += '<div style="border-bottom: 1px dashed var(--color-border, #e2e8f0); padding-bottom: 2px;">' + itemHtml.join(' | ') + '</div>';
+                    });
+                    html += '</div>';
+                    return html;
+                  } else {
+                    // Single object
+                    var html = '<div class="json-generic-object" style="font-size: 11px; display: flex; flex-direction: column; gap: 2px;">';
+                    for (var k in parsed) {
+                      if (parsed.hasOwnProperty(k)) {
+                        html += '<div><strong>' + k + ':</strong> ' + parsed[k] + '</div>';
+                      }
+                    }
+                    html += '</div>';
+                    return html;
+                  }
+                })(parsed);
+              }
+            } catch (e) {
+              // Ignore and fallback
+            }
+          }
           var safeVal = String(v).replace(/"/g, '&quot;');
           return '<span title="' + safeVal + '">' + safeVal + '</span>'; 
         };
@@ -421,7 +514,7 @@ var UITable = (function () {
         }
 
         // Heuristic Format
-        if (keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0) {
+        if ((keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0 || keyLower.indexOf('ngay') >= 0) && keyLower.indexOf('songay') === -1 && keyLower.indexOf('so_ngay') === -1) {
           header.align = 'center';
           col.align = 'center';
           col.render = function(v) { return typeof FormatUtils !== 'undefined' ? FormatUtils.date(v) : v; };

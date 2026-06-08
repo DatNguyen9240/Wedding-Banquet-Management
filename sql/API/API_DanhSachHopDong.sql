@@ -8,7 +8,9 @@ GO
 
 -- =============================================
 -- API: Lấy danh sách Màn hình Hợp đồng (Contract)
--- =============================================
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[API_DanhSachHopDong]') AND type in (N'P', N'PC'))
+    DROP PROCEDURE [dbo].[API_DanhSachHopDong]
+GO
 CREATE PROCEDURE [dbo].[API_DanhSachHopDong]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
@@ -18,61 +20,27 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
-        h.Sohopdong,
-        h.Sobiennhan,
-        
-        -- Ghép Tên 2 người, hoặc xài Tên Khách chung chung nếu không có
-        CASE 
-            WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL AND k.Tenchure <> '' AND k.Tencodau <> ''
-                THEN k.Tenchure + ' & ' + k.Tencodau
-            ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
-        END AS [TenKhachHang],
-        
-        -- Lấy sdt nếu không có bốc số chú rể / cô dâu
-        ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
-        
-        CONVERT(VARCHAR(10), h.Ngaytochuc, 103) AS [NgayToChuc],
-        
-        ISNULL(h.TongSoBan, 0) AS [SoBan],
-        
-        -- Lấy Sảnh đặt bằng subquery (chỉ lấy 1 sảnh tượng trưng nếu chọn nhiều)
-        (
-            SELECT TOP 1 s.Tensanhtiec 
-            FROM tbmk_Hopdongsanhtiec hs 
-            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
-            WHERE hs.Sohopdong = h.Sohopdong
-        ) AS [SanhDat],
-        
-        ISNULL(h.Tongtienhopdong, 0) AS [TongTien],
-        
-        -- Label trạng thái
-        CASE
-            WHEN h.IsHuy = 1 THEN N'Đã Hủy'
-            WHEN h.IsKetthuc = 1 THEN N'Đã Quyết Toán'
-            ELSE N'Đã Ký'
-        END AS [TrangThai]
-        
+        v.*
     FROM 
-        tbmk_Hopdong h
-    LEFT JOIN 
-        dmkhachhang k ON h.Makh = k.Makh
+        [dbo].[v_DanhSachHopDong] v
     WHERE 
         -- Bộ lọc theo Khoảng ngày (Dựa theo NgayToChuc)
-        (@TuNgay IS NULL OR CAST(@TuNgay AS DATE) <= '1900-01-01' OR h.Ngaytochuc >= @TuNgay)
-        AND (@DenNgay IS NULL OR CAST(@DenNgay AS DATE) <= '1900-01-01' OR h.Ngaytochuc <= @DenNgay)
+        (@TuNgay IS NULL OR CAST(@TuNgay AS DATE) <= '1900-01-01' OR v.NgayToChuc >= @TuNgay)
+        AND (@DenNgay IS NULL OR CAST(@DenNgay AS DATE) <= '1900-01-01' OR v.NgayToChuc <= @DenNgay)
         
         -- Bộ lọc Keyword tìm kiếm tương đối
         AND (
             @Keyword IS NULL OR @Keyword = ''
-            OR h.Sohopdong LIKE '%' + @Keyword + '%'
-            OR h.Sobiennhan LIKE '%' + @Keyword + '%'
-            OR k.Tenkh LIKE N'%' + @Keyword + '%'
-            OR k.Tenchure LIKE N'%' + @Keyword + '%'
-            OR k.Tencodau LIKE N'%' + @Keyword + '%'
-            OR k.Dienthoai LIKE '%' + @Keyword + '%'
+            OR v.Sohopdong LIKE '%' + @Keyword + '%'
+            OR v.Sobiennhan LIKE '%' + @Keyword + '%'
+            OR v.TenKhachHang LIKE N'%' + @Keyword + '%'
+            OR v.Tenchure LIKE N'%' + @Keyword + '%'
+            OR v.Tencodau LIKE N'%' + @Keyword + '%'
+            OR v.DienThoai LIKE '%' + @Keyword + '%'
+            OR v.BenB_CCCD LIKE '%' + @Keyword + '%'
         )
     ORDER BY 
-        h.Sohopdong DESC;
+        v.Sohopdong DESC;
         
 END
 GO

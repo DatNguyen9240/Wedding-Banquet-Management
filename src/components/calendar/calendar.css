@@ -70,7 +70,7 @@
   flex-direction: column;
   gap: 16px;
   animation: popInCell var(--transition-fast) forwards;
-  z-index: 10000;
+  z-index: 1000000000 !important;
 }
 
 .calendar-dropdown-header {
@@ -453,3 +453,132 @@ body.dark-theme .calendar-days-header {
     height: 5px;
   }
 }
+
+/* Selected Day Style */
+.calendar-day.selected {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(79, 70, 229, 0.02)) !important;
+}
+.calendar-day.selected .calendar-day-number span.solar-date {
+  color: white !important;
+  font-weight: 800;
+  background: var(--color-primary) !important;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.25);
+}
+
+/* Custom Datepicker Overrides */
+.custom-datepicker-popup {
+  position: absolute;
+  z-index: 99999999 !important;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 12px;
+  width: 340px;
+  box-sizing: border-box;
+  animation: popInCell var(--transition-fast) forwards;
+}
+
+.custom-datepicker-popup .ui-calendar-wrapper {
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+.custom-datepicker-popup .calendar-header {
+  margin-bottom: 8px !important;
+  gap: 8px !important;
+  padding: 0 !important;
+}
+
+.custom-datepicker-popup .calendar-month-picker {
+  font-size: 15px !important;
+  padding: 4px 8px !important;
+  gap: 4px !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.custom-datepicker-popup .calendar-header > div:last-child {
+  gap: 4px !important;
+}
+
+.custom-datepicker-popup .calendar-header .btn {
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  height: 28px !important;
+  width: auto !important;
+}
+
+.custom-datepicker-popup .calendar-header button.rounded-circle {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.custom-datepicker-popup .calendar-day-header {
+  padding: 4px 0 !important;
+  font-size: 11px !important;
+}
+
+.custom-datepicker-popup .calendar-grid {
+  gap: 0 !important;
+  border-radius: 6px !important;
+}
+
+.custom-datepicker-popup .calendar-day {
+  min-height: 48px !important;
+  padding: 4px !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.custom-datepicker-popup .calendar-day-number {
+  align-self: center !important;
+  text-align: center !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+.custom-datepicker-popup .calendar-day-number span.solar-date {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 13px !important;
+}
+
+.custom-datepicker-popup .calendar-day-number span.lunar-date {
+  font-size: 9.5px !important;
+  margin-top: 1px !important;
+  display: block !important;
+  line-height: 1.1 !important;
+}
+
+/* Mobile Responsive Datepicker Popup Centering */
+@media (max-width: 576px) {
+  .custom-datepicker-popup {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    animation: mobilePopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    margin: 0 !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+    z-index: 99999999 !important;
+  }
+}
+
+@keyframes mobilePopIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+

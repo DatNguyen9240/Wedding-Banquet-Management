@@ -155,14 +155,28 @@ UIControls.createDataComboBox = function (options) {
         options.headers || [], displayData, options.colHighlightIndex !== undefined ? options.colHighlightIndex : (options.colFilterIndex || 0), options.colGroupIndex
       );
       var rows = tableWrapper.querySelectorAll('tbody tr');
+      var currentValue = (typeof options.getValue === 'function') ? options.getValue() : null;
       var currentInputVal = input.value.trim().toLowerCase();
 
       rows.forEach(function (row) {
         var dataRow = displayData[row.getAttribute('data-index')];
-        var rowVal = (dataRow[options.colFilterIndex || 0] || '').toString().toLowerCase();
+        var isRowActive = false;
 
-        if (currentInputVal && rowVal === currentInputVal) {
+        if (currentValue !== null && currentValue !== undefined && currentValue !== '') {
+          isRowActive = String(dataRow[0]).trim().toLowerCase() === String(currentValue).trim().toLowerCase();
+        } else {
+          var rowVal = (dataRow[options.colFilterIndex || 0] || '').toString().toLowerCase();
+          isRowActive = currentInputVal && (rowVal === currentInputVal);
+        }
+
+        if (isRowActive) {
           row.classList.add('active');
+          // Tự động cuộn đến dòng được chọn (chỉ khi không tìm kiếm)
+          if (!currentQuery) {
+            setTimeout(function () {
+              row.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+            }, 50);
+          }
         }
 
         row.addEventListener('click', function () {
