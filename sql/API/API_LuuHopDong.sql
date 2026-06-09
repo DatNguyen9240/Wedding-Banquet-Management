@@ -22,7 +22,7 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @Dienthoai NVARCHAR(50) = NULL,
     @Diachi NVARCHAR(500) = NULL,
     @Mail NVARCHAR(100) = NULL,
-    @BenB_CCCD NVARCHAR(50) = NULL,
+    @BenBCCCD NVARCHAR(50) = NULL,
     
     -- Thông tin Hợp đồng Tiệc
     @Ngayhopdong NVARCHAR(100) = NULL,
@@ -232,7 +232,7 @@ BEGIN
                         ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') 
                     END, 
                     @Tenchure, @Tencodau, @Dienthoai, @Diachi, @Mail, 
-                    @BenB_CCCD, @BenB_CCCD, @BenB_CCCD,
+                    @BenBCCCD, @BenBCCCD, @BenBCCCD,
                     1, @Now, @UserCreate
                 );
             END
@@ -245,9 +245,9 @@ BEGIN
                     Tencodau    = ISNULL(NULLIF(@Tencodau, ''), Tencodau),
                     Diachi      = ISNULL(NULLIF(@Diachi,   ''), Diachi),
                     Mail        = ISNULL(NULLIF(@Mail,     ''), Mail),
-                    CMNDDaiDien = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDDaiDien),
-                    CMNDchure   = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDchure),
-                    CMNDcodau   = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDcodau),
+                    CMNDDaiDien = ISNULL(NULLIF(@BenBCCCD, ''), CMNDDaiDien),
+                    CMNDchure   = ISNULL(NULLIF(@BenBCCCD, ''), CMNDchure),
+                    CMNDcodau   = ISNULL(NULLIF(@BenBCCCD, ''), CMNDcodau),
                     DateUpdate  = @Now,
                     UserUpdate  = @UserCreate
                 WHERE Makh = @Makh;
@@ -269,9 +269,9 @@ BEGIN
                 Dienthoai   = ISNULL(NULLIF(@Dienthoai, ''), Dienthoai),
                 Diachi      = ISNULL(NULLIF(@Diachi,    ''), Diachi),
                 Mail        = ISNULL(NULLIF(@Mail,      ''), Mail),
-                CMNDDaiDien = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDDaiDien),
-                CMNDchure   = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDchure),
-                CMNDcodau   = ISNULL(NULLIF(@BenB_CCCD, ''), CMNDcodau),
+                CMNDDaiDien = ISNULL(NULLIF(@BenBCCCD, ''), CMNDDaiDien),
+                CMNDchure   = ISNULL(NULLIF(@BenBCCCD, ''), CMNDchure),
+                CMNDcodau   = ISNULL(NULLIF(@BenBCCCD, ''), CMNDcodau),
                 DateUpdate  = @Now,
                 UserUpdate  = @UserCreate
             WHERE Makh = @Makh;
