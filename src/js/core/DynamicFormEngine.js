@@ -580,7 +580,7 @@ window.DynamicFormEngine = (function () {
             };
 
             // Parse DataSource cho trường Select/Dropdown
-            if (f.renderRule === 'sl' || f.renderRule === 'sw') {
+            if (f.renderRule === 'sl' || f.renderRule === 'sw' || f.renderRule === 'ml') {
               filterObj.type = 'select';
               filterObj.options = [];
               if (f.renderRule === 'sw') {
@@ -1369,7 +1369,7 @@ window.DynamicFormEngine = (function () {
           inputEl = UIInput.createSwitch(field);
         } else if (field.renderRule === 'dt' || field.renderRule === 'date') {
           inputEl = UIInput.createDate(field);
-        } else if (field.renderRule === 'sl' || field.renderRule === 'select') {
+        } else if (field.renderRule === 'sl' || field.renderRule === 'select' || field.renderRule === 'ml') {
           inputEl = document.createElement('div');
           inputEl.className = 'form-group';
           inputEl.style.marginBottom = '0';
@@ -1377,7 +1377,16 @@ window.DynamicFormEngine = (function () {
           var hiddenInput = document.createElement('input');
           hiddenInput.type = 'hidden';
           hiddenInput.name = field.name;
-          hiddenInput.value = field.value || '';
+          var initialValue = field.value || '';
+          if (field.renderRule === 'ml' && initialValue.startsWith('[')) {
+             try {
+                var arr = JSON.parse(initialValue);
+                if (Array.isArray(arr)) {
+                   initialValue = arr.map(function(x) { return String(x.Sanhtiecid || x.id || x.value || x); }).join(',');
+                }
+             } catch(e) {}
+          }
+          hiddenInput.value = initialValue;
           hiddenInput.setAttribute('data-row-index', rowIdx);
           hiddenInput.setAttribute('data-field-name', originalName);
           inputEl.appendChild(hiddenInput);
@@ -1709,7 +1718,7 @@ window.DynamicFormEngine = (function () {
           input = document.createElement('select');
           input.className = 'ui-input';
           input.dataset.key = col.key;
-          input.style.cssText = 'width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--color-border, #cbd5e1); border-radius: 4px; font-size: 12px; background: var(--color-input-bg, #fff); color: var(--color-text, #1e293b);';
+          input.style.cssText = 'width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--color-border, #cbd5e1); border-radius: 4px; font-size: 12px; background: var(--color-surface, #fff); color: var(--color-text, #1e293b);';
           
           var optionsList = [];
           if (col.options) {
@@ -1736,7 +1745,7 @@ window.DynamicFormEngine = (function () {
           input.className = 'ui-input';
           input.dataset.key = col.key;
           input.value = itemData ? (itemData[col.key] !== undefined ? itemData[col.key] : '') : '';
-          input.style.cssText = 'width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--color-border, #cbd5e1); border-radius: 4px; font-size: 12px; background: var(--color-input-bg, #fff); color: var(--color-text, #1e293b);';
+          input.style.cssText = 'width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--color-border, #cbd5e1); border-radius: 4px; font-size: 12px; background: var(--color-surface, #fff); color: var(--color-text, #1e293b);';
         }
         
         if (isReadOnly) {
@@ -1848,7 +1857,7 @@ window.DynamicFormEngine = (function () {
         inputEl = UIInput.createSwitch(field);
       } else if (field.renderRule === 'dt' || field.renderRule === 'date') {
         inputEl = UIInput.createDate(field);
-      } else if (field.renderRule === 'sl' || field.renderRule === 'select') {
+      } else if (field.renderRule === 'sl' || field.renderRule === 'select' || field.renderRule === 'ml') {
         var formGroupWrapper = document.createElement('div');
         formGroupWrapper.className = 'form-group';
 
@@ -1868,7 +1877,16 @@ window.DynamicFormEngine = (function () {
         var hiddenInput = document.createElement('input');
         hiddenInput.type = 'hidden';
         hiddenInput.name = field.name;
-        hiddenInput.value = field.value || '';
+        var initialValue = field.value || '';
+        if (field.renderRule === 'ml' && initialValue.startsWith('[')) {
+           try {
+              var arr = JSON.parse(initialValue);
+              if (Array.isArray(arr)) {
+                 initialValue = arr.map(function(x) { return String(x.Sanhtiecid || x.id || x.value || x); }).join(',');
+              }
+           } catch(e) {}
+        }
+        hiddenInput.value = initialValue;
         formGroupWrapper.appendChild(hiddenInput);
 
         if (field.dataSource) {
@@ -1883,6 +1901,8 @@ window.DynamicFormEngine = (function () {
               placeholder: '-- Vui lòng chọn --',
               headers: ['Mã', 'Tên'],
               disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
+              readonlyInput: field.renderRule === 'ml',
+              multiple: field.renderRule === 'ml',
               getValue: function () { return hiddenInput.value; },
               onSearch: function (q, page) {
                 return new Promise(function (resolve) {
@@ -2007,6 +2027,8 @@ window.DynamicFormEngine = (function () {
               headers: ['Mã', 'Tên'],
               disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
               showAddNew: true, // Bật nút Thêm mới
+              readonlyInput: field.renderRule === 'ml',
+              multiple: field.renderRule === 'ml',
               onF2: function () {
                 lazyCombo.querySelector('.ui-input').focus();
               },
@@ -2050,8 +2072,14 @@ window.DynamicFormEngine = (function () {
             if (field.value) {
               searchApiCall('', 1).then(function (res) {
                 var displayInput = lazyCombo.querySelector('input.ui-input');
-                var matched = res.data.find(function (r) { return String(r[0]) === String(field.value); });
-                if (matched && displayInput) displayInput.value = matched[res.colFilterIndex || 1];
+                if (field.renderRule === 'ml') {
+                   var vals = hiddenInput.value.split(',');
+                   var matches = res.data.filter(function(r) { return vals.includes(String(r[0])); });
+                   if (matches.length > 0 && displayInput) displayInput.value = matches.map(function(m) { return m[res.colFilterIndex || 1]; }).join(', ');
+                } else {
+                   var matched = res.data.find(function (r) { return String(r[0]) === String(field.value); });
+                   if (matched && displayInput) displayInput.value = matched[res.colFilterIndex || 1];
+                }
               }).catch(function (err) {
                 console.error('[DynamicFormEngine] DataComboBox initial fetch error:', err);
                 var displayInput = lazyCombo.querySelector('input.ui-input');
@@ -2066,9 +2094,16 @@ window.DynamicFormEngine = (function () {
                 if (displayInput) displayInput.value = 'Đang tải...';
                 searchApiCall('', 1).then(function (res) {
                   var displayInp = lazyCombo.querySelector('input.ui-input');
-                  var matched = res.data.find(function (r) { return String(r[0]) === String(hiddenInput.value); });
-                  if (matched && displayInp) displayInp.value = matched[res.colFilterIndex || 1];
-                  else if (displayInp) displayInp.value = hiddenInput.value; // Fallback
+                  if (field.renderRule === 'ml') {
+                     var vals = hiddenInput.value.split(',');
+                     var matches = res.data.filter(function(r) { return vals.includes(String(r[0])); });
+                     if (matches.length > 0 && displayInp) displayInp.value = matches.map(function(m) { return m[res.colFilterIndex || 1]; }).join(', ');
+                     else if (displayInp) displayInp.value = hiddenInput.value;
+                  } else {
+                     var matched = res.data.find(function (r) { return String(r[0]) === String(hiddenInput.value); });
+                     if (matched && displayInp) displayInp.value = matched[res.colFilterIndex || 1];
+                     else if (displayInp) displayInp.value = hiddenInput.value; // Fallback
+                  }
                 });
               } else {
                 var displayInput = lazyCombo.querySelector('input.ui-input');
@@ -2117,7 +2152,7 @@ window.DynamicFormEngine = (function () {
         textarea.style.width = '100%';
         textarea.style.border = '1px solid var(--color-border, #cbd5e1)';
         textarea.style.borderRadius = '4px';
-        textarea.style.background = 'var(--color-input-bg, #fff)';
+        textarea.style.background = 'var(--color-surface, #fff)';
         textarea.style.color = 'var(--color-text, #1e293b)';
         if (field.placeholder) textarea.placeholder = field.placeholder;
         formGroupWrapper.appendChild(textarea);

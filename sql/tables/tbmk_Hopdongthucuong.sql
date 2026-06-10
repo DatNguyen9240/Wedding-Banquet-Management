@@ -1,0 +1,25 @@
+CREATE TABLE [dbo].[tbmk_Hopdongthucuong] (
+    [UserAutoid] varchar(50) NOT NULL,
+    [Sohopdong] varchar(50) NOT NULL,
+    [Mahang] varchar(50) NULL,
+    [Soluong] decimal(18,2) NULL,
+    [Dongia] decimal(18,2) NULL,
+    [Sotien] decimal(18,2) NULL,
+    [UserCreate] varchar(50) NULL,
+    [UserUpdate] varchar(50) NULL,
+    [DateCreate] datetime NULL,
+    [DateUpdate] datetime NULL,
+    [IsKhuyenmai] bit NULL,
+    [Ghichuthucuong] nvarchar(500) NULL,
+    [Giamgia] decimal(18,2) NULL,
+    [Mahangtd] varchar(50) NULL,
+    [Sotienbuthem] decimal(18,2) NULL,
+    [Ghichuthucuong02] nvarchar(500) NULL,
+    [Dongiatd] decimal(18,2) NULL,
+    [IsBan] bit NULL,
+    [STT] int NULL,
+    [Dvt] nvarchar(50) NULL,
+    [IsKet] bit NULL,
+    CONSTRAINT [PK_tbmk_Hopdongthucuong] PRIMARY KEY CLUSTERED ([UserAutoid] ASC)
+);
+GO

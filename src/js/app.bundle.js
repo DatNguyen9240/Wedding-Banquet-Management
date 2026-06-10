@@ -1,4 +1,4 @@
-/* --- mockData.js --- */
+﻿/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -1110,7 +1110,7 @@ var WorkflowTransferPlugin = (function () {
 
                     // Điền giá trị
                     el.value = val;
-                    el.style.setProperty('background-color', '#f0fdf4', 'important');
+                    el.style.setProperty('background-color', 'rgba(16, 185, 129, 0.1)', 'important');
                     el.style.setProperty('border-color', '#10b981', 'important');
 
                     // Nếu là input custom (hidden input đồng bộ với các control hiển thị khác như Datepicker, ComboBox)
@@ -1119,7 +1119,7 @@ var WorkflowTransferPlugin = (function () {
                         if (formGroup) {
                             var visibleInputs = formGroup.querySelectorAll('input:not([type="hidden"]), select, textarea');
                             visibleInputs.forEach(function (visibleEl) {
-                                visibleEl.style.setProperty('background-color', '#f0fdf4', 'important');
+                                visibleEl.style.setProperty('background-color', 'rgba(16, 185, 129, 0.1)', 'important');
                                 visibleEl.style.setProperty('border-color', '#10b981', 'important');
                             });
                         }
@@ -1204,11 +1204,20 @@ var FoodSelectionPlugin = (function () {
       .food-plugin-title {
         font-size: 16px;
         font-weight: 700;
-        color: var(--color-primary);
+        color: var(--color-text);
         margin: 0;
         display: flex;
         align-items: center;
         gap: 8px;
+      }
+      .food-badge-type {
+        background: var(--color-background);
+        border: 1px solid var(--color-border);
+        color: var(--color-text);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 500;
       }
       /* Selector Modal Styles */
       .food-modal-tabs {
@@ -1538,7 +1547,7 @@ var FoodSelectionPlugin = (function () {
         selectedFoodsMan.forEach(function (item, idx) {
           contentHtml += `<tr>
             <td class="text-center">${idx + 1}</td>
-            <td><span class="badge bg-light text-dark">${item.PhanLoai}</span></td>
+            <td><span class="food-badge-type">${item.PhanLoai}</span></td>
             <td class="fw-medium">${item.TenMon}</td>
             <td class="text-end text-danger fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
             <td class="text-center">
@@ -1569,7 +1578,7 @@ var FoodSelectionPlugin = (function () {
         selectedFoodsChay.forEach(function (item, idx) {
           contentHtml += `<tr>
             <td class="text-center">${idx + 1}</td>
-            <td><span class="badge bg-light text-dark">${item.PhanLoai}</span></td>
+            <td><span class="food-badge-type">${item.PhanLoai}</span></td>
             <td class="fw-medium">${item.TenMon}</td>
             <td class="text-end text-success fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
             <td class="text-center">
@@ -1872,7 +1881,7 @@ var FoodSelectionPlugin = (function () {
                 <span class="material-symbols-outlined text-primary" style="font-size:20px">folder</span>
                 <span>${groupName}</span>
               </span>
-              <span class="badge bg-light text-dark" style="font-size:11px;">${groupItems.length} sản phẩm</span>
+              <span class="food-badge-type" style="font-size:11px;">${groupItems.length} sản phẩm</span>
             </div>
             <div class="food-grid-container">
         `;
@@ -1893,7 +1902,7 @@ var FoodSelectionPlugin = (function () {
           html += `
             <div class="food-card" id="card-${code}" style="${cardStyle}">
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <span class="badge bg-light text-muted" style="font-family: monospace; font-size:10px; padding: 2px 4px;">${code}</span>
+                <span class="food-badge-type" style="font-family: monospace; font-size:10px; padding: 2px 4px; color: var(--color-text-secondary);">${code}</span>
                 <span class="text-muted" style="font-size: 11px;">ĐVT: ${unit}</span>
               </div>
               <div class="fw-bold food-card-title" style="color: var(--color-text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${name}">
@@ -2158,7 +2167,7 @@ var FoodSelectionPlugin = (function () {
   }
 
   // Danh sách form name cần kích hoạt plugin
-  var SUPPORTED_FORMS = ['tbmk_Thaydoi', 'frmThayDoiBoSung'];
+  var SUPPORTED_FORMS = ['tbmk_Thaydoi', 'frmThayDoiBoSung', 'frmHopDong', 'frmQuyetToan'];
 
   // Tự inject hidden input JSON nếu chưa có trong form
   function _ensureHiddenInputs(modalContent, row) {
@@ -3496,7 +3505,7 @@ var ContractService = (function () {
         : '/api/API_Gateway_Router';
       
       var payload = {
-        List: 'tbmk_Thaydoi',
+        List: 'tbmk_PhuLucHopDong',
         Func: 'View',
         Keyword: sohopdong || ''
       };

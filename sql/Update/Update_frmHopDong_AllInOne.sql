@@ -76,6 +76,9 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     -- Thông tin Hợp đồng Tiệc
     @Ngayhopdong NVARCHAR(100) = NULL,
     @Ngaytochuc NVARCHAR(100) = NULL,
+    @TuNgaySetup NVARCHAR(100) = NULL,
+    @NgayTraSanhDV NVARCHAR(100) = NULL,
+    @TenCongTy NVARCHAR(255) = NULL,
     @_Ngaytochuc NVARCHAR(100) = NULL,
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(10) = NULL,
@@ -117,6 +120,8 @@ BEGIN
 
     IF (UPPER(LTRIM(RTRIM(@Ngayhopdong))) = 'NULL' OR LTRIM(RTRIM(@Ngayhopdong)) = '') SET @Ngayhopdong = NULL;
     IF (UPPER(LTRIM(RTRIM(@Ngaytochuc))) = 'NULL' OR LTRIM(RTRIM(@Ngaytochuc)) = '') SET @Ngaytochuc = NULL;
+    IF (UPPER(LTRIM(RTRIM(@TuNgaySetup))) = 'NULL' OR LTRIM(RTRIM(@TuNgaySetup)) = '') SET @TuNgaySetup = NULL;
+    IF (UPPER(LTRIM(RTRIM(@NgayTraSanhDV))) = 'NULL' OR LTRIM(RTRIM(@NgayTraSanhDV)) = '') SET @NgayTraSanhDV = NULL;
     IF (UPPER(LTRIM(RTRIM(@_Ngaytochuc))) = 'NULL' OR LTRIM(RTRIM(@_Ngaytochuc)) = '') SET @_Ngaytochuc = NULL;
 
     IF (@Ngayhopdong IS NOT NULL)
@@ -136,6 +141,20 @@ BEGIN
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 120);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 111);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 101);
+    END
+    
+    DECLARE @TuNgaySetupParsed DATETIME = NULL;
+    IF (@TuNgaySetup IS NOT NULL)
+    BEGIN
+        SET @TuNgaySetupParsed = TRY_CAST(@TuNgaySetup AS DATETIME);
+        IF (@TuNgaySetupParsed IS NULL) SET @TuNgaySetupParsed = TRY_CONVERT(DATETIME, @TuNgaySetup, 103);
+    END
+    
+    DECLARE @NgayTraSanhDVParsed DATETIME = NULL;
+    IF (@NgayTraSanhDV IS NOT NULL)
+    BEGIN
+        SET @NgayTraSanhDVParsed = TRY_CAST(@NgayTraSanhDV AS DATETIME);
+        IF (@NgayTraSanhDVParsed IS NULL) SET @NgayTraSanhDVParsed = TRY_CONVERT(DATETIME, @NgayTraSanhDV, 103);
     END
     IF (@_Ngaytochuc IS NOT NULL)
     BEGIN
@@ -234,6 +253,7 @@ BEGIN
             -- Co Makh truyen vao: chi ghi de khi gia tri moi KHONG rong
             UPDATE dmkhachhang SET
                 Tenkh = CASE
+                            WHEN ISNULL(@TenCongTy,'') <> '' THEN @TenCongTy
                             WHEN ISNULL(@Tencodau,'')='' THEN ISNULL(NULLIF(@Tenchure,''), Tenkh)
                             WHEN ISNULL(@Tenchure,'')='' THEN ISNULL(NULLIF(@Tencodau,''), Tenkh)
                             ELSE @Tenchure + ' & ' + @Tencodau
@@ -256,12 +276,14 @@ BEGIN
             SET @Sohopdong = 'HD' + FORMAT(@Now, 'yyMMddHHmmss');
             INSERT INTO tbmk_Hopdong (
                 Sohopdong, Sobiennhan, Ngayhopdong, Ngaytochuc, Nhamngay, Makh, Loaitiecid, Thoigianid,
+                TuNgaySetup, NgayTraSanhDV,
                 SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong, TongSoBan,
                 Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongtiencoc,
                 Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID
             )
             VALUES (
                 @Sohopdong, @Sobiennhan, ISNULL(@NgayHopDongParsed,@Now), @NgayToChucParsed, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
+                @TuNgaySetupParsed, @NgayTraSanhDVParsed,
                 @SobanManchinhthucVal, @SobanManduphongVal, @SobanChaychinhthucVal, @SobanChayduphongVal, @TongSoBanVal,
                 @TongtienhopdongVal, @SotiencocchoVal, @SotiencochopdongVal, @TongtiencocVal,
                 @Manv, @Ghichu, 0, 0, @Now, @UserCreate, ''
@@ -279,6 +301,8 @@ BEGIN
             END
             UPDATE tbmk_Hopdong SET
                 Sobiennhan=@Sobiennhan, Makh=@Makh, Ngayhopdong=@NgayHopDongParsed, Ngaytochuc=@NgayToChucParsed,
+                TuNgaySetup = ISNULL(@TuNgaySetupParsed, TuNgaySetup),
+                NgayTraSanhDV = ISNULL(@NgayTraSanhDVParsed, NgayTraSanhDV),
                 Nhamngay=@Nhamngay, Loaitiecid=@Loaitiecid, Thoigianid=@Thoigianid,
                 SobanManchinhthuc=@SobanManchinhthucVal, SobanManduphong=@SobanManduphongVal,
                 SobanChaychinhthuc=@SobanChaychinhthucVal, SobanChayduphong=@SobanChayduphongVal,
@@ -551,7 +575,7 @@ VALUES (
     'frmHopDong',
     'Save',
     'API_LuuHopDong',
-    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenBCCCD=N''{BenBCCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'''
+    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenBCCCD=N''{BenBCCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @TuNgaySetup=N''{TuNgaySetup}'', @NgayTraSanhDV=N''{NgayTraSanhDV}'', @TenCongTy=N''{TenCongTy}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'''
 );
 
 DELETE FROM WA_API WHERE List = 'frmHopDong' AND Func = 'Delete';
@@ -674,7 +698,8 @@ GO
 UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail', 'BenBCCCD', 'Ghichu', 'TenCongTy', 'TieuDePhieu', 'SanhDat2');
 UPDATE SY_FormatFields SET FormatID = 'dt' WHERE FormName = 'frmHopDong' AND FieldName IN ('Ngayhopdong', 'NgayToChuc', 'TuNgaySetup', 'NgayTraSanhDV');
 UPDATE SY_FormatFields SET FormatID = 't', IsReadOnlyAdd = 1, IsReadOnlyEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'Nhamngay';
-UPDATE SY_FormatFields SET FormatID = 'sl' WHERE FormName = 'frmHopDong' AND FieldName IN ('Loaitiecid', 'Thoigianid', 'JsonSanhTiec');
+UPDATE SY_FormatFields SET FormatID = 'sl' WHERE FormName = 'frmHopDong' AND FieldName IN ('Loaitiecid', 'Thoigianid');
+UPDATE SY_FormatFields SET FormatID = 'ml' WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
 UPDATE SY_FormatFields SET FormatID = 'n' WHERE FormName = 'frmHopDong' AND FieldName IN ('SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong', 'DaCocVND', 'Sotiencochopdong', 'Tongtiencoc');
 GO
 

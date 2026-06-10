@@ -1,4 +1,4 @@
-/* --- design-tokens.css --- */
+﻿/* --- design-tokens.css --- */
 /* ═══════════════════════════════════════════
    Design Tokens — TailAdmin Style
    Dành cho Quản lý Tiệc Cưới
@@ -26,6 +26,7 @@
 
   /* Surfaces & Backgrounds */
   --color-background: #F8FAFC;
+  --color-bg-secondary: #F1F5F9; /* Slate 100 cho background phụ */
   /* Nền Slate 50 - Sáng, sang */
   --color-surface: #FFFFFF;
   --color-surface-elevated: #F4F6FB;
@@ -103,6 +104,7 @@ body.dark-theme {
   --color-surface-elevated: #0F172A; /* Slate 900 (Tối hơn surface một chút để tạo độ sâu) */
   --color-sidebar: var(--color-surface); /* Slate 950 */
   --color-header: rgba(30, 41, 59, 0.85);
+  --color-bg-secondary: #334155; /* Slate 700 cho header bảng */
   --color-text: #F8FAFC; /* Slate 50 */
   --color-text-secondary: #94A3B8; /* Slate 400 */
   --color-border: #334155; /* Slate 700 */
