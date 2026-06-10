@@ -159,6 +159,29 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 141 | `{@TenThucAnMangVao}` | Danh sách tên thức ăn mang vào, dạng nhiều dòng (BM02) | | | | |
 | 142 | `{@TenThucUongMangVao}` | Danh sách tên thức uống mang vào, dạng nhiều dòng (BM02) | | | | |
 | 143 | `{@XuatXuMangVao}` | Danh sách xuất xứ thức ăn/uống mang vào, dạng nhiều dòng (BM02) | | | | |
+| 144 | `{SoPhuLuc}` | Số hiệu phụ lục hợp đồng (PL) | | | | |
+| 145 | `{NgayLapPL}` | Ngày lập phụ lục (PL) | | | | |
+| 146 | `{ThangLapPL}` | Tháng lập phụ lục (PL) | | | | |
+| 147 | `{NamLapPL}` | Năm lập phụ lục (PL) | | | | |
+| 148 | `{NgayToChucAmLich}` | Ngày tổ chức tính theo Âm Lịch (PL) | | | | |
+| 149 | `{ThangToChucAmLich}` | Tháng tổ chức Âm Lịch (PL) | | | | |
+| 150 | `{NamToChucAmLich}` | Năm tổ chức Âm Lịch (PL) | | | | |
+| 151 | `{ThangToChuc}` | Tháng tổ chức Dương Lịch (PL) | | | | |
+| 152 | `{NamToChuc}` | Năm tổ chức Dương Lịch (PL) | | | | |
+| 153 | `{QuyMoBanTu}` | Quy mô sảnh từ X bàn (PL) | | | | |
+| 154 | `{QuyMoBanDen}` | Quy mô sảnh đến Y bàn (PL) | | | | |
+| 155 | `{TenDotThanhToan}` | Tên đợt thanh toán (Ví dụ: Đợt 2, Đợt 3) (PL) | | | | |
+| 156 | `{ThanhToanDot2SoTien}` | Số tiền cần thanh toán cho đợt tiếp theo (PL) | | | | |
+| 157 | `{HinhThucThanhToanDot2}` | Hình thức thanh toán đợt tiếp theo (PL) | | | | |
+| 158 | `{HanThanhToanDot2}` | Thời hạn thanh toán (PL) | | | | |
+| 159 | `{@DichVuTinhPhiPhuLuc}` | Dịch vụ tính phí phát sinh, nhiều dòng (PL) | | | | |
+| 160 | `{@ThoaThuanPhuLucKhac}` | Dịch vụ ưu đãi và thoả thuận khác, nhiều dòng (PL) | | | | |
+| 161 | `{BenAChucVuDaiDien}` | Chức vụ người đại diện ký hợp đồng Bên A (PL) | | | | |
+| 162 | `{DonGiaBanTiec}` | Đơn giá hiển thị trên tiêu đề bảng thực đơn (PL) | | | | |
+| 163 | `{SoKhachTrenBan}` | Số lượng khách trên mỗi bàn (PL) | | | | |
+| 164 | `{#DanhSachChiPhi}` | Bắt đầu vòng lặp bảng tổng chi phí thay thế Excel (PL) | | | | |
+| 165 | `{NoiDung}` | Nội dung chi phí trong bảng (PL) | | | | |
+| 166 | `{/DanhSachChiPhi}` | Kết thúc vòng lặp bảng tổng chi phí (PL) | | | | |
 
 ---
 
@@ -181,6 +204,7 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 * `{BenAChucVu}`: Chức vụ của nhân viên phụ trách
 * `{BenASDTNhanVien}`: Điện thoại di động của nhân viên
 * `{BenAEmail}`: Email công việc của nhân viên
+* `{BenADaiDien}`: Đại diện của Bên A (Người ký hợp đồng)
 
 ### 3. Khách Hàng Bên B (Đối Tác / Người Đặt Tiệc)
 * `{BenBTenChuTiec}`: Tên chủ tiệc (tên cô dâu/chú rể hoặc đơn vị thuê sảnh)
@@ -311,3 +335,22 @@ Bảng **CHỦNG LOẠI THỨC ĂN MANG VÀO** (3 cột, dùng `convertFields`):
 * `{@TenThucAnMangVao}`: Cột **TÊN THỨC ĂN** (ví dụ: `1. Bánh kem\n2. Trái cây`)
 * `{@TenThucUongMangVao}`: Cột **TÊN THỨC UỐNG** (ví dụ: `1. Rượu vang\n2. Nước suối`)
 * `{@XuatXuMangVao}`: Cột **XUẤT XỨ** (ví dụ: `1. Tiệm bánh ABC\n2. Siêu thị XYZ`)
+
+---
+
+### 12. Các Trường Bổ Sung Dành Riêng Cho Phụ Lục (PL)
+* `{SoPhuLuc}`: Số hiệu của phụ lục hợp đồng
+* `{NgayLapPL}`, `{ThangLapPL}`, `{NamLapPL}`: Ngày/tháng/năm lập phụ lục
+* `{NgayToChucAmLich}`, `{ThangToChucAmLich}`, `{NamToChucAmLich}`: Thời gian tổ chức tính theo Âm Lịch
+* `{ThangToChuc}`, `{NamToChuc}`: Tháng và năm tổ chức Dương Lịch (tách riêng)
+* `{QuyMoBanTu}`, `{QuyMoBanDen}`: Quy mô sảnh (Số lượng bàn từ ... đến ...)
+* `{TenDotThanhToan}`: Tên đợt thanh toán (Ví dụ: đợt 2, đợt 3...)
+* `{ThanhToanDot2SoTien}`: Số tiền cần thanh toán cho đợt tiếp theo trong phụ lục
+* `{HinhThucThanhToanDot2}`: Hình thức thanh toán (Tiền mặt/Chuyển khoản)
+* `{HanThanhToanDot2}`: Hạn thanh toán đợt này
+* `{@DichVuTinhPhiPhuLuc}`: Khối dữ liệu dạng nhiều dòng (multiline) ghi chú các dịch vụ tính phí riêng lẻ
+* `{@ThoaThuanPhuLucKhac}`: Khối dữ liệu dạng nhiều dòng (multiline) lưu tất cả các thỏa thuận/dịch vụ tặng kèm/khuyến mãi khác
+* `{BenAChucVuDaiDien}`: Chức vụ của đại diện bên A (bổ sung đi kèm `{BenADaiDien}`)
+* `{DonGiaBanTiec}`, `{SoKhachTrenBan}`: Các trường phục vụ ghi chú lên header của bảng thực đơn/báo giá
+* `{#DanhSachChiPhi}` ... `{/DanhSachChiPhi}`: Vòng lặp bảng tổng hợp tất cả các chi phí (dùng khi khách chèn Excel table vào Word)
+  * `{NoiDung}`, `{DVT}`: Các cột nội dung và đơn vị tính của bảng tổng hợp chi phí
