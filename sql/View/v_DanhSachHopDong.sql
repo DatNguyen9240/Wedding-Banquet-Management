@@ -358,7 +358,7 @@ SELECT
         ELSE '...'
     END AS [TiecNamAL],
     
-    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [TiecSanhTiec],
+    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [TenSanhTiec],
     (SELECT TOP 1 s.SLBanMin FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [SanhQuyMoMin],
     (SELECT TOP 1 s.SLBanMax FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [SanhQuyMoMax],
     
@@ -505,7 +505,7 @@ WHERE FormName = 'frmHopDong'
     'BenBTenDaiDien', 'BenBTenChuTiec', 'BenBDiaChi', 'BenBDienThoai', 'BenBChucVu',
     'TiecGioBatDau', 'TiecNgayDL', 'TiecThangDL', 'TiecNamDL',
     'TiecNgayAL', 'TiecThangAL', 'TiecNamAL',
-    'TiecSanhTiec', 'TiecLoaiTiec', 'SanhQuyMoMin', 'SanhQuyMoMax',
+    'TenSanhTiec', 'SanhQuyMoMin', 'SanhQuyMoMax',
     'TiecSoBanChinhThuc', 'TiecSoBanTang', 'TiecSoBanDuPhong', 'TiecSoKhach1Ban',
     'CocLan1SoTien', 'CocLan1BangChu', 'CocNgay', 'CocThang', 'CocNam',
     'CocLan2SoTien', 'CocLan2BangChu',
@@ -576,7 +576,7 @@ UPDATE SY_FormatFields SET CaptionVN = N'Ngày đãi tiệc (AL)' WHERE FormName
 UPDATE SY_FormatFields SET CaptionVN = N'Tháng đãi tiệc (AL)' WHERE FormName = 'frmHopDong' AND FieldName = 'TiecThangAL';
 UPDATE SY_FormatFields SET CaptionVN = N'Năm đãi tiệc (AL)' WHERE FormName = 'frmHopDong' AND FieldName = 'TiecNamAL';
 
-UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đãi tiệc' WHERE FormName = 'frmHopDong' AND FieldName = 'TiecSanhTiec';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đãi tiệc' WHERE FormName = 'frmHopDong' AND FieldName = 'TenSanhTiec';
 UPDATE SY_FormatFields SET CaptionVN = N'Quy mô tối thiểu' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhQuyMoMin';
 UPDATE SY_FormatFields SET CaptionVN = N'Quy mô tối đa' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhQuyMoMax';
 

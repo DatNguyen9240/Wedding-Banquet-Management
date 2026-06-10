@@ -37,9 +37,7 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 17 | `{BenBDiaChi}` | Địa chỉ Bên B (BM02) | x | x | x | x |
 | 18 | `{BenBDienThoai}` | Số điện thoại Bên B (BM02) | x | x | x | x |
 | 19 | `{BenBCCCD}` | Số CCCD Bên B | x | x | x | x |
-| 20 | `{TiecSanhTiec}` | Tên sảnh tiệc chính (BM02) | x | x | x | x |
-| 21 | `{TiecSanhTiecPhu}` | Tên sảnh tiệc phụ | x | | x | |
-| 22 | `{TenSanhTiec}` | Tên sảnh chính | x | x | x | x |
+| 20 | `{TenSanhTiec}` | Tên sảnh tiệc chính | x | x | x | x |
 | 23 | `{TenSanhTiecPhu}` | Tên sảnh phụ | x | | x | |
 | 24 | `{KichThuocSanh}` | Kích thước sảnh chính | x | x | x | x |
 | 25 | `{KichThuocSanhPhu}` | Kích thước sảnh phụ | x | | x | |
@@ -194,9 +192,9 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 * `{Email}`: Địa chỉ email liên hệ
 
 ### 4. Thiết Lập Sảnh Tiệc & Thiết Bị (Venue Setup & Specifications)
-* `{TiecSanhTiec}` / `{TenSanhTiec}`: Sảnh chính sử dụng
-* `{TiecSanhTiecPhu}` / `{TenSanhTiecPhu}`: Sảnh phụ / sảnh mở rộng
-* `{KichThuocSanh}` / `{KichThuocSanhPhu}`: Kích thước chiều dài x rộng sảnh
+* `{TenSanhTiec}`: Sảnh chính sử dụng
+* `{TenSanhTiecPhu}`: Sảnh phụ / sảnh mở rộng
+* `{KichThuocSanhPhu}`: Kích thước chiều dài x rộng sảnh
 * `{TenSanKhau}` / `{TenSanKhauPhu}`: Tên khu vực sân khấu
 * `{KichThuocSanKhau}` / `{KichThuocSanKhauPhu}`: Kích thước khu vực sân khấu
 * `{SucChuaToiDa}` / `{SucChuaToiDaPhu}`: Giới hạn sức chứa tối đa
@@ -306,7 +304,7 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 
 Tái sử dụng trường header đã có:
 * `{NgayToChuc}`, `{TiecGioBatDau}`, `{LoaiHinhSuKien}`, `{TongSoBan}`
-* `{TiecSanhTiec}` / `{TenSanhTiec}`
+* `{TenSanhTiec}`
 * `{BenBTenChuTiec}`, `{BenBDienThoai}`, `{BenBDiaChi}`
 
 Bảng **CHỦNG LOẠI THỨC ĂN MANG VÀO** (3 cột, dùng `convertFields`):
