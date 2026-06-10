@@ -31,7 +31,6 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 11 | `{BenAChucVu}` | Chức vụ nhân viên phụ trách bên A | x | x | x | x |
 | 12 | `{BenASDTNhanVien}` | Số điện thoại nhân viên phụ trách bên A | x | x | x | x |
 | 13 | `{BenAEmail}` | Email nhân viên phụ trách bên A | x | x | x | x |
-| 14 | `{BenBTenChuTiec}` | Tên chủ tiệc Bên B (BM02) | x | x | x | x |
 | 15 | `{BenBTenDaiDien}` | Tên người đại diện Bên B | x | x | x | x |
 | 16 | `{BenBChucVu}` | Chức vụ người đại diện Bên B | x | x | x | x |
 | 17 | `{BenBDiaChi}` | Địa chỉ Bên B (BM02) | x | x | x | x |
@@ -54,8 +53,8 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 36 | `{SetupBatDau}` | Giờ bắt đầu setup | x | x | x | x |
 | 37 | `{SetupKetThuc}` | Giờ kết thúc setup | x | x | x | x |
 | 38 | `{SoKhachDiemDanh}` | Số khách dự kiến điểm danh | x | x | x | x |
-| 39 | `{SoBanManChinhThuc}` | Số lượng bàn mặn chính thức | x | | x | |
-| 40 | `{SoBanManDuPhong}` | Số lượng bàn mặn dự phòng | x | | x | |
+| 56 | `{SoBanChinhThuc}` | Số lượng bàn chính thức | x | | x | |
+| 57 | `{SoBanDuPhong}` | Số lượng bàn dự phòng | x | | x | |
 | 41 | `{#DichVuTinhPhi}` | Bắt đầu khối dịch vụ tính phí | x | x | x | x |
 | 42 | `{TenDichVu}` | Tên dịch vụ tính phí | x | x | x | x |
 | 43 | `{STT}` | Số thứ tự trong bảng dịch vụ | x | x | x | x |
@@ -76,7 +75,7 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 58 | `{UuDai}` | Phần trăm/tiền ưu đãi dịch vụ | x | x | x | x |
 | 59 | `{/DanhSachDV}` | Kết thúc khối dịch vụ theo ngày | x | x | x | x |
 | 60 | `{/DanhSachNgay}` | Kết thúc khối danh sách ngày | x | x | x | x |
-| 61 | `{TongThanhTien}` | Tổng tiền tạm tính trước phí và VAT | x | x | x | x |
+| 78 | `{TongTienDichVu}` | Tổng tiền dịch vụ tạm tính (trước phí) | x | x | x | x |
 | 62 | `{MucPhiPhucVu}` | Mức phí phục vụ (%) | x | x | x | x |
 | 63 | `{PhiPhucVu}` | Số tiền phí phục vụ tạm tính | x | x | x | x |
 | 64 | `{TongCongChuaVAT}` | Tổng cộng chi phí chưa tính VAT | x | x | x | x |
@@ -89,8 +88,7 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 71 | `{HDTenCty}` | Tên công ty xuất hoá đơn Bên B | x | x | x | x |
 | 72 | `{HDDiaChi}` | Địa chỉ công ty xuất hoá đơn | x | x | x | x |
 | 73 | `{HDMaSoThue}` | Mã số thuế công ty xuất hoá đơn | x | x | x | x |
-| 74 | `{HDEmail}` | Email nhận hóa đơn điện tử | x | | x | x |
-| 75 | `{Email}` | Email liên hệ chung của Bên B | x | x | x | x |
+| 92 | `{BenBEmail}` | Email liên hệ chung của Bên B | x | x | x | x |
 | 76 | `{TongGiaTriQuyetToan}` | Tổng giá trị quyết toán (BBNT) | | | | |
 | 77 | `{TongGiaTriQuyetToanBangChu}` | Tổng giá trị quyết toán bằng chữ (BBNT) | | | | |
 | 78 | `{SoTienDaDatCoc}` | Số tiền Bên B đã đặt cọc giữ chỗ (BBNT) | | | | |
@@ -98,10 +96,10 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 80 | `{SoTienConLai}` | Số tiền Bên B còn phải thanh toán (BBNT) | | | | |
 | 81 | `{SoTienConLaiBangChu}` | Số tiền còn lại bằng chữ (BBNT) | | | | |
 | 82 | `{LoaiHinhSuKien}` | Loại hình sự kiện / Hình thức tiệc (GMPS, BM02) | | | | |
-| 83 | `{BanChinhThuc}` | Số bàn chính thức (GMPS) | | | | |
-| 84 | `{BanTang}` | Số bàn tặng (GMPS) | | | | |
-| 85 | `{BanChay}` | Số bàn chay (GMPS) | | | | |
-| 86 | `{BanDuPhong}` | Số bàn dự phòng (GMPS) | | | | |
+| 100 | `{SoBanChinhThuc}` | Số bàn chính thức (GMPS) | | | | |
+| 101 | `{BanTang}` | Số bàn tặng (GMPS) | | | | |
+| 102 | `{BanChay}` | Số bàn chay (GMPS) | | | | |
+| 103 | `{SoBanDuPhong}` | Số bàn dự phòng (GMPS) | | | | |
 | 87 | `{BanPhatSinh}` | Số bàn phát sinh (GMPS) | | | | |
 | 88 | `{TongSoBan}` | Tổng số bàn thực tế (GMPS, BM02) | | | | |
 | 89 | `{#MenuPhatSinh}` | Bắt đầu vòng lặp món phát sinh (GMPS) | | | | |
@@ -182,6 +180,25 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 164 | `{#DanhSachChiPhi}` | Bắt đầu vòng lặp bảng tổng chi phí thay thế Excel (PL) | | | | |
 | 165 | `{NoiDung}` | Nội dung chi phí trong bảng (PL) | | | | |
 | 166 | `{/DanhSachChiPhi}` | Kết thúc vòng lặp bảng tổng chi phí (PL) | | | | |
+| 167 | `{NgayQuyetToan}` | Ngày lập biên bản quyết toán (QT) | | | | |
+| 168 | `{ThangQuyetToan}` | Tháng lập biên bản quyết toán (QT) | | | | |
+| 169 | `{NamQuyetToan}` | Năm lập biên bản quyết toán (QT) | | | | |
+| 170 | `{#ChiTietQuyetToan}` | Bắt đầu vòng lặp bảng chi tiết quyết toán (QT) | | | | |
+| 171 | `{/ChiTietQuyetToan}` | Kết thúc vòng lặp bảng chi tiết quyết toán (QT) | | | | |
+| 172 | `{Cong1}` | Tổng cộng nhóm chi phí 1 (Ví dụ: Tiền tiệc) (QT) | | | | |
+| 173 | `{Cong2}` | Tổng cộng nhóm chi phí 2 (Ví dụ: Thức uống/Dịch vụ) (QT) | | | | |
+| 174 | `{TongCong12}` | Tổng cộng cả 2 nhóm trước phí phục vụ (QT) | | | | |
+| 175 | `{NgayLapPT}` | Ngày lập phiếu thu (PT) | | | | |
+| 176 | `{ThangLapPT}` | Tháng lập phiếu thu (PT) | | | | |
+| 177 | `{NamLapPT}` | Năm lập phiếu thu (PT) | | | | |
+| 178 | `{SoPhieu}` | Số phiếu thu (PT) | | | | |
+| 179 | `{TaiKhoanNo}` | Tài khoản kế toán nợ (PT) | | | | |
+| 180 | `{TaiKhoanCo}` | Tài khoản kế toán có (PT) | | | | |
+| 181 | `{Lydo}` | Lý do thu tiền (PT) | | | | |
+| 182 | `{SoTienThu}` | Số tiền thực thu (PT) | | | | |
+| 183 | `{SoTienThuBangChu}` | Số tiền thực thu bằng chữ (PT) | | | | |
+| 184 | `{HinhThuc}` | Hình thức thanh toán (Tiền mặt/Chuyển khoản) (PT) | | | | |
+| 185 | `{Kemtheo}` | Chứng từ gốc kèm theo (PT) | | | | |
 
 ---
 
@@ -207,13 +224,12 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 * `{BenADaiDien}`: Đại diện của Bên A (Người ký hợp đồng)
 
 ### 3. Khách Hàng Bên B (Đối Tác / Người Đặt Tiệc)
-* `{BenBTenChuTiec}`: Tên chủ tiệc (tên cô dâu/chú rể hoặc đơn vị thuê sảnh)
 * `{BenBTenDaiDien}`: Tên cá nhân ký tên đại diện trên hợp đồng
 * `{BenBChucVu}`: Chức vụ của người đại diện (nếu là doanh nghiệp)
 * `{BenBDiaChi}`: Địa chỉ thường trú hoặc trụ sở Bên B
 * `{BenBDienThoai}`: Số điện thoại liên lạc chính
 * `{BenBCCCD}`: Số căn cước công dân
-* `{Email}`: Địa chỉ email liên hệ
+* `{BenBEmail}`: Địa chỉ email liên hệ
 
 ### 4. Thiết Lập Sảnh Tiệc & Thiết Bị (Venue Setup & Specifications)
 * `{TenSanhTiec}`: Sảnh chính sử dụng
@@ -338,7 +354,7 @@ Bảng **CHỦNG LOẠI THỨC ĂN MANG VÀO** (3 cột, dùng `convertFields`):
 
 ---
 
-### 12. Các Trường Bổ Sung Dành Riêng Cho Phụ Lục (PL)
+### 12. Các Trường Dành Riêng Cho Phụ Lục (PL) / Phiếu Đề Nghị Thay Đổi
 * `{SoPhuLuc}`: Số hiệu của phụ lục hợp đồng
 * `{NgayLapPL}`, `{ThangLapPL}`, `{NamLapPL}`: Ngày/tháng/năm lập phụ lục
 * `{NgayToChucAmLich}`, `{ThangToChucAmLich}`, `{NamToChucAmLich}`: Thời gian tổ chức tính theo Âm Lịch
@@ -354,3 +370,55 @@ Bảng **CHỦNG LOẠI THỨC ĂN MANG VÀO** (3 cột, dùng `convertFields`):
 * `{DonGiaBanTiec}`, `{SoKhachTrenBan}`: Các trường phục vụ ghi chú lên header của bảng thực đơn/báo giá
 * `{#DanhSachChiPhi}` ... `{/DanhSachChiPhi}`: Vòng lặp bảng tổng hợp tất cả các chi phí (dùng khi khách chèn Excel table vào Word)
   * `{NoiDung}`, `{DVT}`: Các cột nội dung và đơn vị tính của bảng tổng hợp chi phí
+
+---
+
+### 13. Biên Bản Quyết Toán (QT)
+*(Lưu ý: Đa số các trường dùng lại của Hợp đồng như `{Sohopdong}`, `{BenBTenChuTiec}`, `{TongGiaTriQuyetToan}`, `{SoTienDaDatCoc}`, `{SoTienConLai}`)*
+* `{NgayQuyetToan}`, `{ThangQuyetToan}`, `{NamQuyetToan}`: Ngày tháng năm ký biên bản quyết toán
+* `{#ChiTietQuyetToan}` ... `{/ChiTietQuyetToan}`: Vòng lặp bảng chi tiết các dịch vụ, món ăn, thức uống thực tế sử dụng để tính tiền
+* `{Cong1}`: Giá trị tính tổng cho nhóm chi phí 1 (Thường là Tiền Tiệc)
+* `{Cong2}`: Giá trị tính tổng cho nhóm chi phí 2 (Thường là Tiền Thức uống / Dịch vụ phát sinh)
+* `{TongCong12}`: Tổng cộng của (`{Cong1}` + `{Cong2}`) trước khi cộng thêm phí phục vụ
+
+---
+
+### 14. Phiếu Thu (PT)
+*(Lưu ý: Các trường dùng chung với hợp đồng gốc gồm `{BenATenCongTy}`, `{BenADiaChi}`, `{BenBTenDaiDien}`, `{BenBDiaChi}`, `{Sohopdong}`)*
+* `{NgayLapPT}`, `{ThangLapPT}`, `{NamLapPT}`: Ngày/tháng/năm lập phiếu thu (tách biệt với ngày lập hợp đồng)
+* `{SoPhieu}`: Số hiệu của phiếu thu (VD: PT-001)
+* `{TaiKhoanNo}`, `{TaiKhoanCo}`: Số tài khoản kế toán ghi nợ/có
+* `{Lydo}`: Lý do nộp tiền (Ví dụ: Đặt cọc lần 1)
+* `{SoTienThu}`: Số tiền khách nộp thực tế trong đợt này
+* `{SoTienThuBangChu}`: Số tiền viết bằng chữ
+* `{HinhThuc}`: Hình thức nộp tiền (Tiền mặt / Chuyển khoản)
+* `{Kemtheo}`: Số lượng/thông tin chứng từ gốc đính kèm
+
+---
+
+### 15. Các Trường Bổ Sung Dành Riêng Cho BEO Hội Nghị
+*(Lưu ý: Các trường cơ bản dùng chung với hợp đồng gốc như {HDTenCty}, {BenANhanVienPhuTrach}, {BenASDTNhanVien}, {BenBDiaChi}, {BenBDienThoai}, {BenBDaiDien}, {Sohopdong}, {NgayToChuc}, {GioBatDau}, {GioKetThuc})*
+* {NgayRaBEO}: Ngày xuất BEO Hội Nghị
+* {TieuDePhieu}: Tiêu đề phiếu BEO
+* {SoKhachChinhThuc}: Số lượng khách hội nghị chính thức
+* {KieuSetup}: Kiểu setup bàn ghế hội nghị
+* {#ChiTietLichTrinh} ... {/ChiTietLichTrinh}: Vòng lặp bảng chi tiết lịch trình hội nghị
+* {#LichTrinhThanhToan} ... {/LichTrinhThanhToan}: Vòng lặp bảng lịch trình thanh toán
+* {@ThongTinSetup}: Block thông tin setup chi tiết
+* {@NoteBaoVe}: Ghi chú cho bộ phận Bảo Vệ
+* {@NoteBieuNgu}: Ghi chú biểu ngữ / backdrop
+* {@NoteKyThuat}: Ghi chú cho bộ phận Kỹ Thuật
+* {@NoteLobby}: Ghi chú khu vực Lobby
+
+---
+
+### 16. Báo Giá Dịch Vụ
+*(Lưu ý: Các trường cơ bản dùng chung với hợp đồng gốc như {HDTenCty}, {BenBDienThoai}, {BenADiaChi}, {BenATenCongTy}, {BenANhanVienPhuTrach}, {BenASDTNhanVien}, {BenAEmailNhanVien})*
+* {NgayBaoGia}: Ngày lập báo giá
+* {#DanhSachDichVu} ... {/DanhSachDichVu}: Vòng lặp danh sách các dịch vụ trong báo giá
+* {#DanhSachKhuVuc} ... {/DanhSachKhuVuc}: Vòng lặp danh sách khu vực sảnh tiệc
+* {#DanhSachThamKhao} ... {/DanhSachThamKhao}: Vòng lặp danh sách menu/dịch vụ tham khảo
+* {@GhiChuSanh1}, {@GhiChuSanh2}, {@GhiChuSanh3}: Các khối ghi chú tương ứng cho từng sảnh
+* {@LuuYChung}: Ghi chú lưu ý chung của báo giá
+* {TongCongTamTinh}: Tổng tiền các hạng mục
+* {TongTienMuc}: Tổng tiền cho từng mục con
