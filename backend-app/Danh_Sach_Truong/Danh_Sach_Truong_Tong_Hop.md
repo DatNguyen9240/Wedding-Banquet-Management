@@ -22,7 +22,7 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 2 | `{NgayLapHD}` | Ngày lập hợp đồng | x | x | x | x |
 | 3 | `{ThangLapHD}` | Tháng lập hợp đồng | x | x | x | x |
 | 4 | `{NamLapHD}` | Năm lập hợp đồng | x | x | x | x |
-| 5 | `{NgayToChuc}` | Ngày tổ chức sự kiện | x | x | x | |
+| 5 | `{NgayToChuc}` | Ngày tổ chức sự kiện (BM02) | x | x | x | |
 | 6 | `{BenATenCongTy}` | Tên công ty Bên A | x | x | x | x |
 | 7 | `{BenADiaChi}` | Địa chỉ Bên A | x | x | x | x |
 | 8 | `{BenASDT}` | Số điện thoại Bên A | x | x | x | x |
@@ -31,13 +31,13 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 11 | `{BenAChucVu}` | Chức vụ nhân viên phụ trách bên A | x | x | x | x |
 | 12 | `{BenASDTNhanVien}` | Số điện thoại nhân viên phụ trách bên A | x | x | x | x |
 | 13 | `{BenAEmail}` | Email nhân viên phụ trách bên A | x | x | x | x |
-| 14 | `{BenBTenChuTiec}` | Tên chủ tiệc Bên B | x | x | x | x |
+| 14 | `{BenBTenChuTiec}` | Tên chủ tiệc Bên B (BM02) | x | x | x | x |
 | 15 | `{BenBTenDaiDien}` | Tên người đại diện Bên B | x | x | x | x |
 | 16 | `{BenBChucVu}` | Chức vụ người đại diện Bên B | x | x | x | x |
-| 17 | `{BenBDiaChi}` | Địa chỉ Bên B | x | x | x | x |
-| 18 | `{BenBDienThoai}` | Số điện thoại Bên B | x | x | x | x |
+| 17 | `{BenBDiaChi}` | Địa chỉ Bên B (BM02) | x | x | x | x |
+| 18 | `{BenBDienThoai}` | Số điện thoại Bên B (BM02) | x | x | x | x |
 | 19 | `{BenBCCCD}` | Số CCCD Bên B | x | x | x | x |
-| 20 | `{TiecSanhTiec}` | Tên sảnh tiệc chính | x | x | x | x |
+| 20 | `{TiecSanhTiec}` | Tên sảnh tiệc chính (BM02) | x | x | x | x |
 | 21 | `{TiecSanhTiecPhu}` | Tên sảnh tiệc phụ | x | | x | |
 | 22 | `{TenSanhTiec}` | Tên sảnh chính | x | x | x | x |
 | 23 | `{TenSanhTiecPhu}` | Tên sảnh phụ | x | | x | |
@@ -51,7 +51,7 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 31 | `{SucChuaToiDaPhu}` | Sức chứa tối đa sảnh phụ | x | | x | |
 | 32 | `{KhachToiThieu}` | Lượng khách tối thiểu sảnh chính | x | x | x | x |
 | 33 | `{SucChuaToiThieuPhu}` | Lượng khách tối thiểu sảnh phụ | x | | x | |
-| 34 | `{TiecGioBatDau}` | Giờ bắt đầu tiệc | x | x | x | x |
+| 34 | `{TiecGioBatDau}` | Giờ bắt đầu tiệc (BM02) | x | x | x | x |
 | 35 | `{TiecGioKetThuc}` | Giờ kết thúc tiệc | x | x | x | x |
 | 36 | `{SetupBatDau}` | Giờ bắt đầu setup | x | x | x | x |
 | 37 | `{SetupKetThuc}` | Giờ kết thúc setup | x | x | x | x |
@@ -99,6 +99,68 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 79 | `{NgayThanhToanDatCoc}` | Ngày thanh toán tiền đặt cọc (BBNT) | | | | |
 | 80 | `{SoTienConLai}` | Số tiền Bên B còn phải thanh toán (BBNT) | | | | |
 | 81 | `{SoTienConLaiBangChu}` | Số tiền còn lại bằng chữ (BBNT) | | | | |
+| 82 | `{LoaiHinhSuKien}` | Loại hình sự kiện / Hình thức tiệc (GMPS, BM02) | | | | |
+| 83 | `{BanChinhThuc}` | Số bàn chính thức (GMPS) | | | | |
+| 84 | `{BanTang}` | Số bàn tặng (GMPS) | | | | |
+| 85 | `{BanChay}` | Số bàn chay (GMPS) | | | | |
+| 86 | `{BanDuPhong}` | Số bàn dự phòng (GMPS) | | | | |
+| 87 | `{BanPhatSinh}` | Số bàn phát sinh (GMPS) | | | | |
+| 88 | `{TongSoBan}` | Tổng số bàn thực tế (GMPS, BM02) | | | | |
+| 89 | `{#MenuPhatSinh}` | Bắt đầu vòng lặp món phát sinh (GMPS) | | | | |
+| 90 | `{MonMan}` | Món mặn phát sinh (GMPS) | | | | |
+| 91 | `{MonChay}` | Món chay phát sinh (GMPS) | | | | |
+| 92 | `{MonPhatSinh}` | Món phát sinh khác (GMPS) | | | | |
+| 93 | `{/MenuPhatSinh}` | Kết thúc vòng lặp món phát sinh (GMPS) | | | | |
+| 94 | `{@PhatSinhTrongHoiNghi}` | Các dịch vụ phát sinh trong hội nghị (dạng nhiều dòng, BBGN) | | | | |
+| 95 | `{@CacDichVuKhac}` | Các dịch vụ khác trong biên bản giao nhận hội nghị (dạng nhiều dòng, BBGN) | | | | |
+| 96 | `{GioBatDauThucTe}` | Giờ bắt đầu thực tế của hội nghị (BBGN) | | | | |
+| 97 | `{GioKetThucThucTe}` | Giờ kết thúc thực tế của hội nghị (BBGN) | | | | |
+| 98 | `{SoKhachThucTe}` | Số lượng khách tham gia thực tế (BBGN) | | | | |
+| 99 | `{SoKhachPhatSinh}` | Số lượng khách phát sinh ngoài (BBGN) | | | | |
+| 100 | `{@ThucDonManLuuMau}` | Thực đơn mặn lưu mẫu (dạng nhiều dòng, BBLM) | | | | |
+| 101 | `{@ThucDonChayLuuMau}` | Thực đơn chay lưu mẫu (dạng nhiều dòng, BBLM) | | | | |
+| 102 | `{GioLayMau}` | Giờ lấy mẫu thức ăn lưu (BBLM) | | | | |
+| 103 | `{NgayLayMau}` | Ngày lấy mẫu thức ăn lưu (BBLM) | | | | |
+| 104 | `{GioHuyMau}` | Giờ hủy mẫu thức ăn lưu (BBLM) | | | | |
+| 105 | `{NgayHuyMau}` | Ngày hủy mẫu thức ăn lưu (BBLM) | | | | |
+| 106 | `{#MenuGiaoNhan}` | Bắt đầu vòng lặp thực đơn giao nhận tiệc (BM01) | | | | |
+| 107 | `{/MenuGiaoNhan}` | Kết thúc vòng lặp thực đơn giao nhận tiệc (BM01) | | | | |
+| 108 | `{#DoUongKiemKe}` | Bắt đầu vòng lặp đồ uống kiểm kê (BM01) | | | | |
+| 109 | `{TenNuoc}` | Tên loại nước/đồ uống (BM01) | | | | |
+| 110 | `{SLTruocTiec}` | Số lượng đồ uống trước tiệc (BM01) | | | | |
+| 111 | `{GhiChu}` | Ghi chú kiểm kê đồ uống (BM01) | | | | |
+| 112 | `{/DoUongKiemKe}` | Kết thúc vòng lặp đồ uống kiểm kê (BM01) | | | | |
+| 113 | `{#PhatSinhTrongTiec}` | Bắt đầu vòng lặp phát sinh trong tiệc (BM01) | | | | |
+| 114 | `{TenPhatSinh}` | Tên mục phát sinh trong tiệc (BM01) | | | | |
+| 115 | `{XacNhan}` | Xác nhận phát sinh của khách hàng (BM01) | | | | |
+| 116 | `{/PhatSinhTrongTiec}` | Kết thúc vòng lặp phát sinh trong tiệc (BM01) | | | | |
+| 117 | `{BanChinhThucDung}` | Số bàn chính thức đã sử dụng (BM01) | | | | |
+| 118 | `{BanChayDung}` | Số bàn chay đã sử dụng (BM01) | | | | |
+| 119 | `{BanTangDung}` | Số bàn tặng đã sử dụng (BM01) | | | | |
+| 120 | `{BanDuPhongDung}` | Số bàn dự phòng đã sử dụng (BM01) | | | | |
+| 121 | `{BanPhatSinhDung}` | Số bàn phát sinh đã thêm (BM01) | | | | |
+| 122 | `{TongSoBanDung}` | Tổng số bàn đã sử dụng thực tế (BM01) | | | | |
+| 123 | `{BiaDung}` | Số bia đã sử dụng (BM01) | | | | |
+| 124 | `{BiaTongKet}` | Tổng kết bia (BM01) | | | | |
+| 125 | `{BiaTra}` | Số bia trả về kho (BM01) | | | | |
+| 126 | `{NuocNgotDung}` | Số nước ngọt đã sử dụng (BM01) | | | | |
+| 127 | `{NuocNgotTongKet}` | Tổng kết nước ngọt (BM01) | | | | |
+| 128 | `{NuocNgotTra}` | Số nước ngọt trả về kho (BM01) | | | | |
+| 129 | `{NuocSuoiDung}` | Số nước suối đã sử dụng (BM01) | | | | |
+| 130 | `{NuocSuoiTongKet}` | Tổng kết nước suối (BM01) | | | | |
+| 131 | `{NuocSuoiTra}` | Số nước suối trả về kho (BM01) | | | | |
+| 132 | `{KhacDung}` | Số mục khác đã sử dụng (BM01) | | | | |
+| 133 | `{KhacTongKet}` | Tổng kết mục khác (BM01) | | | | |
+| 134 | `{KhacTra}` | Mục khác trả về kho (BM01) | | | | |
+| 135 | `{KhanLanhDung}` | Số khăn lạnh đã sử dụng (BM01) | | | | |
+| 136 | `{KhanLanhTongKet}` | Tổng kết khăn lạnh (BM01) | | | | |
+| 137 | `{KhanLanhTra}` | Số khăn lạnh trả về kho (BM01) | | | | |
+| 138 | `{DauPhongDung}` | Số đậu phộng đã sử dụng (BM01) | | | | |
+| 139 | `{DauPhongTongKet}` | Tổng kết đậu phộng (BM01) | | | | |
+| 140 | `{DauPhongTra}` | Số đậu phộng trả về kho (BM01) | | | | |
+| 141 | `{@TenThucAnMangVao}` | Danh sách tên thức ăn mang vào, dạng nhiều dòng (BM02) | | | | |
+| 142 | `{@TenThucUongMangVao}` | Danh sách tên thức uống mang vào, dạng nhiều dòng (BM02) | | | | |
+| 143 | `{@XuatXuMangVao}` | Danh sách xuất xứ thức ăn/uống mang vào, dạng nhiều dòng (BM02) | | | | |
 
 ---
 
@@ -110,6 +172,7 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 * `{Sohopdong}`: Số ký hiệu hợp đồng
 * `{NgayLapHD}`, `{ThangLapHD}`, `{NamLapHD}`: Thời gian ký kết
 * `{NgayToChuc}`: Ngày diễn ra sự kiện chính
+* `{LoaiHinhSuKien}`: Loại hình sự kiện / Hình thức tiệc
 
 ### 2. Đại Diện Bên A (Công Ty Địa Điểm/Tổ Chức)
 * `{BenATenCongTy}`: Tên pháp nhân Bên A
@@ -141,14 +204,36 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 * `{TiecGioBatDau}` / `{TiecGioKetThuc}`: Khung giờ sự kiện diễn ra
 * `{SetupBatDau}` / `{SetupKetThuc}`: Khung giờ bàn giao sảnh để setup
 * `{SoKhachDiemDanh}`: Số lượng khách check-in thực tế
+* Các trường thực tế sau sự kiện / hội nghị (BBGN):
+  * `{GioBatDauThucTe}` / `{GioKetThucThucTe}`: Giờ bắt đầu và giờ kết thúc thực tế
+  * `{SoKhachThucTe}`: Số lượng khách thực tế tham dự
+  * `{SoKhachPhatSinh}`: Số lượng khách phát sinh ngoài
 
 ### 5. Dịch Vụ Ẩm Thực (Catering Details)
-* `{SoBanManChinhThuc}`: Bàn tiệc mặn chính thức
-* `{SoBanManDuPhong}`: Bàn tiệc mặn dự phòng để phát sinh
+* `{SoBanManChinhThuc}`: Bàn tiệc mặn chính thức (Hợp đồng)
+* `{SoBanManDuPhong}`: Bàn tiệc mặn dự phòng để phát sinh (Hợp đồng)
 * `{MenuTongCong}`: Tổng giá trị gói thực đơn
-* Vòng lặp thực đơn:
+* Vòng lặp thực đơn hợp đồng:
   * `{#MenuTiec}` ... `{/MenuTiec}`
   * `{TenMonAn}`: Tên các món trong set menu
+* Các trường liên quan đến bàn tiệc (GMPS):
+  * `{BanChinhThuc}`: Số lượng bàn chính thức thực tế
+  * `{BanTang}`: Số lượng bàn tặng
+  * `{BanChay}`: Số lượng bàn chay
+  * `{BanDuPhong}`: Số lượng bàn dự phòng
+  * `{BanPhatSinh}`: Số lượng bàn phát sinh
+  * `{TongSoBan}`: Tổng số bàn thực tế (Chính thức + Tặng + Chay + Dự phòng + Phát sinh)
+* Vòng lặp món ăn phát sinh (GMPS):
+  * `{#MenuPhatSinh}` ... `{/MenuPhatSinh}`
+  * `{STT}`: Số thứ tự món phát sinh
+  * `{MonMan}`: Tên món mặn phát sinh
+  * `{MonChay}`: Tên món chay phát sinh
+  * `{MonPhatSinh}`: Tên món phát sinh khác
+* Các trường liên quan đến lưu mẫu thức ăn (BBLM):
+  * `{@ThucDonManLuuMau}`: Chi tiết thực đơn mặn lưu mẫu (dạng nhiều dòng, cần đưa vào convertFields)
+  * `{@ThucDonChayLuuMau}`: Chi tiết thực đơn chay lưu mẫu (dạng nhiều dòng, cần đưa vào convertFields)
+  * `{GioLayMau}` / `{NgayLayMau}`: Giờ và ngày lấy mẫu thức ăn lưu
+  * `{GioHuyMau}` / `{NgayHuyMau}`: Giờ và ngày hủy mẫu thức ăn lưu
 
 ### 6. Lịch Trình Chi Tiết Dịch Vụ Theo Ngày (Agenda & Rental Timeline)
 * Vòng lặp ngày: `{#DanhSachNgay}` ... `{/DanhSachNgay}`
@@ -169,6 +254,9 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
   * `{DonGia}`: Đơn giá
   * `{ThanhTien}`: Thành tiền
   * `{GhiChuChiTiet}`: Ghi chú đính kèm
+* Các trường dịch vụ phát sinh khác (BBGN):
+  * `{@PhatSinhTrongHoiNghi}`: Chi tiết dịch vụ phát sinh trong hội nghị (dạng nhiều dòng, cần đưa vào convertFields)
+  * `{@CacDichVuKhac}`: Chi tiết các dịch vụ khác (dạng nhiều dòng, cần đưa vào convertFields)
 
 ### 8. Tổng Hợp Tài Chính & Thuế (Financial Summaries)
 * `{TongThanhTien}`: Tổng tiền trước thuế & phí phục vụ
@@ -188,3 +276,40 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 * `{HDDiaChi}`: Địa chỉ đăng ký kinh doanh
 * `{HDMaSoThue}`: Mã số thuế
 * `{HDEmail}`: Email nhận hóa đơn điện tử
+
+### 10. Tổng Kết Sau Tiệc – Kiểm Kê Đồ Dùng (Post-Party Reconciliation - BM01)
+* Vòng lặp thực đơn giao nhận: `{#MenuGiaoNhan}` ... `{/MenuGiaoNhan}`
+  * `{STT}`: Số thứ tự
+  * `{MonMan}`: Tên món mặn
+  * `{MonChay}`: Tên món chay
+  * `{MonPhatSinh}`: Tên món phát sinh
+* Vòng lặp kiểm kê đồ uống: `{#DoUongKiemKe}` ... `{/DoUongKiemKe}`
+  * `{STT}`: Số thứ tự
+  * `{TenNuoc}`: Tên loại nước/đồ uống
+  * `{SLTruocTiec}`: Số lượng trước tiệc
+  * `{GhiChu}`: Ghi chú
+* Vòng lặp phát sinh trong tiệc: `{#PhatSinhTrongTiec}` ... `{/PhatSinhTrongTiec}`
+  * `{STT}`: Số thứ tự
+  * `{TenPhatSinh}`: Tên mục phát sinh
+  * `{SoLuong}`: Số lượng phát sinh
+  * `{XacNhan}`: Xác nhận của khách hàng
+* Bảng tổng kết các mục sử dụng sau tiệc (cột Dung = đã dùng, TongKet = tổng theo BEO, Tra = trả kho):
+  * **Bàn:** `{BanChinhThucDung}`, `{BanChayDung}`, `{BanTangDung}`, `{BanDuPhongDung}`, `{BanPhatSinhDung}`, `{TongSoBanDung}`
+  * **Bia:** `{BiaDung}`, `{BiaTongKet}`, `{BiaTra}`
+  * **Nước ngọt:** `{NuocNgotDung}`, `{NuocNgotTongKet}`, `{NuocNgotTra}`
+  * **Nước suối:** `{NuocSuoiDung}`, `{NuocSuoiTongKet}`, `{NuocSuoiTra}`
+  * **Phát sinh khác:** `{KhacDung}`, `{KhacTongKet}`, `{KhacTra}`
+  * **Khăn lạnh:** `{KhanLanhDung}`, `{KhanLanhTongKet}`, `{KhanLanhTra}`
+  * **Đậu phộng:** `{DauPhongDung}`, `{DauPhongTongKet}`, `{DauPhongTra}`
+
+### 11. Biên Bản Khách Mang Thức Ăn Vào (BM02)
+
+Tái sử dụng trường header đã có:
+* `{NgayToChuc}`, `{TiecGioBatDau}`, `{LoaiHinhSuKien}`, `{TongSoBan}`
+* `{TiecSanhTiec}` / `{TenSanhTiec}`
+* `{BenBTenChuTiec}`, `{BenBDienThoai}`, `{BenBDiaChi}`
+
+Bảng **CHỦNG LOẠI THỨC ĂN MANG VÀO** (3 cột, dùng `convertFields`):
+* `{@TenThucAnMangVao}`: Cột **TÊN THỨC ĂN** (ví dụ: `1. Bánh kem\n2. Trái cây`)
+* `{@TenThucUongMangVao}`: Cột **TÊN THỨC UỐNG** (ví dụ: `1. Rượu vang\n2. Nước suối`)
+* `{@XuatXuMangVao}`: Cột **XUẤT XỨ** (ví dụ: `1. Tiệm bánh ABC\n2. Siêu thị XYZ`)
