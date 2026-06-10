@@ -2541,10 +2541,16 @@ var PhuLucPlugin = (function () {
         var nThang = parts[1];
         var nNgay = parts[2];
 
+        var userObj = {};
+        try {
+          userObj = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+        } catch (err) {}
+        var currentUserName = userObj.Username || userObj.UserName || userObj.username || 'system';
+
         var payload = {
           List: 'tbmk_PhuLucHopDong',
           Func: 'Save',
-          UserName: 'system', // TODO: Lấy từ session thực tế
+          UserName: currentUserName,
           JsonData: JSON.stringify({
             SoPhuLuc: soThayDoi,
             Sohopdong: sohopdong,
@@ -6658,11 +6664,32 @@ UIControls.createDataComboBox = function (options) {
       var currentValue = (typeof options.getValue === 'function') ? options.getValue() : null;
       var currentInputVal = input.value.trim().toLowerCase();
 
+      var selectedIds = [];
+      if (options.multiple) {
+        if (currentValue) {
+           selectedIds = String(currentValue).split(',').map(function(s) { return s.trim(); });
+        }
+      }
+
+      if (options.multiple) {
+        rows.forEach(function (row) {
+           var firstTd = row.querySelector('td');
+           if (firstTd && !firstTd.querySelector('.multi-check')) {
+              var chk = document.createElement('span');
+              chk.className = 'multi-check';
+              chk.style.cssText = 'display:inline-block; width:16px; height:16px; border:1px solid #ccc; border-radius:3px; margin-right:8px; text-align:center; line-height:14px; font-size:12px; color:white; vertical-align:middle; background: #fff; cursor:pointer;';
+              firstTd.insertBefore(chk, firstTd.firstChild);
+           }
+        });
+      }
+
       rows.forEach(function (row) {
         var dataRow = displayData[row.getAttribute('data-index')];
         var isRowActive = false;
 
-        if (currentValue !== null && currentValue !== undefined && currentValue !== '') {
+        if (options.multiple) {
+           isRowActive = selectedIds.includes(String(dataRow[0]).trim());
+        } else if (currentValue !== null && currentValue !== undefined && currentValue !== '') {
           isRowActive = String(dataRow[0]).trim().toLowerCase() === String(currentValue).trim().toLowerCase();
         } else {
           var rowVal = (dataRow[options.colFilterIndex || 0] || '').toString().toLowerCase();
@@ -6671,8 +6698,18 @@ UIControls.createDataComboBox = function (options) {
 
         if (isRowActive) {
           row.classList.add('active');
+          if (options.multiple) {
+            row.style.background = 'var(--color-primary-light, rgba(79, 70, 229, 0.1))';
+            row.style.fontWeight = '600';
+            var chk = row.querySelector('.multi-check');
+            if (chk) {
+               chk.innerHTML = '✓';
+               chk.style.background = 'var(--color-primary, #4f46e5)';
+               chk.style.borderColor = 'var(--color-primary, #4f46e5)';
+            }
+          }
           // Tự động cuộn đến dòng được chọn (chỉ khi không tìm kiếm)
-          if (!currentQuery) {
+          if (!currentQuery && !options.multiple) {
             setTimeout(function () {
               row.scrollIntoView({ block: 'nearest', behavior: 'auto' });
             }, 50);
@@ -6680,10 +6717,48 @@ UIControls.createDataComboBox = function (options) {
         }
 
         row.addEventListener('click', function () {
-          input.value = dataRow[options.colFilterIndex || 0];
-          hideDropdown();
-          if (typeof options.onSelect === 'function') {
-            options.onSelect(dataRow);
+          if (options.multiple) {
+            var selectedId = String(dataRow[0]).trim();
+            var idx = selectedIds.indexOf(selectedId);
+            var currentText = input.value ? input.value.split(',').map(function(s) { return s.trim(); }) : [];
+            
+            if (idx > -1) {
+               selectedIds.splice(idx, 1);
+               // Find matching text to remove
+               var textIdx = currentText.findIndex(function(t) { return t.toLowerCase() === String(dataRow[options.colFilterIndex || 0]).toLowerCase(); });
+               if (textIdx > -1) currentText.splice(textIdx, 1);
+               row.classList.remove('active');
+               row.style.background = '';
+               row.style.fontWeight = '';
+               var chk = row.querySelector('.multi-check');
+               if (chk) {
+                  chk.innerHTML = '';
+                  chk.style.background = '#fff';
+                  chk.style.borderColor = '#ccc';
+               }
+            } else {
+               selectedIds.push(selectedId);
+               currentText.push(dataRow[options.colFilterIndex || 0]);
+               row.classList.add('active');
+               row.style.background = 'var(--color-primary-light, rgba(79, 70, 229, 0.1))';
+               row.style.fontWeight = '600';
+               var chk = row.querySelector('.multi-check');
+               if (chk) {
+                  chk.innerHTML = '✓';
+                  chk.style.background = 'var(--color-primary, #4f46e5)';
+                  chk.style.borderColor = 'var(--color-primary, #4f46e5)';
+               }
+            }
+            input.value = currentText.join(', ');
+            if (typeof options.onSelect === 'function') {
+               options.onSelect([selectedIds.join(','), input.value]);
+            }
+          } else {
+            input.value = dataRow[options.colFilterIndex || 0];
+            hideDropdown();
+            if (typeof options.onSelect === 'function') {
+              options.onSelect(dataRow);
+            }
           }
         });
       });
@@ -6875,6 +6950,7 @@ UIControls.createDataComboBox = function (options) {
 
 
   input.addEventListener('blur', function () {
+    if (options.multiple) return;
     var val = input.value.trim().toLowerCase();
     if (val && fullData.length > 0) {
       var exactMatch = fullData.find(function (row) {

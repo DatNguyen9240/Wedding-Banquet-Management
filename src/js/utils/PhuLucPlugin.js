@@ -184,14 +184,14 @@ var PhuLucPlugin = (function () {
       form.onsubmit = function (e) {
         e.preventDefault();
         
-        var soThayDoi = document.getElementById('inpSothaydoi').value.trim();
+        var soPhuLuc = document.getElementById('inpSothaydoi').value.trim();
         var ngayLapPL = document.getElementById('inpNgayLapPL').value;
         var thoathuan = document.getElementById('inpThoathuan').value;
 
-        // Nếu trống, hệ thống tự lấy Mã PL + Timestamp ngắn (tối đa 20 ký tự theo DB)
-        if (!soThayDoi) {
+        // Sinh Sothaydoi kỹ thuật nếu chưa nhập (tối đa 20 ký tự theo DB)
+        if (!soPhuLuc) {
           var timeStr = new Date().getTime().toString().slice(-8);
-          soThayDoi = 'PL' + timeStr;
+          soPhuLuc = 'PL' + timeStr;
         }
 
         var parts = ngayLapPL.split('-'); // YYYY-MM-DD
@@ -199,18 +199,31 @@ var PhuLucPlugin = (function () {
         var nThang = parts[1];
         var nNgay = parts[2];
 
+        var userObj = {};
+        try {
+          userObj = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+        } catch (err) {}
+        var currentUserName = userObj.Username || userObj.UserName || userObj.username || 'system';
+
+        // Payload khớp với API_LuuThayDoi:
+        // - Sothaydoi, Sohopdong, Ngaythaydoi, Ghichu, Status: tham số cấp cao
+        // - JsonData: chứa các trường nghiệp vụ chi tiết
         var payload = {
           List: 'tbmk_PhuLucHopDong',
           Func: 'Save',
-          UserName: 'system', // TODO: Lấy từ session thực tế
+          Sothaydoi: soPhuLuc,
+          Sohopdong: sohopdong,
+          Ngaythaydoi: ngayLapPL,
+          Ghichu: thoathuan,
+          Status: 'DRAFT',
+          UserName: currentUserName,
           JsonData: JSON.stringify({
-            SoPhuLuc: soThayDoi,
-            Sohopdong: sohopdong,
-            NgayLap: ngayLapPL,
-            NgayHieuLuc: ngayLapPL,
-            LyDoDieuChinh: thoathuan,
-            GhiChu: thoathuan,
-            TrangThai: 0
+            SoPhuLuc: soPhuLuc,
+            NgayLapPL: ngayLapPL,
+            NgayLapPLDay: nNgay,
+            ThangLapPL: nThang,
+            NamLapPL: nNam,
+            ThoaThuanPhuLucKhacTD: thoathuan
           })
         };
 
@@ -221,20 +234,30 @@ var PhuLucPlugin = (function () {
 
         ContractService.savePhuLuc(payload).then(function(res) {
           if (res && (res.code === 0 || res.success || res.status === 200 || !res.error)) {
-            m.closeNow();
+            // Đóng modal đúng tham chiếu
+            if (modalInstance && typeof modalInstance.closeNow === 'function') {
+              modalInstance.closeNow();
+            } else {
+              var overlay = document.querySelector('.ui-modal-overlay');
+              if (overlay) overlay.remove();
+            }
+            if (typeof Toast !== 'undefined') {
+              Toast.show({ message: 'Đã lưu phụ lục: ' + soPhuLuc, type: 'success' });
+            }
             // Sinh tài liệu DOCX ngay lập tức
             try {
-              _generateDocument(soThayDoi);
+              _generateDocument(soPhuLuc);
             } catch (e) {
-              console.error("Lỗi _generateDocument:", e);
+              console.error('[PhuLucPlugin] Lỗi _generateDocument:', e);
             }
           } else {
-            if (typeof Alert !== 'undefined') Alert.error('Lỗi lưu', 'Có lỗi khi lưu phụ lục.');
+            if (typeof Alert !== 'undefined') Alert.error('Lỗi lưu', (res && res.message) || 'Có lỗi khi lưu phụ lục.');
             else alert('Có lỗi khi lưu phụ lục.');
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnHtml;
           }
         }).catch(function(err) {
+          console.error('[PhuLucPlugin] Save error:', err);
           if (typeof Alert !== 'undefined') Alert.error('Lỗi', 'Không thể kết nối đến server.');
           submitBtn.disabled = false;
           submitBtn.innerHTML = originalBtnHtml;

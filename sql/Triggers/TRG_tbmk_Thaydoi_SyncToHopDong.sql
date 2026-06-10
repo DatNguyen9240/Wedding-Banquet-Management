@@ -1,7 +1,10 @@
 USE [QLTiec]
 GO
 
-CREATE OR ALTER TRIGGER [dbo].[TRG_tbmk_Thaydoi_SyncToHopDong]
+IF OBJECT_ID('[dbo].[TRG_tbmk_Thaydoi_SyncToHopDong]', 'TR') IS NOT NULL
+    DROP TRIGGER [dbo].[TRG_tbmk_Thaydoi_SyncToHopDong];
+GO
+CREATE TRIGGER [dbo].[TRG_tbmk_Thaydoi_SyncToHopDong]
 ON [dbo].[tbmk_Thaydoi]
 AFTER INSERT, UPDATE
 AS
@@ -79,6 +82,21 @@ BEGIN
                 i.NgayTraSanhDVTD,
                 i.GioTraSanhDVTD,
                 i.GoiThucDonIDTD,
+                
+                -- Đồng bộ các cột mới bổ sung
+                i.QuyMoBanTuTD,
+                i.QuyMoBanDenTD,
+                i.TenDotThanhToanTD,
+                i.ThanhToanDot2SoTienTD,
+                i.HinhThucThanhToanDot2TD,
+                i.HanThanhToanDot2TD,
+                i.DichVuTinhPhiPhuLucTD,
+                i.ThoaThuanPhuLucKhacTD,
+                i.DanhSachChiPhiTD,
+                i.BenAChucVuDaiDienTD,
+                i.DonGiaBanTiecTD,
+                i.SoKhachTrenBanTD,
+                
                 ROW_NUMBER() OVER (PARTITION BY i.Sohopdong ORDER BY i.LanThayDoi DESC, i.Ngaythaydoi DESC, i.Sothaydoi DESC) as rn
             FROM tbmk_Thaydoi i
             WHERE (i.Status IN ('SIGNED', 'APPROVED') OR i.IsKetthuc = 1)
@@ -144,7 +162,21 @@ BEGIN
             h.GioBanGiaoSanhDV = COALESCE(lc.GioBanGiaoSanhDVTD, h.GioBanGiaoSanhDV),
             h.NgayTraSanhDV = COALESCE(lc.NgayTraSanhDVTD, h.NgayTraSanhDV),
             h.GioTraSanhDV = COALESCE(lc.GioTraSanhDVTD, h.GioTraSanhDV),
-            h.GoiThucDonID = COALESCE(lc.GoiThucDonIDTD, h.GoiThucDonID)
+            h.GoiThucDonID = COALESCE(lc.GoiThucDonIDTD, h.GoiThucDonID),
+            
+            -- Đồng bộ các cột mới bổ sung
+            h.QuyMoBanTu = COALESCE(lc.QuyMoBanTuTD, h.QuyMoBanTu),
+            h.QuyMoBanDen = COALESCE(lc.QuyMoBanDenTD, h.QuyMoBanDen),
+            h.TenDotThanhToan = COALESCE(lc.TenDotThanhToanTD, h.TenDotThanhToan),
+            h.ThanhToanDot2SoTien = COALESCE(lc.ThanhToanDot2SoTienTD, h.ThanhToanDot2SoTien),
+            h.HinhThucThanhToanDot2 = COALESCE(lc.HinhThucThanhToanDot2TD, h.HinhThucThanhToanDot2),
+            h.HanThanhToanDot2 = COALESCE(lc.HanThanhToanDot2TD, h.HanThanhToanDot2),
+            h.DichVuTinhPhiPhuLuc = COALESCE(lc.DichVuTinhPhiPhuLucTD, h.DichVuTinhPhiPhuLuc),
+            h.ThoaThuanPhuLucKhac = COALESCE(lc.ThoaThuanPhuLucKhacTD, h.ThoaThuanPhuLucKhac),
+            h.DanhSachChiPhi = COALESCE(lc.DanhSachChiPhiTD, h.DanhSachChiPhi),
+            h.BenAChucVuDaiDien = COALESCE(lc.BenAChucVuDaiDienTD, h.BenAChucVuDaiDien),
+            h.DonGiaBanTiec = COALESCE(lc.DonGiaBanTiecTD, h.DonGiaBanTiec),
+            h.SoKhachTrenBan = COALESCE(lc.SoKhachTrenBanTD, h.SoKhachTrenBan)
         FROM tbmk_Hopdong h
         INNER JOIN LatestChanges lc ON h.Sohopdong = lc.Sohopdong
         WHERE lc.rn = 1;

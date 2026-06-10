@@ -1,0 +1,774 @@
+USE [QLTiec]
+GO
+
+PRINT N'=== BẮT ĐẦU CẬP NHẬT CẤU TRÚC PHỤ LỤC HỢP ĐỒNG (ALL-IN-ONE) ===';
+GO
+
+-- =========================================================================
+-- 1. BỔ SUNG CỘT SCHEMA CHO BẢNG tbmk_Thaydoi VÀ tbmk_Hopdong
+-- =========================================================================
+PRINT N'1. Đang kiểm tra và bổ sung cột cho bảng tbmk_Thaydoi...';
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'QuyMoBanTu')
+    ALTER TABLE tbmk_Thaydoi ADD QuyMoBanTu INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'QuyMoBanTuTD')
+    ALTER TABLE tbmk_Thaydoi ADD QuyMoBanTuTD INT NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'QuyMoBanDen')
+    ALTER TABLE tbmk_Thaydoi ADD QuyMoBanDen INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'QuyMoBanDenTD')
+    ALTER TABLE tbmk_Thaydoi ADD QuyMoBanDenTD INT NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'TenDotThanhToan')
+    ALTER TABLE tbmk_Thaydoi ADD TenDotThanhToan NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'TenDotThanhToanTD')
+    ALTER TABLE tbmk_Thaydoi ADD TenDotThanhToanTD NVARCHAR(100) NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'ThanhToanDot2SoTien')
+    ALTER TABLE tbmk_Thaydoi ADD ThanhToanDot2SoTien DECIMAL(18,2) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'ThanhToanDot2SoTienTD')
+    ALTER TABLE tbmk_Thaydoi ADD ThanhToanDot2SoTienTD DECIMAL(18,2) NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'HinhThucThanhToanDot2')
+    ALTER TABLE tbmk_Thaydoi ADD HinhThucThanhToanDot2 NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'HinhThucThanhToanDot2TD')
+    ALTER TABLE tbmk_Thaydoi ADD HinhThucThanhToanDot2TD NVARCHAR(100) NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'HanThanhToanDot2')
+    ALTER TABLE tbmk_Thaydoi ADD HanThanhToanDot2 DATETIME NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'HanThanhToanDot2TD')
+    ALTER TABLE tbmk_Thaydoi ADD HanThanhToanDot2TD DATETIME NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'DichVuTinhPhiPhuLuc')
+    ALTER TABLE tbmk_Thaydoi ADD DichVuTinhPhiPhuLuc NVARCHAR(MAX) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'DichVuTinhPhiPhuLucTD')
+    ALTER TABLE tbmk_Thaydoi ADD DichVuTinhPhiPhuLucTD NVARCHAR(MAX) NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'ThoaThuanPhuLucKhac')
+    ALTER TABLE tbmk_Thaydoi ADD ThoaThuanPhuLucKhac NVARCHAR(MAX) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'ThoaThuanPhuLucKhacTD')
+    ALTER TABLE tbmk_Thaydoi ADD ThoaThuanPhuLucKhacTD NVARCHAR(MAX) NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'DanhSachChiPhi')
+    ALTER TABLE tbmk_Thaydoi ADD DanhSachChiPhi NVARCHAR(MAX) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'DanhSachChiPhiTD')
+    ALTER TABLE tbmk_Thaydoi ADD DanhSachChiPhiTD NVARCHAR(MAX) NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'BenAChucVuDaiDien')
+    ALTER TABLE tbmk_Thaydoi ADD BenAChucVuDaiDien NVARCHAR(200) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'BenAChucVuDaiDienTD')
+    ALTER TABLE tbmk_Thaydoi ADD BenAChucVuDaiDienTD NVARCHAR(200) NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'DonGiaBanTiec')
+    ALTER TABLE tbmk_Thaydoi ADD DonGiaBanTiec DECIMAL(18,2) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'DonGiaBanTiecTD')
+    ALTER TABLE tbmk_Thaydoi ADD DonGiaBanTiecTD DECIMAL(18,2) NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'SoKhachTrenBan')
+    ALTER TABLE tbmk_Thaydoi ADD SoKhachTrenBan INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'SoKhachTrenBanTD')
+    ALTER TABLE tbmk_Thaydoi ADD SoKhachTrenBanTD INT NULL;
+GO
+
+PRINT N'2. Đang kiểm tra và bổ sung cột cho bảng tbmk_Hopdong...';
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'QuyMoBanTu')
+    ALTER TABLE tbmk_Hopdong ADD QuyMoBanTu INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'QuyMoBanDen')
+    ALTER TABLE tbmk_Hopdong ADD QuyMoBanDen INT NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'TenDotThanhToan')
+    ALTER TABLE tbmk_Hopdong ADD TenDotThanhToan NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'ThanhToanDot2SoTien')
+    ALTER TABLE tbmk_Hopdong ADD ThanhToanDot2SoTien DECIMAL(18,2) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'HinhThucThanhToanDot2')
+    ALTER TABLE tbmk_Hopdong ADD HinhThucThanhToanDot2 NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'HanThanhToanDot2')
+    ALTER TABLE tbmk_Hopdong ADD HanThanhToanDot2 DATETIME NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'DichVuTinhPhiPhuLuc')
+    ALTER TABLE tbmk_Hopdong ADD DichVuTinhPhiPhuLuc NVARCHAR(MAX) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'ThoaThuanPhuLucKhac')
+    ALTER TABLE tbmk_Hopdong ADD ThoaThuanPhuLucKhac NVARCHAR(MAX) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'DanhSachChiPhi')
+    ALTER TABLE tbmk_Hopdong ADD DanhSachChiPhi NVARCHAR(MAX) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'BenAChucVuDaiDien')
+    ALTER TABLE tbmk_Hopdong ADD BenAChucVuDaiDien NVARCHAR(200) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'DonGiaBanTiec')
+    ALTER TABLE tbmk_Hopdong ADD DonGiaBanTiec DECIMAL(18,2) NULL;
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'SoKhachTrenBan')
+    ALTER TABLE tbmk_Hopdong ADD SoKhachTrenBan INT NULL;
+GO
+
+
+-- =========================================================================
+-- 2. TẠO VIEW DÂN SỰ/PHỤ LỤC v_DanhSachPhuLuc
+-- =========================================================================
+PRINT N'3. Đang tạo/cập nhật View v_DanhSachPhuLuc...';
+GO
+
+IF OBJECT_ID('[dbo].[v_DanhSachPhuLuc]', 'V') IS NOT NULL
+    DROP VIEW [dbo].[v_DanhSachPhuLuc];
+GO
+CREATE VIEW [dbo].[v_DanhSachPhuLuc] AS
+SELECT 
+    td.Sothaydoi AS [Id], -- Dùng làm PrimaryKey cho Frontend
+    td.Sothaydoi AS [Sothaydoi], 
+    td.Sothaydoi AS [SoPhuLuc], -- Biến trong docx
+    td.Ngaythaydoi AS [Ngaythaydoi],
+    td.Ngaythaydoi AS [NgayLapPL],
+    RIGHT('0' + CAST(DAY(td.Ngaythaydoi) AS VARCHAR), 2) AS [NgayLapPLDay],
+    RIGHT('0' + CAST(MONTH(td.Ngaythaydoi) AS VARCHAR), 2) AS [ThangLapPL],
+    CAST(YEAR(td.Ngaythaydoi) AS VARCHAR) AS [NamLapPL],
+    td.Sohopdong AS [Sohopdong],
+    td.Sobiennhan AS [Sobiennhan],
+    td.Makh AS [Makh],
+    td.Manv AS [Manv],
+    ISNULL(nv.Tennv, td.Manv) AS [NVLap],
+    
+    -- Thông tin khách hàng (Bên B)
+    kh.Tenkh AS [TenKhachHang],
+    kh.Tenchure AS [TenChuRe],
+    kh.Tencodau AS [TenCoDau],
+    kh.Dienthoai AS [DienThoai],
+    kh.Diachi AS [DiaChi],
+    kh.Mail AS [Mail],
+    kh.CMNDDaiDien AS [BenBCCCD],
+    
+    -- Ngày tổ chức Dương lịch & Âm lịch
+    ISNULL(td.NgayToChucTD, hd.Ngaytochuc) AS [NgayToChuc],
+    RIGHT('0' + CAST(DAY(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [NgayToChucDay],
+    RIGHT('0' + CAST(MONTH(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [ThangToChuc],
+    CAST(YEAR(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR) AS [NamToChuc],
+    
+    -- Âm lịch (Tách thành Ngày, Tháng, Năm Âm Lịch)
+    CASE 
+        WHEN CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) > 0 
+            THEN SUBSTRING(ISNULL(td.NhamNgayTD, hd.Nhamngay), 1, CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) - 1)
+        ELSE ISNULL(td.NhamNgayTD, hd.Nhamngay)
+    END AS [NgayToChucAmLich],
+    CASE 
+        WHEN CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) > 0 
+            THEN CASE 
+                WHEN CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) + 1) > 0 
+                    THEN SUBSTRING(ISNULL(td.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) + 1, CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) + 1) - CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) - 1)
+                ELSE SUBSTRING(ISNULL(td.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) + 1, LEN(ISNULL(td.NhamNgayTD, hd.Nhamngay)))
+            END
+        ELSE '...'
+    END AS [ThangToChucAmLich],
+    CASE 
+        WHEN CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) > 0 AND CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) + 1) > 0
+            THEN SUBSTRING(ISNULL(td.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(td.NhamNgayTD, hd.Nhamngay)) + 1) + 1, LEN(ISNULL(td.NhamNgayTD, hd.Nhamngay)))
+        ELSE '...'
+    END AS [NamToChucAmLich],
+    ISNULL(td.NhamNgayTD, hd.Nhamngay) AS [Nhamngay],
+    
+    -- Loại tiệc & Ca
+    ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid) AS [LoaiTiecID],
+    (SELECT TOP 1 tm.TemplateFile FROM tbmk_LoaitiecAddfile tm WHERE tm.FormName = 'frmHopDong' AND tm.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)) AS [TemplateFile],
+    ISNULL(td.ThoiGianIDTD, hd.Thoigianid) AS [ThoiGianID],
+    
+    -- Quy mô bàn & Đơn giá
+    ISNULL(td.QuyMoBanTuTD, td.QuyMoBanTu) AS [QuyMoBanTu],
+    ISNULL(td.QuyMoBanDenTD, td.QuyMoBanDen) AS [QuyMoBanDen],
+    ISNULL(td.DonGiaBanTiecTD, td.DonGiaBanTiec) AS [DonGiaBanTiec],
+    ISNULL(td.SoKhachTrenBanTD, td.SoKhachTrenBan) AS [SoKhachTrenBan],
+    
+    -- Bàn tiệc
+    ISNULL(td.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SobanManchinhthuc],
+    ISNULL(td.SobanManduphong, hd.SobanManduphong) AS [SobanManduphong],
+    ISNULL(td.SobanChaychinhthuc, hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
+    ISNULL(td.SobanChayduphong, hd.SobanChayduphong) AS [SobanChayduphong],
+    ISNULL(td.TongSoBanTD, hd.TongSoBan) AS [TongSoBan],
+    
+    -- Các đợt thanh toán
+    ISNULL(td.TenDotThanhToanTD, td.TenDotThanhToan) AS [TenDotThanhToan],
+    ISNULL(td.ThanhToanDot2SoTienTD, td.ThanhToanDot2SoTien) AS [ThanhToanDot2SoTien],
+    ISNULL(td.HinhThucThanhToanDot2TD, td.HinhThucThanhToanDot2) AS [HinhThucThanhToanDot2],
+    ISNULL(td.HanThanhToanDot2TD, td.HanThanhToanDot2) AS [HanThanhToanDot2],
+    
+    -- Dịch vụ & thỏa thuận
+    ISNULL(td.DichVuTinhPhiPhuLucTD, td.DichVuTinhPhiPhuLuc) AS [DichVuTinhPhiPhuLuc],
+    ISNULL(td.ThoaThuanPhuLucKhacTD, td.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
+    ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) AS [DanhSachChiPhi],
+    
+    -- Các trường tiền tệ
+    ISNULL(td.TongtienBanmanTD, hd.Tongtienbanman) AS [Tongtienbanman],
+    ISNULL(td.TongtienBanchayTD, hd.Tongtienbanchay) AS [Tongtienbanchay],
+    ISNULL(td.Tongtienthucuong, hd.Tongtienthucuong) AS [Tongtienthucuong],
+    ISNULL(td.TongtienDichvuTD, hd.Tongtiendichvu) AS [Tongtiendichvu],
+    ISNULL(td.TongtienHopdongTD, hd.Tongtienhopdong) AS [TongTien],
+    ISNULL(td.Sotiencoccho, hd.Sotiencoccho) AS [DaCocVND],
+    ISNULL(td.Sotiencochopdong, hd.Sotiencochopdong) AS [Sotiencochopdong],
+    ISNULL(td.Tongtiencoc, hd.Tongtiencoc) AS [Tongtiencoc],
+    ISNULL(td.ConLaiTD, hd.Conlai) AS [ConLai],
+    
+    -- Trạng thái & metadata
+    td.LanThayDoi AS [LanThayDoi],
+    td.Ghichu AS [Ghichu],
+    td.Status AS [Status],
+    CASE 
+        WHEN td.Status = 'DRAFT' THEN N'Nháp'
+        WHEN td.Status = 'SIGNED' THEN N'Đã Ký'
+        WHEN td.Status = 'APPROVED' THEN N'Đã Duyệt'
+        WHEN td.Status = 'CANCELLED' THEN N'Đã Hủy'
+        ELSE N'Nháp'
+    END AS [TrangThai],
+    
+    td.IsKetthuc AS [IsKetthuc],
+    td.JsonBanTiec AS [JsonBanTiec],
+    td.JsonThucUong AS [JsonThucUong],
+    td.JsonDichVu AS [JsonDichVu],
+    td.JsonPhatSinh AS [JsonPhatSinh],
+    td.BenAChucVuDaiDienTD AS [BenAChucVuDaiDien]
+FROM tbmk_Thaydoi td
+INNER JOIN tbmk_Hopdong hd ON td.Sohopdong = hd.Sohopdong
+LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
+LEFT JOIN dmNhanvienView nv ON td.Manv = nv.Manv
+WHERE ISNULL(td.IsDeleted, 0) = 0;
+GO
+
+
+-- =========================================================================
+-- 3. THỦ TỤC LƯU PHỤ LỤC THAY ĐỔI API_LuuThayDoi
+-- =========================================================================
+PRINT N'4. Đang tạo/cập nhật Procedure API_LuuThayDoi...';
+GO
+
+IF OBJECT_ID('[dbo].[API_LuuThayDoi]', 'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[API_LuuThayDoi];
+GO
+CREATE PROCEDURE [dbo].[API_LuuThayDoi]
+    @Sothaydoi VARCHAR(50) = NULL OUTPUT,
+    @Sohopdong VARCHAR(50) = NULL,
+    @Ngaythaydoi DATETIME = NULL,
+    @Ghichu NVARCHAR(MAX) = NULL,
+    @Status VARCHAR(20) = 'DRAFT',
+    @UserName VARCHAR(50) = 'System',
+    @JsonData NVARCHAR(MAX) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @Now DATETIME = GETDATE();
+    
+    -- Giải nén các tham số từ JsonData nếu có
+    IF (@JsonData IS NOT NULL AND @JsonData <> '' AND ISJSON(@JsonData) = 1)
+    BEGIN
+        SET @Sothaydoi = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Sothaydoi'), ''), NULLIF(JSON_VALUE(@JsonData, '$.SoPhuLuc'), ''), @Sothaydoi);
+        SET @Sohopdong = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Sohopdong'), ''), @Sohopdong);
+        SET @Ngaythaydoi = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.Ngaythaydoi') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayLap') AS DATETIME), @Ngaythaydoi);
+        SET @Ghichu = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Ghichu'), ''), NULLIF(JSON_VALUE(@JsonData, '$.LyDoDieuChinh'), ''), @Ghichu);
+        SET @Status = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Status'), ''), NULLIF(JSON_VALUE(@JsonData, '$.TrangThai'), ''), @Status);
+    END
+
+    IF @Sohopdong IS NULL OR @Sohopdong = ''
+    BEGIN
+        SELECT -1 AS code, N'Lỗi: Số hợp đồng không được để trống!' AS msg;
+        RETURN;
+    END
+
+    -- Tự động sinh mã Phụ lục
+    IF @Sothaydoi IS NULL OR @Sothaydoi = '' OR @Sothaydoi = 'NULL'
+    BEGIN
+        DECLARE @TimeStr VARCHAR(10) = FORMAT(@Now, 'yyMMddHHmm');
+        SET @Sothaydoi = 'PL' + @TimeStr;
+    END
+
+    IF @Ngaythaydoi IS NULL
+        SET @Ngaythaydoi = @Now;
+
+    DECLARE @IsEdit BIT = 0;
+    IF EXISTS (SELECT 1 FROM tbmk_Thaydoi WHERE Sothaydoi = @Sothaydoi AND ISNULL(IsDeleted, 0) = 0)
+        SET @IsEdit = 1;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF @IsEdit = 0 -- INSERT
+        BEGIN
+            DECLARE @NextLan INT = 1;
+            SELECT @NextLan = ISNULL(MAX(LanThayDoi), 0) + 1 
+            FROM tbmk_Thaydoi 
+            WHERE Sohopdong = @Sohopdong AND ISNULL(IsDeleted, 0) = 0;
+
+            INSERT INTO tbmk_Thaydoi (
+                Sothaydoi, Ngaythaydoi, Sohopdong, Sobiennhan, Makh, Manv, LanThayDoi, Ghichu,
+                Status, IsDeleted, UserCreate, DateCreate,
+                QuyMoBanTu, QuyMoBanTuTD, QuyMoBanDen, QuyMoBanDenTD,
+                TenDotThanhToan, TenDotThanhToanTD, ThanhToanDot2SoTien, ThanhToanDot2SoTienTD,
+                HinhThucThanhToanDot2, HinhThucThanhToanDot2TD, HanThanhToanDot2, HanThanhToanDot2TD,
+                DichVuTinhPhiPhuLuc, DichVuTinhPhiPhuLucTD, ThoaThuanPhuLucKhac, ThoaThuanPhuLucKhacTD,
+                DanhSachChiPhi, DanhSachChiPhiTD, BenAChucVuDaiDien, BenAChucVuDaiDienTD,
+                DonGiaBanTiec, DonGiaBanTiecTD, SoKhachTrenBan, SoKhachTrenBanTD,
+                JsonBanTiec, JsonThucUong, JsonDichVu, JsonPhatSinh
+            )
+            VALUES (
+                @Sothaydoi, @Ngaythaydoi, @Sohopdong, 
+                JSON_VALUE(@JsonData, '$.Sobiennhan'),
+                JSON_VALUE(@JsonData, '$.Makh'),
+                JSON_VALUE(@JsonData, '$.Manv'),
+                @NextLan, @Ghichu,
+                @Status, 0, @UserName, @Now,
+                
+                TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanTu') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanTuTD') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanDen') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanDenTD') AS INT),
+                
+                JSON_VALUE(@JsonData, '$.TenDotThanhToan'),
+                JSON_VALUE(@JsonData, '$.TenDotThanhToanTD'),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.ThanhToanDot2SoTien') AS DECIMAL(18,2)),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.ThanhToanDot2SoTienTD') AS DECIMAL(18,2)),
+                
+                JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2'),
+                JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2TD'),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2') AS DATETIME),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD') AS DATETIME),
+                
+                JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLuc'),
+                JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLucTD'),
+                JSON_VALUE(@JsonData, '$.ThoaThuanPhuLucKhac'),
+                JSON_VALUE(@JsonData, '$.ThoaThuanPhuLucKhacTD'),
+                
+                JSON_VALUE(@JsonData, '$.DanhSachChiPhi'),
+                JSON_VALUE(@JsonData, '$.DanhSachChiPhiTD'),
+                JSON_VALUE(@JsonData, '$.BenAChucVuDaiDien'),
+                JSON_VALUE(@JsonData, '$.BenAChucVuDaiDienTD'),
+                
+                TRY_CAST(JSON_VALUE(@JsonData, '$.DonGiaBanTiec') AS DECIMAL(18,2)),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.DonGiaBanTiecTD') AS DECIMAL(18,2)),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBan') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBanTD') AS INT),
+                
+                JSON_VALUE(@JsonData, '$.JsonBanTiec'),
+                JSON_VALUE(@JsonData, '$.JsonThucUong'),
+                JSON_VALUE(@JsonData, '$.JsonDichVu'),
+                JSON_VALUE(@JsonData, '$.JsonPhatSinh')
+            );
+        END
+        ELSE -- UPDATE
+        BEGIN
+            UPDATE tbmk_Thaydoi
+            SET 
+                Ngaythaydoi = @Ngaythaydoi,
+                Ghichu = @Ghichu,
+                Status = @Status,
+                UserUpdate = @UserName,
+                DateUpdate = @Now,
+                
+                QuyMoBanTu = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanTu') AS INT), QuyMoBanTu),
+                QuyMoBanTuTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanTuTD') AS INT), QuyMoBanTuTD),
+                QuyMoBanDen = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanDen') AS INT), QuyMoBanDen),
+                QuyMoBanDenTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanDenTD') AS INT), QuyMoBanDenTD),
+                
+                TenDotThanhToan = COALESCE(JSON_VALUE(@JsonData, '$.TenDotThanhToan'), TenDotThanhToan),
+                TenDotThanhToanTD = COALESCE(JSON_VALUE(@JsonData, '$.TenDotThanhToanTD'), TenDotThanhToanTD),
+                ThanhToanDot2SoTien = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.ThanhToanDot2SoTien') AS DECIMAL(18,2)), ThanhToanDot2SoTien),
+                ThanhToanDot2SoTienTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.ThanhToanDot2SoTienTD') AS DECIMAL(18,2)), ThanhToanDot2SoTienTD),
+                
+                HinhThucThanhToanDot2 = COALESCE(JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2'), HinhThucThanhToanDot2),
+                HinhThucThanhToanDot2TD = COALESCE(JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2TD'), HinhThucThanhToanDot2TD),
+                HanThanhToanDot2 = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2') AS DATETIME), HanThanhToanDot2),
+                HanThanhToanDot2TD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD') AS DATETIME), HanThanhToanDot2TD),
+                
+                DichVuTinhPhiPhuLuc = COALESCE(JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLuc'), DichVuTinhPhiPhuLuc),
+                DichVuTinhPhiPhuLucTD = COALESCE(JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLucTD'), DichVuTinhPhiPhuLucTD),
+                ThoaThuanPhuLucKhac = COALESCE(JSON_VALUE(@JsonData, '$.ThoaThuanPhuLucKhac'), ThoaThuanPhuLucKhac),
+                ThoaThuanPhuLucKhacTD = COALESCE(JSON_VALUE(@JsonData, '$.ThoaThuanPhuLucKhacTD'), ThoaThuanPhuLucKhacTD),
+                
+                DanhSachChiPhi = COALESCE(JSON_VALUE(@JsonData, '$.DanhSachChiPhi'), DanhSachChiPhi),
+                DanhSachChiPhiTD = COALESCE(JSON_VALUE(@JsonData, '$.DanhSachChiPhiTD'), DanhSachChiPhiTD),
+                BenAChucVuDaiDien = COALESCE(JSON_VALUE(@JsonData, '$.BenAChucVuDaiDien'), BenAChucVuDaiDien),
+                BenAChucVuDaiDienTD = COALESCE(JSON_VALUE(@JsonData, '$.BenAChucVuDaiDienTD'), BenAChucVuDaiDienTD),
+                
+                DonGiaBanTiec = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DonGiaBanTiec') AS DECIMAL(18,2)), DonGiaBanTiec),
+                DonGiaBanTiecTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DonGiaBanTiecTD') AS DECIMAL(18,2)), DonGiaBanTiecTD),
+                SoKhachTrenBan = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBan') AS INT), SoKhachTrenBan),
+                SoKhachTrenBanTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBanTD') AS INT), SoKhachTrenBanTD),
+                
+                JsonBanTiec = COALESCE(JSON_VALUE(@JsonData, '$.JsonBanTiec'), JsonBanTiec),
+                JsonThucUong = COALESCE(JSON_VALUE(@JsonData, '$.JsonThucUong'), JsonThucUong),
+                JsonDichVu = COALESCE(JSON_VALUE(@JsonData, '$.JsonDichVu'), JsonDichVu),
+                JsonPhatSinh = COALESCE(JSON_VALUE(@JsonData, '$.JsonPhatSinh'), JsonPhatSinh)
+            WHERE Sothaydoi = @Sothaydoi;
+        END
+
+        COMMIT TRANSACTION;
+        SELECT 0 AS code, N'Lưu phụ lục thay đổi thành công!' AS msg, @Sothaydoi AS Sothaydoi;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+        SELECT -1 AS code, N'Lỗi lưu phụ lục: ' + ERROR_MESSAGE() AS msg;
+    END CATCH
+END
+GO
+
+
+-- =========================================================================
+-- 4. CẬP NHẬT TRIGGER ĐỒNG BỘ TRG_tbmk_Thaydoi_SyncToHopDong
+-- =========================================================================
+PRINT N'5. Đang tạo/cập nhật Trigger TRG_tbmk_Thaydoi_SyncToHopDong...';
+GO
+
+IF OBJECT_ID('[dbo].[TRG_tbmk_Thaydoi_SyncToHopDong]', 'TR') IS NOT NULL
+    DROP TRIGGER [dbo].[TRG_tbmk_Thaydoi_SyncToHopDong];
+GO
+CREATE TRIGGER [dbo].[TRG_tbmk_Thaydoi_SyncToHopDong]
+ON [dbo].[tbmk_Thaydoi]
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Chỉ chạy đồng bộ khi có thay đổi liên quan đến các bản ghi được ký duyệt hoặc kết thúc
+    IF EXISTS (
+        SELECT 1 
+        FROM inserted i
+        WHERE (i.Status IN ('SIGNED', 'APPROVED') OR i.IsKetthuc = 1)
+          AND ISNULL(i.IsDeleted, 0) = 0
+    )
+    BEGIN
+        -- Cập nhật thông tin mới nhất từ tbmk_Thaydoi sang tbmk_Hopdong
+        ;WITH LatestChanges AS (
+            SELECT 
+                i.Sohopdong,
+                i.NgayToChucTD,
+                i.ThoiGianIDTD,
+                i.NhamNgayTD,
+                i.LoaiTiecIDTD,
+                i.SobanManchinhthuc,
+                i.SobanManduphong,
+                i.GiabanManTD,
+                i.SobanChaychinhthuc,
+                i.SobanChayduphong,
+                i.GiabanChayTD,
+                i.Ghichu,
+                i.TongtienBanmanTD,
+                i.TongtienBanchayTD,
+                i.Tongtienthucuong,
+                i.TongtienDichvuTD,
+                i.TongtienHopdongTD,
+                i.ConLaiTD,
+                i.SoluongKhachTD,
+                i.TongTienPhanChayTD,
+                i.SoBanTang,
+                i.SoNguoiTrenBanTD,
+                i.TongSoBanTD,
+                i.SoBanTinhPhiPhucVuTD,
+                i.PhiPhucVuTD,
+                i.TongTienPhiPhucVuTD,
+                i.TienTTSTD,
+                i.GiamGiaTTSTD,
+                i.TongTienTTSTD,
+                i.TienNTLTD,
+                i.GiamGiaNTLTD,
+                i.TongTienNTLTD,
+                i.HinhThucSapSepIDTD,
+                i.PhongSanKhauIDTD,
+                i.PhiBuSanhTD,
+                i.TenTrenPhongSanKhauTD,
+                i.GhiChuThongBaoTiecTD,
+                i.PhiBuBanTangTD,
+                i.MauNoTD,
+                i.DiaDiemToChucTD,
+                i.TuNgaySetupTD,
+                i.DenNgaySetupTD,
+                i.TuGioDenGioSetupTD,
+                i.DenGioSetupTD,
+                i.TuNgayThuDonTD,
+                i.DenNgayThuDonTD,
+                i.GioKetThucThuDonTD,
+                i.DenGioKetThucThuDonTD,
+                i.GioDienRaSuKienTD,
+                i.ChuongTrinhUuDaiTD,
+                i.SoNgayToChucTD,
+                i.GioBanGiaoSanhTiecCuoiTD,
+                i.GioTraSanhTiecCuoiTD,
+                i.GioKetThucSuKienTD,
+                i.NgayBanGiaoSanhDVTD,
+                i.GioBanGiaoSanhDVTD,
+                i.NgayTraSanhDVTD,
+                i.GioTraSanhDVTD,
+                i.GoiThucDonIDTD,
+                
+                -- Đồng bộ các cột mới bổ sung
+                i.QuyMoBanTuTD,
+                i.QuyMoBanDenTD,
+                i.TenDotThanhToanTD,
+                i.ThanhToanDot2SoTienTD,
+                i.HinhThucThanhToanDot2TD,
+                i.HanThanhToanDot2TD,
+                i.DichVuTinhPhiPhuLucTD,
+                i.ThoaThuanPhuLucKhacTD,
+                i.DanhSachChiPhiTD,
+                i.BenAChucVuDaiDienTD,
+                i.DonGiaBanTiecTD,
+                i.SoKhachTrenBanTD,
+                
+                ROW_NUMBER() OVER (PARTITION BY i.Sohopdong ORDER BY i.LanThayDoi DESC, i.Ngaythaydoi DESC, i.Sothaydoi DESC) as rn
+            FROM tbmk_Thaydoi i
+            WHERE (i.Status IN ('SIGNED', 'APPROVED') OR i.IsKetthuc = 1)
+              AND ISNULL(i.IsDeleted, 0) = 0
+              AND i.Sohopdong IN (SELECT Sohopdong FROM inserted)
+        )
+        UPDATE h
+        SET 
+            h.Ngaytochuc = COALESCE(lc.NgayToChucTD, h.Ngaytochuc),
+            h.Thoigianid = COALESCE(lc.ThoiGianIDTD, h.Thoigianid),
+            h.Nhamngay = COALESCE(lc.NhamNgayTD, h.Nhamngay),
+            h.Loaitiecid = COALESCE(lc.LoaiTiecIDTD, h.Loaitiecid),
+            h.SobanManchinhthuc = COALESCE(lc.SobanManchinhthuc, h.SobanManchinhthuc),
+            h.SobanManduphong = COALESCE(lc.SobanManduphong, h.SobanManduphong),
+            h.Giabanman = COALESCE(lc.GiabanManTD, h.Giabanman),
+            h.SobanChaychinhthuc = COALESCE(lc.SobanChaychinhthuc, h.SobanChaychinhthuc),
+            h.SobanChayduphong = COALESCE(lc.SobanChayduphong, h.SobanChayduphong),
+            h.Giabanchay = COALESCE(lc.GiabanChayTD, h.Giabanchay),
+            h.Ghichu = COALESCE(lc.Ghichu, h.Ghichu),
+            h.Tongtienbanman = COALESCE(lc.TongtienBanmanTD, h.Tongtienbanman),
+            h.Tongtienbanchay = COALESCE(lc.TongtienBanchayTD, h.Tongtienbanchay),
+            h.Tongtienthucuong = COALESCE(lc.Tongtienthucuong, h.Tongtienthucuong),
+            h.Tongtiendichvu = COALESCE(lc.TongtienDichvuTD, h.Tongtiendichvu),
+            h.Tongtienhopdong = COALESCE(lc.TongtienHopdongTD, h.Tongtienhopdong),
+            h.Conlai = COALESCE(lc.ConLaiTD, h.Conlai),
+            h.Soluongkhach = COALESCE(lc.SoluongKhachTD, h.Soluongkhach),
+            h.Tongtienphanchay = COALESCE(lc.TongTienPhanChayTD, h.Tongtienphanchay),
+            h.SoBanTang = COALESCE(lc.SoBanTang, h.SoBanTang),
+            h.SoNguoiTrenBan = COALESCE(lc.SoNguoiTrenBanTD, h.SoNguoiTrenBan),
+            h.TongSoBan = COALESCE(lc.TongSoBanTD, h.TongSoBan),
+            h.SoBanTinhPhiPhucVu = COALESCE(lc.SoBanTinhPhiPhucVuTD, h.SoBanTinhPhiPhucVu),
+            h.PhiPhucVu = COALESCE(lc.PhiPhucVuTD, h.PhiPhucVu),
+            h.TongTienPhiPhucVu = COALESCE(lc.TongTienPhiPhucVuTD, h.TongTienPhiPhucVu),
+            h.TienTTS = COALESCE(lc.TienTTSTD, h.TienTTS),
+            h.GiamGiaTTS = COALESCE(lc.GiamGiaTTSTD, h.GiamGiaTTS),
+            h.TongTienTTS = COALESCE(lc.TongTienTTSTD, h.TongTienTTS),
+            h.TienNTL = COALESCE(lc.TienNTLTD, h.TienNTL),
+            h.GiamGiaNTL = COALESCE(lc.GiamGiaNTLTD, h.GiamGiaNTL),
+            h.TongTienNTL = COALESCE(lc.TongTienNTLTD, h.TongTienNTL),
+            h.HinhThucSapSepID = COALESCE(lc.HinhThucSapSepIDTD, h.HinhThucSapSepID),
+            h.PhongSanKhauID = COALESCE(lc.PhongSanKhauIDTD, h.PhongSanKhauID),
+            h.PhiBuSanh = COALESCE(lc.PhiBuSanhTD, h.PhiBuSanh),
+            h.TenTrenPhongSanKhau = COALESCE(lc.TenTrenPhongSanKhauTD, h.TenTrenPhongSanKhau),
+            h.GhiChuThongBaoTiec = COALESCE(lc.GhiChuThongBaoTiecTD, h.GhiChuThongBaoTiec),
+            h.PhiBuBanTang = COALESCE(lc.PhiBuBanTangTD, h.PhiBuBanTang),
+            h.MauNo = COALESCE(lc.MauNoTD, h.MauNo),
+            h.DiaDiemToChuc = COALESCE(lc.DiaDiemToChucTD, h.DiaDiemToChuc),
+            h.TuNgaySetup = COALESCE(lc.TuNgaySetupTD, h.TuNgaySetup),
+            h.DenNgaySetup = COALESCE(lc.DenNgaySetupTD, h.DenNgaySetup),
+            h.TuGioDenGioSetup = COALESCE(lc.TuGioDenGioSetupTD, h.TuGioDenGioSetup),
+            h.DenGioSetup = COALESCE(lc.DenGioSetupTD, h.DenGioSetup),
+            h.TuNgayThuDon = COALESCE(lc.TuNgayThuDonTD, h.TuNgayThuDon),
+            h.DenNgayThuDon = COALESCE(lc.DenNgayThuDonTD, h.DenNgayThuDon),
+            h.GioKetThucThuDon = COALESCE(lc.GioKetThucThuDonTD, h.GioKetThucThuDon),
+            h.DenGioKetThucThuDon = COALESCE(lc.DenGioKetThucThuDonTD, h.DenGioKetThucThuDon),
+            h.GioDienRaSuKien = COALESCE(lc.GioDienRaSuKienTD, h.GioDienRaSuKien),
+            h.ChuongTrinhUuDai = COALESCE(lc.ChuongTrinhUuDaiTD, h.ChuongTrinhUuDai),
+            h.SoNgayToChuc = COALESCE(lc.SoNgayToChucTD, h.SoNgayToChuc),
+            h.GioBanGiaoSanhTiecCuoi = COALESCE(lc.GioBanGiaoSanhTiecCuoiTD, h.GioBanGiaoSanhTiecCuoi),
+            h.GioTraSanhTiecCuoi = COALESCE(lc.GioTraSanhTiecCuoiTD, h.GioTraSanhTiecCuoi),
+            h.GioKetThucSuKien = COALESCE(lc.GioKetThucSuKienTD, h.GioKetThucSuKien),
+            h.NgayBanGiaoSanhDV = COALESCE(lc.NgayBanGiaoSanhDVTD, h.NgayBanGiaoSanhDV),
+            h.GioBanGiaoSanhDV = COALESCE(lc.GioBanGiaoSanhDVTD, h.GioBanGiaoSanhDV),
+            h.NgayTraSanhDV = COALESCE(lc.NgayTraSanhDVTD, h.NgayTraSanhDV),
+            h.GioTraSanhDV = COALESCE(lc.GioTraSanhDVTD, h.GioTraSanhDV),
+            h.GoiThucDonID = COALESCE(lc.GoiThucDonIDTD, h.GoiThucDonID),
+            
+            -- Đồng bộ các cột mới bổ sung
+            h.QuyMoBanTu = COALESCE(lc.QuyMoBanTuTD, h.QuyMoBanTu),
+            h.QuyMoBanDen = COALESCE(lc.QuyMoBanDenTD, h.QuyMoBanDen),
+            h.TenDotThanhToan = COALESCE(lc.TenDotThanhToanTD, h.TenDotThanhToan),
+            h.ThanhToanDot2SoTien = COALESCE(lc.ThanhToanDot2SoTienTD, h.ThanhToanDot2SoTien),
+            h.HinhThucThanhToanDot2 = COALESCE(lc.HinhThucThanhToanDot2TD, h.HinhThucThanhToanDot2),
+            h.HanThanhToanDot2 = COALESCE(lc.HanThanhToanDot2TD, h.HanThanhToanDot2),
+            h.DichVuTinhPhiPhuLuc = COALESCE(lc.DichVuTinhPhiPhuLucTD, h.DichVuTinhPhiPhuLuc),
+            h.ThoaThuanPhuLucKhac = COALESCE(lc.ThoaThuanPhuLucKhacTD, h.ThoaThuanPhuLucKhac),
+            h.DanhSachChiPhi = COALESCE(lc.DanhSachChiPhiTD, h.DanhSachChiPhi),
+            h.BenAChucVuDaiDien = COALESCE(lc.BenAChucVuDaiDienTD, h.BenAChucVuDaiDien),
+            h.DonGiaBanTiec = COALESCE(lc.DonGiaBanTiecTD, h.DonGiaBanTiec),
+            h.SoKhachTrenBan = COALESCE(lc.SoKhachTrenBanTD, h.SoKhachTrenBan)
+        FROM tbmk_Hopdong h
+        INNER JOIN LatestChanges lc ON h.Sohopdong = lc.Sohopdong
+        WHERE lc.rn = 1;
+    END
+END
+GO
+
+
+-- =========================================================================
+-- 5. ĐỒNG BỘ ĐỊNH TUYẾN GATEWAY (WA_API) VÀ METADATA GIAO DIỆN (SY_FrmLstTbl)
+-- =========================================================================
+PRINT N'6. Đang đồng bộ cấu hình Gateway WA_API và Metadata Giao diện...';
+GO
+
+-- 6.1. Đăng ký/Cập nhật các bảng form trong SY_FrmLstTbl
+-- Form chính dùng cho grid thay đổi bổ sung
+IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'frmThayDoiBoSung')
+    INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, TableName, SaveTableName, PrimaryKey)
+    VALUES ('frmThayDoiBoSung', N'Phụ lục thay đổi bổ sung', 'v_DanhSachPhuLuc', 'tbmk_Thaydoi', 'Sothaydoi');
+ELSE
+    UPDATE SY_FrmLstTbl 
+    SET TableName = 'v_DanhSachPhuLuc', SaveTableName = 'tbmk_Thaydoi', PrimaryKey = 'Sothaydoi' 
+    WHERE FormID = 'frmThayDoiBoSung';
+
+-- Form map theo tên bảng phu luc (đầu ra của PhuLucPlugin)
+IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'tbmk_PhuLucHopDong')
+    INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, TableName, SaveTableName, PrimaryKey)
+    VALUES ('tbmk_PhuLucHopDong', N'Danh sách phụ lục hợp đồng', 'v_DanhSachPhuLuc', 'tbmk_Thaydoi', 'Sothaydoi');
+ELSE
+    UPDATE SY_FrmLstTbl 
+    SET TableName = 'v_DanhSachPhuLuc', SaveTableName = 'tbmk_Thaydoi', PrimaryKey = 'Sothaydoi' 
+    WHERE FormID = 'tbmk_PhuLucHopDong';
+
+-- Form map theo tên bảng thay đổi gốc
+IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'tbmk_Thaydoi')
+    INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, TableName, SaveTableName, PrimaryKey)
+    VALUES ('tbmk_Thaydoi', N'Thay đổi hợp đồng', 'v_DanhSachPhuLuc', 'tbmk_Thaydoi', 'Sothaydoi');
+ELSE
+    UPDATE SY_FrmLstTbl 
+    SET TableName = 'v_DanhSachPhuLuc', SaveTableName = 'tbmk_Thaydoi', PrimaryKey = 'Sothaydoi' 
+    WHERE FormID = 'tbmk_Thaydoi';
+GO
+
+-- 6.2. Đồng bộ các định tuyến API trong WA_API cho cả 3 form IDs (đảm bảo FE gọi ID nào cũng chạy đúng)
+DELETE FROM WA_API WHERE List IN ('frmThayDoiBoSung', 'tbmk_PhuLucHopDong', 'tbmk_Thaydoi') AND Func IN ('View', 'Save', 'Delete');
+GO
+
+-- Đăng ký View
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES 
+('frmThayDoiBoSung', 'View', 'API_TruyVanDong', '@List=N''frmThayDoiBoSung'', @Keyword=N''{Keyword}'', @SortColumn=N''{SortColumn}'', @SortDir=N''{SortDir}'', @Data=N''{JsonData}'''),
+('tbmk_PhuLucHopDong', 'View', 'API_TruyVanDong', '@List=N''tbmk_PhuLucHopDong'', @Keyword=N''{Keyword}'', @SortColumn=N''{SortColumn}'', @SortDir=N''{SortDir}'', @Data=N''{JsonData}'''),
+('tbmk_Thaydoi', 'View', 'API_Thaydoi', '@Keyword=N''{Keyword}'', @Sothaydoi=N''{Sothaydoi}'''); -- Giữ nguyên SP cũ cho xuất Word/Detail
+
+-- Đăng ký Save
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES 
+('frmThayDoiBoSung', 'Save', 'API_LuuThayDoi', '@Sothaydoi=N''{Sothaydoi}'', @Sohopdong=N''{Sohopdong}'', @Ngaythaydoi=N''{Ngaythaydoi}'', @Ghichu=N''{Ghichu}'', @Status=N''{Status}'', @UserName=N''{UserName}'', @JsonData=N''{JsonData}'''),
+('tbmk_PhuLucHopDong', 'Save', 'API_LuuThayDoi', '@Sothaydoi=N''{Sothaydoi}'', @Sohopdong=N''{Sohopdong}'', @Ngaythaydoi=N''{Ngaythaydoi}'', @Ghichu=N''{Ghichu}'', @Status=N''{Status}'', @UserName=N''{UserName}'', @JsonData=N''{JsonData}'''),
+('tbmk_Thaydoi', 'Save', 'API_LuuThayDoi', '@Sothaydoi=N''{Sothaydoi}'', @Sohopdong=N''{Sohopdong}'', @Ngaythaydoi=N''{Ngaythaydoi}'', @Ghichu=N''{Ghichu}'', @Status=N''{Status}'', @UserName=N''{UserName}'', @JsonData=N''{JsonData}''');
+
+-- Đăng ký Delete
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES 
+('frmThayDoiBoSung', 'Delete', 'API_XoaThayDoi', '@Ids=N''{Sothaydoi}'', @UserName=N''{UserName}'''),
+('tbmk_PhuLucHopDong', 'Delete', 'API_XoaThayDoi', '@Ids=N''{Sothaydoi}'', @UserName=N''{UserName}'''),
+('tbmk_Thaydoi', 'Delete', 'API_XoaThayDoi', '@Ids=N''{Sothaydoi}'', @UserName=N''{UserName}''');
+GO
+
+-- 6.3. Tự động đồng bộ các cột từ View sang bảng định dạng trường SY_FormatFields
+EXEC API_DongBoTruongGiaoDien @FormName = 'frmThayDoiBoSung', @ObjectName = 'v_DanhSachPhuLuc';
+EXEC API_DongBoTruongGiaoDien @FormName = 'tbmk_PhuLucHopDong', @ObjectName = 'v_DanhSachPhuLuc';
+EXEC API_DongBoTruongGiaoDien @FormName = 'tbmk_Thaydoi', @ObjectName = 'v_DanhSachPhuLuc';
+GO
+
+-- 6.4. Cấu hình nhãn Tiếng Việt, loại hiển thị, datasource và ẩn các trường không dùng trong Form
+PRINT N'6.4. Đang cấu hình nhãn tiếng Việt và ẩn các trường không sử dụng trong Form...';
+GO
+
+DECLARE @Forms TABLE (FormName VARCHAR(50));
+INSERT INTO @Forms VALUES ('frmThayDoiBoSung'), ('tbmk_PhuLucHopDong'), ('tbmk_Thaydoi');
+
+-- Mặc định ẩn toàn bộ trường trong form trước để tránh tràn lan cột metadata/computed
+UPDATE SY_FormatFields 
+SET ShowInAdd = 0, ShowInEdit = 0 
+WHERE FormName IN (SELECT FormName FROM @Forms);
+
+-- Cấu hình chi tiết hiển thị, nhãn, kiểu nhập liệu và thứ tự hiển thị cho các trường nghiệp vụ
+-- 1. Khóa chính & Liên kết
+UPDATE ff
+SET CaptionVN = N'Số Thay Đổi', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1, FormPosition = '6', OrderNo = 1
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Sothaydoi';
+
+UPDATE ff
+SET CaptionVN = N'Số Hợp Đồng', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1, FormPosition = '6', OrderNo = 2
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Sohopdong';
+
+-- 2. Thông tin Phụ lục
+UPDATE ff
+SET CaptionVN = N'Số Phụ Lục HĐ', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 3
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'SoPhuLuc';
+
+UPDATE ff
+SET CaptionVN = N'Ngày Lập Phụ Lục', FormatID = 'dt', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 4
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'NgayLapPL';
+
+-- 3. Thông tin tiệc thay đổi
+UPDATE ff
+SET CaptionVN = N'Ngày Tổ Chức Tiệc', FormatID = 'dt', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 5
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'NgayToChuc';
+
+UPDATE ff
+SET CaptionVN = N'Loại Hình Tiệc', FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachLoaiHinhTiec&Func=View', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 6
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'LoaiTiecID';
+
+UPDATE ff
+SET CaptionVN = N'Ca Tổ Chức', FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachCaLam&Func=View', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 7
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'ThoiGianID';
+
+-- 4. Quy mô & Đơn giá
+UPDATE ff
+SET CaptionVN = N'Quy Mô Bàn (Từ)', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 8
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'QuyMoBanTu';
+
+UPDATE ff
+SET CaptionVN = N'Quy Mô Bàn (Đến)', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 9
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'QuyMoBanDen';
+
+UPDATE ff
+SET CaptionVN = N'Đơn Giá Bàn Tiệc', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 10
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'DonGiaBanTiec';
+
+UPDATE ff
+SET CaptionVN = N'Số Khách / Bàn', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 11
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'SoKhachTrenBan';
+
+-- 5. Số bàn tiệc chính thức & dự phòng
+UPDATE ff
+SET CaptionVN = N'Bàn Mặn (Chính Thức)', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 12
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'SobanManchinhthuc';
+
+UPDATE ff
+SET CaptionVN = N'Bàn Mặn (Dự Phòng)', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 13
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'SobanManduphong';
+
+UPDATE ff
+SET CaptionVN = N'Bàn Chay (Chính Thức)', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 14
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'SobanChaychinhthuc';
+
+UPDATE ff
+SET CaptionVN = N'Bàn Chay (Dự Phòng)', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 15
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'SobanChayduphong';
+
+-- 6. Đợt thanh toán 2
+UPDATE ff
+SET CaptionVN = N'Tên Đợt Thanh Toán 2', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 16
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'TenDotThanhToan';
+
+UPDATE ff
+SET CaptionVN = N'Số Tiền Đợt 2', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 17
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'ThanhToanDot2SoTien';
+
+UPDATE ff
+SET CaptionVN = N'Hình thức thanh toán Đợt 2', FormatID = 'sl', DataSource = N'STATIC:Tiền mặt|Tiền mặt,Chuyển khoản|Chuyển khoản,Tiền mặt / Chuyển khoản|Tiền mặt / Chuyển khoản', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 18
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'HinhThucThanhToanDot2';
+
+UPDATE ff
+SET CaptionVN = N'Hạn Thanh Toán Đợt 2', FormatID = 'dt', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 19
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'HanThanhToanDot2';
+
+-- 7. Khác & Ghi chú
+UPDATE ff
+SET CaptionVN = N'Bên A - Chức Vụ Người Ký', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 20
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'BenAChucVuDaiDien';
+
+UPDATE ff
+SET CaptionVN = N'Trạng Thái Phụ Lục', FormatID = 'sl', DataSource = N'STATIC:DRAFT|Bản nháp,SIGNED|Đã ký (Đang chờ duyệt),APPROVED|Đã duyệt (Sync hợp đồng),CANCELLED|Đã hủy', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 21
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Status';
+
+UPDATE ff
+SET CaptionVN = N'Ghi Chú Phụ Lục', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '12', OrderNo = 22
+FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Ghichu';
+GO
+
+PRINT N'=== HOÀN THÀNH CẬP NHẬT CẤU TRÚC PHỤ LỤC HỢP ĐỒNG (ALL-IN-ONE) ===';
+GO
