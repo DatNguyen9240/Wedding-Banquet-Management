@@ -665,6 +665,10 @@ body.dark-theme .nav-item:hover span.icon {
   width: calc(25% - 8px) !important;
 }
 
+.df-col-2 {
+  width: calc(16.666% - 8.5px) !important;
+}
+
 @media (max-width: 768px) {
 
   /* Trên Mobile: 
@@ -675,7 +679,8 @@ body.dark-theme .nav-item:hover span.icon {
   .df-col-8,
   .df-col-6,
   .df-col-4,
-  .df-col-3 {
+  .df-col-3,
+  .df-col-2 {
     width: calc(50% - 5px) !important;
   }
 }

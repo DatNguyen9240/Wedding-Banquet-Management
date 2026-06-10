@@ -1,5 +1,4 @@
-USE [QLTiec]
-GO
+-- Script Update Hợp Đồng All-in-One
 
 SET ANSI_NULLS ON
 GO
@@ -565,14 +564,23 @@ VALUES (
 );
 GO
 
--- 4.3. Cấu hình hiển thị và định dạng cho các trường nhập liệu trên Form
 UPDATE SY_FormatFields
 SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '6'
 WHERE FormName = 'frmHopDong'
+  AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail');
+
+UPDATE SY_FormatFields
+SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '3'
+WHERE FormName = 'frmHopDong'
   AND FieldName IN (
-    'Tenchure', 'Tencodau', 'Diachi', 'Mail',
+    'SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong'
+  );
+
+UPDATE SY_FormatFields
+SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '4'
+WHERE FormName = 'frmHopDong'
+  AND FieldName IN (
     'Ngayhopdong', 'NgayToChuc', 'Nhamngay', 'Loaitiecid', 'Thoigianid', 'JsonSanhTiec',
-    'SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong',
     'DaCocVND', 'Sotiencochopdong', 'Tongtiencoc'
   );
 
@@ -587,8 +595,8 @@ SET ShowInForm = 0, ShowInEdit = 0, ShowInAdd = 0, ShowInFilter = 0, FormPositio
 WHERE FormName = 'frmHopDong' 
   AND FieldName IN (
     'NgayLapHD', 'ThangLapHD', 'NamLapHD',
-    'BenANhanVienPhuTrach', 'BenASDTNhanVien',
-    'BenBTenDaiDien', 'BenBTenChuTiec', 'BenBCCCD', 'BenBDiaChi', 'BenBDienThoai', 'BenBChucVu',
+    'BenANhanVienPhuTrach', 'BenASDTNhanVien', 'BenAChucVu', 'BenANguoiDaiDien', 'BenATenCongTy', 'BenADiaChi', 'BenASDT', 'BenAEmail', 'BenAMST',
+    'BenBTenDaiDien', 'BenBTenChuTiec', 'BenBCCCD', 'BenBDiaChi', 'BenBDienThoai', 'BenBChucVu', 'BenBEmail',
     'TiecGioBatDau', 'TiecNgayDL', 'TiecThangDL', 'TiecNamDL',
     'TiecNgayAL', 'TiecThangAL', 'TiecNamAL',
     'TenSanhTiec', 'SanhQuyMoMin', 'SanhQuyMoMax',
@@ -596,7 +604,13 @@ WHERE FormName = 'frmHopDong'
     'CocLan1SoTien', 'CocLan1BangChu', 'CocNgay', 'CocThang', 'CocNam',
     'CocLan2SoTien', 'CocLan2BangChu',
     'DieuKhoanBoSung', 'DSKhuyenMai',
-    'BenBCCCD', 'BenANguoiDaiDien', 'BenAChucVu'
+    'HDTenCty', 'HDDiaChi', 'HDMaSoThue', 'HDEmail',
+    'TongGiaTriTamTinh', 'TongGiaTriTamTinhBangChu', 'SoKhachDiemDanh', 'LichTrinh',
+    'LichTrinhSetup', 'LichTrinhToChuc', 'LichTrinhOut', 'LichTrinhThanhToan',
+    'SetupBatDau', 'SetupKetThuc', 'SetupNoiDung1', 'SetupNoiDung2', 'ToChucNoiDung', 'OutNoiDung',
+    'Dot1SoTien', 'Dot1Ngay', 'Dot1HinhThuc', 'Dot2SoTien', 'Dot2HinhThuc', 'DotCuoiGhiChu',
+    'TongThanhTien', 'MucPhiPhucVu', 'PhiPhucVu', 'TongCongChuaVAT', 'VAT8', 'VAT10', 'TongTienFormat',
+    'TemplateFile'
   );
 
 -- Đảm bảo trường NgayToChuc luôn tồn tại trong cấu hình Form kèm Trigger tính lịch âm
@@ -688,6 +702,13 @@ UPDATE SY_FormatFields SET CaptionVN = N'Ngày bắt đầu Setup' WHERE FormNam
 UPDATE SY_FormatFields SET CaptionVN = N'Ngày trả sảnh' WHERE FormName = 'frmHopDong' AND FieldName = 'NgayTraSanhDV';
 UPDATE SY_FormatFields SET CaptionVN = N'Sảnh phụ (nếu có)' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat2';
 
+UPDATE SY_FormatFields SET CaptionVN = N'Giờ bắt đầu Setup', FormPosition = '6', OrderNo = 80 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupBatDau';
+UPDATE SY_FormatFields SET CaptionVN = N'Giờ kết thúc Setup', FormPosition = '6', OrderNo = 81 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupKetThuc';
+UPDATE SY_FormatFields SET CaptionVN = N'Nội dung Setup 1', FormPosition = '12', OrderNo = 82 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupNoiDung1';
+UPDATE SY_FormatFields SET CaptionVN = N'Nội dung Setup 2', FormPosition = '12', OrderNo = 83 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupNoiDung2';
+UPDATE SY_FormatFields SET CaptionVN = N'Nội dung Tổ chức', FormPosition = '12', OrderNo = 84 WHERE FormName = 'frmHopDong' AND FieldName = 'ToChucNoiDung';
+UPDATE SY_FormatFields SET CaptionVN = N'Nội dung Ra hàng', FormPosition = '12', OrderNo = 85 WHERE FormName = 'frmHopDong' AND FieldName = 'OutNoiDung';
+
 UPDATE SY_FormatFields SET CaptionVN = N'Nhân viên phụ trách' WHERE FormName = 'frmHopDong' AND FieldName = 'BenANhanVienPhuTrach';
 UPDATE SY_FormatFields SET CaptionVN = N'SĐT nhân viên' WHERE FormName = 'frmHopDong' AND FieldName = 'BenASDTNhanVien';
 UPDATE SY_FormatFields SET CaptionVN = N'Đại diện Bên A' WHERE FormName = 'frmHopDong' AND FieldName = 'BenANguoiDaiDien';
@@ -767,10 +788,10 @@ ELSE
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhThanhToan')
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, DataSource, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
-    VALUES ('frmHopDong', 'LichTrinhThanhToan', N'Lịch trình thanh toán (JSON)', 'js', N'[{"key":"STT","label":"Đợt","type":"number","width":"60px"},{"key":"SoTien","label":"Số tiền","type":"text","width":"150px"},{"key":"Ngay","label":"Ngày","type":"text","width":"120px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', 0, 0, 0, 99, '12');
+    VALUES ('frmHopDong', 'LichTrinhThanhToan', N'Lịch trình thanh toán', 'js', N'[{"key":"STT","label":"Đợt","type":"number","width":"60px"},{"key":"SoTien","label":"Số tiền","type":"text","width":"150px"},{"key":"Ngay","label":"Ngày","type":"text","width":"120px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', 0, 0, 0, 99, '12');
 ELSE
     UPDATE SY_FormatFields 
-    SET CaptionVN = N'Lịch trình thanh toán (JSON)',
+    SET CaptionVN = N'Lịch trình thanh toán',
         FormatID = 'js',
         DataSource = N'[{"key":"STT","label":"Đợt","type":"number","width":"60px"},{"key":"SoTien","label":"Số tiền","type":"text","width":"150px"},{"key":"Ngay","label":"Ngày","type":"text","width":"120px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]'
     WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhThanhToan';
@@ -872,4 +893,16 @@ UPDATE SY_FormatFields
 SET VisibleRule = 'Loaitiecid=BLT000001|blt000001'
 WHERE FormName = 'frmHopDong' 
   AND FieldName IN ('Tenchure', 'Tencodau', 'DTchure', 'DTcodau');
+GO
+
+PRINT N'Cập nhật toàn bộ phân hệ Hợp đồng thành công!';
+GO
+
+-- Tự động gán file mẫu mặc định (hop_dong.docx) cho tất cả loại tiệc nếu chưa được cấu hình
+INSERT INTO tbmk_LoaitiecAddfile (Loaitiecid, FormName, TemplateFile)
+SELECT Loaitiecid, 'frmHopDong', 'hop_dong.docx'
+FROM dmLoaihinhtiec
+WHERE Loaitiecid NOT IN (
+    SELECT Loaitiecid FROM tbmk_LoaitiecAddfile WHERE FormName = 'frmHopDong'
+);
 GO

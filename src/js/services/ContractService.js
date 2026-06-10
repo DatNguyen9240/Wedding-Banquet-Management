@@ -115,7 +115,7 @@ var ContractService = (function () {
         : '/api/API_Gateway_Router';
       
       var payload = {
-        List: 'tbmk_Thaydoi',
+        List: 'tbmk_PhuLucHopDong',
         Func: 'View',
         Keyword: sohopdong || ''
       };

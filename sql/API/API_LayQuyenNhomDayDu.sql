@@ -1,5 +1,10 @@
 USE [QLTiec]
 GO
+/****** Object:  StoredProcedure [dbo].[API_LayQuyenNhomDayDu]    Script Date: 10/06/2026 5:32:50 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 
 ALTER PROCEDURE [dbo].[API_LayQuyenNhomDayDu]
     @NhomNguoiDangThaoTac NVARCHAR(50),
@@ -70,4 +75,3 @@ BEGIN
 
     ORDER BY [id];
 END
-GO

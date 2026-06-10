@@ -2191,7 +2191,7 @@ window.DynamicFormEngine = (function () {
       if (span === 'grid') span = '6';
       if (span === 'body') span = '12';
       if (span === 'hidden') span = '12';
-      if (!['12', '8', '6', '4', '3'].includes(span)) span = '12';
+      if (!['12', '8', '6', '4', '3', '2'].includes(span)) span = '12';
 
       var wrapper = document.createElement('div');
       wrapper.className = 'df-col-' + span;
@@ -2342,6 +2342,7 @@ window.DynamicFormEngine = (function () {
       var isVisible = isEdit ? f.showInEdit : f.showInAdd;
       return (String(isVisible) === '1' || isVisible === true) && (f.renderRule === 'json' || f.renderRule === 'js');
     });
+    
     if (hasJsonField) {
       modalWidth = '1300px';
     }

@@ -103,6 +103,7 @@ SELECT
     h.Ngayhopdong,
     h.Nhamngay,
     h.Loaitiecid,
+    (SELECT TOP 1 tm.TemplateFile FROM tbmk_LoaitiecAddfile tm WHERE tm.FormName = 'frmHopDong' AND tm.Loaitiecid = h.Loaitiecid) AS [TemplateFile],
     h.Thoigianid,
     h.SobanManchinhthuc,
     h.SobanManduphong,
@@ -168,99 +169,8 @@ SELECT
     ISNULL(h.GioDienRaSuKien, '...') AS [TiecGioBatDau],
 
     -- Các trường lịch trình động dạng JSON phục vụ in ấn BEO mới
-    -- Nếu đã có JsonLichTrinh lưu trong DB thì ưu tiên lấy, ngược lại dùng fallback tự sinh
-    ISNULL(NULLIF(h.JsonLichTrinh, ''), (
-        SELECT 
-            t.BatDau AS [BatDau],
-            t.KetThuc AS [KetThuc],
-            t.Sanh AS [Sanh],
-            t.NoiDung AS [NoiDung]
-        FROM (
-            -- SETUP 1
-            SELECT 
-                ISNULL(h.TuGioDenGioSetup, '...') AS BatDau, 
-                ISNULL(h.DenGioSetup, '...') AS KetThuc, 
-                s.Tensanhtiec AS Sanh, 
-                N'Vào hàng hóa' AS NoiDung,
-                1 AS STT
-            FROM tbmk_Hopdongsanhtiec hs 
-            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
-            WHERE hs.Sohopdong = h.Sohopdong
-
-            UNION ALL
-
-            -- SETUP 2
-            SELECT 
-                N'13h00' AS BatDau, 
-                N'17h00' AS KetThuc, 
-                s.Tensanhtiec AS Sanh, 
-                ISNULL(h.GhiChuSetup, N'SETUP: Không máy lạnh') AS NoiDung,
-                2 AS STT
-            FROM tbmk_Hopdongsanhtiec hs 
-            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
-            WHERE hs.Sohopdong = h.Sohopdong
-
-            UNION ALL
-
-            -- TOCHUC 1: RHS (Chạy ở Sảnh chính)
-            SELECT 
-                ISNULL(h.GioDienRaSuKien, '10h00') AS BatDau, 
-                ISNULL(h.GioKetThucSuKien, '12h00') AS KetThuc, 
-                s.Tensanhtiec AS Sanh, 
-                N'RHS: Có ATAS, Led; không máy lạnh' AS NoiDung,
-                3 AS STT
-            FROM tbmk_Hopdongsanhtiec hs 
-            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
-            WHERE hs.Sohopdong = h.Sohopdong AND hs.IsSanhchinh = 1
-
-            UNION ALL
-
-            -- TOCHUC 2: HỘI NGHỊ (Chạy ở Sảnh chính)
-            SELECT 
-                N'13h00' AS BatDau, 
-                N'17h00' AS KetThuc, 
-                s.Tensanhtiec AS Sanh, 
-                N'HỘI NGHỊ' AS NoiDung,
-                4 AS STT
-            FROM tbmk_Hopdongsanhtiec hs 
-            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
-            WHERE hs.Sohopdong = h.Sohopdong AND hs.IsSanhchinh = 1
-
-            UNION ALL
-
-            -- TOCHUC 3: TIỆC
-            SELECT 
-                N'18h00' AS BatDau, 
-                N'22h00' AS KetThuc, 
-                ISNULL(
-                    (SELECT s2.Tensanhtiec 
-                     FROM tbmk_Hopdongsanhtiec hs2 
-                     INNER JOIN dmSanhtiec s2 ON hs2.Sanhtiecid = s2.Sanhtiecid 
-                     WHERE hs2.Sohopdong = h.Sohopdong AND hs2.IsSanhchinh = 0),
-                    (SELECT s3.Tensanhtiec 
-                     FROM tbmk_Hopdongsanhtiec hs3 
-                     INNER JOIN dmSanhtiec s3 ON hs3.Sanhtiecid = s3.Sanhtiecid 
-                     WHERE hs3.Sohopdong = h.Sohopdong AND hs3.IsSanhchinh = 1)
-                ) AS Sanh, 
-                N'TIỆC' AS NoiDung,
-                5 AS STT
-
-            UNION ALL
-
-            -- OUT
-            SELECT 
-                N'Trước 10h sáng' AS BatDau, 
-                N'' AS KetThuc, 
-                s.Tensanhtiec AS Sanh, 
-                N'Ra hàng hóa' AS NoiDung,
-                6 AS STT
-            FROM tbmk_Hopdongsanhtiec hs 
-            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
-            WHERE hs.Sohopdong = h.Sohopdong
-        ) t
-        ORDER BY t.STT
-        FOR JSON PATH
-    )) AS [LichTrinh],
+    -- Nếu đã có JsonLichTrinh lưu trong DB thì ưu tiên lấy, ngược lại trả về mảng rỗng []
+    ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [LichTrinh],
     
     (
         SELECT 
