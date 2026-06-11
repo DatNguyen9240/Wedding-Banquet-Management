@@ -284,10 +284,9 @@ app.post('/api/documents/generate', async (req, res) => {
             }
         });
 
-        // Đổ toàn bộ dataMap (Bên A + Bên B + Món ăn) vào template Word
+        // Đổ toàn bộ dataMap vào template Word
         try {
-            doc.setData(dataMap);
-            doc.render();
+            doc.render(dataMap);
             console.log('[GENERATE] ✅ Render dữ liệu vào template thành công');
         } catch (renderErr) {
             console.error('[GENERATE] ❌ Lỗi render:', renderErr.message);
@@ -295,40 +294,6 @@ app.post('/api/documents/generate', async (req, res) => {
                 console.error('[GENERATE] Chi tiết:', JSON.stringify(renderErr.properties.errors));
             }
             throw renderErr;
-        }
-
-        // HẬU XỬ LÝ XML: Tự động gộp dọc (vertical merge) các ô trùng tên sảnh ở các cột chỉ định
-        try {
-            // Lấy Zip object sau render
-            const docZip = doc.getZip();
-            
-            // Tìm file word/document.xml (linh hoạt hơn)
-            let docXmlFile = docZip.file("word/document.xml") || docZip.file(/word\/document\.xml/i)[0];
-            
-            if (!docXmlFile) {
-                throw new Error('Không tìm thấy word/document.xml trong ZIP');
-            }
-
-            let xmlContent = docXmlFile.asText();
-            
-            let colsToMerge = [];
-            if (Array.isArray(mergeColumns)) {
-                colsToMerge = mergeColumns;
-            } else if (typeof mergeColumns === 'string') {
-                colsToMerge = [mergeColumns];
-            } else {
-                // Mặc định gộp cột "VỊ TRÍ" nếu không truyền để tương thích ngược
-                colsToMerge = ["VỊ TRÍ"];
-            }
-            
-            colsToMerge.forEach(colName => {
-                xmlContent = mergeTableColumn(xmlContent, colName);
-            });
-            
-            docZip.file(docXmlFile.name, xmlContent);
-            console.log(`[GENERATE] ✅ Đã tự động gộp dọc các ô trùng nhau ở cột: ${colsToMerge.join(', ')}`);
-        } catch (xmlErr) {
-            console.error('[GENERATE] ⚠️  Lỗi hậu xử lý XML gộp ô (nhưng file vẫn được tạo):', xmlErr.message);
         }
 
         let buf;
