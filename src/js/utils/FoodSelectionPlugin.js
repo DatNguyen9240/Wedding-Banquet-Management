@@ -1138,18 +1138,10 @@ var FoodSelectionPlugin = (function () {
             var formName = bodyWithFormName.getAttribute('data-form-name');
             if (SUPPORTED_FORMS.indexOf(formName) !== -1) {
               formBody = bodyWithFormName;
-            }
-          }
-
-          // Cách 2: Fallback - tìm [name="JsonBanTiec"] đã có sẵn
-          if (!formBody) {
-            var modalContent = node.querySelector('.modal-content') ||
-                               (node.classList && node.classList.contains('modal-content') ? node : null);
-            if (modalContent) {
-              var hasJsonField = modalContent.querySelector('[name="JsonBanTiec"]');
-              if (hasJsonField) {
-                formBody = modalContent;
-              }
+            } else {
+              // Form name được khai báo nhưng KHÔNG nằm trong danh sách hỗ trợ
+              // (Ví dụ: frmHopDong) => Từ chối kích hoạt Plugin
+              return; 
             }
           }
 
