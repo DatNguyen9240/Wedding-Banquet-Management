@@ -376,12 +376,22 @@ Bảng **CHỦNG LOẠI THỨC ĂN MANG VÀO** (3 cột, dùng `convertFields`):
 ---
 
 ### 13. Biên Bản Quyết Toán (QT)
-*(Lưu ý: Đa số các trường dùng lại của Hợp đồng như `{Sohopdong}`, `{BenBTenChuTiec}`, `{TongGiaTriQuyetToan}`, `{SoTienDaDatCoc}`, `{SoTienConLai}`)*
+*(Lưu ý: Đa số các trường dùng lại của Hợp đồng như `{Sohopdong}`)*
 * `{NgayQuyetToan}`, `{ThangQuyetToan}`, `{NamQuyetToan}`: Ngày tháng năm ký biên bản quyết toán
-* `{#ChiTietQuyetToan}` ... `{/ChiTietQuyetToan}`: Vòng lặp bảng chi tiết các dịch vụ, món ăn, thức uống thực tế sử dụng để tính tiền
-* `{Cong1}`: Giá trị tính tổng cho nhóm chi phí 1 (Thường là Tiền Tiệc)
-* `{Cong2}`: Giá trị tính tổng cho nhóm chi phí 2 (Thường là Tiền Thức uống / Dịch vụ phát sinh)
-* `{TongCong12}`: Tổng cộng của (`{Cong1}` + `{Cong2}`) trước khi cộng thêm phí phục vụ
+* Thông tin chung Quyết toán: `{KhachHang}`, `{LoaiHinhSK}`, `{NVKD}`, `{SoLuongKhach}`, `{SanhTiec}`, `{NgayToChuc}`, `{ThoiGian}`
+* `{#DanhSachDichVu}` ... `{/DanhSachDichVu}`: Vòng lặp bảng chi tiết các dịch vụ chính (Tiệc, Nước, Dịch vụ cưới...)
+* `{#DichVuPhatSinh}` ... `{/DichVuPhatSinh}`: Vòng lặp bảng chi tiết các dịch vụ phát sinh (Bù sảnh, bù bàn tăng...)
+  * Các trường bên trong vòng lặp: `{STT}`, `{DienGiai}`, `{DVT}`, `{SoLuong}`, `{DonGia}`, `{ThanhTien}`
+* Bảng Tổng kết & Thanh toán:
+  * `{Cong1}`: Tổng cộng nhóm chi phí 1 (Dịch vụ chính)
+  * `{Cong2}`: Tổng cộng nhóm chi phí 2 (Phát sinh)
+  * `{TongCong12}`: Tổng cộng của (`{Cong1}` + `{Cong2}`)
+  * `{PhiPhucVu}`: Tiền phí phục vụ (5%)
+  * `{TongCongChuaVAT}`: Tổng cộng trước thuế
+  * `{VAT8}`, `{VAT10}`: Thuế VAT 8% và 10%
+  * `{TongTien}`: Tổng tiền cuối cùng (Đã gồm VAT)
+  * `{TruCoc}`: Số tiền đã cọc
+  * `{ThanhToanConLai}`: Số tiền cần thanh toán còn lại
 
 ---
 
