@@ -287,6 +287,25 @@ app.post('/api/documents/generate', async (req, res) => {
 
         // ── 4. Khởi tạo docxtemplater và bơm dữ liệu ─────────────────────────
         const zip = new PizZip(content);
+
+        // --- TỰ ĐỘNG LÀM SẠCH TAG TRONG WORD (XML CLEANER) ---
+        // Word thường tự chèn các thẻ <w:t> làm nát tag {Ten_Bien} thành {Te<w:t>n_Bi</w:t>en}
+        // Đoạn code này sẽ tìm và nối chúng lại trước khi Docxtemplater xử lý.
+        try {
+            const docXmlFile = zip.file("word/document.xml");
+            if (docXmlFile) {
+                let xmlContent = docXmlFile.asText();
+                // Regex tìm các khối { ... } có chứa thẻ XML bên trong
+                // sau đó loại bỏ toàn bộ thẻ XML (<...>) nhưng giữ lại nội dung text
+                xmlContent = xmlContent.replace(/\{[^{}]*?<[^>]+>[^{}]*?\}/g, (match) => {
+                    return match.replace(/<[^>]+>/g, "");
+                });
+                zip.file("word/document.xml", xmlContent);
+            }
+        } catch (cleanErr) {
+            console.warn('[GENERATE] ⚠️ Không thể làm sạch XML tags:', cleanErr.message);
+        }
+
         const doc = new Docxtemplater(zip, {
             paragraphLoop: true,
             linebreaks: true,
