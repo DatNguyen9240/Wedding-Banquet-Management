@@ -366,12 +366,12 @@ app.post('/api/documents/generate', async (req, res) => {
                 FilePath: finalFileName,
                 FileHash: fileHash,
                 Status: 'ACTIVE',
-                GeneratedBy: req.body.UserName || 'system'
+                GeneratedBy: req.body?.UserName || 'system'
             };
             const payload = {
                 List: 'Tiec_Documents',
                 Func: 'Save',
-                UserName: req.body.UserName || 'system',
+                UserName: req.body?.UserName || 'system',
                 JsonData: JSON.stringify(docData)
             };
             await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload);
@@ -409,11 +409,11 @@ app.delete('/api/documents/:fileName', async (req, res) => {
                 const payload = {
                     List: 'Tiec_Documents',
                     Func: 'Edit', // Cập nhật lại Status
-                    UserName: req.body.UserName || 'system',
+                    UserName: req.body?.UserName || 'system',
                     JsonData: JSON.stringify({
                         FilePath: fileName, // Dùng FilePath làm khóa tìm kiếm
                         Status: 'DELETED',
-                        DeletedBy: req.body.UserName || 'system',
+                        DeletedBy: req.body?.UserName || 'system',
                         DeletedAt: new Date().toISOString()
                     })
                 };
