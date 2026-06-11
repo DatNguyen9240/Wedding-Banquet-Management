@@ -286,8 +286,7 @@ app.post('/api/documents/generate', async (req, res) => {
 
         // Đổ toàn bộ dataMap vào template Word
         try {
-            doc.setData(dataMap);
-            doc.render();
+            doc.render(dataMap);
             console.log('[GENERATE] ✅ Render dữ liệu vào template thành công');
         } catch (renderErr) {
             console.error('[GENERATE] ❌ Lỗi render:', renderErr.message);
