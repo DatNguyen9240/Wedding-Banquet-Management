@@ -410,7 +410,7 @@ var DocumentExportPlugin = (function () {
     // Đọc tên file mẫu từ DB (đã cấu hình trong bảng dmLoaihinhtiec)
     var actualDocType = config.docType;
     if (config.docType === 'hop_dong' && row.TemplateFile) {
-        actualDocType = row.TemplateFile;
+      actualDocType = row.TemplateFile;
     }
 
     var btn = document.getElementById('btn-export-doc-' + config.docType);
@@ -488,6 +488,16 @@ var DocumentExportPlugin = (function () {
         }
 
         var row = selectedRows[0];
+        var st = (row.Status || row.TrangThai || '').toString().toLowerCase();
+        if (st.includes('đã ký')) {
+          if (typeof Alert !== 'undefined') {
+            Alert.warning('Bị khóa', 'Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
+          } else {
+            alert('Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
+          }
+          return;
+        }
+
         _generateDocument(row, config);
       }
     }];

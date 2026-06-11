@@ -288,6 +288,25 @@ app.post('/api/documents/generate', async (req, res) => {
         // ── 4. Khởi tạo docxtemplater và bơm dữ liệu ─────────────────────────
         const zip = new PizZip(content);
 
+        // --- CHUẨN HÓA ĐƯỜNG DẪN ZIP (HỖ TRỢ ĐƯỜNG DẪN WINDOWS) ---
+        // Một số file .docx được nén trên Windows sử dụng dấu gạch chéo ngược (\) thay vì (/)
+        // Làm docxtemplater và xml cleaner không tìm thấy các file như word/document.xml
+        try {
+            const fileNames = Object.keys(zip.files);
+            for (const name of fileNames) {
+                if (name.includes('\\')) {
+                    const normalizedName = name.replace(/\\/g, '/');
+                    zip.files[normalizedName] = zip.files[name];
+                    if (zip.files[normalizedName]) {
+                        zip.files[normalizedName].name = normalizedName;
+                    }
+                    delete zip.files[name];
+                }
+            }
+        } catch (normErr) {
+            console.warn('[GENERATE] ⚠️ Không thể chuẩn hóa đường dẫn trong ZIP:', normErr.message);
+        }
+
         // --- TỰ ĐỘNG LÀM SẠCH TAG TRONG WORD (XML CLEANER) ---
         // Word thường tự chèn các thẻ <w:t> làm nát tag {Ten_Bien} thành {Te<w:t>n_Bi</w:t>en}
         // Đoạn code này sẽ tìm và nối chúng lại trước khi Docxtemplater xử lý.
