@@ -182,8 +182,7 @@ BEGIN
     SET @SotiencochopdongVal   = TRY_CAST(REPLACE(REPLACE(ISNULL(@Sotiencochopdong,   '0'), '.', ''), ',', '') AS DECIMAL(18,2));
     SET @TongtiencocVal        = TRY_CAST(REPLACE(REPLACE(ISNULL(@Tongtiencoc,        '0'), '.', ''), ',', '') AS DECIMAL(18,2));
 
-    IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '' AND LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
-        SET @JsonSanhTiec = '[{"Sanhtiecid":"' + @JsonSanhTiec + '", "IsSanhchinh":1}]';
+
 
     IF (@NgayToChucParsed IS NULL AND @Sohopdong IS NOT NULL AND @Sohopdong <> '')
         SELECT TOP 1 @NgayToChucParsed = Ngaytochuc FROM tbmk_Hopdong WHERE Sohopdong = @Sohopdong;
@@ -206,13 +205,21 @@ BEGIN
             IF EXISTS (
                 SELECT 1 FROM tbmk_Hopdong h
                 INNER JOIN tbmk_Hopdongsanhtiec hs ON h.Sohopdong = hs.Sohopdong
-                INNER JOIN OPENJSON(@JsonSanhTiec) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
+                INNER JOIN (
+                  SELECT JSON_VALUE(value, '$.Sanhtiecid') AS Sanhtiecid FROM OPENJSON(@JsonSanhTiec) WHERE LEFT(LTRIM(@JsonSanhTiec), 1) = '['
+                  UNION ALL
+                  SELECT LTRIM(RTRIM(value)) AS Sanhtiecid FROM STRING_SPLIT(@JsonSanhTiec, ',') WHERE LEFT(LTRIM(@JsonSanhTiec), 1) != '['
+              ) j ON hs.Sanhtiecid = j.Sanhtiecid
                 WHERE h.Ngaytochuc = @NgayToChucParsed AND h.Thoigianid = @Thoigianid
                   AND ISNULL(h.IsHuy, 0) = 0 AND h.Sohopdong != ISNULL(@Sohopdong, '')
                 UNION ALL
                 SELECT 1 FROM tbmk_Biennhancoccho b
                 INNER JOIN tbmk_Biennhancocchosanhtiec bs ON b.DocumentID = bs.DocumentID
-                INNER JOIN OPENJSON(@JsonSanhTiec) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
+                INNER JOIN (
+                  SELECT JSON_VALUE(value, '$.Sanhtiecid') AS Sanhtiecid FROM OPENJSON(@JsonSanhTiec) WHERE LEFT(LTRIM(@JsonSanhTiec), 1) = '['
+                  UNION ALL
+                  SELECT LTRIM(RTRIM(value)) AS Sanhtiecid FROM STRING_SPLIT(@JsonSanhTiec, ',') WHERE LEFT(LTRIM(@JsonSanhTiec), 1) != '['
+              ) j ON bs.Sanhtiecid = j.Sanhtiecid
                 WHERE b.Ngaytochuc = @NgayToChucParsed AND b.Thoigianid = @Thoigianid
                   AND ISNULL(b.IsHuy, 0) = 0 AND ISNULL(b.IsKetthuc, 0) = 0
                   AND b.DocumentID != ISNULL(@Sobiennhan, '')
@@ -380,13 +387,13 @@ SELECT
     
     ISNULL(h.TongSoBan, 0) AS [SoBan],
     
-    (
-        SELECT TOP 1 s.Tensanhtiec 
-        FROM tbmk_Hopdongsanhtiec hs 
-        INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
+    STUFF((
+        SELECT N', ' + s.Tensanhtiec
+        FROM tbmk_Hopdongsanhtiec hs
+        INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid
         WHERE hs.Sohopdong = h.Sohopdong
         ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid
-    ) AS [SanhDat],
+        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS [SanhDat],
     ISNULL((
         SELECT s.Tensanhtiec 
         FROM tbmk_Hopdongsanhtiec hs 
@@ -871,6 +878,17 @@ WHERE FormName = 'frmHopDong' AND FieldName = 'Loaitiecid';
 UPDATE SY_FormatFields
 SET DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View'
 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
+
+-- Đảm bảo SanhDat hiển thị đẹp trên Grid
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat')
+BEGIN
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInForm, ShowInAdd, ShowInEdit, ShowInFilter, IsReadOnlyAdd, IsReadOnlyEdit)
+    VALUES ('frmHopDong', 'SanhDat', N'Sảnh đãi tiệc', 't', 'hidden', 99, 0, 0, 0, 1, 1, 1);
+END
+ELSE
+BEGIN
+    UPDATE SY_FormatFields SET ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 0, CaptionVN = N'Sảnh đãi tiệc', FormPosition = 'hidden' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
+END
 GO
 
 -- 4.7. Cập nhật tên hiển thị tiếng Việt (CaptionVN)

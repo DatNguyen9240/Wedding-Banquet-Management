@@ -86,12 +86,14 @@ SELECT
     
     b.Ngaytochuc AS [NgayToChuc],
     ISNULL(b.Tongsoban, 0) AS SoBan,
-    (
-        SELECT TOP 1 s.Tensanhtiec 
-        FROM tbmk_Biennhancocchosanhtiec bs 
-        INNER JOIN dmSanhtiec s ON bs.Sanhtiecid = s.Sanhtiecid 
-        WHERE bs.DocumentID = b.DocumentID
-    ) AS SanhDat,
+    STUFF((
+          SELECT N', ' + s.Tensanhtiec
+          FROM tbmk_Biennhancocchosanhtiec bs 
+          INNER JOIN dmSanhtiec s ON bs.Sanhtiecid = s.Sanhtiecid 
+          WHERE bs.DocumentID = b.DocumentID
+          ORDER BY bs.IsSanhchinh DESC, s.Tensanhtiec ASC
+          FOR XML PATH('')
+      ), 1, 2, '') AS [SanhDat],
     ISNULL(b.Tongtien, 0) AS DaCocVND,
     
     b.Solan AS [Solan],
@@ -101,12 +103,13 @@ SELECT
     b.Lydo,
     b.HinhThuc,
     
-    (
-        SELECT TOP 1 Sanhtiecid 
-        FROM tbmk_Biennhancocchosanhtiec 
-        WHERE DocumentID = b.DocumentID 
-        ORDER BY IsSanhchinh DESC
-    ) AS JsonSanhTiec,
+    STUFF((
+          SELECT ',' + Sanhtiecid 
+          FROM tbmk_Biennhancocchosanhtiec 
+          WHERE DocumentID = b.DocumentID 
+          ORDER BY IsSanhchinh DESC
+          FOR XML PATH('')
+      ), 1, 1, '') AS [JsonSanhTiec],
     
     (
         SELECT Sanhtiecid, IsSanhchinh 
@@ -237,12 +240,13 @@ BEGIN
             WHERE DocumentID = b.DocumentID 
             FOR JSON PATH
         ) AS [_JsonSanhTiec],
-        (
-            SELECT TOP 1 Sanhtiecid 
-            FROM tbmk_Biennhancocchosanhtiec 
-            WHERE DocumentID = b.DocumentID 
-            ORDER BY IsSanhchinh DESC
-        ) AS [JsonSanhTiec],
+        STUFF((
+          SELECT ',' + Sanhtiecid 
+          FROM tbmk_Biennhancocchosanhtiec 
+          WHERE DocumentID = b.DocumentID 
+          ORDER BY IsSanhchinh DESC
+          FOR XML PATH('')
+      ), 1, 1, '') AS [JsonSanhTiec],
         
         CASE
             WHEN b.IsHuy = 1 THEN N'Đã Hủy'
@@ -425,17 +429,18 @@ BEGIN
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
             DECLARE @JsonSanhTiecTemp NVARCHAR(MAX) = @JsonSanhTiec;
-            IF (LEFT(LTRIM(@JsonSanhTiecTemp), 1) != '[')
-            BEGIN
-                SET @JsonSanhTiecTemp = '[{"Sanhtiecid":"' + @JsonSanhTiecTemp + '", "IsSanhchinh":1}]';
-            END
+            
 
             IF EXISTS (
                 -- 1. Trùng với Hợp đồng khác đang hoạt động
                 SELECT 1 
                 FROM tbmk_Hopdong h
                 INNER JOIN tbmk_Hopdongsanhtiec hs ON h.Sohopdong = hs.Sohopdong
-                INNER JOIN OPENJSON(@JsonSanhTiecTemp) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
+                INNER JOIN (
+                    SELECT JSON_VALUE(value, '$.Sanhtiecid') AS Sanhtiecid FROM OPENJSON(@JsonSanhTiecTemp) WHERE LEFT(LTRIM(@JsonSanhTiecTemp), 1) = '['
+                    UNION ALL
+                    SELECT LTRIM(RTRIM(value)) AS Sanhtiecid FROM STRING_SPLIT(@JsonSanhTiecTemp, ',') WHERE LEFT(LTRIM(@JsonSanhTiecTemp), 1) != '['
+                ) j ON hs.Sanhtiecid = j.Sanhtiecid
                 WHERE h.Ngaytochuc = @Ngaytochuc 
                   AND h.Thoigianid = @Thoigianid
                   AND ISNULL(h.IsHuy, 0) = 0
@@ -446,7 +451,11 @@ BEGIN
                 SELECT 1 
                 FROM tbmk_Biennhancoccho b
                 INNER JOIN tbmk_Biennhancocchosanhtiec bs ON b.DocumentID = bs.DocumentID
-                INNER JOIN OPENJSON(@JsonSanhTiecTemp) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
+                INNER JOIN (
+                    SELECT JSON_VALUE(value, '$.Sanhtiecid') AS Sanhtiecid FROM OPENJSON(@JsonSanhTiecTemp) WHERE LEFT(LTRIM(@JsonSanhTiecTemp), 1) = '['
+                    UNION ALL
+                    SELECT LTRIM(RTRIM(value)) AS Sanhtiecid FROM STRING_SPLIT(@JsonSanhTiecTemp, ',') WHERE LEFT(LTRIM(@JsonSanhTiecTemp), 1) != '['
+                ) j ON bs.Sanhtiecid = j.Sanhtiecid
                 WHERE b.Ngaytochuc = @Ngaytochuc 
                   AND b.Thoigianid = @Thoigianid
                   AND ISNULL(b.IsHuy, 0) = 0
@@ -603,10 +612,7 @@ BEGIN
 
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
-            IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
-            BEGIN
-                SET @JsonSanhTiec = '[{"Sanhtiecid":"' + @JsonSanhTiec + '", "IsSanhchinh":1}]';
-            END
+            
 
             DELETE FROM tbmk_Biennhancocchosanhtiec WHERE DocumentID = @DocumentID;
 
@@ -621,7 +627,20 @@ BEGIN
                 ISNULL(CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0),
                 @Now,
                 @UserCreate
-            FROM OPENJSON(@JsonSanhTiec);
+            FROM OPENJSON(@JsonSanhTiec)
+            WHERE LEFT(LTRIM(@JsonSanhTiec), 1) = '['
+            
+            UNION ALL
+            
+            SELECT 
+                NEWID(), 
+                @DocumentID, 
+                LTRIM(RTRIM(value)),
+                1,
+                @Now,
+                @UserCreate
+            FROM STRING_SPLIT(@JsonSanhTiec, ',')
+            WHERE LEFT(LTRIM(@JsonSanhTiec), 1) != '[';
         END
 
         COMMIT TRANSACTION;
@@ -771,7 +790,7 @@ BEGIN
     UPDATE SY_FormatFields SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
 END
 
-UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInForm = 0, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
 
 -- Đảm bảo trường DaCocVND (Số tiền cọc) được hiển thị và cho phép nhập dạng số
 IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DaCocVND')
@@ -838,7 +857,7 @@ WHERE FormName = 'frmBiennhancoccho'
   AND FieldName IN (
     'DocumentID', 'MaChungTu', 'Sohopdong', 'Makh', 'TemplateFile', 
     'TenKhachHang', 'BenBTenDaiDien', 'BenBDiaChi', 'BenBDienThoai', 'BenBEmail', 
-    'DienThoai', 'SoBan', 'SanhDat', '_JsonSanhTiec', 
+    'DienThoai', 'SoBan', '_JsonSanhTiec', 
     'NgayLapHD', 'ThangLapHD', 'NamLapHD', 
     'HDTenCty', 'HDDiaChi', 'HDMaSoThue', 'HDEmail', 'TrangThai', 'Tenkh', 'GoiTiec'
   );
@@ -861,3 +880,13 @@ WHERE Loaitiecid NOT IN (
     SELECT Loaitiecid FROM tbmk_LoaitiecAddfile WHERE FormName = 'frmBiennhancoccho'
 );
 GO
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SanhDat')
+BEGIN
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit)
+    VALUES ('frmBiennhancoccho', 'SanhDat', N'Sảnh đãi tiệc', 't', 'hidden', 15, 0, 0);
+END
+ELSE
+BEGIN
+    UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đãi tiệc', ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 0, FormPosition = 'hidden' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SanhDat';
+END
