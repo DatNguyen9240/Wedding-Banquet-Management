@@ -131,10 +131,14 @@ SELECT
         WHEN b.IsKetthuc = 1 THEN N'Đã lên Hợp đồng'
         WHEN b.Solan = 2 THEN N'Đã cọc lần 2'
         ELSE N'Đã cọc lần 1'
-    END AS TrangThai
+    END AS TrangThai,
+    
+    b.GoiThucDonID AS [GoiThucDonID],
+    gd.TenGoiThucDon AS [GoiTiec]
 
 FROM tbmk_Biennhancoccho b
 LEFT JOIN dmkhachhang k ON b.Makh = k.Makh
+LEFT JOIN dmGoiThucDon gd ON b.GoiThucDonID = gd.GoiThucDonID
 WHERE ISNULL(b.IsDeleted, 0) = 0;
 GO
 
@@ -245,12 +249,17 @@ BEGIN
             WHEN b.IsKetthuc = 1 THEN N'Đã lên Hợp đồng'
             WHEN b.Solan = 2 THEN N'Đã cọc lần 2'
             ELSE N'Đã cọc lần 1'
-        END AS [TrangThai]
+        END AS [TrangThai],
+        
+        b.GoiThucDonID AS [GoiThucDonID],
+        gd.TenGoiThucDon AS [GoiTiec]
         
     FROM 
         tbmk_Biennhancoccho b
     LEFT JOIN 
         dmkhachhang k ON b.Makh = k.Makh
+    LEFT JOIN
+        dmGoiThucDon gd ON b.GoiThucDonID = gd.GoiThucDonID
     OUTER APPLY (
         SELECT 
             CASE 
@@ -308,6 +317,7 @@ CREATE PROCEDURE [dbo].[API_LuuPhieuCoc]
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(50) = NULL,
     @Thoigianid VARCHAR(50) = NULL,
+    @GoiThucDonID VARCHAR(50) = NULL,
     @SobanManchinhthuc INT = 0,
     @SobanManduphong INT = 0,
     @SobanChaychinhthuc INT = 0,
@@ -547,7 +557,7 @@ BEGIN
             VALUES (
                 @DocumentID, @SoBN, ISNULL(@DocumentDate, @Now), @Makh, @Solan, @Manv, @Loaitiecid,
                 @Ngaytochuc, @Nhamngay, @TongTienDecimal, @Tongsoban, @SobanManchinhthuc, @SobanManduphong, @SobanChaychinhthuc, @SobanChayduphong,
-                @Thoigianid, @Ghichu, 0, 0, '', @Now, @UserCreate,
+                @Thoigianid, @Ghichu, 0, 0, ISNULL(@GoiThucDonID, ''), @Now, @UserCreate,
                 @TaiKhoanNo, @TaiKhoanCo, @Kemtheo, @Lydo, @HinhThuc
             );
         END
@@ -579,6 +589,7 @@ BEGIN
                 SobanChaychinhthuc = @SobanChaychinhthuc,
                 SobanChayduphong = @SobanChayduphong,
                 Thoigianid = @Thoigianid,
+                GoiThucDonID = ISNULL(@GoiThucDonID, GoiThucDonID),
                 Ghichu = @Ghichu,
                 DateUpdate = @Now,
                 UserUpdate = @UserCreate,
@@ -662,7 +673,7 @@ GO
 PRINT N'Đang cấu hình định tuyến tham số API Save trong WA_API...';
 GO
 UPDATE WA_API
-SET Para = '@DocumentID=N''{DocumentID}'', @Makh=N''{Makh}'', @MaChungTu=N''{MaChungTu}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Diachi=N''{Diachi}'', @Nguoigd=N''{Nguoigd}'', @DienThoaiDaiDien=N''{DienThoaiDaiDien}'', @Mail=N''{Mail}'', @Ngaytochuc=N''{NgayToChuc}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @Tongtien=N''{DaCocVND}'', @Solan=N''{Solan}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @TaiKhoanNo=N''{TaiKhoanNo}'', @TaiKhoanCo=N''{TaiKhoanCo}'', @Kemtheo=N''{Kemtheo}'', @Lydo=N''{Lydo}'', @HinhThuc=N''{HinhThuc}'''
+SET Para = '@DocumentID=N''{DocumentID}'', @Makh=N''{Makh}'', @MaChungTu=N''{MaChungTu}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Diachi=N''{Diachi}'', @Nguoigd=N''{Nguoigd}'', @DienThoaiDaiDien=N''{DienThoaiDaiDien}'', @Mail=N''{Mail}'', @Ngaytochuc=N''{NgayToChuc}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @GoiThucDonID=N''{GoiThucDonID}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @Tongtien=N''{DaCocVND}'', @Solan=N''{Solan}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @TaiKhoanNo=N''{TaiKhoanNo}'', @TaiKhoanCo=N''{TaiKhoanCo}'', @Kemtheo=N''{Kemtheo}'', @Lydo=N''{Lydo}'', @HinhThuc=N''{HinhThuc}'''
 WHERE List = 'frmBiennhancoccho' AND Func = 'Save';
 GO
 
@@ -673,6 +684,7 @@ INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES 
 ('API_DanhSachCaLam', 'View', 'API_DanhSachCaLam', NULL),
 ('API_DanhSachSanh', 'View', 'API_DanhSachSanh', '@Keyword=N''{Keyword}'''),
+('API_DanhSachGoiThucDon', 'View', 'API_DanhSachGoiThucDon', '@Keyword=N''{Keyword}'''),
 ('API_DanhSachLoaiHinhTiec', 'View', 'API_DanhSachLoaiHinhTiec', NULL),
 ('API_TimNguoiGiaoDich', 'View', 'API_TimNguoiGiaoDich', '@Keyword=N''{Keyword}'', @Nguoigd=N''{Nguoigd}'', @DienThoaiDaiDien=N''{DienThoaiDaiDien}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}''');
 GO
@@ -748,7 +760,18 @@ UPDATE SY_FormatFields SET CaptionVN = N'Ngày tổ chức', FormPosition = '6',
 UPDATE SY_FormatFields SET CaptionVN = N'Nhằm ngày (Âm lịch)', FormPosition = '6', OrderNo = 10, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Nhamngay';
 UPDATE SY_FormatFields SET CaptionVN = N'Ca tiệc', FormPosition = '6', OrderNo = 11, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachCaLam&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Thoigianid';
 UPDATE SY_FormatFields SET CaptionVN = N'Loại tiệc', FormPosition = '6', OrderNo = 12, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachLoaiHinhTiec&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Loaitiecid';
-UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID')
+BEGIN
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit, DataSource)
+    VALUES ('frmBiennhancoccho', 'GoiThucDonID', N'Gói tiệc', 'sl', '6', 13, 1, 1, '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View');
+END
+ELSE
+BEGIN
+    UPDATE SY_FormatFields SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
+END
+
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
 
 -- Đảm bảo trường DaCocVND (Số tiền cọc) được hiển thị và cho phép nhập dạng số
 IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DaCocVND')
@@ -767,7 +790,7 @@ END
 ELSE
 BEGIN
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmBiennhancoccho', 'DaCocVND', N'Số tiền cọc', 'mn', '6', 1, 14, 1, 1, 0, 0);
+    VALUES ('frmBiennhancoccho', 'DaCocVND', N'Số tiền cọc', 'mn', '6', 1, 15, 1, 1, 0, 0);
 END
 
 -- Nhóm 3: Số bàn (mỗi ô chiếm 1/4 dòng = df-col-3 để nằm gọn trên 1 hàng ngang)
@@ -817,8 +840,14 @@ WHERE FormName = 'frmBiennhancoccho'
     'TenKhachHang', 'BenBTenDaiDien', 'BenBDiaChi', 'BenBDienThoai', 'BenBEmail', 
     'DienThoai', 'SoBan', 'SanhDat', '_JsonSanhTiec', 
     'NgayLapHD', 'ThangLapHD', 'NamLapHD', 
-    'HDTenCty', 'HDDiaChi', 'HDMaSoThue', 'HDEmail', 'TrangThai', 'Tenkh'
+    'HDTenCty', 'HDDiaChi', 'HDMaSoThue', 'HDEmail', 'TrangThai', 'Tenkh', 'GoiTiec'
   );
+GO
+
+-- Đảm bảo trường GoiThucDonID hiển thị đúng định dạng Dropdown sau khi đồng bộ
+UPDATE SY_FormatFields 
+SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, ShowInForm = 1, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View' 
+WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
 GO
 
 PRINT N'Cập nhật toàn bộ phân hệ Đặt cọc thành công!';
