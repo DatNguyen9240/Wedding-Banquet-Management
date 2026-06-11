@@ -44,7 +44,7 @@ var DocumentExportPlugin = (function () {
       label: 'Xuất Phụ Lục HĐ',
       icon: 'description',
       altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'API_DanhSachPhuLuc',
+      sqlListName: 'frmPhuLucHopDong',
       convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
     },
     'frmThayDoiBoSung': {
@@ -52,7 +52,7 @@ var DocumentExportPlugin = (function () {
       label: 'Xuất Phụ Lục HĐ',
       icon: 'description',
       altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'API_DanhSachPhuLuc',
+      sqlListName: 'frmPhuLucHopDong',
       convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
     }
   };

@@ -1106,7 +1106,12 @@ var FoodSelectionPlugin = (function () {
         </div>
       `;
 
-      grid.appendChild(wrapper);
+      var buttonsRow = grid.querySelector('.justify-content-end') || grid.querySelector('.d-flex.justify-content-end') || grid.querySelector('form > .d-flex');
+      if (buttonsRow) {
+        buttonsRow.parentNode.insertBefore(wrapper, buttonsRow);
+      } else {
+        grid.appendChild(wrapper);
+      }
       _renderSummaryTables();
     }
   }
@@ -1169,7 +1174,14 @@ var FoodSelectionPlugin = (function () {
     openSelectionModal: openSelectionModal,
     switchSummaryTab: switchSummaryTab,
     removeItem: removeItem,
-    changeQty: changeQty
+    changeQty: changeQty,
+    reloadForm: function (modal) {
+      if (modal) {
+        activeModal = modal;
+        _readInputs(modal);
+        _renderSummaryTables();
+      }
+    }
   };
 })();
 

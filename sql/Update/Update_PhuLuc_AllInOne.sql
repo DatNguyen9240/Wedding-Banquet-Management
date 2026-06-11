@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 PRINT N'=== BẮT ĐẦU CẬP NHẬT CẤU TRÚC PHỤ LỤC HỢP ĐỒNG (ALL-IN-ONE) ===';
@@ -175,11 +175,71 @@ SELECT
     ISNULL(td.SoKhachTrenBanTD, td.SoKhachTrenBan) AS [SoKhachTrenBan],
     
     -- Bàn tiệc
-    ISNULL(td.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SobanManchinhthuc],
-    ISNULL(td.SobanManduphong, hd.SobanManduphong) AS [SobanManduphong],
+    -- Lưu ý: CI collation → chỉ dùng 1 alias cho mỗi cột (PascalCase khớp biến docx)
+    ISNULL(td.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
+    ISNULL(td.SobanManduphong, hd.SobanManduphong) AS [SoBanManDuPhong],
     ISNULL(td.SobanChaychinhthuc, hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
     ISNULL(td.SobanChayduphong, hd.SobanChayduphong) AS [SobanChayduphong],
     ISNULL(td.TongSoBanTD, hd.TongSoBan) AS [TongSoBan],
+
+    -- {#MenuTiec}{TenMonAn}{DonGia}{/MenuTiec}: JSON array từ JsonBanTiec
+    (
+        SELECT 
+            ISNULL(j.TenHang, ISNULL(j.TenMon, ISNULL(j.Tenhang, j.Mahang))) AS [TenMonAn],
+            ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0) AS [DonGia]
+        FROM OPENJSON(ISNULL(td.JsonBanTiec, '[]'))
+        WITH (
+            Mahang   NVARCHAR(50)  '$.Mahang',
+            TenHang  NVARCHAR(255) '$.TenHang',
+            TenMon   NVARCHAR(255) '$.TenMon',
+            Tenhang  NVARCHAR(255) '$.Tenhang',
+            Dongia   NVARCHAR(50)  '$.Dongia'
+        ) j
+        FOR JSON PATH
+    ) AS [MenuTiec],
+
+    -- {MenuTongCong}: Tổng tiền thực đơn format sẵn
+    FORMAT(
+        ISNULL((
+            SELECT SUM(ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0))
+            FROM OPENJSON(ISNULL(td.JsonBanTiec, '[]'))
+            WITH (Dongia NVARCHAR(50) '$.Dongia') j
+        ), 0),
+        'N0', 'vi-VN'
+    ) + N' VNĐ' AS [MenuTongCong],
+
+    -- {#DanhSachChiPhi}{STT}{NoiDung}{DVT}{SoLuong}{DonGia}{ThanhTien}{/DanhSachChiPhi}
+    -- Ưu tiên: cột DanhSachChiPhi có sẵn → fallback tổng hợp từ JsonDichVu
+    CASE
+        WHEN ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) IS NOT NULL
+             AND ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) <> ''
+             AND ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) <> '[]'
+            THEN ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi)
+        ELSE (
+            SELECT 
+                ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [STT],
+                ISNULL(j.TenHang, ISNULL(j.TenMon, j.Mahang)) AS [NoiDung],
+                ISNULL(j.DvtID, N'Cái') AS [DVT],
+                ISNULL(TRY_CAST(j.Soluong AS INT), 1) AS [SoLuong],
+                FORMAT(ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0), 'N0', 'vi-VN') AS [DonGia],
+                FORMAT(
+                    ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0)
+                    * ISNULL(TRY_CAST(j.Soluong AS DECIMAL(18,2)), 1),
+                    'N0', 'vi-VN'
+                ) AS [ThanhTien]
+            FROM OPENJSON(ISNULL(td.JsonDichVu, '[]'))
+            WITH (
+                Mahang  NVARCHAR(50)  '$.Mahang',
+                TenHang NVARCHAR(255) '$.TenHang',
+                TenMon  NVARCHAR(255) '$.TenMon',
+                DvtID   NVARCHAR(50)  '$.DvtID',
+                Dongia  NVARCHAR(50)  '$.Dongia',
+                Soluong NVARCHAR(50)  '$.Soluong'
+            ) j
+            FOR JSON PATH
+        )
+    END AS [DanhSachChiPhi],
+    -- ===== KẾT THÚC CỘT DOCX =====
     
     -- Các đợt thanh toán
     ISNULL(td.TenDotThanhToanTD, td.TenDotThanhToan) AS [TenDotThanhToan],
@@ -190,7 +250,6 @@ SELECT
     -- Dịch vụ & thỏa thuận
     ISNULL(td.DichVuTinhPhiPhuLucTD, td.DichVuTinhPhiPhuLuc) AS [DichVuTinhPhiPhuLuc],
     ISNULL(td.ThoaThuanPhuLucKhacTD, td.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
-    ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) AS [DanhSachChiPhi],
     
     -- Các trường tiền tệ
     ISNULL(td.TongtienBanmanTD, hd.Tongtienbanman) AS [Tongtienbanman],
@@ -202,6 +261,9 @@ SELECT
     ISNULL(td.Sotiencochopdong, hd.Sotiencochopdong) AS [Sotiencochopdong],
     ISNULL(td.Tongtiencoc, hd.Tongtiencoc) AS [Tongtiencoc],
     ISNULL(td.ConLaiTD, hd.Conlai) AS [ConLai],
+
+    -- Tổng giá trị tạm tính (format VNĐ) - {TongGiaTriTamTinh}
+    FORMAT(ISNULL(td.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
     
     -- Trạng thái & metadata
     td.LanThayDoi AS [LanThayDoi],
@@ -227,6 +289,7 @@ LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
 LEFT JOIN dmNhanvienView nv ON td.Manv = nv.Manv
 WHERE ISNULL(td.IsDeleted, 0) = 0;
 GO
+
 
 
 -- =========================================================================

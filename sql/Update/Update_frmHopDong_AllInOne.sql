@@ -414,6 +414,7 @@ SELECT
     h.SobanChayduphong,
     h.Sotiencoccho AS DaCocVND,
     h.Sotiencochopdong,
+    h.Giabanman,
     h.Tongtiencoc,
     h.Ghichu,
     (

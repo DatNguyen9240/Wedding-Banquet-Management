@@ -1,4 +1,4 @@
-﻿IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong]'))
+IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong]'))
     DROP VIEW [dbo].[v_DanhSachHopDong]
 GO
 CREATE VIEW [dbo].[v_DanhSachHopDong] AS
@@ -75,6 +75,7 @@ SELECT
     h.SobanChayduphong,
     h.Sotiencoccho AS DaCocVND,
     h.Sotiencochopdong,
+    h.Giabanman,
     h.Tongtiencoc,
     h.Ghichu,
     h.JsonLichTrinh,
