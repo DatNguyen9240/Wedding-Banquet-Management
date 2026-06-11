@@ -244,12 +244,12 @@ app.post('/api/documents/generate', async (req, res) => {
                 }
             }
         }
-
         // --- KHỞI TẠO NORMALIZATION (Để Template dễ khớp hơn) ---
-        // Tự động tạo thêm Version VIẾT HOA của các Key để template {ID} hay {id} đều chạy
+        // Tự động tạo thêm các phiên bản chữ hoa, chữ thường để template kiểu gì cũng chạy
         const normalizedData = { ...dataMap };
         for (const key in dataMap) {
             normalizedData[key.toUpperCase()] = dataMap[key];
+            normalizedData[key.toLowerCase()] = dataMap[key];
             // Hỗ trợ một số trường hợp viết hoa chữ cái đầu phổ biến
             const camelKey = key.charAt(0).toUpperCase() + key.slice(1);
             if (!normalizedData[camelKey]) normalizedData[camelKey] = dataMap[key];

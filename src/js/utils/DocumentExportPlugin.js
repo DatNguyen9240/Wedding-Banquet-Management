@@ -80,7 +80,7 @@ var DocumentExportPlugin = (function () {
     // Đọc tên file mẫu từ DB (đã cấu hình trong bảng dmLoaihinhtiec)
     var actualDocType = config.docType;
     if (config.docType === 'hop_dong' && row.TemplateFile) {
-        actualDocType = row.TemplateFile;
+      actualDocType = row.TemplateFile;
     }
 
     var btn = document.getElementById('btn-export-doc-' + config.docType);

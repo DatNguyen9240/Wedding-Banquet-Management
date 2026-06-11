@@ -374,7 +374,7 @@ var DocumentExportPlugin = (function () {
       label: 'Xuất Phụ Lục HĐ',
       icon: 'description',
       altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'API_DanhSachPhuLuc',
+      sqlListName: 'frmPhuLucHopDong',
       convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
     },
     'frmThayDoiBoSung': {
@@ -382,7 +382,7 @@ var DocumentExportPlugin = (function () {
       label: 'Xuất Phụ Lục HĐ',
       icon: 'description',
       altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'API_DanhSachPhuLuc',
+      sqlListName: 'frmPhuLucHopDong',
       convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
     }
   };
@@ -488,16 +488,6 @@ var DocumentExportPlugin = (function () {
         }
 
         var row = selectedRows[0];
-        var st = (row.Status || row.TrangThai || '').toString().toLowerCase();
-        if (st.includes('đã ký')) {
-          if (typeof Alert !== 'undefined') {
-            Alert.warning('Bị khóa', 'Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
-          } else {
-            alert('Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
-          }
-          return;
-        }
-
         _generateDocument(row, config);
       }
     }];
@@ -1507,6 +1497,8 @@ var FoodSelectionPlugin = (function () {
     var listDichVu = selectedDichVu.map(function (x) {
       return {
         Mahang: x.MaMon,
+        TenHang: x.TenMon || '',
+        DvtID: x.DvtID || '',
         Soluong: x.SoLuong || 1,
         Dongia: x.DonGia,
         Giamgia: 0,
@@ -2424,7 +2416,7 @@ var PhuLucPlugin = (function () {
     var DOC_API_BASE = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER) ? window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API : 'http://localhost:3000/api/document';
     var config = {
       docType: 'phu_luc_hop_dong',
-      sqlListName: 'API_DanhSachPhuLuc'
+      sqlListName: 'frmPhuLucHopDong'
     };
 
     if (typeof UIToast !== 'undefined') {

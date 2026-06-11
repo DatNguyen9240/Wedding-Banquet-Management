@@ -193,7 +193,7 @@ BEGIN
 
     IF (@NgayToChucParsed IS NULL)
     BEGIN
-        SELECT 0 AS [Success], N'Loi: Ngay to chuc khong duoc de trong hoac dinh dang ngay khong hop le.' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+        SELECT 0 AS [Success], N'Lỗi: Ngày tổ chức không được để trống hoặc định dạng ngày không hợp lệ.' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
         RETURN;
     END
 
@@ -219,7 +219,7 @@ BEGIN
             )
             BEGIN
                 ROLLBACK TRANSACTION;
-                SELECT 0 AS [Success], N'Loi: Sanh ban chon da duoc dat hoac coc truoc do trong ca tiec nay. Vui long kiem tra lai!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+                SELECT 0 AS [Success], N'Lỗi: Sảnh bạn chọn đã được đặt hoặc cọc trước đó trong ca tiệc này. Vui lòng kiểm tra lại!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
                 RETURN;
             END
         END
@@ -301,7 +301,7 @@ BEGIN
             IF EXISTS (SELECT 1 FROM tbmk_Hopdong WHERE Sohopdong=@Sohopdong AND (Status IN ('SIGNED','COMPLETED') OR IsKetthuc=1 OR IsHuy=1))
             BEGIN
                 ROLLBACK TRANSACTION;
-                SELECT 0 AS [Success], N'Loi: Khong the chinh sua hop dong da chot. Vui long dung chuc nang Phu luc!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+                SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã chốt. Vui lòng dùng chức năng Phụ lục!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
                 RETURN;
             END
             UPDATE tbmk_Hopdong SET
@@ -354,7 +354,7 @@ SELECT
     h.Sobiennhan,
     h.Makh,
     
-    -- Láº¥y thông tin khách hàng từ dmkhachhang
+    -- Lấy thông tin khách hàng từ dmkhachhang
     CASE 
         WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL AND k.Tenchure <> '' AND k.Tencodau <> ''
             THEN k.Tenchure + ' & ' + k.Tencodau
@@ -369,8 +369,8 @@ SELECT
     
     CASE 
         WHEN ISNULL((SELECT MAX(td.LanThayDoi) FROM tbmk_Thaydoi td WHERE td.Sohopdong = h.Sohopdong AND ISNULL(td.IsDeleted, 0) = 0), 0) = 0
-            THEN N'PHIáº¾U ĐẶT TIỆCC'
-        ELSE N'PHIáº¾U ĐẶT TIỆCC THAY ĐỔII Láº¦N ' + CAST((SELECT MAX(td.LanThayDoi) FROM tbmk_Thaydoi td WHERE td.Sohopdong = h.Sohopdong AND ISNULL(td.IsDeleted, 0) = 0) AS NVARCHAR(10))
+            THEN N'PHIẾU ĐẶT TIỆC'
+        ELSE N'PHIẾU ĐẶT TIỆC THAY ĐỔI LẦN ' + CAST((SELECT MAX(td.LanThayDoi) FROM tbmk_Thaydoi td WHERE td.Sohopdong = h.Sohopdong AND ISNULL(td.IsDeleted, 0) = 0) AS NVARCHAR(10))
     END AS [TieuDePhieu],
     
     ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
@@ -440,12 +440,12 @@ SELECT
     -- CÁC CỘT DỮ LIỆU ĐƯỢC FORMAT SẴN CHO IN ẤN
     -- Dùng để binding vào file hop_dong.docx (docxtemplater)
     -- ==========================================
-    -- (Đã có sáºµn h.Sohopdong á»Ÿ trên nên không cáº§n táº¡o SoHopDong ná»¯a, trong Word sáº½ dùng biến {Sohopdong})
+    -- (Đã có sẵn h.Sohopdong ở trên nên không cần tạo SoHopDong nữa, trong Word sẽ dùng biến {Sohopdong})
     RIGHT('0' + CAST(DAY(h.Ngayhopdong) AS VARCHAR), 2) AS [NgayLapHD],
     RIGHT('0' + CAST(MONTH(h.Ngayhopdong) AS VARCHAR), 2) AS [ThangLapHD],
     CAST(YEAR(h.Ngayhopdong) AS VARCHAR) AS [NamLapHD],
 
-    -- Thông tin Bên A (có _ cho hop_dong.docx cổ©)
+    -- Thông tin Bên A (có _ cho hop_dong.docx cũ)
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
     ISNULL(h.UserCreate, '...') AS [BenANhanVienPhuTrach],
@@ -479,7 +479,7 @@ SELECT
     ISNULL(h.GioDienRaSuKien, '...') AS [TiecGioBatDau],
 
     -- Các trường lịch trình động dạng JSON phục vụ in ấn BEO mới
-    -- Nếu đã có JsonLichTrinh lưu trong DB thì ưu tiên láº¥y, ngược lại trả về mảng rỗng []
+    -- Nếu đã có JsonLichTrinh lưu trong DB thì ưu tiên lấy, ngược lại trả về mảng rỗng []
     ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [LichTrinh],
     
     (
@@ -633,10 +633,10 @@ SELECT
         SELECT TOP 1 NULLIF(b.HinhThuc, '') 
         FROM tbmk_Biennhancoccho b 
         WHERE b.DocumentID = h.Sobiennhan
-    ), N'Chuyá»đn khoáº£n') AS [Dot1HinhThuc],
+    ), N'Chuyển khoản') AS [Dot1HinhThuc],
     
     FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ' AS [Dot2SoTien],
-    N'Chuyá»đn khoáº£n' AS [Dot2HinhThuc],
+    N'Chuyển khoản' AS [Dot2HinhThuc],
     
     ISNULL(NULLIF(h.Ghichu, ''), 
         CASE 
@@ -661,14 +661,14 @@ SELECT
     ISNULL(h.Noidunguudai, '') AS [DSKhuyenMai],
 
     -- ==========================================
-    -- THÔNG TIN XUáº¤T HÓA ĐƠN GTGT (Điều 6)
+    -- THÔNG TIN XUẤT HÓA ĐƠN GTGT (Điều 6)
     -- ==========================================
     ISNULL(h.TenCtyHoaDon,    N'...') AS [HDTenCty],
     ISNULL(h.DiaChiCtyHoaDon, N'...') AS [HDDiaChi],
     ISNULL(h.MaSoThueHoaDon,  N'...') AS [HDMaSoThue],
     ISNULL(k.Mail, N'...') AS [Email],
 
-    -- DỮ LIệU BỔ SUNG CHO CÁCH 3.1 (GROUPING) TRONG WORD
+    -- DỮ LIỆU BỔ SUNG CHO CÁCH 3.1 (GROUPING) TRONG WORD
     -- 1. Bảng Dịch Vụ Tính Phí
     (
         SELECT 
@@ -787,7 +787,7 @@ WHERE FormName = 'frmHopDong'
     'SetupBatDau', 'SetupKetThuc', 'SetupNoiDung1', 'SetupNoiDung2', 'ToChucNoiDung', 'OutNoiDung',
     'Dot1SoTien', 'Dot1Ngay', 'Dot1HinhThuc', 'Dot2SoTien', 'Dot2HinhThuc', 'DotCuoiGhiChu',
     'TongThanhTien', 'MucPhiPhucVu', 'PhiPhucVu', 'TongCongChuaVAT', 'VAT8', 'VAT10', 'TongTienFormat',
-    'TemplateFile'
+    'TemplateFile', 'JsonLichTrinh', 'SanhDat2', 'Giabanman', 'DanhSachSanh', 'DichVuTinhPhi', 'DanhSachNgay', 'Email'
   );
 
 -- Đảm bảo trường NgayToChuc luôn tồn tại trong cấu hình Form kèm Trigger tính lịch âm
@@ -818,7 +818,7 @@ UPDATE SY_FormatFields
 SET ShowInAdd = 0, ShowInEdit = 0
 WHERE FormName = 'frmHopDong' AND FieldName IN ('TenKhachHang', 'TiecLoaiTiec');
 
--- Khóa khi sửa đđi với các thông tin cđt lõi
+-- Khóa khi sửa đối với các thông tin cốt lõi
 UPDATE SY_FormatFields
 SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmHopDong' AND FieldName IN ('Makh', 'SoBan', 'SanhDat', 'TongTien', 'TrangThai', 'Sohopdong');
