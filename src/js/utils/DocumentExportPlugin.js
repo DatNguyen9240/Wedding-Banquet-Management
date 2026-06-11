@@ -158,6 +158,8 @@ var DocumentExportPlugin = (function () {
         }
 
         var row = selectedRows[0];
+        // Bỏ chặn xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký) theo yêu cầu
+        /*
         var st = (row.Status || row.TrangThai || '').toString().toLowerCase();
         if (st.includes('đã ký')) {
           if (typeof Alert !== 'undefined') {
@@ -167,6 +169,7 @@ var DocumentExportPlugin = (function () {
           }
           return;
         }
+        */
 
         _generateDocument(row, config);
       }

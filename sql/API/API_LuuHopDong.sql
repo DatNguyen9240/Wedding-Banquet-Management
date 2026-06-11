@@ -48,7 +48,10 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @UserCreate VARCHAR(20) = 'System',
     
     -- Danh sách Sảnh đặt (Dạng JSON: [{"Sanhtiecid":"S01", "IsSanhchinh": 1}, ...])
-    @JsonSanhTiec NVARCHAR(MAX) = NULL 
+    @JsonSanhTiec NVARCHAR(MAX) = NULL,
+    @JsonBanTiec NVARCHAR(MAX) = NULL,
+    @JsonThucUong NVARCHAR(MAX) = NULL,
+    @JsonDichVu NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -369,6 +372,101 @@ BEGIN
                 @Now,
                 @UserCreate
             FROM OPENJSON(@JsonSanhTiec);
+        END
+
+        -- ==========================================================
+        -- 4. XỬ LÝ CHI TIẾT THỰC ĐƠN BÀN TIỆC (tbmk_Hopdongthucdonman, tbmk_Hopdongthucdonchay)
+        -- ==========================================================
+        IF (@JsonBanTiec IS NOT NULL)
+        BEGIN
+            DELETE FROM tbmk_Hopdongthucdonman WHERE Sohopdong = @Sohopdong;
+            DELETE FROM tbmk_Hopdongthucdonchay WHERE Sohopdong = @Sohopdong;
+            
+            -- Insert món mặn: Tên hàng không chứa chữ 'chay'
+            INSERT INTO tbmk_Hopdongthucdonman (
+                UserAutoid, Sohopdong, STTmon, Mahang, Dongia, 
+                UserCreate, DateCreate, Ghichuthucdonman, IsKhaividaugio
+            )
+            SELECT 
+                NEWID(), @Sohopdong, ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), j.Mahang, j.Dongia,
+                @UserCreate, @Now, NULL, 0
+            FROM OPENJSON(@JsonBanTiec)
+            WITH (
+                Mahang VARCHAR(50),
+                TenHang NVARCHAR(255),
+                Dongia DECIMAL(18,2)
+            ) j
+            LEFT JOIN dmHanghoa h ON j.Mahang = h.Mahang
+            WHERE ISNULL(h.Tenhang, j.TenHang) NOT LIKE N'%chay%';
+
+            -- Insert món chay: Tên hàng chứa chữ 'chay'
+            INSERT INTO tbmk_Hopdongthucdonchay (
+                UserAutoid, Sohopdong, STTmon, Mahang, Dongia, 
+                UserCreate, DateCreate, Ghichuthucdonchay, IsKhaividaugio, IsPhan
+            )
+            SELECT 
+                NEWID(), @Sohopdong, ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), j.Mahang, j.Dongia,
+                @UserCreate, @Now, NULL, 0, 0
+            FROM OPENJSON(@JsonBanTiec)
+            WITH (
+                Mahang VARCHAR(50),
+                TenHang NVARCHAR(255),
+                Dongia DECIMAL(18,2)
+            ) j
+            LEFT JOIN dmHanghoa h ON j.Mahang = h.Mahang
+            WHERE ISNULL(h.Tenhang, j.TenHang) LIKE N'%chay%';
+        END
+
+        -- ==========================================================
+        -- 5. XỬ LÝ CHI TIẾT THỨC UỐNG (tbmk_Hopdongthucuong)
+        -- ==========================================================
+        IF (@JsonThucUong IS NOT NULL)
+        BEGIN
+            DELETE FROM tbmk_Hopdongthucuong WHERE Sohopdong = @Sohopdong;
+            
+            INSERT INTO tbmk_Hopdongthucuong (
+                UserAutoid, Sohopdong, Mahang, Soluong, Dongia, Sotien,
+                IsKhuyenmai, Ghichuthucuong, Giamgia, UserCreate, DateCreate, STT, Dvt
+            )
+            SELECT 
+                NEWID(), @Sohopdong, j.Mahang, j.Soluong, j.Dongia, (j.Soluong * j.Dongia),
+                ISNULL(j.IsKhuyenmai, 0), j.Ghichuthucuong, ISNULL(j.Giamgia, 0), @UserCreate, @Now,
+                ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), h.DVTID
+            FROM OPENJSON(@JsonThucUong)
+            WITH (
+                Mahang VARCHAR(50),
+                Soluong DECIMAL(18,2),
+                Dongia DECIMAL(18,2),
+                IsKhuyenmai BIT,
+                Ghichuthucuong NVARCHAR(500),
+                Giamgia DECIMAL(18,2)
+            ) j
+            LEFT JOIN dmHanghoa h ON j.Mahang = h.Mahang;
+        END
+
+        -- ==========================================================
+        -- 6. XỬ LÝ CHI TIẾT DỊCH VỤ (tbmk_Hopdongdichvu)
+        -- ==========================================================
+        IF (@JsonDichVu IS NOT NULL)
+        BEGIN
+            DELETE FROM tbmk_Hopdongdichvu WHERE Sohopdong = @Sohopdong;
+            
+            INSERT INTO tbmk_Hopdongdichvu (
+                UserAutoid, Sohopdong, Mahang, Soluong, Dongia, Sotien,
+                IsKhuyenmai, Ghichudichvu, UserCreate, DateCreate, STT
+            )
+            SELECT 
+                NEWID(), @Sohopdong, j.Mahang, j.Soluong, j.Dongia, (j.Soluong * j.Dongia),
+                ISNULL(j.IsKhuyenmai, 0), j.Ghichudichvu, @UserCreate, @Now,
+                ROW_NUMBER() OVER(ORDER BY (SELECT NULL))
+            FROM OPENJSON(@JsonDichVu)
+            WITH (
+                Mahang VARCHAR(50),
+                Soluong DECIMAL(18,2),
+                Dongia DECIMAL(18,2),
+                IsKhuyenmai BIT,
+                Ghichudichvu NVARCHAR(500)
+            ) j;
         END
 
         COMMIT TRANSACTION;
