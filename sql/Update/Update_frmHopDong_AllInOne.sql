@@ -1,4 +1,4 @@
-﻿-- Script Update Hợp Đồng All-in-One
+-- Script Update Hợp Đồng All-in-One
 
 SET ANSI_NULLS ON
 GO
@@ -477,6 +477,8 @@ SELECT
     N'RHS: Có ATAS, Led; không máy lạnh' AS [ToChucNoiDung],
     N'Ra hàng hóa' AS [OutNoiDung],
     ISNULL(h.GioDienRaSuKien, '...') AS [TiecGioBatDau],
+    ISNULL(FORMAT(h.NgayTraSanhDV, 'HH:mm'), '') AS [TiecGioKetThuc],
+    ISNULL(h.TongSoBan * 10, 0) AS [SoKhachDiemDanh],
 
     -- Các trường lịch trình động dạng JSON phục vụ in ấn BEO mới
     -- Nếu đã có JsonLichTrinh lưu trong DB thì ưu tiên lấy, ngược lại trả về mảng rỗng []
@@ -663,9 +665,10 @@ SELECT
     -- ==========================================
     -- THÔNG TIN XUẤT HÓA ĐƠN GTGT (Điều 6)
     -- ==========================================
-    ISNULL(h.TenCtyHoaDon,    N'...') AS [HDTenCty],
-    ISNULL(h.DiaChiCtyHoaDon, N'...') AS [HDDiaChi],
-    ISNULL(h.MaSoThueHoaDon,  N'...') AS [HDMaSoThue],
+    -- Nếu chưa điền riêng thì tự lấy từ thông tin khách hàng
+    ISNULL(NULLIF(h.TenCtyHoaDon, ''),    ISNULL(k.Tenkh,  N'...')) AS [HDTenCty],
+    ISNULL(NULLIF(h.DiaChiCtyHoaDon, ''), ISNULL(k.Diachi, N'...')) AS [HDDiaChi],
+    ISNULL(NULLIF(h.MaSoThueHoaDon, ''),  N'...') AS [HDMaSoThue],
     ISNULL(k.Mail, N'...') AS [Email],
 
     -- DỮ LIỆU BỔ SUNG CHO CÁCH 3.1 (GROUPING) TRONG WORD

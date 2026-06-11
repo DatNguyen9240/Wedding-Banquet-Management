@@ -1,4 +1,4 @@
-﻿IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong]'))
+IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong]'))
     DROP VIEW [dbo].[v_DanhSachHopDong]
 GO
 CREATE VIEW [dbo].[v_DanhSachHopDong] AS
@@ -119,6 +119,8 @@ SELECT
 
     -- 3. Thông tin tiệc
     FORMAT(h.Ngaytochuc, 'HH:mm') AS [TiecGioBatDau],
+    ISNULL(FORMAT(h.NgayTraSanhDV, 'HH:mm'), '') AS [TiecGioKetThuc],
+    ISNULL(h.TongSoBan * 10, 0) AS [SoKhachDiemDanh],
     RIGHT('0' + CAST(DAY(h.Ngaytochuc) AS VARCHAR), 2) AS [TiecNgayDL],
     RIGHT('0' + CAST(MONTH(h.Ngaytochuc) AS VARCHAR), 2) AS [TiecThangDL],
     CAST(YEAR(h.Ngaytochuc) AS VARCHAR) AS [TiecNamDL],
@@ -187,9 +189,15 @@ SELECT
     FORMAT(h.Tongtienhopdong, 'N0', 'vi-VN') AS [TongThanhTien],
     [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0)) AS [TongTienBangChu],
 
-    -- 3. Tổng giá trị tạm tính bằng chữ
+    -- 9. Tổng giá trị tạm tính bằng chữ
     [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0)) AS [TongGiaTriTamTinhBangChu],
-    FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriTamTinh]
+    FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
+
+    -- 10. Thông tin xuất hóa đơn GTGT (tự động lấy từ KH nếu chưa điền riêng)
+    ISNULL(NULLIF(h.TenCtyHoaDon, ''),    ISNULL(k.Tenkh,  N'...')) AS [HDTenCty],
+    ISNULL(NULLIF(h.DiaChiCtyHoaDon, ''), ISNULL(k.Diachi, N'...')) AS [HDDiaChi],
+    ISNULL(NULLIF(h.MaSoThueHoaDon, ''),  N'...') AS [HDMaSoThue],
+    ISNULL(k.Mail, N'...') AS [HDEmail]
     
 FROM tbmk_Hopdong h
 LEFT JOIN dmkhachhang k ON h.Makh = k.Makh
