@@ -777,7 +777,7 @@ WHERE FormName = 'frmHopDong'
     'NgayLapHD', 'ThangLapHD', 'NamLapHD',
     'BenANhanVienPhuTrach', 'BenASDTNhanVien', 'BenAChucVu', 'BenANguoiDaiDien', 'BenATenCongTy', 'BenADiaChi', 'BenASDT', 'BenAEmail', 'BenAMST',
     'BenBTenDaiDien', 'BenBTenChuTiec', 'BenBCCCD', 'BenBDiaChi', 'BenBDienThoai', 'BenBChucVu', 'BenBEmail',
-    'TiecGioBatDau', 'TiecNgayDL', 'TiecThangDL', 'TiecNamDL',
+    'TiecGioBatDau', 'TiecGioKetThuc', 'TiecNgayDL', 'TiecThangDL', 'TiecNamDL',
     'TiecNgayAL', 'TiecThangAL', 'TiecNamAL',
     'TenSanhTiec', 'SanhQuyMoMin', 'SanhQuyMoMax',
     'TiecSoBanChinhThuc', 'TiecSoBanTang', 'TiecSoBanDuPhong', 'TiecSoKhach1Ban',
@@ -1087,6 +1087,3 @@ WHERE Loaitiecid NOT IN (
     SELECT Loaitiecid FROM tbmk_LoaitiecAddfile WHERE FormName = 'frmHopDong'
 );
 GO
-
-
-
