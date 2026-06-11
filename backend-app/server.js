@@ -286,7 +286,8 @@ app.post('/api/documents/generate', async (req, res) => {
 
         // Đổ toàn bộ dataMap (Bên A + Bên B + Món ăn) vào template Word
         try {
-            doc.render(dataMap);
+            doc.setData(dataMap);
+            doc.render();
             console.log('[GENERATE] ✅ Render dữ liệu vào template thành công');
         } catch (renderErr) {
             console.error('[GENERATE] ❌ Lỗi render:', renderErr.message);
@@ -300,16 +301,15 @@ app.post('/api/documents/generate', async (req, res) => {
         try {
             // Lấy Zip object sau render
             const docZip = doc.getZip();
-            if (!docZip) {
-                throw new Error('getZip() trả về null sau render');
-            }
-
-            let docXml = docZip.file("word/document.xml");
-            if (!docXml) {
+            
+            // Tìm file word/document.xml (linh hoạt hơn)
+            let docXmlFile = docZip.file("word/document.xml") || docZip.file(/word\/document\.xml/i)[0];
+            
+            if (!docXmlFile) {
                 throw new Error('Không tìm thấy word/document.xml trong ZIP');
             }
 
-            let xmlContent = docXml.asText();
+            let xmlContent = docXmlFile.asText();
             
             let colsToMerge = [];
             if (Array.isArray(mergeColumns)) {
@@ -325,7 +325,7 @@ app.post('/api/documents/generate', async (req, res) => {
                 xmlContent = mergeTableColumn(xmlContent, colName);
             });
             
-            docZip.file("word/document.xml", xmlContent);
+            docZip.file(docXmlFile.name, xmlContent);
             console.log(`[GENERATE] ✅ Đã tự động gộp dọc các ô trùng nhau ở cột: ${colsToMerge.join(', ')}`);
         } catch (xmlErr) {
             console.error('[GENERATE] ⚠️  Lỗi hậu xử lý XML gộp ô (nhưng file vẫn được tạo):', xmlErr.message);
