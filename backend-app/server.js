@@ -285,11 +285,31 @@ app.post('/api/documents/generate', async (req, res) => {
         });
 
         // Đổ toàn bộ dataMap (Bên A + Bên B + Món ăn) vào template Word
-        doc.render(dataMap);
+        try {
+            doc.render(dataMap);
+            console.log('[GENERATE] ✅ Render dữ liệu vào template thành công');
+        } catch (renderErr) {
+            console.error('[GENERATE] ❌ Lỗi render:', renderErr.message);
+            if (renderErr.properties && renderErr.properties.errors) {
+                console.error('[GENERATE] Chi tiết:', JSON.stringify(renderErr.properties.errors));
+            }
+            throw renderErr;
+        }
 
         // HẬU XỬ LÝ XML: Tự động gộp dọc (vertical merge) các ô trùng tên sảnh ở các cột chỉ định
         try {
-            let docXml = doc.getZip().file("word/document.xml").asText();
+            // Lấy Zip object sau render
+            const docZip = doc.getZip();
+            if (!docZip) {
+                throw new Error('getZip() trả về null sau render');
+            }
+
+            let docXml = docZip.file("word/document.xml");
+            if (!docXml) {
+                throw new Error('Không tìm thấy word/document.xml trong ZIP');
+            }
+
+            let xmlContent = docXml.asText();
             
             let colsToMerge = [];
             if (Array.isArray(mergeColumns)) {
@@ -302,19 +322,29 @@ app.post('/api/documents/generate', async (req, res) => {
             }
             
             colsToMerge.forEach(colName => {
-                docXml = mergeTableColumn(docXml, colName);
+                xmlContent = mergeTableColumn(xmlContent, colName);
             });
             
-            doc.getZip().file("word/document.xml", docXml);
+            docZip.file("word/document.xml", xmlContent);
             console.log(`[GENERATE] ✅ Đã tự động gộp dọc các ô trùng nhau ở cột: ${colsToMerge.join(', ')}`);
         } catch (xmlErr) {
-            console.error('[GENERATE] Lỗi hậu xử lý XML gộp ô:', xmlErr.message);
+            console.error('[GENERATE] ⚠️  Lỗi hậu xử lý XML gộp ô (nhưng file vẫn được tạo):', xmlErr.message);
         }
 
-        const buf = doc.getZip().generate({
-            type: "nodebuffer",
-            compression: "DEFLATE",
-        });
+        let buf;
+        try {
+            const docZip = doc.getZip();
+            if (!docZip) {
+                throw new Error('getZip() trả về null lúc generate');
+            }
+            buf = docZip.generate({
+                type: "nodebuffer",
+                compression: "DEFLATE",
+            });
+        } catch (genErr) {
+            console.error('[GENERATE] ❌ Lỗi generate ZIP:', genErr.message);
+            throw genErr;
+        }
 
         // ── 5. Lưu file .docx đã sinh ra ──────────────
         const finalFileName = `${outputFileName}_${Date.now()}.docx`;
