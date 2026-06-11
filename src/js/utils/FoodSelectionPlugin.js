@@ -325,6 +325,8 @@ var FoodSelectionPlugin = (function () {
     var listDichVu = selectedDichVu.map(function (x) {
       return {
         Mahang: x.MaMon,
+        TenHang: x.TenMon || '',
+        DvtID: x.DvtID || '',
         Soluong: x.SoLuong || 1,
         Dongia: x.DonGia,
         Giamgia: 0,

@@ -218,8 +218,15 @@ SELECT
         ELSE (
             SELECT 
                 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [STT],
-                ISNULL(j.TenHang, ISNULL(j.TenMon, j.Mahang)) AS [NoiDung],
-                ISNULL(j.DvtID, N'Cái') AS [DVT],
+                -- Ưu tiên TenHang trong JSON (record mới), fallback tra dmHanghoa (record cũ)
+                ISNULL(
+                    NULLIF(j.TenHang, ''),
+                    ISNULL(
+                        (SELECT TOP 1 h.Tenhang FROM dmHanghoa h WHERE h.Mahang = j.Mahang),
+                        j.Mahang
+                    )
+                ) AS [NoiDung],
+                ISNULL(j.DvtID, '') AS [DVT],
                 ISNULL(TRY_CAST(j.Soluong AS INT), 1) AS [SoLuong],
                 FORMAT(ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0), 'N0', 'vi-VN') AS [DonGia],
                 FORMAT(
