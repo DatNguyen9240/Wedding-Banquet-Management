@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 PRINT N'=== BẮT ĐẦU CẬP NHẬT CẤU TRÚC PHỤ LỤC HỢP ĐỒNG (ALL-IN-ONE) ===';
@@ -611,13 +611,13 @@ ELSE
     WHERE FormID = 'frmThayDoiBoSung';
 
 -- Form map theo tên bảng phu luc (đầu ra của PhuLucPlugin)
-IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'tbmk_PhuLucHopDong')
+IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'frmPhuLucHopDong')
     INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, TableName, SaveTableName, PrimaryKey)
-    VALUES ('tbmk_PhuLucHopDong', N'Danh sách phụ lục hợp đồng', 'v_DanhSachPhuLuc', 'tbmk_Thaydoi', 'Sothaydoi');
+    VALUES ('frmPhuLucHopDong', N'Danh sách phụ lục hợp đồng', 'v_DanhSachPhuLuc', 'tbmk_Thaydoi', 'Sothaydoi');
 ELSE
     UPDATE SY_FrmLstTbl 
     SET TableName = 'v_DanhSachPhuLuc', SaveTableName = 'tbmk_Thaydoi', PrimaryKey = 'Sothaydoi' 
-    WHERE FormID = 'tbmk_PhuLucHopDong';
+    WHERE FormID = 'frmPhuLucHopDong';
 
 -- Form map theo tên bảng thay đổi gốc
 IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'tbmk_Thaydoi')
@@ -630,34 +630,34 @@ ELSE
 GO
 
 -- 6.2. Đồng bộ các định tuyến API trong WA_API cho cả 3 form IDs (đảm bảo FE gọi ID nào cũng chạy đúng)
-DELETE FROM WA_API WHERE List IN ('frmThayDoiBoSung', 'tbmk_PhuLucHopDong', 'tbmk_Thaydoi') AND Func IN ('View', 'Save', 'Delete');
+DELETE FROM WA_API WHERE List IN ('frmThayDoiBoSung', 'frmPhuLucHopDong', 'tbmk_Thaydoi') AND Func IN ('View', 'Save', 'Delete');
 GO
 
 -- Đăng ký View
 INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES 
 ('frmThayDoiBoSung', 'View', 'API_TruyVanDong', '@List=N''frmThayDoiBoSung'', @Keyword=N''{Keyword}'', @SortColumn=N''{SortColumn}'', @SortDir=N''{SortDir}'', @Data=N''{JsonData}'''),
-('tbmk_PhuLucHopDong', 'View', 'API_TruyVanDong', '@List=N''tbmk_PhuLucHopDong'', @Keyword=N''{Keyword}'', @SortColumn=N''{SortColumn}'', @SortDir=N''{SortDir}'', @Data=N''{JsonData}'''),
+('frmPhuLucHopDong', 'View', 'API_TruyVanDong', '@List=N''frmPhuLucHopDong'', @Keyword=N''{Keyword}'', @SortColumn=N''{SortColumn}'', @SortDir=N''{SortDir}'', @Data=N''{JsonData}'''),
 ('tbmk_Thaydoi', 'View', 'API_Thaydoi', '@Keyword=N''{Keyword}'', @Sothaydoi=N''{Sothaydoi}'''); -- Giữ nguyên SP cũ cho xuất Word/Detail
 
 -- Đăng ký Save
 INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES 
 ('frmThayDoiBoSung', 'Save', 'API_LuuThayDoi', '@Sothaydoi=N''{Sothaydoi}'', @Sohopdong=N''{Sohopdong}'', @Ngaythaydoi=N''{Ngaythaydoi}'', @Ghichu=N''{Ghichu}'', @Status=N''{Status}'', @UserName=N''{UserName}'', @JsonData=N''{JsonData}'''),
-('tbmk_PhuLucHopDong', 'Save', 'API_LuuThayDoi', '@Sothaydoi=N''{Sothaydoi}'', @Sohopdong=N''{Sohopdong}'', @Ngaythaydoi=N''{Ngaythaydoi}'', @Ghichu=N''{Ghichu}'', @Status=N''{Status}'', @UserName=N''{UserName}'', @JsonData=N''{JsonData}'''),
+('frmPhuLucHopDong', 'Save', 'API_LuuThayDoi', '@Sothaydoi=N''{Sothaydoi}'', @Sohopdong=N''{Sohopdong}'', @Ngaythaydoi=N''{Ngaythaydoi}'', @Ghichu=N''{Ghichu}'', @Status=N''{Status}'', @UserName=N''{UserName}'', @JsonData=N''{JsonData}'''),
 ('tbmk_Thaydoi', 'Save', 'API_LuuThayDoi', '@Sothaydoi=N''{Sothaydoi}'', @Sohopdong=N''{Sohopdong}'', @Ngaythaydoi=N''{Ngaythaydoi}'', @Ghichu=N''{Ghichu}'', @Status=N''{Status}'', @UserName=N''{UserName}'', @JsonData=N''{JsonData}''');
 
 -- Đăng ký Delete
 INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES 
 ('frmThayDoiBoSung', 'Delete', 'API_XoaThayDoi', '@Ids=N''{Sothaydoi}'', @UserName=N''{UserName}'''),
-('tbmk_PhuLucHopDong', 'Delete', 'API_XoaThayDoi', '@Ids=N''{Sothaydoi}'', @UserName=N''{UserName}'''),
+('frmPhuLucHopDong', 'Delete', 'API_XoaThayDoi', '@Ids=N''{Sothaydoi}'', @UserName=N''{UserName}'''),
 ('tbmk_Thaydoi', 'Delete', 'API_XoaThayDoi', '@Ids=N''{Sothaydoi}'', @UserName=N''{UserName}''');
 GO
 
 -- 6.3. Tự động đồng bộ các cột từ View sang bảng định dạng trường SY_FormatFields
 EXEC API_DongBoTruongGiaoDien @FormName = 'frmThayDoiBoSung', @ObjectName = 'v_DanhSachPhuLuc';
-EXEC API_DongBoTruongGiaoDien @FormName = 'tbmk_PhuLucHopDong', @ObjectName = 'v_DanhSachPhuLuc';
+EXEC API_DongBoTruongGiaoDien @FormName = 'frmPhuLucHopDong', @ObjectName = 'v_DanhSachPhuLuc';
 EXEC API_DongBoTruongGiaoDien @FormName = 'tbmk_Thaydoi', @ObjectName = 'v_DanhSachPhuLuc';
 GO
 
@@ -666,7 +666,7 @@ PRINT N'6.4. Đang cấu hình nhãn tiếng Việt và ẩn các trường khô
 GO
 
 DECLARE @Forms TABLE (FormName VARCHAR(50));
-INSERT INTO @Forms VALUES ('frmThayDoiBoSung'), ('tbmk_PhuLucHopDong'), ('tbmk_Thaydoi');
+INSERT INTO @Forms VALUES ('frmThayDoiBoSung'), ('frmPhuLucHopDong'), ('tbmk_Thaydoi');
 
 -- Mặc định ẩn toàn bộ trường trong form trước để tránh tràn lan cột metadata/computed
 UPDATE SY_FormatFields 
@@ -766,9 +766,10 @@ SET CaptionVN = N'Trạng Thái Phụ Lục', FormatID = 'sl', DataSource = N'ST
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Status';
 
 UPDATE ff
-SET CaptionVN = N'Ghi Chú Phụ Lục', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '12', OrderNo = 22
+SET CaptionVN = N'Nội dung thỏa thuận', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '12', OrderNo = 22
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Ghichu';
 GO
 
 PRINT N'=== HOÀN THÀNH CẬP NHẬT CẤU TRÚC PHỤ LỤC HỢP ĐỒNG (ALL-IN-ONE) ===';
 GO
+

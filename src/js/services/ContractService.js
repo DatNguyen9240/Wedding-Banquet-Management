@@ -115,7 +115,7 @@ var ContractService = (function () {
         : '/api/API_Gateway_Router';
       
       var payload = {
-        List: 'tbmk_PhuLucHopDong',
+        List: 'frmPhuLucHopDong',
         Func: 'View',
         Keyword: sohopdong || ''
       };
@@ -152,12 +152,45 @@ var ContractService = (function () {
     });
   }
 
+  /**
+   * Xóa phụ lục hợp đồng
+   * @param {string} sothaydoi - Số phụ lục/thay đổi cần xóa (ids)
+   * @param {string} username - Tên người xóa
+   * @returns {Promise}
+   */
+  function deletePhuLuc(sothaydoi, username) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.ROUTER)
+        ? API_CONFIG.ENDPOINTS.ROUTER
+        : '/api/API_Gateway_Router';
+
+      var payload = {
+        List: 'frmPhuLucHopDong',
+        Func: 'Delete',
+        Sothaydoi: sothaydoi,
+        UserName: username || 'System',
+        JsonData: JSON.stringify({
+          Sothaydoi: sothaydoi,
+          UserName: username || 'System'
+        })
+      };
+
+      ApiClient.post(endpoint, payload)
+        .then(resolve)
+        .catch(function (err) {
+          console.error('[ContractService] Lỗi deletePhuLuc:', err);
+          reject(err);
+        });
+    });
+  }
+
   return {
     getList: getList,
     getBookingById: getBookingById,
     getFoods: getFoods,
     save: save,
     getPhuLucHistory: getPhuLucHistory,
-    savePhuLuc: savePhuLuc
+    savePhuLuc: savePhuLuc,
+    deletePhuLuc: deletePhuLuc
   };
 })();

@@ -177,6 +177,7 @@ Dưới đây là bảng thống kê sự xuất hiện của các trường tro
 | 161 | `{BenAChucVuDaiDien}` | Chức vụ người đại diện ký hợp đồng Bên A (PL) | | | | |
 | 162 | `{DonGiaBanTiec}` | Đơn giá hiển thị trên tiêu đề bảng thực đơn (PL) | | | | |
 | 163 | `{SoKhachTrenBan}` | Số lượng khách trên mỗi bàn (PL) | | | | |
+| 163b | `{NoiDungPhuLuc}` | Nội dung thỏa thuận (PL) | | | | |
 | 164 | `{#DanhSachChiPhi}` | Bắt đầu vòng lặp bảng tổng chi phí thay thế Excel (PL) | | | | |
 | 165 | `{NoiDung}` | Nội dung chi phí trong bảng (PL) | | | | |
 | 166 | `{/DanhSachChiPhi}` | Kết thúc vòng lặp bảng tổng chi phí (PL) | | | | |
@@ -368,6 +369,7 @@ Bảng **CHỦNG LOẠI THỨC ĂN MANG VÀO** (3 cột, dùng `convertFields`):
 * `{@ThoaThuanPhuLucKhac}`: Khối dữ liệu dạng nhiều dòng (multiline) lưu tất cả các thỏa thuận/dịch vụ tặng kèm/khuyến mãi khác
 * `{BenAChucVuDaiDien}`: Chức vụ của đại diện bên A (bổ sung đi kèm `{BenADaiDien}`)
 * `{DonGiaBanTiec}`, `{SoKhachTrenBan}`: Các trường phục vụ ghi chú lên header của bảng thực đơn/báo giá
+* `{NoiDungPhuLuc}`: Nội dung thỏa thuận / ghi chú chung của phụ lục
 * `{#DanhSachChiPhi}` ... `{/DanhSachChiPhi}`: Vòng lặp bảng tổng hợp tất cả các chi phí (dùng khi khách chèn Excel table vào Word)
   * `{NoiDung}`, `{DVT}`: Các cột nội dung và đơn vị tính của bảng tổng hợp chi phí
 

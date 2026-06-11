@@ -354,7 +354,12 @@ app.post('/api/documents/generate', async (req, res) => {
         return res.json({ success: true, message: 'Tạo tài liệu thành công!', fileName: finalFileName });
 
     } catch (error) {
-        console.error('[API] Lỗi generate:', error.message || error);
+        console.error('[API] Lỗi generate:', error);
+        if (error.properties && error.properties.errors) {
+            console.error('[API] Chi tiết lỗi docxtemplater:', JSON.stringify(error.properties.errors));
+            const details = error.properties.errors.map(e => e.message + (e.properties && e.properties.explanation ? ': ' + e.properties.explanation : '')).join('; ');
+            return res.status(500).json({ success: false, message: 'Lỗi Docxtemplater: ' + details });
+        }
         res.status(500).json({ success: false, message: 'Lỗi server: ' + (error.message || 'Unknown') });
     }
 });

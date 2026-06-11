@@ -51,12 +51,12 @@ var PhuLucPlugin = (function () {
   function _generateDocument(sothaydoi) {
     var DOC_API_BASE = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER) ? window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API : 'http://localhost:3000/api/document';
     var config = {
-      docType: 'de_nghi_thay_doi',
-      sqlListName: 'API_DanhSachThayDoi'
+      docType: 'phu_luc_hop_dong',
+      sqlListName: 'API_DanhSachPhuLuc'
     };
     
-    if (typeof Toast !== 'undefined') {
-      Toast.show({ message: 'Đang khởi tạo tài liệu...', type: 'info' });
+    if (typeof UIToast !== 'undefined') {
+      UIToast.show('Đang khởi tạo tài liệu...', 'info');
     }
 
     fetch(DOC_API_BASE + '/generate', {
@@ -66,15 +66,16 @@ var PhuLucPlugin = (function () {
         templateType: config.docType,
         customerId: sothaydoi,
         outputFileName: config.docType + '_' + sothaydoi,
-        rowData: {}, // Backend will fetch from API_DanhSachThayDoi using customerId
-        sqlListName: config.sqlListName
+        rowData: {}, // Backend will fetch from API_DanhSachPhuLuc using customerId
+        sqlListName: config.sqlListName,
+        convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
       })
     })
     .then(function (res) { return res.json(); })
     .then(function (json) {
       if (json.success) {
-        if (typeof Toast !== 'undefined') {
-          Toast.show({ message: 'Đã tạo tài liệu: ' + json.fileName, type: 'success' });
+        if (typeof UIToast !== 'undefined') {
+          UIToast.show('Đã tạo tài liệu: ' + json.fileName, 'success');
         }
         sessionStorage.setItem('docmgr_open_file', json.fileName);
         window.location.hash = '#/document-manager';
@@ -96,13 +97,33 @@ var PhuLucPlugin = (function () {
     _injectStyles();
 
     var sohopdong = contractRow.Sohopdong || contractRow.sohopdong || contractRow.SoHopDong;
-    var khachhang = contractRow.Khachhang || contractRow.Daidiendat || '';
+    var khachhang = contractRow.Khachhang || contractRow.Daidiendat || contractRow.TenKhachHang || '';
+
+    // Khai báo sẵn các trường mặc định từ hợp đồng gốc
+    var qmTu = contractRow.QuyMoBanTu || contractRow.quymobantu || contractRow.QuyMoBanTuTD || '';
+    var qmDen = contractRow.QuyMoBanDen || contractRow.quymobanden || contractRow.QuyMoBanDenTD || '';
+    var donGia = contractRow.DonGiaBanTiec || contractRow.Giabanman || contractRow.giabanman || '';
+    var soKhach = contractRow.SoKhachTrenBan || contractRow.SoNguoiTrenBan || 10;
+    var tenDot = contractRow.TenDotThanhToan || 'Đợt 2';
+    var soTienDot2 = contractRow.ThanhToanDot2SoTien || contractRow.Sotiencochopdong || '';
+    var hinhThuc = contractRow.HinhThucThanhToanDot2 || 'Chuyển khoản';
+    var hanThanhToan = contractRow.HanThanhToanDot2 || '';
+    if (hanThanhToan && hanThanhToan.indexOf('T') !== -1) hanThanhToan = hanThanhToan.split('T')[0];
+    
+    var chucVu = contractRow.BenAChucVuDaiDien || contractRow.BenAChucVu || '';
+    var ngayToChuc = contractRow.NgayToChuc || contractRow.Ngaytochuc || '';
+    if (ngayToChuc && ngayToChuc.indexOf('T') !== -1) ngayToChuc = ngayToChuc.split('T')[0];
+    
+    var nhamNgay = contractRow.NhamNgay || contractRow.Nhamngay || '';
+    var dvTinhPhi = contractRow.DichVuTinhPhiPhuLuc || '';
+    var uuDai = contractRow.ThoaThuanPhuLucKhac || '';
+    var lyDo = contractRow.Ghichu || contractRow.LyDoDieuChinh || '';
 
     // Lấy lịch sử phụ lục
     ContractService.getPhuLucHistory(sohopdong).then(function (historyRecords) {
       var historyHtml = '';
       if (!historyRecords || historyRecords.length === 0) {
-        historyHtml = '<tr><td colspan="4" class="text-center text-muted">Chưa có phụ lục / thay đổi nào.</td></tr>';
+        historyHtml = '<tr><td colspan="5" class="text-center text-muted">Chưa có phụ lục / thay đổi nào.</td></tr>';
       } else {
         historyRecords.forEach(function (rec, index) {
           var ngay = rec.NgayLapPL || rec.Ngaythaydoi || '';
@@ -110,9 +131,17 @@ var PhuLucPlugin = (function () {
           historyHtml += `
             <tr>
               <td class="text-center">${index + 1}</td>
-              <td><strong>${rec.SoPhuLuc || rec.Sothaydoi || ''}</strong></td>
+              <td><a href="javascript:void(0)" class="btn-edit-pl" style="font-weight: 600; color: var(--color-primary); text-decoration: none;" data-idx="${index}">${rec.SoPhuLuc || rec.Sothaydoi || ''}</a></td>
               <td>${ngay}</td>
-              <td>${rec.LyDoDieuChinh || rec.GhiChu || ''}</td>
+              <td>${rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || ''}</td>
+              <td class="text-center">
+                <button type="button" class="btn btn-sm btn-link btn-edit-pl" data-idx="${index}" title="Sửa" style="padding: 2px 4px; border: none; background: transparent; cursor: pointer; color: var(--color-primary);">
+                  <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-link text-danger btn-delete-pl" data-id="${rec.SoPhuLuc || rec.Sothaydoi || ''}" title="Xóa" style="padding: 2px 4px; border: none; background: transparent; cursor: pointer; color: var(--color-danger);">
+                  <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">delete</span>
+                </button>
+              </td>
             </tr>
           `;
         });
@@ -124,7 +153,7 @@ var PhuLucPlugin = (function () {
         <div class="phuluc-history-card">
           <h5 style="margin-top: 0; font-size: 15px; color: var(--color-primary);"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">history</span> Lịch Sử Phụ Lục / Thay Đổi</h5>
           <p class="text-muted" style="margin-bottom: 12px; font-size: 13px;">Hợp đồng: <strong>${sohopdong}</strong> - Khách hàng: <strong>${khachhang}</strong></p>
-          <div style="max-height: 200px; overflow-y: auto;">
+          <div style="max-height: 150px; overflow-y: auto;">
             <table class="phuluc-table">
               <thead>
                 <tr>
@@ -132,6 +161,7 @@ var PhuLucPlugin = (function () {
                   <th style="width: 120px;">Số Phụ Lục</th>
                   <th style="width: 120px;">Ngày Lập</th>
                   <th>Nội dung thỏa thuận</th>
+                  <th style="width: 100px;" class="text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,23 +172,83 @@ var PhuLucPlugin = (function () {
         </div>
 
         <div class="phuluc-form-card">
-          <h5 style="margin-top: 0; font-size: 15px; color: var(--color-primary);"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">add_circle</span> Tạo Phụ Lục Mới</h5>
+          <h5 id="form-title" style="margin-top: 0; font-size: 15px; color: var(--color-primary);"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">add_circle</span> Tạo Phụ Lục Mới</h5>
           <form id="frmPhuLucCreate">
             <div class="row">
               <div class="col-md-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Số Phụ Lục (Hệ thống tự sinh nếu để trống)</label>
                 <input type="text" id="inpSothaydoi" class="ui-input" placeholder="Ví dụ: PL01/2026" maxlength="20" style="width: 100%;">
               </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label" style="font-weight: 600;">Ngày Lập Phụ Lục <span class="text-danger">*</span></label>
-                <input type="date" id="inpNgayLapPL" class="ui-input" style="width: 100%;" required>
+              <div class="col-md-6" id="containerNgayLapPL"></div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-weight: 600;">Quy Mô Bàn (Từ)</label>
+                <input type="number" id="inpQuyMoBanTu" class="ui-input" style="width: 100%;" min="0">
               </div>
-              <div class="col-md-12 mb-3">
-                <label class="form-label" style="font-weight: 600;">Nội dung thỏa thuận bổ sung</label>
-                <textarea id="inpThoathuan" class="ui-input" rows="4" style="width: 100%; resize: vertical;" placeholder="Nhập các nội dung thay đổi như: Tăng bàn, Đổi sảnh, Thay đổi thực đơn..."></textarea>
+              <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-weight: 600;">Quy Mô Bàn (Đến)</label>
+                <input type="number" id="inpQuyMoBanDen" class="ui-input" style="width: 100%;" min="0">
+              </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-weight: 600;">Đơn Giá Bàn Tiệc (VND)</label>
+                <input type="number" id="inpDonGiaBanTiec" class="ui-input" style="width: 100%;" min="0" step="1000">
+              </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-weight: 600;">Số Khách / Bàn</label>
+                <input type="number" id="inpSoKhachTrenBan" class="ui-input" style="width: 100%;" min="1" max="100">
               </div>
             </div>
+
+            <div class="row">
+              <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-weight: 600;">Tên Đợt Thanh Toán</label>
+                <input type="text" id="inpTenDotThanhToan" class="ui-input" placeholder="Ví dụ: Đợt 2" style="width: 100%;">
+              </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-weight: 600;">Số Tiền Đợt 2 (VND)</label>
+                <input type="number" id="inpThanhToanDot2SoTien" class="ui-input" style="width: 100%;" min="0" step="1000">
+              </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label" style="font-weight: 600;">Hình Thức T.Toán</label>
+                <select id="inpHinhThucThanhToanDot2" class="ui-input" style="width: 100%;">
+                  <option value="Chuyển khoản">Chuyển khoản</option>
+                  <option value="Tiền mặt">Tiền mặt</option>
+                  <option value="Tiền mặt / Chuyển khoản">Tiền mặt / Chuyển khoản</option>
+                </select>
+              </div>
+              <div class="col-md-3" id="containerHanThanhToanDot2"></div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" style="font-weight: 600;">Chức vụ đại diện ký Bên A</label>
+                <input type="text" id="inpBenAChucVuDaiDien" class="ui-input" placeholder="Ví dụ: Đại diện kinh doanh" style="width: 100%;">
+              </div>
+              <div class="col-md-6" id="containerNgayToChucTD"></div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label" style="font-weight: 600;">Dịch vụ tính phí phụ lục (Mỗi dòng 1 mục)</label>
+                <textarea id="inpDichVuTinhPhiPhuLuc" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. MC tiệc cưới: 2.000.000 VND&#10;2. Màn hình LED: 5.000.000 VND"></textarea>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label" style="font-weight: 600;">Dịch vụ ưu đãi & thỏa thuận khác (Mỗi dòng 1 mục)</label>
+                <textarea id="inpThoaThuanPhuLucKhac" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. Tặng 1 xe hoa rước dâu&#10;2. Miễn phí phí phục vụ nước ngọt"></textarea>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-12 mb-3">
+                <label class="form-label" style="font-weight: 600;">Nội dung thỏa thuận</label>
+                <textarea id="inpThoathuan" class="ui-input" rows="2" style="width: 100%; resize: vertical;" placeholder="Nhập nội dung thỏa thuận..."></textarea>
+              </div>
+            </div>
+
             <div class="d-flex justify-content-end gap-2 mt-2">
+              <button type="button" id="btnCancelEdit" class="btn btn-outline-warning" style="display: none; margin-right: auto;">Hủy sửa / Tạo mới</button>
               <button type="button" class="btn btn-outline-secondary" onclick="document.querySelector('.ui-modal-overlay').remove()">Hủy</button>
               <button type="submit" class="btn btn-success d-flex align-items-center gap-1"><span class="material-symbols-outlined" style="font-size: 18px;">save</span> Lưu & Tạo File Word</button>
             </div>
@@ -168,16 +258,217 @@ var PhuLucPlugin = (function () {
 
       var modalInstance = UIModal.show({
         title: 'Quản Lý Phụ Lục Hợp Đồng',
-        width: '800px',
+        width: '900px',
         content: modalContent
       });
 
-      // Gán ngày hiện tại làm mặc định
+      // Tạo các trường ngày dùng component UIInput.createDate có sẵn
       var today = new Date();
       var yyyy = today.getFullYear();
       var mm = String(today.getMonth() + 1).padStart(2, '0');
       var dd = String(today.getDate()).padStart(2, '0');
-      modalContent.querySelector('#inpNgayLapPL').value = yyyy + '-' + mm + '-' + dd;
+      var defaultToday = yyyy + '-' + mm + '-' + dd;
+
+      var ngayLapInput = UIInput.createDate({
+        id: 'inpNgayLapPL',
+        label: 'Ngày Lập Phụ Lục',
+        required: true,
+        value: defaultToday
+      });
+      modalContent.querySelector('#containerNgayLapPL').appendChild(ngayLapInput);
+
+      var hanThanhToanInput = UIInput.createDate({
+        id: 'inpHanThanhToanDot2',
+        label: 'Hạn Thanh Toán Đợt 2',
+        value: hanThanhToan
+      });
+      modalContent.querySelector('#containerHanThanhToanDot2').appendChild(hanThanhToanInput);
+
+      var ngayToChucTDInput = UIInput.createDate({
+        id: 'inpNgayToChucTD',
+        label: 'Điều chỉnh Ngày Tổ Chức (Nếu có)',
+        value: ngayToChuc
+      });
+      modalContent.querySelector('#containerNgayToChucTD').appendChild(ngayToChucTDInput);
+
+      // Lấy username hiện hành
+      var userObj = {};
+      try {
+        userObj = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+      } catch (err) {}
+      var currentUserName = userObj.Username || userObj.UserName || userObj.username || 'system';
+
+      // Định nghĩa các helper điền form/reset form
+      function _fillFormForEdit(rec) {
+        modalContent.querySelector('#form-title').innerHTML = `<span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">edit_document</span> Cập Nhật Phụ Lục: <strong style="color: var(--color-primary);">${rec.SoPhuLuc || rec.Sothaydoi || ''}</strong>`;
+        modalContent.querySelector('#btnCancelEdit').style.display = 'block';
+
+        modalContent.querySelector('#inpSothaydoi').value = rec.SoPhuLuc || rec.Sothaydoi || '';
+        modalContent.querySelector('#inpSothaydoi').disabled = true;
+
+        var ngayLap = rec.NgayLapPL || rec.Ngaythaydoi || rec.NgayLap || '';
+        if (ngayLap && ngayLap.indexOf('T') !== -1) ngayLap = ngayLap.split('T')[0];
+        modalContent.querySelector('#inpNgayLapPL').value = ngayLap;
+
+        modalContent.querySelector('#inpQuyMoBanTu').value = (rec.QuyMoBanTu !== null && rec.QuyMoBanTu !== undefined) ? rec.QuyMoBanTu : '';
+        modalContent.querySelector('#inpQuyMoBanDen').value = (rec.QuyMoBanDen !== null && rec.QuyMoBanDen !== undefined) ? rec.QuyMoBanDen : '';
+        modalContent.querySelector('#inpDonGiaBanTiec').value = (rec.DonGiaBanTiec !== null && rec.DonGiaBanTiec !== undefined) ? rec.DonGiaBanTiec : '';
+        modalContent.querySelector('#inpSoKhachTrenBan').value = (rec.SoKhachTrenBan !== null && rec.SoKhachTrenBan !== undefined) ? rec.SoKhachTrenBan : '';
+
+        modalContent.querySelector('#inpTenDotThanhToan').value = rec.TenDotThanhToan || '';
+        modalContent.querySelector('#inpThanhToanDot2SoTien').value = (rec.ThanhToanDot2SoTien !== null && rec.ThanhToanDot2SoTien !== undefined) ? rec.ThanhToanDot2SoTien : '';
+        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = rec.HinhThucThanhToanDot2 || 'Chuyển khoản';
+
+        var hanTT = rec.HanThanhToanDot2 || '';
+        if (hanTT && hanTT.indexOf('T') !== -1) hanTT = hanTT.split('T')[0];
+        modalContent.querySelector('#inpHanThanhToanDot2').value = hanTT;
+
+        modalContent.querySelector('#inpBenAChucVuDaiDien').value = rec.BenAChucVuDaiDien || '';
+
+        var ngayTCTD = rec.NgayToChuc || '';
+        if (ngayTCTD && ngayTCTD.indexOf('T') !== -1) ngayTCTD = ngayTCTD.split('T')[0];
+        modalContent.querySelector('#inpNgayToChucTD').value = ngayTCTD;
+
+        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = rec.DichVuTinhPhiPhuLuc || '';
+        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = rec.ThoaThuanPhuLucKhac || '';
+        modalContent.querySelector('#inpThoathuan').value = rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || '';
+      }
+
+      function _resetFormToNew() {
+        modalContent.querySelector('#form-title').innerHTML = `<span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">add_circle</span> Tạo Phụ Lục Mới`;
+        modalContent.querySelector('#btnCancelEdit').style.display = 'none';
+
+        modalContent.querySelector('#inpSothaydoi').value = '';
+        modalContent.querySelector('#inpSothaydoi').disabled = false;
+
+        var today = new Date();
+        var yyyy = today.getFullYear();
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var dd = String(today.getDate()).padStart(2, '0');
+        modalContent.querySelector('#inpNgayLapPL').value = yyyy + '-' + mm + '-' + dd;
+
+        modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
+        modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
+        modalContent.querySelector('#inpDonGiaBanTiec').value = donGia;
+        modalContent.querySelector('#inpSoKhachTrenBan').value = soKhach;
+        modalContent.querySelector('#inpTenDotThanhToan').value = tenDot;
+        modalContent.querySelector('#inpThanhToanDot2SoTien').value = soTienDot2;
+        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = hinhThuc;
+        modalContent.querySelector('#inpHanThanhToanDot2').value = hanThanhToan;
+        modalContent.querySelector('#inpBenAChucVuDaiDien').value = chucVu;
+        modalContent.querySelector('#inpNgayToChucTD').value = ngayToChuc;
+        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = dvTinhPhi;
+        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = uuDai;
+        modalContent.querySelector('#inpThoathuan').value = lyDo;
+      }
+
+      function _deletePhuLuc(id) {
+        var performDelete = function () {
+          ContractService.deletePhuLuc(id, currentUserName).then(function (res) {
+            if (res && (res.code === 0 || res.success || res.status === 200 || !res.error)) {
+              if (modalInstance && typeof modalInstance.closeNow === 'function') {
+                modalInstance.closeNow();
+              } else {
+                var overlay = document.querySelector('.ui-modal-overlay');
+                if (overlay) overlay.remove();
+              }
+              if (typeof UIToast !== 'undefined') {
+                UIToast.show('Đã xóa thành công phụ lục: ' + id, 'success');
+              }
+              // Mở lại modal để refresh danh sách
+              _showPhuLucModal(contractRow);
+            } else {
+              var errMsg = (res && (res.message || res.msg)) || 'Có lỗi khi xóa phụ lục.';
+              if (typeof Alert !== 'undefined') {
+                Alert.error('Lỗi xóa phụ lục', errMsg);
+              } else {
+                alert(errMsg);
+              }
+            }
+          }).catch(function (err) {
+            console.error('[PhuLucPlugin] Delete error:', err);
+            if (typeof Alert !== 'undefined') {
+              Alert.error('Lỗi', 'Không thể kết nối đến server.');
+            }
+          });
+        };
+
+        if (typeof ConfirmModal !== 'undefined') {
+          ConfirmModal.show({
+            title: 'Xác nhận xóa phụ lục',
+            message: `Bạn có chắc chắn muốn xóa phụ lục <strong>${id}</strong>? Hành động này không thể hoàn tác và không được phép xóa phụ lục đã duyệt chốt.`,
+            confirmText: 'Đồng ý xóa',
+            confirmClass: 'btn-danger',
+            onConfirm: performDelete
+          });
+        } else {
+          if (confirm(`Bạn có chắc chắn muốn xóa phụ lục ${id}?`)) {
+            performDelete();
+          }
+        }
+      }
+
+      // Đăng ký sự kiện Click (Event delegation) cho History table và Cancel button
+      modalContent.addEventListener('click', function (e) {
+        var editBtn = e.target.closest('.btn-edit-pl');
+        if (editBtn) {
+          var idx = parseInt(editBtn.getAttribute('data-idx'));
+          var rec = historyRecords[idx];
+          if (rec) {
+            _fillFormForEdit(rec);
+          }
+          return;
+        }
+
+        var deleteBtn = e.target.closest('.btn-delete-pl');
+        if (deleteBtn) {
+          var id = deleteBtn.getAttribute('data-id');
+          if (id) {
+            _deletePhuLuc(id);
+          }
+          return;
+        }
+
+        var cancelBtn = e.target.closest('#btnCancelEdit');
+        if (cancelBtn) {
+          _resetFormToNew();
+          return;
+        }
+      });
+
+      // Gán ngày hiện tại làm mặc định
+      var inpNgayLap = modalContent.querySelector('#inpNgayLapPL');
+      if (inpNgayLap) {
+        inpNgayLap.value = defaultToday;
+        inpNgayLap.dispatchEvent(new Event('change'));
+      }
+
+      // Điền sẵn các giá trị mặc định từ hợp đồng gốc
+      modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
+      modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
+      modalContent.querySelector('#inpDonGiaBanTiec').value = donGia;
+      modalContent.querySelector('#inpSoKhachTrenBan').value = soKhach;
+      modalContent.querySelector('#inpTenDotThanhToan').value = tenDot;
+      modalContent.querySelector('#inpThanhToanDot2SoTien').value = soTienDot2;
+      modalContent.querySelector('#inpHinhThucThanhToanDot2').value = hinhThuc;
+
+      var inpHan = modalContent.querySelector('#inpHanThanhToanDot2');
+      if (inpHan) {
+        inpHan.value = hanThanhToan;
+        inpHan.dispatchEvent(new Event('change'));
+      }
+
+      modalContent.querySelector('#inpBenAChucVuDaiDien').value = chucVu;
+
+      var inpNgayTC = modalContent.querySelector('#inpNgayToChucTD');
+      if (inpNgayTC) {
+        inpNgayTC.value = ngayToChuc;
+        inpNgayTC.dispatchEvent(new Event('change'));
+      }
+
+      modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = dvTinhPhi;
+      modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = uuDai;
+      modalContent.querySelector('#inpThoathuan').value = lyDo;
 
       // Xử lý Form Submit
       var form = modalContent.querySelector('#frmPhuLucCreate');
@@ -186,6 +477,22 @@ var PhuLucPlugin = (function () {
         
         var soPhuLuc = document.getElementById('inpSothaydoi').value.trim();
         var ngayLapPL = document.getElementById('inpNgayLapPL').value;
+        
+        var qmTuVal = document.getElementById('inpQuyMoBanTu').value;
+        var qmDenVal = document.getElementById('inpQuyMoBanDen').value;
+        var donGiaVal = document.getElementById('inpDonGiaBanTiec').value;
+        var soKhachVal = document.getElementById('inpSoKhachTrenBan').value;
+        
+        var tenDotVal = document.getElementById('inpTenDotThanhToan').value.trim();
+        var soTienDot2Val = document.getElementById('inpThanhToanDot2SoTien').value;
+        var hinhThucVal = document.getElementById('inpHinhThucThanhToanDot2').value;
+        var hanThanhToanVal = document.getElementById('inpHanThanhToanDot2').value;
+        
+        var chucVuVal = document.getElementById('inpBenAChucVuDaiDien').value.trim();
+        var ngayToChucTDVal = document.getElementById('inpNgayToChucTD').value;
+        
+        var dvTinhPhiVal = document.getElementById('inpDichVuTinhPhiPhuLuc').value;
+        var uuDaiVal = document.getElementById('inpThoaThuanPhuLucKhac').value;
         var thoathuan = document.getElementById('inpThoathuan').value;
 
         // Sinh Sothaydoi kỹ thuật nếu chưa nhập (tối đa 20 ký tự theo DB)
@@ -205,11 +512,9 @@ var PhuLucPlugin = (function () {
         } catch (err) {}
         var currentUserName = userObj.Username || userObj.UserName || userObj.username || 'system';
 
-        // Payload khớp với API_LuuThayDoi:
-        // - Sothaydoi, Sohopdong, Ngaythaydoi, Ghichu, Status: tham số cấp cao
-        // - JsonData: chứa các trường nghiệp vụ chi tiết
+        // Payload khớp với API_LuuPhuLucHopDong:
         var payload = {
-          List: 'tbmk_PhuLucHopDong',
+          List: 'frmPhuLucHopDong',
           Func: 'Save',
           Sothaydoi: soPhuLuc,
           Sohopdong: sohopdong,
@@ -223,7 +528,39 @@ var PhuLucPlugin = (function () {
             NgayLapPLDay: nNgay,
             ThangLapPL: nThang,
             NamLapPL: nNam,
-            ThoaThuanPhuLucKhacTD: thoathuan
+            
+            QuyMoBanTu: qmTu,
+            QuyMoBanTuTD: qmTuVal,
+            QuyMoBanDen: qmDen,
+            QuyMoBanDenTD: qmDenVal,
+            
+            DonGiaBanTiec: donGia,
+            DonGiaBanTiecTD: donGiaVal,
+            SoKhachTrenBan: soKhach,
+            SoKhachTrenBanTD: soKhachVal,
+            
+            TenDotThanhToan: tenDot,
+            TenDotThanhToanTD: tenDotVal,
+            ThanhToanDot2SoTien: soTienDot2,
+            ThanhToanDot2SoTienTD: soTienDot2Val,
+            HinhThucThanhToanDot2: hinhThuc,
+            HinhThucThanhToanDot2TD: hinhThucVal,
+            HanThanhToanDot2: hanThanhToan,
+            HanThanhToanDot2TD: hanThanhToanVal,
+            
+            BenAChucVuDaiDien: chucVu,
+            BenAChucVuDaiDienTD: chucVuVal,
+            NgayToChuc: ngayToChuc,
+            NgayToChucTD: ngayToChucTDVal,
+            NhamNgay: nhamNgay,
+            NhamNgayTD: (ngayToChucTDVal === ngayToChuc) ? nhamNgay : '',
+            
+            DichVuTinhPhiPhuLuc: dvTinhPhi,
+            DichVuTinhPhiPhuLucTD: dvTinhPhiVal,
+            ThoaThuanPhuLucKhac: uuDai,
+            ThoaThuanPhuLucKhacTD: uuDaiVal,
+            
+            Ghichu: thoathuan
           })
         };
 
@@ -241,8 +578,8 @@ var PhuLucPlugin = (function () {
               var overlay = document.querySelector('.ui-modal-overlay');
               if (overlay) overlay.remove();
             }
-            if (typeof Toast !== 'undefined') {
-              Toast.show({ message: 'Đã lưu phụ lục: ' + soPhuLuc, type: 'success' });
+            if (typeof UIToast !== 'undefined') {
+              UIToast.show('Đã lưu phụ lục: ' + soPhuLuc, 'success');
             }
             // Sinh tài liệu DOCX ngay lập tức
             try {

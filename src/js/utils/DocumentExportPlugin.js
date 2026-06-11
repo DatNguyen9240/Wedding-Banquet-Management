@@ -36,7 +36,24 @@ var DocumentExportPlugin = (function () {
       label: 'Xuất Phiếu Thay Đổi',
       icon: 'edit_note',
       altKeys: ['Sothaydoi', 'sothaydoi', 'SoThayDoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'API_DanhSachThayDoi'
+      sqlListName: 'API_DanhSachThayDoi',
+      convertFields: ['ThoaThuanPhuLucKhac']
+    },
+    'frmPhuLucHopDong': {
+      docType: 'phu_luc_hop_dong',
+      label: 'Xuất Phụ Lục HĐ',
+      icon: 'description',
+      altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
+      sqlListName: 'API_DanhSachPhuLuc',
+      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
+    },
+    'frmThayDoiBoSung': {
+      docType: 'phu_luc_hop_dong',
+      label: 'Xuất Phụ Lục HĐ',
+      icon: 'description',
+      altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
+      sqlListName: 'API_DanhSachPhuLuc',
+      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
     }
   };
 
@@ -88,7 +105,8 @@ var DocumentExportPlugin = (function () {
         customerId: docId,
         outputFileName: actualDocType + '_' + docId,
         rowData: row,
-        sqlListName: config.sqlListName
+        sqlListName: config.sqlListName,
+        convertFields: config.convertFields || []
       })
     })
       .then(function (res) { return res.json(); })
