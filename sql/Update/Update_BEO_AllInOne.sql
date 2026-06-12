@@ -50,6 +50,34 @@ BEGIN
     PRINT N'  + Đã thêm cột ThongTinSetup';
 END
 
+-- DonViThiCong: đơn vị thi công sự kiện (hội nghị thường có)
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'tbmk_Hopdong') AND name = 'DonViThiCong')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD DonViThiCong NVARCHAR(500) NULL;
+    PRINT N'  + Đã thêm cột DonViThiCong';
+END
+
+-- TieuSuKhachHang: tiểu sử / ghi chú về khách hàng
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'tbmk_Hopdong') AND name = 'TieuSuKhachHang')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD TieuSuKhachHang NVARCHAR(MAX) NULL;
+    PRINT N'  + Đã thêm cột TieuSuKhachHang';
+END
+
+-- DichVuKhuyenMai: các dịch vụ ưu đãi / tặng kèm cho sự kiện
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'tbmk_Hopdong') AND name = 'DichVuKhuyenMai')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD DichVuKhuyenMai NVARCHAR(MAX) NULL;
+    PRINT N'  + Đã thêm cột DichVuKhuyenMai';
+END
+
+-- LuuY: lưu ý chung cho sự kiện (khác Ghichu — dành riêng cho BEO)
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'tbmk_Hopdong') AND name = 'LuuY')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD LuuY NVARCHAR(MAX) NULL;
+    PRINT N'  + Đã thêm cột LuuY';
+END
+
 PRINT N'1. Hoàn thành bổ sung cột.';
 GO
 
@@ -107,6 +135,21 @@ BEGIN
 
         -- ── Sảnh tiệc ───────────────────────────────────────────────────
         (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [TenSanhTiec],
+        (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [SanhDat],
+
+        -- DanhSachSanh: mảng JSON để template dùng vòng lặp {#DanhSachSanh}...{/DanhSachSanh}
+        (
+            SELECT
+                s.Tensanhtiec                           AS [SanhDat],
+                ISNULL(h.SoKhachChinhThuc, 0)          AS [SoKhachChinhThuc],
+                ISNULL(h.SobanManduphong, 0) + ISNULL(h.SobanChayduphong, 0) AS [SoBanDuPhong],
+                ISNULL(h.KieuSetup, N'Tiệc ngồi')      AS [KieuSetup]
+            FROM tbmk_Hopdongsanhtiec hs
+            INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid
+            WHERE hs.Sohopdong = h.Sohopdong
+            ORDER BY hs.IsSanhchinh DESC
+            FOR JSON PATH
+        ) AS [DanhSachSanh],
 
         -- ── Thời gian tổ chức ───────────────────────────────────────────
         CONVERT(VARCHAR(10), h.Ngaytochuc, 103)                 AS [NgayToChuc],
@@ -123,6 +166,7 @@ BEGIN
         -- SoKhachChinhThuc: nhân viên nhập thủ công khi lập BEO, để NULL nếu chưa có
         h.SoKhachChinhThuc                                      AS [SoKhachChinhThuc],
         ISNULL(h.KieuSetup, N'Tiệc ngồi')                      AS [KieuSetup],
+
 
         -- ── Số bàn ──────────────────────────────────────────────────────
         ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanChaychinhthuc, 0) AS [SoBanChinhThuc],
@@ -153,7 +197,38 @@ BEGIN
         ISNULL(NULLIF(k.CMNDDaiDien, ''), ISNULL(NULLIF(k.CMNDnguoidd, ''), ISNULL(NULLIF(k.CMNDchure, ''), '...'))) AS [BenBCCCD],
         ISNULL(k.Mail, N'...')           AS [BenBEmail],
 
+        -- ── Thông tin bổ sung cho template BEO ──────────────────────────
+        -- BenBDaiDien: tên người giao dịch (alias của BenBTenDaiDien để khớp placeholder {BenBDaiDien})
+        CASE 
+            WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL AND k.Tenchure <> '' AND k.Tencodau <> ''
+                THEN k.Tenchure + ' & ' + k.Tencodau
+            ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
+        END AS [BenBDaiDien],
+        ISNULL(k.Diachi, N'...')         AS [BenBDiaChiTemplate], -- backup alias nếu cần
+
+        -- NgayHopDong: ngày ký hợp đồng (template dùng {NgayHopDong})
+        ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), N'...') AS [NgayHopDong],
+
+        -- NgaySetup: ngày trước ngày tổ chức 1 ngày (setup sảnh)
+        ISNULL(CONVERT(VARCHAR(10), DATEADD(DAY, -1, h.Ngaytochuc), 103), N'...') AS [NgaySetup],
+
+        -- DonViThiCong: đơn vị thi công (nếu có), mặc định để trống
+        ISNULL(NULLIF(h.DonViThiCong, ''), N'') AS [DonViThiCong],
+
+        -- TieuSuKhachHang: tiểu sử / ghi chú khách hàng  
+        ISNULL(NULLIF(h.TieuSuKhachHang, ''), N'') AS [TieuSuKhachHang],
+
+        -- DichVuKhuyenMai: dịch vụ ưu đãi tặng kèm
+        ISNULL(NULLIF(h.DichVuKhuyenMai, ''), N'') AS [DichVuKhuyenMai],
+
+        -- LuuY: lưu ý chung (lấy từ ghi chú hợp đồng nếu có)
+        ISNULL(NULLIF(h.LuuY, ''), ISNULL(NULLIF(h.Ghichu, ''), N'')) AS [LuuY],
+
+        -- HDTenCty: tên công ty xuất hóa đơn (khớp placeholder {HDTenCty})
+        ISNULL(NULLIF(h.TenCtyHoaDon, ''), ISNULL(k.Tenkh, N'')) AS [HDTenCty],
+
         -- ── Tài chính cơ bản ─────────────────────────────────────────────
+
         FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
         [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0)) AS [TongGiaTriTamTinhBangChu],
         FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + N' VNĐ' AS [Dot1SoTien],
@@ -181,7 +256,7 @@ BEGIN
                 SELECT CASE WHEN ISNULL(h.Sotiencochopdong, 0) > 0 THEN 3 ELSE 2 END,
                     N'Thanh toán còn lại',
                     ISNULL(CONVERT(VARCHAR(10), h.Ngaytochuc, 103), '...'),
-                    ISNULL(NULLIF(h.Ghichu, ''), N'Thanh toán cuối tiệc.')
+                    N'Thanh toán cuối tiệc.'
             ) t
             FOR JSON PATH
         ) AS [LichTrinhThanhToan],
