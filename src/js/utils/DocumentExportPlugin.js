@@ -54,6 +54,21 @@ var DocumentExportPlugin = (function () {
       altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
       sqlListName: 'frmPhuLucHopDong',
       convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
+    },
+    'frmBEO': {
+      docType: 'beo_tiec_cuoi',
+      label: 'Xuất BEO',
+      icon: 'print',
+      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+      sqlListName: 'frmBEO',
+      convertFields: ['ThongTinSetup', 'NoteBaoVe', 'NoteBieuNgu', 'NoteKyThuat', 'NoteLobby'],
+      getDocType: function (row) {
+        var lh = (row.LoaiHinhSuKien || row.LoaiHinhSK || '').toString().toLowerCase();
+        if (lh.includes('hội nghị') || lh.includes('hoi nghi') || lh.includes('conference')) {
+          return 'BEO_Hoi_Nghi';
+        }
+        return 'BEO_Tiec_Cuoi';
+      }
     }
   };
 
@@ -79,7 +94,9 @@ var DocumentExportPlugin = (function () {
 
     // Đọc tên file mẫu từ DB (đã cấu hình trong bảng dmLoaihinhtiec)
     var actualDocType = config.docType;
-    if (config.docType === 'hop_dong' && row.TemplateFile) {
+    if (typeof config.getDocType === 'function') {
+      actualDocType = config.getDocType(row);
+    } else if (config.docType === 'hop_dong' && row.TemplateFile) {
       actualDocType = row.TemplateFile;
     }
 

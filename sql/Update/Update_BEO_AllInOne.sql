@@ -115,8 +115,8 @@ BEGIN
         CAST(YEAR(h.Ngaytochuc) AS VARCHAR)                     AS [NamToChuc],
         ISNULL(h.GioDienRaSuKien, N'...')                       AS [GioBatDau],
         ISNULL(h.GioKetThucSuKien, N'...')                      AS [GioKetThuc],
-        -- TenCa: lấy từ dmCalam qua Thoigianid
-        ISNULL((SELECT TOP 1 c.Tenca FROM dmCalam c WHERE c.Thoigianid = h.Thoigianid), N'') AS [TenCa],
+        -- TenCa: lấy từ dmThoigian qua Thoigianid
+        ISNULL((SELECT TOP 1 c.Thoigian FROM dmThoigian c WHERE c.Thoigianid = h.Thoigianid), N'') AS [TenCa],
 
         -- ── Loại hình & số lượng ─────────────────────────────────────────
         ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid), N'TIỆC CƯỚI') AS [LoaiHinhSuKien],
@@ -244,13 +244,13 @@ VALUES (
     '@Keyword=N''{Keyword}'', @Sohopdong=N''{Sohopdong}'''
 );
 
--- Đăng ký Save (dùng lại API_LuuHopDong để cập nhật NgayRaBEO, KieuSetup, SoKhachChinhThuc...)
+-- Đăng ký Save (dùng API_LuuDong để cập nhật tự động các cột trong tbmk_Hopdong)
 INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES (
     'frmBEO',
     'Save',
-    'API_LuuHopDong',
-    '@Sohopdong=N''{Sohopdong}'', @UserName=N''{UserName}'', @JsonData=N''{JsonData}'''
+    'API_LuuDong',
+    '@List=N''frmBEO'', @Data=N''{JsonData}'''
 );
 GO
 
@@ -286,13 +286,13 @@ INSERT INTO @BEO_Fields VALUES
 ('KieuSetup',       N'Kiểu Setup',            'sl', N'STATIC:Rạp hát|Rạp hát,Lớp học|Lớp học,Chữ U|Chữ U,Hội đồng|Hội đồng,Tiệc ngồi|Tiệc ngồi,Tiệc đứng|Tiệc đứng', '6', 11, 1,1,0,0),
 ('SoBanChinhThuc',  N'Bàn Chính Thức',       'n',  NULL,  '6',  12, 1,1,1,1),
 ('SoBanDuPhong',    N'Bàn Dự Phòng',         'n',  NULL,  '6',  13, 1,1,1,1),
-('ThongTinSetup',   N'Thông Tin Setup',       'ml', NULL,  '12', 20, 1,1,0,0),
-('NoteBaoVe',       N'Ghi Chú Bảo Vệ',       'ml', NULL,  '12', 21, 1,1,0,0),
-('NoteBieuNgu',     N'Ghi Chú Biểu Ngữ',     'ml', NULL,  '12', 22, 1,1,0,0),
-('NoteKyThuat',     N'Ghi Chú Kỹ Thuật',     'ml', NULL,  '12', 23, 1,1,0,0),
-('NoteLobby',       N'Ghi Chú Lobby',         'ml', NULL,  '12', 24, 1,1,0,0),
-('ChiTietLichTrinh',N'Lịch Trình Chi Tiết',  'js', NULL,  '12', 30, 0,0,1,1),
-('LichTrinhThanhToan',N'Lịch Trình Thanh Toán','js',NULL, '12', 31, 0,0,1,1);
+('ThongTinSetup',   N'Thông Tin Setup',       'ta', NULL,  '12', 20, 1,1,0,0),
+('NoteBaoVe',       N'Ghi Chú Bảo Vệ',       'ta', NULL,  '12', 21, 1,1,0,0),
+('NoteBieuNgu',     N'Ghi Chú Biểu Ngữ',     'ta', NULL,  '12', 22, 1,1,0,0),
+('NoteKyThuat',     N'Ghi Chú Kỹ Thuật',     'ta', NULL,  '12', 23, 1,1,0,0),
+('NoteLobby',       N'Ghi Chú Lobby',         'ta', NULL,  '12', 24, 1,1,0,0),
+('ChiTietLichTrinh',N'Lịch Trình Chi Tiết',  'js', N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"80px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"80px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"100px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]',  '12', 30, 0,0,1,1),
+('LichTrinhThanhToan',N'Lịch Trình Thanh Toán','js', N'[{"key":"STT","label":"Đợt","type":"number","width":"60px"},{"key":"SoTien","label":"Số tiền","type":"text","width":"150px"},{"key":"Ngay","label":"Ngày","type":"text","width":"120px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', '12', 31, 0,0,1,1);
 
 MERGE SY_FormatFields AS tgt
 USING (SELECT 'frmBEO' AS FormName, * FROM @BEO_Fields) AS src

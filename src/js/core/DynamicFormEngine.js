@@ -61,6 +61,20 @@ window.DynamicFormEngine = (function () {
     return String(camel) === '1' || camel === true || String(pascal) === '1' || pascal === true;
   }
 
+  function _getValueFromRow(row, fieldName) {
+    if (!row || !fieldName) return '';
+    if (row[fieldName] !== undefined && row[fieldName] !== null) {
+      return row[fieldName];
+    }
+    var targetKey = fieldName.toLowerCase();
+    for (var key in row) {
+      if (key.toLowerCase() === targetKey) {
+        return row[key] !== undefined && row[key] !== null ? row[key] : '';
+      }
+    }
+    return '';
+  }
+
   /**
    * Gọi API tuần tự cho mảng payload (tránh sập API khi gửi đồng loạt)
    * @param {string}   endpoint  - API URL
@@ -331,8 +345,8 @@ window.DynamicFormEngine = (function () {
           globalDictionary[item.name] = item.label;
 
 
-          // Xây dựng Custom Renderers Động từ cấu hình DB
-          if (item.renderRule) {
+          // Xây dựng Custom Renderers Động từ cấu hình DB (tránh đè logic JSON của UITable)
+          if (item.renderRule && item.renderRule.toLowerCase() !== 'js' && item.renderRule.toLowerCase() !== 'json') {
             globalRenderers[item.name] = function (v) {
               var rule = item.renderRule.toLowerCase();
 
@@ -1339,7 +1353,7 @@ window.DynamicFormEngine = (function () {
       var hiddenPK = document.createElement('input');
       hiddenPK.type = 'hidden';
       hiddenPK.name = MODULE_CONFIG.PrimaryKey + '_' + rowIdx;
-      hiddenPK.value = row[MODULE_CONFIG.PrimaryKey] || '';
+      hiddenPK.value = _getValueFromRow(row, MODULE_CONFIG.PrimaryKey);
       hiddenPK.setAttribute('data-row-index', rowIdx);
       hiddenPK.setAttribute('data-field-name', MODULE_CONFIG.PrimaryKey);
       tr.appendChild(hiddenPK);
@@ -1360,7 +1374,7 @@ window.DynamicFormEngine = (function () {
         td.style.padding = '0'; // Đã CSS trong class
 
         var field = Object.assign({}, fieldTemplate);
-        field.value = row[field.name] !== undefined && row[field.name] !== null ? row[field.name] : '';
+        field.value = _getValueFromRow(row, field.name);
         var originalName = field.name;
         field.name = originalName + '_' + rowIdx;
 
@@ -1369,7 +1383,7 @@ window.DynamicFormEngine = (function () {
           inputEl = UIInput.createSwitch(field);
         } else if (field.renderRule === 'dt' || field.renderRule === 'date') {
           inputEl = UIInput.createDate(field);
-        } else if (field.renderRule === 'sl' || field.renderRule === 'select' || field.renderRule === 'ml') {
+        } else if ((field.renderRule === 'sl' || field.renderRule === 'select' || field.renderRule === 'ml') && field.dataSource) {
           inputEl = document.createElement('div');
           inputEl.className = 'form-group';
           inputEl.style.marginBottom = '0';
@@ -1843,13 +1857,13 @@ window.DynamicFormEngine = (function () {
         var hiddenEl = document.createElement('input');
         hiddenEl.type = 'hidden';
         hiddenEl.name = field.name;
-        hiddenEl.value = row ? (row[field.name] || '') : '';
+        hiddenEl.value = row ? _getValueFromRow(row, field.name) : '';
         body.appendChild(hiddenEl);
         return;
       }
 
       // Tự động gán giá trị cũ (nếu đang Sửa 1 dòng).
-      field.value = (isEdit && row) ? (row[field.name] || '') : '';
+      field.value = (isEdit && row) ? _getValueFromRow(row, field.name) : '';
 
       // Khởi tạo Ô nhập liệu tuỳ thuộc vào quy tắc renderRule
       var inputEl;
@@ -1857,7 +1871,7 @@ window.DynamicFormEngine = (function () {
         inputEl = UIInput.createSwitch(field);
       } else if (field.renderRule === 'dt' || field.renderRule === 'date') {
         inputEl = UIInput.createDate(field);
-      } else if (field.renderRule === 'sl' || field.renderRule === 'select' || field.renderRule === 'ml') {
+      } else if ((field.renderRule === 'sl' || field.renderRule === 'select' || field.renderRule === 'ml') && field.dataSource) {
         var formGroupWrapper = document.createElement('div');
         formGroupWrapper.className = 'form-group';
 
@@ -2125,7 +2139,7 @@ window.DynamicFormEngine = (function () {
       } else if (field.renderRule === 'json' || field.renderRule === 'js') {
         var isReadOnly = ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd));
         inputEl = createJsonGridEditor(field, isReadOnly);
-      } else if (field.renderRule === 'textarea' || field.name.toLowerCase().indexOf('note') >= 0 || field.name.toLowerCase().indexOf('ghichu') >= 0) {
+      } else if (field.renderRule === 'textarea' || field.renderRule === 'ta' || (field.renderRule === 'ml' && !field.dataSource) || field.name.toLowerCase().indexOf('note') >= 0 || field.name.toLowerCase().indexOf('ghichu') >= 0) {
         var formGroupWrapper = document.createElement('div');
         formGroupWrapper.className = 'form-group';
         formGroupWrapper.style.width = '100%';

@@ -384,6 +384,21 @@ var DocumentExportPlugin = (function () {
       altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
       sqlListName: 'frmPhuLucHopDong',
       convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
+    },
+    'frmBEO': {
+      docType: 'beo_tiec_cuoi',
+      label: 'Xuất BEO',
+      icon: 'print',
+      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+      sqlListName: 'frmBEO',
+      convertFields: ['ThongTinSetup', 'NoteBaoVe', 'NoteBieuNgu', 'NoteKyThuat', 'NoteLobby'],
+      getDocType: function (row) {
+        var lh = (row.LoaiHinhSuKien || row.LoaiHinhSK || '').toString().toLowerCase();
+        if (lh.includes('hội nghị') || lh.includes('hoi nghi') || lh.includes('conference')) {
+          return 'BEO_Hoi_Nghi';
+        }
+        return 'BEO_Tiec_Cuoi';
+      }
     }
   };
 
@@ -409,7 +424,9 @@ var DocumentExportPlugin = (function () {
 
     // Đọc tên file mẫu từ DB (đã cấu hình trong bảng dmLoaihinhtiec)
     var actualDocType = config.docType;
-    if (config.docType === 'hop_dong' && row.TemplateFile) {
+    if (typeof config.getDocType === 'function') {
+      actualDocType = config.getDocType(row);
+    } else if (config.docType === 'hop_dong' && row.TemplateFile) {
       actualDocType = row.TemplateFile;
     }
 
@@ -10232,9 +10249,9 @@ var UITable = (function () {
                       var html = '<div class="json-schedule-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; padding: 2px 0;">';
                       parsed.forEach(function(item) {
                         var timeStr = (item.BatDau || '') + (item.KetThuc ? ' - ' + item.KetThuc : '');
-                        var hallStr = item.Sanh ? '<span style="background: rgba(59, 130, 246, 0.1); color: #2563eb; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px;">' + item.Sanh + '</span>' : '';
-                        var timeBadge = timeStr ? '<span style="background: rgba(16, 185, 129, 0.1); color: #059669; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px; white-space: nowrap;">' + timeStr + '</span>' : '';
-                        var contentStr = item.NoiDung ? '<span style="color: var(--color-text-primary, #1e293b); font-weight: 500;">' + item.NoiDung + '</span>' : '';
+                        var hallStr = item.Sanh ? '<span style="background: rgba(59, 130, 246, 0.18); color: var(--color-primary, #4361ee); border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px;">' + item.Sanh + '</span>' : '';
+                        var timeBadge = timeStr ? '<span style="background: rgba(16, 185, 129, 0.18); color: var(--color-success, #10b981); border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px; white-space: nowrap;">' + timeStr + '</span>' : '';
+                        var contentStr = item.NoiDung ? '<span style="color: var(--color-text, inherit); font-weight: 500;">' + item.NoiDung + '</span>' : '';
                         html += '<div class="schedule-row" style="display: flex; align-items: center; flex-wrap: wrap; gap: 2px;">' + timeBadge + hallStr + contentStr + '</div>';
                       });
                       html += '</div>';
@@ -10244,10 +10261,10 @@ var UITable = (function () {
                     if (isPayment) {
                       var html = '<div class="json-payment-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; padding: 2px 0;">';
                       parsed.forEach(function(item) {
-                        var sttStr = item.STT ? '<span style="background: rgba(124, 58, 237, 0.1); color: #7c3aed; border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px;">Đợt ' + item.STT + '</span>' : '';
-                        var moneyStr = item.SoTien ? '<span style="color: #ef4444; font-weight: 600; margin-right: 4px;">' + item.SoTien + '</span>' : '';
-                        var dateStr = item.Ngay ? '<span style="color: var(--color-text-secondary, #64748b); margin-right: 4px;">(' + item.Ngay + ')</span>' : '';
-                        var contentStr = item.NoiDung ? '<span style="color: var(--color-text-primary, #1e293b); font-style: italic;">' + item.NoiDung + '</span>' : '';
+                        var sttStr = item.STT ? '<span style="background: rgba(124, 58, 237, 0.18); color: var(--color-secondary, #7c3aed); border-radius: 4px; padding: 1px 4px; font-weight: 600; margin-right: 4px;">Đợt ' + item.STT + '</span>' : '';
+                        var moneyStr = item.SoTien ? '<span style="color: var(--color-danger, #ef4444); font-weight: 600; margin-right: 4px;">' + item.SoTien + '</span>' : '';
+                        var dateStr = item.Ngay ? '<span style="color: var(--color-text-secondary); margin-right: 4px;">(' + item.Ngay + ')</span>' : '';
+                        var contentStr = item.NoiDung ? '<span style="color: var(--color-text, inherit); font-style: italic;">' + item.NoiDung + '</span>' : '';
                         html += '<div class="payment-row" style="display: flex; align-items: center; flex-wrap: wrap; gap: 2px;">' + sttStr + moneyStr + dateStr + contentStr + '</div>';
                       });
                       html += '</div>';
@@ -10263,7 +10280,7 @@ var UITable = (function () {
                     }
                     
                     // Generic complex array
-                    var html = '<div class="json-generic-table" style="font-size: 11px; display: flex; flex-direction: column; gap: 2px;">';
+                    var html = '<div class="json-generic-table" style="font-size: 11px; display: flex; flex-direction: column; gap: 2px; color: var(--color-text, inherit);">';
                     parsed.forEach(function(item) {
                       var itemHtml = [];
                       for (var k in item) {
@@ -10271,7 +10288,7 @@ var UITable = (function () {
                           itemHtml.push('<strong>' + k + ':</strong> ' + item[k]);
                         }
                       }
-                      html += '<div style="border-bottom: 1px dashed var(--color-border, #e2e8f0); padding-bottom: 2px;">' + itemHtml.join(' | ') + '</div>';
+                      html += '<div style="border-bottom: 1px dashed var(--color-border); padding-bottom: 2px;">' + itemHtml.join(' | ') + '</div>';
                     });
                     html += '</div>';
                     return html;
