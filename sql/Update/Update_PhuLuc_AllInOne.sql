@@ -182,31 +182,40 @@ SELECT
     ISNULL(td.SobanChayduphong, hd.SobanChayduphong) AS [SobanChayduphong],
     ISNULL(td.TongSoBanTD, hd.TongSoBan) AS [TongSoBan],
 
-    -- {#MenuTiec}{TenMonAn}{DonGia}{/MenuTiec}: JSON array từ JsonBanTiec
-    (
-        SELECT 
-            ISNULL(j.TenHang, ISNULL(j.TenMon, ISNULL(j.Tenhang, j.Mahang))) AS [TenMonAn],
-            ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0) AS [DonGia]
-        FROM OPENJSON(ISNULL(td.JsonBanTiec, '[]'))
-        WITH (
-            Mahang   NVARCHAR(50)  '$.Mahang',
-            TenHang  NVARCHAR(255) '$.TenHang',
-            TenMon   NVARCHAR(255) '$.TenMon',
-            Tenhang  NVARCHAR(255) '$.Tenhang',
-            Dongia   NVARCHAR(50)  '$.Dongia'
-        ) j
-        FOR JSON PATH
+    -- {#MenuTiec}: ưu tiên chi tiết HĐ (tbmk_Hopdongthucdon*), fallback JsonBanTiec phụ lục
+    COALESCE(
+        NULLIF(dbo.fn_DOCX_MenuTiec(td.Sohopdong), '[]'),
+        (
+            SELECT 
+                ISNULL(j.TenHang, ISNULL(j.TenMon, ISNULL(j.Tenhang, j.Mahang))) AS [TenMonAn],
+                FORMAT(ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0), 'N0', 'vi-VN') AS [DonGia]
+            FROM OPENJSON(ISNULL(td.JsonBanTiec, '[]'))
+            WITH (
+                Mahang   NVARCHAR(50)  '$.Mahang',
+                TenHang  NVARCHAR(255) '$.TenHang',
+                TenMon   NVARCHAR(255) '$.TenMon',
+                Tenhang  NVARCHAR(255) '$.Tenhang',
+                Dongia   NVARCHAR(50)  '$.Dongia'
+            ) j
+            FOR JSON PATH
+        )
     ) AS [MenuTiec],
 
-    -- {MenuTongCong}: Tổng tiền thực đơn format sẵn
-    FORMAT(
-        ISNULL((
-            SELECT SUM(ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0))
-            FROM OPENJSON(ISNULL(td.JsonBanTiec, '[]'))
-            WITH (Dongia NVARCHAR(50) '$.Dongia') j
-        ), 0),
-        'N0', 'vi-VN'
-    ) + N' VNĐ' AS [MenuTongCong],
+    COALESCE(
+        NULLIF(dbo.fn_DOCX_MenuTongCong(td.Sohopdong), N'0 VNĐ'),
+        FORMAT(
+            ISNULL((
+                SELECT SUM(ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0))
+                FROM OPENJSON(ISNULL(td.JsonBanTiec, '[]'))
+                WITH (Dongia NVARCHAR(50) '$.Dongia') j
+            ), 0),
+            'N0', 'vi-VN'
+        ) + N' VNĐ'
+    ) AS [MenuTongCong],
+
+    dbo.fn_DOCX_DanhSachMenu(td.Sohopdong)     AS [DanhSachMenu],
+    dbo.fn_DOCX_DanhSachThucUong(td.Sohopdong) AS [DanhSachThucUong],
+    dbo.fn_DOCX_DichVuTinhPhi(td.Sohopdong)    AS [DichVuTinhPhi],
 
     -- {#DanhSachChiPhi}{STT}{NoiDung}{DVT}{SoLuong}{DonGia}{ThanhTien}{/DanhSachChiPhi}
     -- Ưu tiên: cột DanhSachChiPhi có sẵn → fallback tổng hợp từ JsonDichVu

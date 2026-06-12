@@ -273,7 +273,16 @@ BEGIN
         -- ── Trạng thái ───────────────────────────────────────────────────
         h.Status,
         h.IsKetthuc,
-        h.Manv
+        h.Manv,
+
+        -- ── Menu / dịch vụ (fn_DOCX_* — xem sql/Functions/fn_DOCX_MenuDichVu.sql) ──
+        dbo.fn_DOCX_DanhSachMenu(h.Sohopdong)     AS [DanhSachMenu],
+        dbo.fn_DOCX_DanhSachThucUong(h.Sohopdong) AS [DanhSachThucUong],
+        dbo.fn_DOCX_DichVuTinhPhi(h.Sohopdong)    AS [DichVuTinhPhi],
+        dbo.fn_DOCX_DanhSachNgay(h.Sohopdong)     AS [DanhSachNgay],
+        dbo.fn_DOCX_DanhSachDichVu(h.Sohopdong)   AS [DanhSachDichVu],
+        dbo.fn_DOCX_MenuTiec(h.Sohopdong)         AS [MenuTiec],
+        dbo.fn_DOCX_MenuTongCong(h.Sohopdong)     AS [MenuTongCong]
 
     FROM tbmk_Hopdong h
     LEFT JOIN dmkhachhang k ON h.Makh = k.Makh

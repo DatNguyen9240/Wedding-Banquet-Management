@@ -684,42 +684,16 @@ SELECT
     ISNULL(NULLIF(h.MaSoThueHoaDon, ''),  N'...') AS [HDMaSoThue],
     ISNULL(k.Mail, N'...') AS [Email],
 
-    -- DỮ LIỆU BỔ SUNG CHO CÁCH 3.1 (GROUPING) TRONG WORD
-    -- 1. Bảng Dịch Vụ Tính Phí
-    (
-        SELECT 
-            hh.Tenhang AS [TenDichVu],
-            hd.Ghichudichvu AS [GhiChuChiTiet]
-        FROM tbmk_Hopdongdichvu hd
-        INNER JOIN dmHanghoa hh ON hd.Mahang = hh.Mahang
-        WHERE hd.Sohopdong = h.Sohopdong
-        ORDER BY hd.STT
-        FOR JSON PATH
-    ) AS [DichVuTinhPhi],
+    -- Menu / dịch vụ cho docx (fn_DOCX_* — sql/Functions/fn_DOCX_MenuDichVu.sql)
+    dbo.fn_DOCX_DanhSachMenu(h.Sohopdong)     AS [DanhSachMenu],
+    dbo.fn_DOCX_DanhSachThucUong(h.Sohopdong) AS [DanhSachThucUong],
+    dbo.fn_DOCX_MenuTiec(h.Sohopdong)         AS [MenuTiec],
+    dbo.fn_DOCX_MenuTongCong(h.Sohopdong)     AS [MenuTongCong],
+    dbo.fn_DOCX_DichVuTinhPhi(h.Sohopdong)    AS [DichVuTinhPhi],
+    dbo.fn_DOCX_DanhSachNgay(h.Sohopdong)     AS [DanhSachNgay],
+    dbo.fn_DOCX_DanhSachDichVu(h.Sohopdong)   AS [DanhSachDichVu],
 
-    -- 2. Bảng Danh Sách Ngày & Dịch Vụ (Nested Loop)
-    (
-        SELECT 
-            N'Ngày ' + RIGHT('0' + CAST(DAY(h.Ngaytochuc) AS VARCHAR), 2) + '/' + RIGHT('0' + CAST(MONTH(h.Ngaytochuc) AS VARCHAR), 2) AS [TenNhomNgay],
-            (
-                SELECT 
-                    ROW_NUMBER() OVER(ORDER BY hd2.STT) AS [STT],
-                    hh2.Tenhang AS [TenDichVu],
-                    ISNULL(h.Thoigianid, '...') AS [KhungGio],
-                    (SELECT TOP 1 DVTID FROM dmHanghoa WHERE Mahang = hd2.Mahang) AS [DVT],
-                    FORMAT(hd2.Soluong, 'G29') AS [SoLuong],
-                    FORMAT(hd2.Dongia, 'N0', 'vi-VN') AS [DonGia],
-                    N'' AS [UuDai],
-                    FORMAT(hd2.Sotien, 'N0', 'vi-VN') AS [ThanhTien]
-                FROM tbmk_Hopdongdichvu hd2
-                INNER JOIN dmHanghoa hh2 ON hd2.Mahang = hh2.Mahang
-                WHERE hd2.Sohopdong = h.Sohopdong
-                FOR JSON PATH
-            ) AS [DanhSachDV]
-        FOR JSON PATH
-    ) AS [DanhSachNgay],
-
-    -- 3. Tổng giá trị tạm tính bằng chữ
+    -- Tổng giá trị tạm tính bằng chữ
     [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0)) AS [TongGiaTriTamTinhBangChu],
     FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriTamTinh]
     
@@ -803,7 +777,9 @@ WHERE FormName = 'frmHopDong'
     'SetupBatDau', 'SetupKetThuc', 'SetupNoiDung1', 'SetupNoiDung2', 'ToChucNoiDung', 'OutNoiDung',
     'Dot1SoTien', 'Dot1Ngay', 'Dot1HinhThuc', 'Dot2SoTien', 'Dot2HinhThuc', 'DotCuoiGhiChu',
     'TongThanhTien', 'MucPhiPhucVu', 'PhiPhucVu', 'TongCongChuaVAT', 'VAT8', 'VAT10', 'TongTienFormat',
-    'TemplateFile', 'JsonLichTrinh', 'SanhDat2', 'Giabanman', 'DanhSachSanh', 'DichVuTinhPhi', 'DanhSachNgay', 'Email'
+    'TemplateFile', 'JsonLichTrinh', 'SanhDat2', 'Giabanman', 'DanhSachSanh',
+    'DanhSachMenu', 'DanhSachThucUong', 'MenuTiec', 'MenuTongCong',
+    'DichVuTinhPhi', 'DanhSachNgay', 'DanhSachDichVu', 'Email'
   );
 
 -- Đảm bảo trường NgayToChuc luôn tồn tại trong cấu hình Form kèm Trigger tính lịch âm

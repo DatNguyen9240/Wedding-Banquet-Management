@@ -136,6 +136,9 @@ BEGIN
             FOR JSON PATH
         ) AS [DanhSachDichVu],
 
+        dbo.fn_DOCX_DanhSachNgay(pt.Sohopdong)   AS [DanhSachNgay],
+        dbo.fn_DOCX_DichVuTinhPhi(pt.Sohopdong)  AS [DichVuTinhPhi],
+
         -- DỮ LIỆU MẢNG JSON CHO DỊCH VỤ PHÁT SINH
         (
             SELECT 

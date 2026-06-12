@@ -176,6 +176,10 @@ BEGIN
             FOR JSON PATH
         ) AS [DanhSachDichVu],
 
+        -- {#DanhSachNgay}{#DanhSachDV} — timeline từ HĐ gốc (BBNT / báo giá)
+        dbo.fn_DOCX_DanhSachNgay(pt.Sohopdong)   AS [DanhSachNgay],
+        dbo.fn_DOCX_DichVuTinhPhi(pt.Sohopdong)  AS [DichVuTinhPhi],
+
         -- DỮ LIỆU MẢNG JSON CHO DỊCH VỤ PHÁT SINH
         (
             SELECT 

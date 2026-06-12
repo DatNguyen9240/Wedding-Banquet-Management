@@ -231,19 +231,8 @@ app.post('/api/documents/generate', async (req, res) => {
             dataMap = { ...dataMap, ...dbRow };
         }
 
-        // Tự động phân tích các chuỗi JSON từ CSDL thành mảng/đối tượng JS
-        for (const key in dataMap) {
-            if (typeof dataMap[key] === 'string') {
-                const val = dataMap[key].trim();
-                if ((val.startsWith('[') && val.endsWith(']')) || (val.startsWith('{') && val.endsWith('}'))) {
-                    try {
-                        dataMap[key] = JSON.parse(val);
-                    } catch (e) {
-                        // ignore
-                    }
-                }
-            }
-        }
+        // Tự động parse JSON từ CSDL (kể cả JSON lồng nhau — menu/dịch vụ docx)
+        dataMap = deepParseJsonStrings(dataMap);
         // --- KHỞI TẠO NORMALIZATION (Để Template dễ khớp hơn) ---
         // Tự động tạo thêm các phiên bản chữ hoa, chữ thường để template kiểu gì cũng chạy
         const normalizedData = { ...dataMap };
@@ -716,6 +705,32 @@ function convertTextToWordXML(text, fieldName = '') {
         }
     }
     return xml;
+}
+
+/** Parse đệ quy mọi chuỗi JSON trong object/array (không hardcode field menu/dịch vụ). */
+function deepParseJsonStrings(value) {
+    if (typeof value === 'string') {
+        const val = value.trim();
+        if ((val.startsWith('[') && val.endsWith(']')) || (val.startsWith('{') && val.endsWith('}'))) {
+            try {
+                return deepParseJsonStrings(JSON.parse(val));
+            } catch (e) {
+                return value;
+            }
+        }
+        return value;
+    }
+    if (Array.isArray(value)) {
+        return value.map(item => deepParseJsonStrings(item));
+    }
+    if (value && typeof value === 'object') {
+        const out = {};
+        for (const key in value) {
+            out[key] = deepParseJsonStrings(value[key]);
+        }
+        return out;
+    }
+    return value;
 }
 
 function findTemplatePath(baseDir, templateName) {
