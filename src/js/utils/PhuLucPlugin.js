@@ -270,7 +270,7 @@ var PhuLucPlugin = (function () {
 
             <div class="d-flex justify-content-end gap-2 mt-2">
               <button type="button" id="btnCancelEdit" class="btn btn-outline-warning" style="display: none; margin-right: auto;">Hủy sửa / Tạo mới</button>
-              <button type="button" class="btn btn-outline-secondary" onclick="document.querySelector('.ui-modal-overlay').remove()">Hủy</button>
+              <button type="button" id="btnCancelModal" class="btn btn-outline-secondary">Hủy</button>
               <button type="submit" class="btn btn-success d-flex align-items-center gap-1"><span class="material-symbols-outlined" style="font-size: 18px;">save</span> Lưu & Tạo File Word</button>
             </div>
           </form>
@@ -406,7 +406,7 @@ var PhuLucPlugin = (function () {
               if (modalInstance && typeof modalInstance.closeNow === 'function') {
                 modalInstance.closeNow();
               } else {
-                var overlay = document.querySelector('.ui-modal-overlay');
+                var overlay = document.querySelector('.modal-overlay');
                 if (overlay) overlay.remove();
               }
               if (typeof UIToast !== 'undefined') {
@@ -469,6 +469,17 @@ var PhuLucPlugin = (function () {
         var cancelBtn = e.target.closest('#btnCancelEdit');
         if (cancelBtn) {
           _resetFormToNew();
+          return;
+        }
+
+        var cancelModalBtn = e.target.closest('#btnCancelModal');
+        if (cancelModalBtn) {
+          if (modalInstance && typeof modalInstance.close === 'function') {
+            modalInstance.close();
+          } else {
+            var overlay = document.querySelector('.modal-overlay');
+            if (overlay) overlay.remove();
+          }
           return;
         }
       });
@@ -627,7 +638,7 @@ var PhuLucPlugin = (function () {
             if (modalInstance && typeof modalInstance.closeNow === 'function') {
               modalInstance.closeNow();
             } else {
-              var overlay = document.querySelector('.ui-modal-overlay');
+              var overlay = document.querySelector('.modal-overlay');
               if (overlay) overlay.remove();
             }
             if (typeof UIToast !== 'undefined') {
