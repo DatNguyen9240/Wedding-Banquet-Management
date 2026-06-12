@@ -132,16 +132,20 @@ BEGIN
     SET @SotiencochopdongVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@Sotiencochopdong, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
     SET @TongtiencocVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@Tongtiencoc, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
 
-    -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân cách bởi dấu phẩy (ví dụ: 'S01,S02' -> '[{"Sanhtiecid":"S01","IsSanhchinh":1},{"Sanhtiecid":"S02","IsSanhchinh":0}]')
-    IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '' AND LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+    -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân tách bằng dấu phẩy
+    IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
     BEGIN
-        SET @JsonSanhTiec = (
-            SELECT 
-                LTRIM(RTRIM(value)) AS Sanhtiecid,
-                CASE WHEN ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) = 1 THEN 1 ELSE 0 END AS IsSanhchinh
-            FROM STRING_SPLIT(@JsonSanhTiec, ',')
-            FOR JSON PATH
-        );
+        IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+        BEGIN
+            SET @JsonSanhTiec = (
+                SELECT Sanhtiecid, 1 AS IsSanhchinh
+                FROM (
+                    SELECT LTRIM(RTRIM(value)) AS Sanhtiecid 
+                    FROM STRING_SPLIT(@JsonSanhTiec, ',')
+                ) s
+                FOR JSON PATH
+            );
+        END
     END
 
     -- Fallback 1: Nếu rỗng và là cập nhật hợp đồng cũ, lấy từ hợp đồng hiện tại

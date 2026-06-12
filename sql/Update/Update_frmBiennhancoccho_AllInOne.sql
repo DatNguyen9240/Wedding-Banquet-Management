@@ -348,22 +348,26 @@ BEGIN
     SET NOCOUNT ON;
     
     BEGIN TRY
+        -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân tách bằng dấu phẩy
+        IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
+        BEGIN
+            IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+            BEGIN
+                SET @JsonSanhTiec = (
+                    SELECT Sanhtiecid, 1 AS IsSanhchinh
+                    FROM (
+                        SELECT LTRIM(RTRIM(value)) AS Sanhtiecid 
+                        FROM STRING_SPLIT(@JsonSanhTiec, ',')
+                    ) s
+                    FOR JSON PATH
+                );
+            END
+        END
+
         IF @MaChungTu IS NOT NULL AND (@DocumentID IS NULL OR @DocumentID = '')
             SET @DocumentID = @MaChungTu;
         IF @_Ngaytochuc IS NOT NULL
             SET @Ngaytochuc = @_Ngaytochuc;
-            
-        -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân cách bởi dấu phẩy
-        IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '' AND LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
-        BEGIN
-            SET @JsonSanhTiec = (
-                SELECT 
-                    LTRIM(RTRIM(value)) AS Sanhtiecid,
-                    CASE WHEN ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) = 1 THEN 1 ELSE 0 END AS IsSanhchinh
-                FROM STRING_SPLIT(@JsonSanhTiec, ',')
-                FOR JSON PATH
-            );
-        END
             
         DECLARE @TongTienDecimal DECIMAL(18,2) = 0;
 
