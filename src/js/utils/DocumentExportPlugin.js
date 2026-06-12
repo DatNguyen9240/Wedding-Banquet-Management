@@ -69,6 +69,14 @@ var DocumentExportPlugin = (function () {
         }
         return 'BEO_Tiec_Cuoi';
       }
+    },
+    'frmBaoGia': {
+      docType: 'bao_gia',
+      label: 'Xuất Báo Giá',
+      icon: 'request_quote',
+      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+      sqlListName: 'frmBaoGia',
+      convertFields: ['LuuYChung', 'GhiChuSanh1', 'GhiChuSanh2', 'GhiChuSanh3']
     }
   };
 
