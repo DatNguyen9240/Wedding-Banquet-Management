@@ -107,6 +107,18 @@ BEGIN
         IF @_NgayToChucParsed IS NOT NULL
             SET @NgayToChucParsed = @_NgayToChucParsed;
             
+        -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân cách bởi dấu phẩy
+        IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '' AND LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+        BEGIN
+            SET @JsonSanhTiec = (
+                SELECT 
+                    LTRIM(RTRIM(value)) AS Sanhtiecid,
+                    CASE WHEN ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) = 1 THEN 1 ELSE 0 END AS IsSanhchinh
+                FROM STRING_SPLIT(@JsonSanhTiec, ',')
+                FOR JSON PATH
+            );
+        END
+
         DECLARE @TongTienDecimal DECIMAL(18,2) = 0;
 
         IF @Tongtien IS NOT NULL AND LTRIM(RTRIM(@Tongtien)) <> ''
@@ -182,18 +194,12 @@ BEGIN
         -- B. Kiểm tra trùng lịch sảnh (Double Booking)
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
-            DECLARE @JsonSanhTiecTemp NVARCHAR(MAX) = @JsonSanhTiec;
-            IF (LEFT(LTRIM(@JsonSanhTiecTemp), 1) != '[')
-            BEGIN
-                SET @JsonSanhTiecTemp = '[{"Sanhtiecid":"' + @JsonSanhTiecTemp + '", "IsSanhchinh":1}]';
-            END
-
             IF EXISTS (
                 -- 1. Trùng với Hợp đồng khác đang hoạt động
                 SELECT 1 
                 FROM tbmk_Hopdong h
                 INNER JOIN tbmk_Hopdongsanhtiec hs ON h.Sohopdong = hs.Sohopdong
-                INNER JOIN OPENJSON(@JsonSanhTiecTemp) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
+                INNER JOIN OPENJSON(@JsonSanhTiec) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
                 WHERE h.Ngaytochuc = @NgayToChucParsed 
                   AND h.Thoigianid = @Thoigianid
                   AND ISNULL(h.IsHuy, 0) = 0
@@ -204,7 +210,7 @@ BEGIN
                 SELECT 1 
                 FROM tbmk_Biennhancoccho b
                 INNER JOIN tbmk_Biennhancocchosanhtiec bs ON b.DocumentID = bs.DocumentID
-                INNER JOIN OPENJSON(@JsonSanhTiecTemp) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
+                INNER JOIN OPENJSON(@JsonSanhTiec) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
                 WHERE b.Ngaytochuc = @NgayToChucParsed 
                   AND b.Thoigianid = @Thoigianid
                   AND ISNULL(b.IsHuy, 0) = 0
@@ -404,13 +410,6 @@ BEGIN
         -- Chỉ xử lý nếu có truyền danh sách Sảnh
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
-            -- Nếu không phải dạng mảng JSON (ví dụ: chỉ là mã sảnh 'S01' chọn từ dropdown đơn giản)
-            -- thì tự động bọc thành JSON array hợp lệ để OPENJSON không bị lỗi
-            IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
-            BEGIN
-                SET @JsonSanhTiec = '[{"Sanhtiecid":"' + @JsonSanhTiec + '", "IsSanhchinh":1}]';
-            END
-
             -- Xóa sảnh cũ của phiếu này
             DELETE FROM tbmk_Biennhancocchosanhtiec WHERE DocumentID = @DocumentID;
 

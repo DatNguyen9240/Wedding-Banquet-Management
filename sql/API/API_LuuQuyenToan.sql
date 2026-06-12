@@ -18,6 +18,16 @@ CREATE PROCEDURE [dbo].[API_LuuQuyenToan]
     @Ghichu NVARCHAR(500) = NULL,
     @User VARCHAR(50) = NULL,
 
+    -- Extra fields for settlement totals
+    @Sotienphatsinh DECIMAL(18,2) = 0,
+    @PhiBuSanh DECIMAL(18,2) = 0,
+    @PhiBuBantang DECIMAL(18,2) = 0,
+    @PhiBuTTS DECIMAL(18,2) = 0,
+    @PhiBuNTL DECIMAL(18,2) = 0,
+    @PhiPhucVu DECIMAL(18,2) = 0,
+    @PTThueVAT DECIMAL(18,2) = 0,
+    @TienThueVAT DECIMAL(18,2) = 0,
+
     -- Các tham số JSON chi tiết gửi từ Frontend
     @JsonBanTiec NVARCHAR(MAX) = NULL,  -- Danh sách chi tiết món ăn/bàn tiệc
     @JsonThucUong NVARCHAR(MAX) = NULL, -- Danh sách chi tiết đồ uống tiêu dùng thực tế
@@ -41,11 +51,13 @@ BEGIN
             INSERT INTO tbmk_Phieuthu (
                 DocumentID, DocumentDate, SPthu, Ngaythu, Sohopdong, Nguoinop, Manv, 
                 Tongtiencoc, TongtienHoaDon, Thanhtoan, Conlai, IsKetthuc, Ghichu, 
+                Sotienphatsinh, PhiBuSanh, PhiBuBantang, PhiBuTTS, PhiBuNTL, PhiPhucVu, PTThueVAT, TienThueVAT,
                 UserCreate, DateCreate
             )
             VALUES (
                 @DocumentID, ISNULL(@DocumentDate, @Now), @SPthu, ISNULL(@DocumentDate, @Now), @Sohopdong, @Nguoinop, @User,
                 @Tongtiencoc, @TongtienHoaDon, @Thanhtoan, @Conlai, @IsKetthuc, @Ghichu,
+                @Sotienphatsinh, @PhiBuSanh, @PhiBuBantang, @PhiBuTTS, @PhiBuNTL, @PhiPhucVu, @PTThueVAT, @TienThueVAT,
                 @User, @Now
             );
         END
@@ -64,6 +76,14 @@ BEGIN
                 Conlai = ISNULL(@Conlai, Conlai),
                 IsKetthuc = ISNULL(@IsKetthuc, IsKetthuc),
                 Ghichu = ISNULL(@Ghichu, Ghichu),
+                Sotienphatsinh = ISNULL(@Sotienphatsinh, Sotienphatsinh),
+                PhiBuSanh = ISNULL(@PhiBuSanh, PhiBuSanh),
+                PhiBuBantang = ISNULL(@PhiBuBantang, PhiBuBantang),
+                PhiBuTTS = ISNULL(@PhiBuTTS, PhiBuTTS),
+                PhiBuNTL = ISNULL(@PhiBuNTL, PhiBuNTL),
+                PhiPhucVu = ISNULL(@PhiPhucVu, PhiPhucVu),
+                PTThueVAT = ISNULL(@PTThueVAT, PTThueVAT),
+                TienThueVAT = ISNULL(@TienThueVAT, TienThueVAT),
                 UserUpdate = @User,
                 DateUpdate = @Now
             WHERE DocumentID = @DocumentID;

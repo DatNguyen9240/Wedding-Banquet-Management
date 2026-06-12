@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -79,11 +79,11 @@ BEGIN
         YEAR(ISNULL(pt.DocumentDate, GETDATE())) AS [NamQuyetToan],
 
         -- Bảng tổng hợp & tính toán chi tiết
-        CASE WHEN (ISNULL(hd.Tongtienbanman, 0) + ISNULL(hd.Tongtienbanchay, 0) + ISNULL(hd.Tongtienthucuong, 0) + ISNULL(hd.Tongtiendichvu, 0)) = 0 THEN N'-' ELSE FORMAT((ISNULL(hd.Tongtienbanman, 0) + ISNULL(hd.Tongtienbanchay, 0) + ISNULL(hd.Tongtienthucuong, 0) + ISNULL(hd.Tongtiendichvu, 0)), 'N0', 'vi-VN') END AS [Cong1],
-        CASE WHEN (ISNULL(pt.Sotienphatsinh, 0) + ISNULL(pt.PhiBuSanh, 0) + ISNULL(pt.PhiBuBanTang, 0) + ISNULL(pt.PhiBuTTS, 0) + ISNULL(pt.PhiBuNTL, 0)) = 0 THEN N'-' ELSE FORMAT((ISNULL(pt.Sotienphatsinh, 0) + ISNULL(pt.PhiBuSanh, 0) + ISNULL(pt.PhiBuBanTang, 0) + ISNULL(pt.PhiBuTTS, 0) + ISNULL(pt.PhiBuNTL, 0)), 'N0', 'vi-VN') END AS [Cong2],
-        CASE WHEN ((ISNULL(hd.Tongtienbanman, 0) + ISNULL(hd.Tongtienbanchay, 0) + ISNULL(hd.Tongtienthucuong, 0) + ISNULL(hd.Tongtiendichvu, 0)) + (ISNULL(pt.Sotienphatsinh, 0) + ISNULL(pt.PhiBuSanh, 0) + ISNULL(pt.PhiBuBanTang, 0) + ISNULL(pt.PhiBuTTS, 0) + ISNULL(pt.PhiBuNTL, 0))) = 0 THEN N'-' ELSE FORMAT(((ISNULL(hd.Tongtienbanman, 0) + ISNULL(hd.Tongtienbanchay, 0) + ISNULL(hd.Tongtienthucuong, 0) + ISNULL(hd.Tongtiendichvu, 0)) + (ISNULL(pt.Sotienphatsinh, 0) + ISNULL(pt.PhiBuSanh, 0) + ISNULL(pt.PhiBuBanTang, 0) + ISNULL(pt.PhiBuTTS, 0) + ISNULL(pt.PhiBuNTL, 0))), 'N0', 'vi-VN') END AS [TongCong12],
+        CASE WHEN c1.Cong1Val = 0 THEN N'-' ELSE FORMAT(c1.Cong1Val, 'N0', 'vi-VN') END AS [Cong1],
+        CASE WHEN c2.Cong2Val = 0 THEN N'-' ELSE FORMAT(c2.Cong2Val, 'N0', 'vi-VN') END AS [Cong2],
+        CASE WHEN (c1.Cong1Val + c2.Cong2Val) = 0 THEN N'-' ELSE FORMAT((c1.Cong1Val + c2.Cong2Val), 'N0', 'vi-VN') END AS [TongCong12],
         CASE WHEN ISNULL(pt.PhiPhucVu, 0) = 0 THEN N'-' ELSE FORMAT(pt.PhiPhucVu, 'N0', 'vi-VN') END AS [PhiPhucVu],
-        CASE WHEN ((ISNULL(hd.Tongtienbanman, 0) + ISNULL(hd.Tongtienbanchay, 0) + ISNULL(hd.Tongtienthucuong, 0) + ISNULL(hd.Tongtiendichvu, 0)) + (ISNULL(pt.Sotienphatsinh, 0) + ISNULL(pt.PhiBuSanh, 0) + ISNULL(pt.PhiBuBanTang, 0) + ISNULL(pt.PhiBuTTS, 0) + ISNULL(pt.PhiBuNTL, 0)) + ISNULL(pt.PhiPhucVu, 0)) = 0 THEN N'-' ELSE FORMAT(((ISNULL(hd.Tongtienbanman, 0) + ISNULL(hd.Tongtienbanchay, 0) + ISNULL(hd.Tongtienthucuong, 0) + ISNULL(hd.Tongtiendichvu, 0)) + (ISNULL(pt.Sotienphatsinh, 0) + ISNULL(pt.PhiBuSanh, 0) + ISNULL(pt.PhiBuBanTang, 0) + ISNULL(pt.PhiBuTTS, 0) + ISNULL(pt.PhiBuNTL, 0)) + ISNULL(pt.PhiPhucVu, 0)), 'N0', 'vi-VN') END AS [TongCongChuaVAT],
+        CASE WHEN (c1.Cong1Val + c2.Cong2Val + ISNULL(pt.PhiPhucVu, 0)) = 0 THEN N'-' ELSE FORMAT((c1.Cong1Val + c2.Cong2Val + ISNULL(pt.PhiPhucVu, 0)), 'N0', 'vi-VN') END AS [TongCongChuaVAT],
         CASE WHEN (CASE WHEN pt.PTThueVAT = 8 THEN ISNULL(pt.TienThueVAT, 0) ELSE 0 END) = 0 THEN N'-' ELSE FORMAT(CASE WHEN pt.PTThueVAT = 8 THEN ISNULL(pt.TienThueVAT, 0) ELSE 0 END, 'N0', 'vi-VN') END AS [VAT8],
         CASE WHEN (CASE WHEN pt.PTThueVAT = 10 THEN ISNULL(pt.TienThueVAT, 0) ELSE 0 END) = 0 THEN N'-' ELSE FORMAT(CASE WHEN pt.PTThueVAT = 10 THEN ISNULL(pt.TienThueVAT, 0) ELSE 0 END, 'N0', 'vi-VN') END AS [VAT10],
         -- Alias khớp placeholder Word template (Danh_Sach_Truong_Tong_Hop.md - Section 13)
@@ -238,6 +238,20 @@ BEGIN
     FROM tbmk_Phieuthu pt
     LEFT JOIN tbmk_Hopdong hd ON pt.Sohopdong = hd.Sohopdong
     LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
+    CROSS APPLY (
+        SELECT COALESCE(
+            NULLIF(
+                ISNULL((SELECT SUM(ThanhTien) FROM tbmk_Phieuthubantiec WHERE SPthu = pt.SPthu), 0) +
+                ISNULL((SELECT SUM(Sotien - Sotiengiamgia) FROM tbmk_Phieuthuthucuong WHERE SPthu = pt.SPthu), 0) +
+                ISNULL((SELECT SUM(Sotien - Sotiengiamgia) FROM tbmk_PhieuthuDichvu WHERE SPthu = pt.SPthu), 0),
+                0
+            ),
+            (ISNULL(hd.Tongtienbanman, 0) + ISNULL(hd.Tongtienbanchay, 0) + ISNULL(hd.Tongtienthucuong, 0) + ISNULL(hd.Tongtiendichvu, 0))
+        ) AS Cong1Val
+    ) c1
+    CROSS APPLY (
+        SELECT (ISNULL(pt.Sotienphatsinh, 0) + ISNULL(pt.PhiBuSanh, 0) + ISNULL(pt.PhiBuBanTang, 0) + ISNULL(pt.PhiBuTTS, 0) + ISNULL(pt.PhiBuNTL, 0)) AS Cong2Val
+    ) c2
     WHERE 
         ISNULL(pt.IsDeleted, 0) = 0
         AND (@DocumentID IS NULL OR @DocumentID = '' OR pt.DocumentID = @DocumentID)
@@ -274,6 +288,16 @@ CREATE PROCEDURE [dbo].[API_LuuQuyenToan]
     @Ghichu NVARCHAR(500) = NULL,
     @User VARCHAR(50) = NULL,
 
+    -- Extra fields for settlement totals
+    @Sotienphatsinh DECIMAL(18,2) = 0,
+    @PhiBuSanh DECIMAL(18,2) = 0,
+    @PhiBuBantang DECIMAL(18,2) = 0,
+    @PhiBuTTS DECIMAL(18,2) = 0,
+    @PhiBuNTL DECIMAL(18,2) = 0,
+    @PhiPhucVu DECIMAL(18,2) = 0,
+    @PTThueVAT DECIMAL(18,2) = 0,
+    @TienThueVAT DECIMAL(18,2) = 0,
+
     -- Các tham số JSON chi tiết gửi từ Frontend
     @JsonBanTiec NVARCHAR(MAX) = NULL,  -- Danh sách chi tiết món ăn/bàn tiệc
     @JsonThucUong NVARCHAR(MAX) = NULL, -- Danh sách chi tiết đồ uống tiêu dùng thực tế
@@ -297,11 +321,13 @@ BEGIN
             INSERT INTO tbmk_Phieuthu (
                 DocumentID, DocumentDate, SPthu, Ngaythu, Sohopdong, Nguoinop, Manv, 
                 Tongtiencoc, TongtienHoaDon, Thanhtoan, Conlai, IsKetthuc, Ghichu, 
+                Sotienphatsinh, PhiBuSanh, PhiBuBantang, PhiBuTTS, PhiBuNTL, PhiPhucVu, PTThueVAT, TienThueVAT,
                 UserCreate, DateCreate
             )
             VALUES (
                 @DocumentID, ISNULL(@DocumentDate, @Now), @SPthu, ISNULL(@DocumentDate, @Now), @Sohopdong, @Nguoinop, @User,
                 @Tongtiencoc, @TongtienHoaDon, @Thanhtoan, @Conlai, @IsKetthuc, @Ghichu,
+                @Sotienphatsinh, @PhiBuSanh, @PhiBuBantang, @PhiBuTTS, @PhiBuNTL, @PhiPhucVu, @PTThueVAT, @TienThueVAT,
                 @User, @Now
             );
         END
@@ -320,6 +346,14 @@ BEGIN
                 Conlai = ISNULL(@Conlai, Conlai),
                 IsKetthuc = ISNULL(@IsKetthuc, IsKetthuc),
                 Ghichu = ISNULL(@Ghichu, Ghichu),
+                Sotienphatsinh = ISNULL(@Sotienphatsinh, Sotienphatsinh),
+                PhiBuSanh = ISNULL(@PhiBuSanh, PhiBuSanh),
+                PhiBuBantang = ISNULL(@PhiBuBantang, PhiBuBantang),
+                PhiBuTTS = ISNULL(@PhiBuTTS, PhiBuTTS),
+                PhiBuNTL = ISNULL(@PhiBuNTL, PhiBuNTL),
+                PhiPhucVu = ISNULL(@PhiPhucVu, PhiPhucVu),
+                PTThueVAT = ISNULL(@PTThueVAT, PTThueVAT),
+                TienThueVAT = ISNULL(@TienThueVAT, TienThueVAT),
                 UserUpdate = @User,
                 DateUpdate = @Now
             WHERE DocumentID = @DocumentID;
@@ -577,19 +611,56 @@ BEGIN
 
     SELECT 
         (
-            SELECT 
-                h.Mahang,
-                h.Tenhang AS [TenHang],
-                h.DVTID AS [DvtID],
-                @SoBanChinhThuc AS [Soluong],
-                CASE WHEN h.LoaihangID = 'MONCHAY' THEN @Giabanchay ELSE @Giabanman END AS [Dongia],
-                (@SoBanChinhThuc * CASE WHEN h.LoaihangID = 'MONCHAY' THEN @Giabanchay ELSE @Giabanman END) AS [Sotien],
-                0 AS [Giamgia],
-                0 AS [Sotiengiamgia],
-                (@SoBanChinhThuc * CASE WHEN h.LoaihangID = 'MONCHAY' THEN @Giabanchay ELSE @Giabanman END) AS [ThanhTien]
-            FROM dmHangHoa h
-            WHERE h.GoiThucDonID = @GoiThucDonID 
-              AND ISNULL(h.IsNgungSuDung, 0) = 0
+            SELECT *
+            FROM (
+                SELECT 
+                    tdm.Mahang,
+                    h.Tenhang AS [TenHang],
+                    h.DVTID AS [DvtID],
+                    @SoBanChinhThuc AS [Soluong],
+                    ISNULL(tdm.Dongia, 0) AS [Dongia],
+                    (@SoBanChinhThuc * ISNULL(tdm.Dongia, 0)) AS [Sotien],
+                    0 AS [Giamgia],
+                    0 AS [Sotiengiamgia],
+                    (@SoBanChinhThuc * ISNULL(tdm.Dongia, 0)) AS [ThanhTien]
+                FROM tbmk_Hopdongthucdonman tdm
+                LEFT JOIN dmHangHoa h ON tdm.Mahang = h.Mahang
+                WHERE tdm.Sohopdong = @Sohopdong
+                
+                UNION ALL
+                
+                SELECT 
+                    tdc.Mahang,
+                    h.Tenhang AS [TenHang],
+                    h.DVTID AS [DvtID],
+                    @SoBanChinhThuc AS [Soluong],
+                    ISNULL(tdc.Dongia, 0) AS [Dongia],
+                    (@SoBanChinhThuc * ISNULL(tdc.Dongia, 0)) AS [Sotien],
+                    0 AS [Giamgia],
+                    0 AS [Sotiengiamgia],
+                    (@SoBanChinhThuc * ISNULL(tdc.Dongia, 0)) AS [ThanhTien]
+                FROM tbmk_Hopdongthucdonchay tdc
+                LEFT JOIN dmHangHoa h ON tdc.Mahang = h.Mahang
+                WHERE tdc.Sohopdong = @Sohopdong
+                
+                UNION ALL
+                
+                SELECT 
+                    h.Mahang,
+                    h.Tenhang AS [TenHang],
+                    h.DVTID AS [DvtID],
+                    @SoBanChinhThuc AS [Soluong],
+                    CASE WHEN h.LoaihangID = 'MONCHAY' THEN @Giabanchay ELSE @Giabanman END AS [Dongia],
+                    (@SoBanChinhThuc * CASE WHEN h.LoaihangID = 'MONCHAY' THEN @Giabanchay ELSE @Giabanman END) AS [Sotien],
+                    0 AS [Giamgia],
+                    0 AS [Sotiengiamgia],
+                    (@SoBanChinhThuc * CASE WHEN h.LoaihangID = 'MONCHAY' THEN @Giabanchay ELSE @Giabanman END) AS [ThanhTien]
+                FROM dmHangHoa h
+                WHERE h.GoiThucDonID = @GoiThucDonID 
+                  AND ISNULL(h.IsNgungSuDung, 0) = 0
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Hopdongthucdonman WHERE Sohopdong = @Sohopdong)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Hopdongthucdonchay WHERE Sohopdong = @Sohopdong)
+            ) sub
             FOR JSON PATH
         ) AS [JsonBanTiec],
 
@@ -614,17 +685,38 @@ BEGIN
         ) AS [JsonThucUong],
 
         (
-            SELECT 
-                'DV-MACDINH' AS [Mahang],
-                N'Dịch vụ tổ chức & Trang trí tiệc cưới' AS [TenHang],
-                N'Gói' AS [DvtID],
-                1 AS [Soluong],
-                @Tongtiendichvu AS [Dongia],
-                @Tongtiendichvu AS [Sotien],
-                0 AS [Giamgia],
-                0 AS [Sotiengiamgia],
-                @Tongtiendichvu AS [ThanhTien]
-            WHERE @Tongtiendichvu > 0
+            SELECT *
+            FROM (
+                SELECT 
+                    dv.Mahang,
+                    h.Tenhang AS [TenHang],
+                    h.DVTID AS [DvtID],
+                    ISNULL(dv.Soluong, 0) AS [Soluong],
+                    ISNULL(dv.Dongia, 0) AS [Dongia],
+                    ISNULL(dv.Sotien, 0) AS [Sotien],
+                    0 AS [Giamgia],
+                    0 AS [Sotiengiamgia],
+                    ISNULL(dv.Sotien, 0) AS [ThanhTien]
+                FROM tbmk_Hopdongdichvu dv
+                LEFT JOIN dmHangHoa h ON dv.Mahang = h.Mahang
+                WHERE dv.Sohopdong = @Sohopdong
+                
+                UNION ALL
+                
+                -- Fallback to default package if no detailed services found but Tongtiendichvu > 0
+                SELECT 
+                    'DV-MACDINH' AS [Mahang],
+                    N'Dịch vụ tổ chức & Trang trí tiệc cưới' AS [TenHang],
+                    N'Gói' AS [DvtID],
+                    1 AS [Soluong],
+                    @Tongtiendichvu AS [Dongia],
+                    @Tongtiendichvu AS [Sotien],
+                    0 AS [Giamgia],
+                    0 AS [Sotiengiamgia],
+                    @Tongtiendichvu AS [ThanhTien]
+                WHERE @Tongtiendichvu > 0 
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Hopdongdichvu WHERE Sohopdong = @Sohopdong)
+            ) sub
             FOR JSON PATH
         ) AS [JsonDichVu],
 
@@ -764,7 +856,7 @@ VALUES
     'frmQuyetToan', 
     'Save', 
     'API_LuuQuyenToan', 
-    '@DocumentID=N''{DocumentID}'', @DocumentDate=N''{DocumentDate}'', @Sohopdong=N''{Sohopdong}'', @Nguoinop=N''{Nguoinop}'', @Tongtiencoc={Tongtiencoc}, @TongtienHoaDon={TongtienHoaDon}, @Thanhtoan={Thanhtoan}, @Conlai={Conlai}, @IsKetthuc={IsKetthuc}, @Ghichu=N''{Ghichu}'', @User=N''{UserName}'', @JsonBanTiec=N''{JsonBanTiec}'', @JsonThucUong=N''{JsonThucUong}'', @JsonDichVu=N''{JsonDichVu}'', @JsonPhatSinh=N''{JsonPhatSinh}'''
+    '@DocumentID=N''{DocumentID}'', @DocumentDate=N''{DocumentDate}'', @Sohopdong=N''{Sohopdong}'', @Nguoinop=N''{Nguoinop}'', @Tongtiencoc={Tongtiencoc}, @TongtienHoaDon={TongtienHoaDon}, @Thanhtoan={Thanhtoan}, @Conlai={Conlai}, @IsKetthuc={IsKetthuc}, @Ghichu=N''{Ghichu}'', @User=N''{UserName}'', @Sotienphatsinh={Sotienphatsinh}, @PhiBuSanh={PhiBuSanh}, @PhiBuBantang={PhiBuBantang}, @PhiBuTTS={PhiBuTTS}, @PhiBuNTL={PhiBuNTL}, @PhiPhucVu={PhiPhucVu}, @PTThueVAT={PTThueVAT}, @TienThueVAT={TienThueVAT}, @JsonBanTiec=N''{JsonBanTiec}'', @JsonThucUong=N''{JsonThucUong}'', @JsonDichVu=N''{JsonDichVu}'', @JsonPhatSinh=N''{JsonPhatSinh}'''
 ),
 (
     'frmQuyetToan', 

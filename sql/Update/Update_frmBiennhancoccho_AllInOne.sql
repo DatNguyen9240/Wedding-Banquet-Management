@@ -353,6 +353,18 @@ BEGIN
         IF @_Ngaytochuc IS NOT NULL
             SET @Ngaytochuc = @_Ngaytochuc;
             
+        -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân cách bởi dấu phẩy
+        IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '' AND LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+        BEGIN
+            SET @JsonSanhTiec = (
+                SELECT 
+                    LTRIM(RTRIM(value)) AS Sanhtiecid,
+                    CASE WHEN ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) = 1 THEN 1 ELSE 0 END AS IsSanhchinh
+                FROM STRING_SPLIT(@JsonSanhTiec, ',')
+                FOR JSON PATH
+            );
+        END
+            
         DECLARE @TongTienDecimal DECIMAL(18,2) = 0;
 
         IF @Tongtien IS NOT NULL AND LTRIM(RTRIM(@Tongtien)) <> ''
@@ -428,19 +440,12 @@ BEGIN
         -- B. Kiểm tra trùng lịch sảnh (Double Booking)
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
-            DECLARE @JsonSanhTiecTemp NVARCHAR(MAX) = @JsonSanhTiec;
-            
-
             IF EXISTS (
                 -- 1. Trùng với Hợp đồng khác đang hoạt động
                 SELECT 1 
                 FROM tbmk_Hopdong h
                 INNER JOIN tbmk_Hopdongsanhtiec hs ON h.Sohopdong = hs.Sohopdong
-                INNER JOIN (
-                    SELECT JSON_VALUE(value, '$.Sanhtiecid') AS Sanhtiecid FROM OPENJSON(@JsonSanhTiecTemp) WHERE LEFT(LTRIM(@JsonSanhTiecTemp), 1) = '['
-                    UNION ALL
-                    SELECT LTRIM(RTRIM(value)) AS Sanhtiecid FROM STRING_SPLIT(@JsonSanhTiecTemp, ',') WHERE LEFT(LTRIM(@JsonSanhTiecTemp), 1) != '['
-                ) j ON hs.Sanhtiecid = j.Sanhtiecid
+                INNER JOIN OPENJSON(@JsonSanhTiec) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
                 WHERE h.Ngaytochuc = @Ngaytochuc 
                   AND h.Thoigianid = @Thoigianid
                   AND ISNULL(h.IsHuy, 0) = 0
@@ -451,11 +456,7 @@ BEGIN
                 SELECT 1 
                 FROM tbmk_Biennhancoccho b
                 INNER JOIN tbmk_Biennhancocchosanhtiec bs ON b.DocumentID = bs.DocumentID
-                INNER JOIN (
-                    SELECT JSON_VALUE(value, '$.Sanhtiecid') AS Sanhtiecid FROM OPENJSON(@JsonSanhTiecTemp) WHERE LEFT(LTRIM(@JsonSanhTiecTemp), 1) = '['
-                    UNION ALL
-                    SELECT LTRIM(RTRIM(value)) AS Sanhtiecid FROM STRING_SPLIT(@JsonSanhTiecTemp, ',') WHERE LEFT(LTRIM(@JsonSanhTiecTemp), 1) != '['
-                ) j ON bs.Sanhtiecid = j.Sanhtiecid
+                INNER JOIN OPENJSON(@JsonSanhTiec) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
                 WHERE b.Ngaytochuc = @Ngaytochuc 
                   AND b.Thoigianid = @Thoigianid
                   AND ISNULL(b.IsHuy, 0) = 0
@@ -612,8 +613,6 @@ BEGIN
 
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
-            
-
             DELETE FROM tbmk_Biennhancocchosanhtiec WHERE DocumentID = @DocumentID;
 
             INSERT INTO tbmk_Biennhancocchosanhtiec (
@@ -627,20 +626,7 @@ BEGIN
                 ISNULL(CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0),
                 @Now,
                 @UserCreate
-            FROM OPENJSON(@JsonSanhTiec)
-            WHERE LEFT(LTRIM(@JsonSanhTiec), 1) = '['
-            
-            UNION ALL
-            
-            SELECT 
-                NEWID(), 
-                @DocumentID, 
-                LTRIM(RTRIM(value)),
-                1,
-                @Now,
-                @UserCreate
-            FROM STRING_SPLIT(@JsonSanhTiec, ',')
-            WHERE LEFT(LTRIM(@JsonSanhTiec), 1) != '[';
+            FROM OPENJSON(@JsonSanhTiec);
         END
 
         COMMIT TRANSACTION;

@@ -59,9 +59,21 @@ var PhuLucPlugin = (function () {
       UIToast.show('Đang khởi tạo tài liệu...', 'info');
     }
 
+    var headers = { 'Content-Type': 'application/json' };
+    var token = '';
+    if (typeof ApiClient !== 'undefined' && typeof ApiClient.getCookie === 'function') {
+      token = ApiClient.getCookie('auth_token');
+    } else {
+      var match = document.cookie.match(/(?:^|; )auth_token=([^;]*)/);
+      if (match) token = decodeURIComponent(match[1]);
+    }
+    if (token) {
+      headers['Authorization'] = 'Bearer ' + token;
+    }
+
     fetch(DOC_API_BASE + '/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers,
       body: JSON.stringify({
         templateType: config.docType,
         customerId: sothaydoi,

@@ -67,6 +67,7 @@ $jsFiles = @(
   "js\utils\WorkflowTransferPlugin.js",
   "js\utils\FoodSelectionPlugin.js",
   "js\utils\PhuLucPlugin.js",
+  "js\utils\QuyetToanPlugin.js",
   "js\core\EventBus.js",
   "js\core\KeyboardManager.js",
   "js\utils\FormatUtils.js",

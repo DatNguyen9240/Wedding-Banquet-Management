@@ -2504,6 +2504,29 @@ window.DynamicFormEngine = (function () {
       }
     });
 
+    // Chuẩn hóa/Serialize các trường multi-list (ml) thành JSON string trước khi validate và gửi đi
+    globalFormSchema.forEach(function (f) {
+      if (f.renderRule === 'ml') {
+        var val = formInputData[f.name];
+        if (val && !val.startsWith('[')) {
+          var items = val.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+          if (items.length > 0) {
+            var jsonArr = items.map(function (itemId, idx) {
+              return {
+                Sanhtiecid: itemId,
+                id: itemId,
+                value: itemId,
+                IsSanhchinh: idx === 0 ? 1 : 0
+              };
+            });
+            formInputData[f.name] = JSON.stringify(jsonArr);
+          } else {
+            formInputData[f.name] = '';
+          }
+        }
+      }
+    });
+
     // 2. Validate Required và ValidateRule
     var isInvalid = false;
     for (var i = 0; i < globalFormSchema.length; i++) {

@@ -97,9 +97,45 @@ var CheckoutService = (function () {
     });
   }
 
+  /**
+   * Lấy chi tiết phiếu quyết toán (món ăn, đồ uống, dịch vụ, phát sinh)
+   * @param {Object} params - { Sohopdong, Sothaydoi, DocumentID }
+   * @returns {Promise<Object>}
+   */
+  function getDetails(params) {
+    return new Promise(function (resolve, reject) {
+      var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.ROUTER)
+        ? API_CONFIG.ENDPOINTS.ROUTER
+        : '/api/API_Gateway_Router';
+
+      var payload = {
+        List: 'frmQuyetToan',
+        Func: 'GetDetails',
+        Sohopdong: params.Sohopdong || '',
+        Sothaydoi: params.Sothaydoi || '',
+        DocumentID: params.DocumentID || ''
+      };
+
+      ApiClient.post(endpoint, payload)
+        .then(function (res) {
+          var record = null;
+          if (res && res.records && res.records.length > 0)  record = res.records[0];
+          else if (res && res.data && res.data.length > 0)   record = res.data[0];
+          else if (Array.isArray(res) && res.length > 0)     record = res[0];
+          else record = res;
+          resolve(record);
+        })
+        .catch(function (err) {
+          console.error('[CheckoutService] Lỗi getDetails:', err);
+          reject(err);
+        });
+    });
+  }
+
   return {
     getList:         getList,
     searchContracts: searchContracts,
-    save:            save
+    save:            save,
+    getDetails:      getDetails
   };
 })();
