@@ -144,7 +144,7 @@ SELECT
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenADaiDien],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
-    ISNULL(nv.Tennv, td.Manv) AS [BenANhanVienPhuTrach],
+    ISNULL(nv.Tennv, ISNULL(td.Manv, hd.Manv)) AS [BenANhanVienPhuTrach],
     ISNULL(nv.Dienthoai, '') AS [BenASDTNhanVien],
 
     -- Bên B (Thông tin khách hàng)
@@ -167,7 +167,7 @@ SELECT
     FORMAT(ISNULL(td.NgayToChucTD, hd.Ngaytochuc), 'HH:mm') AS [TiecGioBatDau],
     
     -- Ngày tổ chức Dương lịch & Âm lịch
-    FORMAT(ISNULL(td.NgayToChucTD, hd.Ngaytochuc), 'dd/MM/yyyy') AS [NgayToChuc],
+    RIGHT('0' + CAST(DAY(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [NgayToChuc],
     RIGHT('0' + CAST(DAY(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [NgayToChucDay],
     RIGHT('0' + CAST(MONTH(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [ThangToChuc],
     CAST(YEAR(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR) AS [NamToChuc],
@@ -335,7 +335,7 @@ SELECT
 FROM tbmk_Thaydoi td
 INNER JOIN tbmk_Hopdong hd ON td.Sohopdong = hd.Sohopdong
 LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
-LEFT JOIN dmNhanvienView nv ON td.Manv = nv.Manv
+LEFT JOIN dmNhanvienView nv ON ISNULL(td.Manv, hd.Manv) = nv.Manv
 WHERE ISNULL(td.IsDeleted, 0) = 0;
 GO
 
