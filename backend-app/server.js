@@ -397,7 +397,11 @@ app.post('/api/documents/generate', async (req, res) => {
                 UserName: userName,
                 JsonData: JSON.stringify(docData)
             };
-            await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload);
+            const headers = {};
+            if (req.headers && req.headers.authorization) {
+                headers['Authorization'] = req.headers.authorization;
+            }
+            await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload, { headers });
             console.log(`[AUDIT] ✅ Đã lưu vết Sổ lưu trữ cho file ${finalFileName}`);
         } catch (err) {
             console.error(`[AUDIT] ❌ Lỗi ghi log:`, err.message);
