@@ -282,45 +282,14 @@ app.post('/api/documents/generate', async (req, res) => {
 
         // Tự động parse JSON từ CSDL (kể cả JSON lồng nhau — menu/dịch vụ docx)
         dataMap = deepParseJsonStrings(dataMap);
-        // --- KHỞI TẠO NORMALIZATION (Để Template dễ khớp hơn) ---
-        // Tự động tạo thêm các phiên bản chữ hoa, chữ thường để template kiểu gì cũng chạy
-        const normalizedData = { ...dataMap };
-        for (const key in dataMap) {
-            normalizedData[key.toUpperCase()] = dataMap[key];
-            normalizedData[key.toLowerCase()] = dataMap[key];
-            // Hỗ trợ một số trường hợp viết hoa chữ cái đầu phổ biến
-            const camelKey = key.charAt(0).toUpperCase() + key.slice(1);
-            if (!normalizedData[camelKey]) normalizedData[camelKey] = dataMap[key];
-        }
-
-        // Đảm bảo ánh xạ các biến đại diện và số lượng bàn từ nhiều định dạng viết hoa/thường khác nhau của template
-        const commonMappings = {
-            'sobanchaychinhthuc': ['SobanChaychinhthuc', 'SoBanChayChinhThuc', 'sobanchaychinhthuc'],
-            'sobanchayduphong': ['SobanChayduphong', 'SoBanChayDuPhong', 'sobanchayduphong'],
-            'sobanmanchinhthuc': ['SobanManchinhthuc', 'SoBanManChinhThuc', 'sobanmanchinhthuc'],
-            'sobanmanduphong': ['SobanManduphong', 'SoBanManDuPhong', 'sobanmanduphong'],
-            'benadaidien': ['BenADaiDien', 'BenANguoiDaiDien', 'benadaidien', 'benanguoidaidien'],
-            'benachucvudaidien': ['BenAChucVuDaiDien', 'BenAChucVu', 'benachucvudaidien', 'benachucvu']
-        };
-
-        for (const stdKey in commonMappings) {
-            const foundKey = Object.keys(dataMap).find(k => k.toLowerCase() === stdKey);
-            if (foundKey) {
-                const value = dataMap[foundKey];
-                commonMappings[stdKey].forEach(alias => {
-                    normalizedData[alias] = value;
-                });
-            }
-        }
-
-        dataMap = normalizedData;
 
         // Xác định danh sách các trường cần chuyển đổi thành XML Word
         let fieldsToConvert = Array.isArray(convertFields) ? convertFields : [];
         
         fieldsToConvert.forEach(key => {
-            if (dataMap[key] && typeof dataMap[key] === 'string') {
-                dataMap[key] = convertTextToWordXML(dataMap[key]);
+            const foundKey = Object.keys(dataMap).find(k => k.toLowerCase() === key.toLowerCase());
+            if (foundKey && dataMap[foundKey] && typeof dataMap[foundKey] === 'string') {
+                dataMap[foundKey] = convertTextToWordXML(dataMap[foundKey]);
             }
         });
 
@@ -387,6 +356,20 @@ app.post('/api/documents/generate', async (req, res) => {
         const doc = new Docxtemplater(zip, {
             paragraphLoop: true,
             linebreaks: true,
+            parser: function(tag) {
+                return {
+                    get: function(scope) {
+                        if (tag === '.') return scope;
+                        const lowerTag = tag.toLowerCase();
+                        if (scope && typeof scope === 'object') {
+                            if (scope[tag] !== undefined) return scope[tag];
+                            const foundKey = Object.keys(scope).find(k => k.toLowerCase() === lowerTag);
+                            if (foundKey) return scope[foundKey];
+                        }
+                        return "";
+                    }
+                };
+            },
             nullGetter() {
                 return "";
             }
