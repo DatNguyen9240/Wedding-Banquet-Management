@@ -747,9 +747,13 @@ UPDATE SY_FormatFields
 SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '4'
 WHERE FormName = 'frmHopDong'
   AND FieldName IN (
-    'Ngayhopdong', 'NgayToChuc', 'Nhamngay', 'Loaitiecid', 'Thoigianid', 'JsonSanhTiec',
+    'Ngayhopdong', 'NgayToChuc', 'Nhamngay', 'Loaitiecid', 'Thoigianid',
     'DaCocVND', 'Sotiencochopdong', 'Tongtiencoc'
   );
+
+UPDATE SY_FormatFields
+SET ShowInForm = 0, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '4'
+WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
 
 -- Ghi chú bổ sung hiển thị ở Form dưới dạng textarea/textbox lớn
 UPDATE SY_FormatFields
@@ -865,11 +869,11 @@ WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat')
 BEGIN
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInForm, ShowInAdd, ShowInEdit, ShowInFilter, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmHopDong', 'SanhDat', N'Sảnh đãi tiệc', 't', 'hidden', 99, 0, 0, 0, 1, 1, 1);
+    VALUES ('frmHopDong', 'SanhDat', N'Sảnh đãi tiệc', 't', 'hidden', 15, 1, 0, 0, 1, 1, 1);
 END
 ELSE
 BEGIN
-    UPDATE SY_FormatFields SET ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 0, CaptionVN = N'Sảnh đãi tiệc', FormPosition = 'hidden' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
+    UPDATE SY_FormatFields SET ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 0, CaptionVN = N'Sảnh đãi tiệc', FormPosition = 'hidden', OrderNo = 15 WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
 END
 GO
 
@@ -955,7 +959,7 @@ UPDATE SY_FormatFields SET CaptionVN = N'Tên khách hàng' WHERE FormName = 'fr
 UPDATE SY_FormatFields SET CaptionVN = N'Điện thoại' WHERE FormName = 'frmHopDong' AND FieldName = 'DienThoai';
 UPDATE SY_FormatFields SET CaptionVN = N'Ngày tổ chức' WHERE FormName = 'frmHopDong' AND FieldName = 'NgayToChuc';
 UPDATE SY_FormatFields SET CaptionVN = N'Số bàn' WHERE FormName = 'frmHopDong' AND FieldName = 'SoBan';
-UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đãi tiệc' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
 UPDATE SY_FormatFields SET CaptionVN = N'Tổng tiền' WHERE FormName = 'frmHopDong' AND FieldName = 'TongTien';
 UPDATE SY_FormatFields SET CaptionVN = N'Trạng thái' WHERE FormName = 'frmHopDong' AND FieldName = 'TrangThai';
 GO
@@ -1053,7 +1057,8 @@ UPDATE SY_FormatFields SET OrderNo = 11 WHERE FormName = 'frmHopDong' AND FieldN
 UPDATE SY_FormatFields SET OrderNo = 12 WHERE FormName = 'frmHopDong' AND FieldName = 'Nhamngay';
 UPDATE SY_FormatFields SET OrderNo = 13 WHERE FormName = 'frmHopDong' AND FieldName = 'Loaitiecid';
 UPDATE SY_FormatFields SET OrderNo = 14 WHERE FormName = 'frmHopDong' AND FieldName = 'Thoigianid';
-UPDATE SY_FormatFields SET OrderNo = 15 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
+UPDATE SY_FormatFields SET OrderNo = 15 WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
+UPDATE SY_FormatFields SET OrderNo = 151 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
 UPDATE SY_FormatFields SET OrderNo = 16 WHERE FormName = 'frmHopDong' AND FieldName = 'SoBan';
 UPDATE SY_FormatFields SET OrderNo = 17 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanManchinhthuc';
 UPDATE SY_FormatFields SET OrderNo = 18 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanManduphong';

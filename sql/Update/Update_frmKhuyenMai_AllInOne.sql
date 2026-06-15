@@ -31,10 +31,13 @@ BEGIN
         k.DocumentID AS [Id],
         k.DocumentID,
         k.Tenuudai,
+        k.Loaitiecid,
         k.Tungay,
         k.Denngay,
         k.Tusoluongban,
         k.Densoluongban,
+        k.IsKetthuc,
+        k.Ghichu,
         ISNULL(CAST(k.Tusoluongban AS VARCHAR), '0') + ' - ' + ISNULL(CAST(k.Densoluongban AS VARCHAR), 'MAX') AS [ApDungSoBan],
         k.DateCreate
     FROM tbmk_Banuudai k
@@ -83,11 +86,14 @@ GO
 -- Gán Label có dấu (CaptionVN)
 UPDATE SY_FormatFields SET CaptionVN = N'Mã ưu đãi' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'DocumentID';
 UPDATE SY_FormatFields SET CaptionVN = N'Tên ưu đãi' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Tenuudai';
+UPDATE SY_FormatFields SET CaptionVN = N'Loại hình tiệc', FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachLoaiHinhTiec&Func=View' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Loaitiecid';
 UPDATE SY_FormatFields SET CaptionVN = N'Từ ngày', FormatID = 'dt' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Tungay';
 UPDATE SY_FormatFields SET CaptionVN = N'Đến ngày', FormatID = 'dt' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Denngay';
 UPDATE SY_FormatFields SET CaptionVN = N'Từ số bàn', FormatID = 'n' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Tusoluongban';
 UPDATE SY_FormatFields SET CaptionVN = N'Đến số bàn', FormatID = 'n' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Densoluongban';
 UPDATE SY_FormatFields SET CaptionVN = N'Áp dụng số bàn' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'ApDungSoBan';
+UPDATE SY_FormatFields SET CaptionVN = N'Đã kết thúc', FormatID = 'sw' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'IsKetthuc';
+UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Ghichu';
 
 -- Cấu hình hiển thị (Ẩn các trường không cần nhập)
 -- ApDungSoBan là cột tính toán -> Chỉ hiện trên lưới, không cho nhập
@@ -95,6 +101,9 @@ UPDATE SY_FormatFields SET ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 0 WHERE F
 
 -- Tusoluongban, Densoluongban -> Chỉ hiện trong form nhập, ẩn trên lưới
 UPDATE SY_FormatFields SET ShowInForm = 0, ShowInAdd = 1, ShowInEdit = 1 WHERE FormName = 'frmKhuyenMai' AND FieldName IN ('Tusoluongban', 'Densoluongban');
+
+-- Các trường nhập hiển thị đầy đủ trên Form
+UPDATE SY_FormatFields SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1 WHERE FormName = 'frmKhuyenMai' AND FieldName IN ('Loaitiecid', 'Tungay', 'Denngay', 'IsKetthuc', 'Ghichu');
 
 -- Ẩn hoàn toàn các cột hệ thống (Id, DateCreate)
 UPDATE SY_FormatFields SET ShowInForm = 0, ShowInAdd = 0, ShowInEdit = 0, ShowInFilter = 0, FormPosition = 'hidden' WHERE FormName = 'frmKhuyenMai' AND FieldName IN ('Id', 'DateCreate');

@@ -205,9 +205,8 @@ SELECT
     ISNULL(td.SoKhachTrenBanTD, td.SoKhachTrenBan) AS [SoKhachTrenBan],
     
     -- Bàn tiệc
-    -- Lưu ý: CI collation → chỉ dùng 1 alias cho mỗi cột (PascalCase khớp biến docx)
-    ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
-    ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) AS [SoBanManDuPhong],
+    ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SobanManchinhthuc],
+    ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) AS [SobanManduphong],
     ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
     ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
     ISNULL(NULLIF(td.TongSoBanTD, 0), hd.TongSoBan) AS [TongSoBan],

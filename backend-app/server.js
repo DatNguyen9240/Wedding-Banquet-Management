@@ -54,8 +54,23 @@ app.use((err, req, res, next) => {
 // ==========================================
 // API GATEWAY CHÍNH (SQL Server)
 // ==========================================
-const SQL_API_BASE = 'https://qlt.bms79.com';
+let SQL_API_BASE;
 const SQL_API_USER = 'admin';
+
+// Tự động tải API_BASE từ env.js (Bắt buộc)
+try {
+    const envJsPath = path.join(__dirname, '../env.js');
+    const envContent = fs.readFileSync(envJsPath, 'utf8');
+    const matchBase = envContent.match(/API_BASE\s*:\s*['"`](.*?)['"`]/);
+    if (!matchBase || !matchBase[1]) {
+        throw new Error('Không tìm thấy API_BASE trong file env.js!');
+    }
+    SQL_API_BASE = matchBase[1].trim();
+    console.log(`[CONFIG] Đã tải SQL_API_BASE từ env.js: ${SQL_API_BASE}`);
+} catch (err) {
+    console.error('[CRITICAL] Không thể chạy server vì thiếu cấu hình env.js:', err.message);
+    process.exit(1);
+}
 
 /** Giải mã username từ token hoặc fallback */
 function extractUserName(req) {
@@ -262,6 +277,27 @@ app.post('/api/documents/generate', async (req, res) => {
             const camelKey = key.charAt(0).toUpperCase() + key.slice(1);
             if (!normalizedData[camelKey]) normalizedData[camelKey] = dataMap[key];
         }
+
+        // Đảm bảo ánh xạ các biến đại diện và số lượng bàn từ nhiều định dạng viết hoa/thường khác nhau của template
+        const commonMappings = {
+            'sobanchaychinhthuc': ['SobanChaychinhthuc', 'SoBanChayChinhThuc', 'sobanchaychinhthuc'],
+            'sobanchayduphong': ['SobanChayduphong', 'SoBanChayDuPhong', 'sobanchayduphong'],
+            'sobanmanchinhthuc': ['SobanManchinhthuc', 'SoBanManChinhThuc', 'sobanmanchinhthuc'],
+            'sobanmanduphong': ['SobanManduphong', 'SoBanManDuPhong', 'sobanmanduphong'],
+            'benadaidien': ['BenADaiDien', 'BenANguoiDaiDien', 'benadaidien', 'benanguoidaidien'],
+            'benachucvudaidien': ['BenAChucVuDaiDien', 'BenAChucVu', 'benachucvudaidien', 'benachucvu']
+        };
+
+        for (const stdKey in commonMappings) {
+            const foundKey = Object.keys(dataMap).find(k => k.toLowerCase() === stdKey);
+            if (foundKey) {
+                const value = dataMap[foundKey];
+                commonMappings[stdKey].forEach(alias => {
+                    normalizedData[alias] = value;
+                });
+            }
+        }
+
         dataMap = normalizedData;
 
         // Xác định danh sách các trường cần chuyển đổi thành XML Word
