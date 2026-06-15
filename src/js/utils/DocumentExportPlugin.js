@@ -100,12 +100,12 @@ var DocumentExportPlugin = (function () {
       return;
     }
 
-    // Đọc tên file mẫu từ DB (đã cấu hình trong bảng dmLoaihinhtiec)
+    // Đọc tên file mẫu từ DB (được cấu hình trong bảng tbmk_LoaitiecAddfile qua View)
     var actualDocType = config.docType;
-    if (typeof config.getDocType === 'function') {
-      actualDocType = config.getDocType(row);
-    } else if (config.docType === 'hop_dong' && row.TemplateFile) {
+    if (row.TemplateFile) {
       actualDocType = row.TemplateFile;
+    } else if (typeof config.getDocType === 'function') {
+      actualDocType = config.getDocType(row);
     }
 
     var btn = document.getElementById('btn-export-doc-' + config.docType);
