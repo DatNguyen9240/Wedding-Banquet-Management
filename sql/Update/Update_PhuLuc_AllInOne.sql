@@ -206,12 +206,12 @@ SELECT
     
     -- Bàn tiệc
     -- Lưu ý: CI collation → chỉ dùng 1 alias cho mỗi cột (PascalCase khớp biến docx)
-    ISNULL(td.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
-    ISNULL(td.SobanManduphong, hd.SobanManduphong) AS [SoBanManDuPhong],
-    ISNULL(td.SobanChaychinhthuc, hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
-    ISNULL(td.SobanChayduphong, hd.SobanChayduphong) AS [SobanChayduphong],
-    ISNULL(td.TongSoBanTD, hd.TongSoBan) AS [TongSoBan],
-    ISNULL(td.SoBanTang, hd.SoBanTang) AS [BanTang],
+    ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
+    ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) AS [SoBanManDuPhong],
+    ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
+    ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
+    ISNULL(NULLIF(td.TongSoBanTD, 0), hd.TongSoBan) AS [TongSoBan],
+    ISNULL(NULLIF(td.SoBanTang, 0), hd.SoBanTang) AS [BanTang],
 
     -- {#MenuTiec}: ưu tiên chi tiết HĐ (tbmk_Hopdongthucdon*), fallback JsonBanTiec phụ lục
     COALESCE(
