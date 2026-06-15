@@ -426,10 +426,8 @@ var DocumentManagerPage = (function () {
   // ── Xóa tài liệu ──────────────────────────────────────────────────────
   function _deleteDocument(fileName) {
     var msg = 'Bạn có chắc chắn muốn xóa file "' + fileName + '" không?';
-
     function _doDelete() {
-      fetch(API_BASE + '/' + encodeURIComponent(fileName), { method: 'DELETE' })
-        .then(function (res) { return res.json(); })
+      ApiClient.delete(API_BASE + '/' + encodeURIComponent(fileName))
         .then(function (json) {
           if (json.success) {
             if (_currentFile === fileName) {

@@ -1,0 +1,5 @@
+ID	int
+FormName	varchar
+Loaitiecid	varchar
+TemplateFile	nvarchar
+GhiChu	nvarchar

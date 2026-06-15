@@ -57,6 +57,25 @@ app.use((err, req, res, next) => {
 const SQL_API_BASE = 'https://qlt.bms79.com';
 const SQL_API_USER = 'admin';
 
+/** Giải mã username từ token hoặc fallback */
+function extractUserName(req) {
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+        try {
+            const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+            const parts = token.split('.');
+            if (parts.length === 3) {
+                const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
+                const user = payload.UserName || payload.username || payload.unique_name || payload.name || payload.sub;
+                if (user) return user;
+            }
+        } catch (e) {
+            console.error('[AUTH] Lỗi giải mã JWT:', e.message);
+        }
+    }
+    return req.body?.UserName || req.query?.UserName || req.headers?.username || 'system';
+}
+
 // Cache thông tin nhà hàng (tránh gọi API nhiều lần)
 let _setupCache = null;
 let _setupCacheTime = 0;
@@ -362,6 +381,7 @@ app.post('/api/documents/generate', async (req, res) => {
             // Tìm mã tiệc case-insensitive từ dataMap hoặc customerId làm fallback
             const tiecId = dataMap.Sohopdong || dataMap.SoHopDong || dataMap.sohopdong || customerId || '';
 
+            const userName = extractUserName(req);
             const docData = {
                 TiecID: tiecId,
                 DocType: templateType,
@@ -369,12 +389,12 @@ app.post('/api/documents/generate', async (req, res) => {
                 FilePath: finalFileName,
                 FileHash: fileHash,
                 Status: 'ACTIVE',
-                GeneratedBy: req.body?.UserName || 'system'
+                GeneratedBy: userName
             };
             const payload = {
                 List: 'Tiec_Documents',
                 Func: 'Save',
-                UserName: req.body?.UserName || 'system',
+                UserName: userName,
                 JsonData: JSON.stringify(docData)
             };
             await axios.post(`${SQL_API_BASE}/api/API_Gateway_Router`, payload);
@@ -409,14 +429,32 @@ app.delete('/api/documents/:fileName', async (req, res) => {
 
             // Cập nhật Bia mộ (Soft Delete) trong CSDL
             try {
+                // Thử phân tách tên file để lấy TiecID và DocType phòng khi file chưa có trong CSDL
+                // Định dạng chuẩn: {DocType}_{TiecID}_{Timestamp}.docx
+                let parsedTiecID = 'UNKNOWN';
+                let parsedDocType = 'UNKNOWN';
+                
+                const nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
+                const parts = nameWithoutExt.split('_');
+                if (parts.length >= 3) {
+                    const timestamp = parts[parts.length - 1];
+                    if (/^\d+$/.test(timestamp)) {
+                        parsedTiecID = parts[parts.length - 2];
+                        parsedDocType = parts.slice(0, parts.length - 2).join('_');
+                    }
+                }
+
+                const userName = extractUserName(req);
                 const payload = {
                     List: 'Tiec_Documents',
                     Func: 'Edit', // Cập nhật lại Status
-                    UserName: req.body?.UserName || 'system',
+                    UserName: userName,
                     JsonData: JSON.stringify({
                         FilePath: fileName, // Dùng FilePath làm khóa tìm kiếm
+                        TiecID: parsedTiecID,
+                        DocType: parsedDocType,
                         Status: 'DELETED',
-                        DeletedBy: req.body?.UserName || 'system',
+                        DeletedBy: userName,
                         DeletedAt: new Date().toISOString()
                     })
                 };
