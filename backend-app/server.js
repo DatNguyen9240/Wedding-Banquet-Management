@@ -59,14 +59,29 @@ const SQL_API_USER = 'admin';
 
 // Tự động tải API_BASE từ env.js (Bắt buộc)
 try {
-    const envJsPath = path.join(__dirname, '../env.js');
+    const possiblePaths = [
+        path.join(__dirname, '../env.js'),
+        path.join(__dirname, 'env.js'),
+        '/env.js',
+        '/app/env.js'
+    ];
+    let envJsPath = null;
+    for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+            envJsPath = p;
+            break;
+        }
+    }
+    if (!envJsPath) {
+        throw new Error(`Không tìm thấy file env.js ở bất kỳ đường dẫn nào: ${possiblePaths.join(', ')}`);
+    }
     const envContent = fs.readFileSync(envJsPath, 'utf8');
     const matchBase = envContent.match(/API_BASE\s*:\s*['"`](.*?)['"`]/);
     if (!matchBase || !matchBase[1]) {
         throw new Error('Không tìm thấy API_BASE trong file env.js!');
     }
     SQL_API_BASE = matchBase[1].trim();
-    console.log(`[CONFIG] Đã tải SQL_API_BASE từ env.js: ${SQL_API_BASE}`);
+    console.log(`[CONFIG] Đã tải SQL_API_BASE từ env.js (${envJsPath}): ${SQL_API_BASE}`);
 } catch (err) {
     console.error('[CRITICAL] Không thể chạy server vì thiếu cấu hình env.js:', err.message);
     process.exit(1);
