@@ -116,7 +116,7 @@ SELECT
     td.Sothaydoi AS [Sothaydoi], 
     td.Sothaydoi AS [SoPhuLuc], -- Biến trong docx
     td.Ngaythaydoi AS [Ngaythaydoi],
-    td.Ngaythaydoi AS [NgayLapPL],
+    RIGHT('0' + CAST(DAY(td.Ngaythaydoi) AS VARCHAR), 2) AS [NgayLapPL],
     RIGHT('0' + CAST(DAY(td.Ngaythaydoi) AS VARCHAR), 2) AS [NgayLapPLDay],
     RIGHT('0' + CAST(MONTH(td.Ngaythaydoi) AS VARCHAR), 2) AS [ThangLapPL],
     CAST(YEAR(td.Ngaythaydoi) AS VARCHAR) AS [NamLapPL],
@@ -167,7 +167,7 @@ SELECT
     FORMAT(ISNULL(td.NgayToChucTD, hd.Ngaytochuc), 'HH:mm') AS [TiecGioBatDau],
     
     -- Ngày tổ chức Dương lịch & Âm lịch
-    ISNULL(td.NgayToChucTD, hd.Ngaytochuc) AS [NgayToChuc],
+    FORMAT(ISNULL(td.NgayToChucTD, hd.Ngaytochuc), 'dd/MM/yyyy') AS [NgayToChuc],
     RIGHT('0' + CAST(DAY(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [NgayToChucDay],
     RIGHT('0' + CAST(MONTH(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [ThangToChuc],
     CAST(YEAR(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR) AS [NamToChuc],
@@ -210,6 +210,8 @@ SELECT
     ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) AS [SobanManduphong],
     ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
     ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
+    ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc) + ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SoBanChinhThuc],
+    ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) + ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SoBanDuPhong],
     ISNULL(NULLIF(td.TongSoBanTD, 0), hd.TongSoBan) AS [TongSoBan],
     ISNULL(NULLIF(td.SoBanTang, 0), hd.SoBanTang) AS [BanTang],
 
@@ -292,7 +294,7 @@ SELECT
     ISNULL(td.TenDotThanhToanTD, td.TenDotThanhToan) AS [TenDotThanhToan],
     ISNULL(td.ThanhToanDot2SoTienTD, td.ThanhToanDot2SoTien) AS [ThanhToanDot2SoTien],
     ISNULL(td.HinhThucThanhToanDot2TD, td.HinhThucThanhToanDot2) AS [HinhThucThanhToanDot2],
-    ISNULL(td.HanThanhToanDot2TD, td.HanThanhToanDot2) AS [HanThanhToanDot2],
+    FORMAT(ISNULL(td.HanThanhToanDot2TD, td.HanThanhToanDot2), 'dd/MM/yyyy') AS [HanThanhToanDot2],
     
     -- Dịch vụ & thỏa thuận
     ISNULL(td.DichVuTinhPhiPhuLucTD, td.DichVuTinhPhiPhuLuc) AS [DichVuTinhPhiPhuLuc],

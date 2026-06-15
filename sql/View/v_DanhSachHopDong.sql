@@ -127,11 +127,10 @@ SELECT
     CAST(YEAR(h.Ngaytochuc) AS VARCHAR) AS [TiecNamDL],
     h.Nhamngay AS [TiecNgayAL], -- Giả sử Nhamngay đã chứa chuỗi ngày âm
 
-    -- 4. Quy mô bàn
-    h.SobanManchinhthuc AS [TiecSoBanChinhThuc],
-    h.SobanManduphong AS [TiecSoBanDuPhong],
-    ISNULL(h.SobanChaychinhthuc, 0) + ISNULL(h.SobanChayduphong, 0) AS [TiecSoBanTang],
-    10 AS [TiecSoKhach1Ban], -- Mặc định 10 khách/bàn
+    ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanChaychinhthuc, 0) AS [TiecSoBanChinhThuc],
+    ISNULL(h.SoBanTang, 0) AS [TiecSoBanTang],
+    ISNULL(h.SobanManduphong, 0) + ISNULL(h.SobanChayduphong, 0) AS [TiecSoBanDuPhong],
+    ISNULL(h.SoNguoiTrenBan, 10) AS [TiecSoKhach1Ban],
 
     -- 5. Thực đơn & Dịch vụ (Dạng JSON lồng nhau cho Table)
     (
