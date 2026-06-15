@@ -1,12 +1,74 @@
 USE [QLTiec]
 GO
 
--- 0. Chèn trường ShowInFilter nếu chưa có (Để FormBuilder có thể tự sửa tính năng Lọc)
-IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'ShowInFilter')
-BEGIN
+-- 0. Khởi tạo/Bổ sung đầy đủ các trường cấu hình cho FormBuilder nếu chưa có
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'FormName')
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
-    VALUES ('frmFormBuilder', 'ShowInFilter', N'Hiển thị bộ lọc', 'Show in Filter', 'sw', 0, '6', 1, 1, 0, 0, 99);
-END
+    VALUES ('frmFormBuilder', 'FormName', N'Mã Form', 'Form Name', 't', 1, '6', 1, 1, 0, 1, 1);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'FieldName')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'FieldName', N'Tên Trường (Database)', 'Field Name', 't', 1, '6', 1, 1, 0, 1, 2);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'CaptionVN')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'CaptionVN', N'Tiêu đề (Hiển thị)', 'Caption VN', 't', 1, '6', 1, 1, 0, 0, 3);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'CaptionEN')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'CaptionEN', N'Tiêu đề (Tiếng Anh)', 'Caption EN', 't', 0, '6', 1, 1, 0, 0, 4);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'FormatID')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo, DataSource)
+    VALUES ('frmFormBuilder', 'FormatID', N'Loại Input', 'Format ID', 'sl', 1, '6', 1, 1, 0, 0, 5, N'STATIC:t|Văn bản (Text),n|Số (Number),dt|Ngày (Date),sw|Bật/Tắt (Switch),sl|Danh sách chọn (Select)');
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'FormPosition')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo, DataSource)
+    VALUES ('frmFormBuilder', 'FormPosition', N'Kích thước hiển thị', 'Form Position', 'sl', 1, '6', 1, 1, 0, 0, 6, N'STATIC:12|Đầy đủ 100% (Full),6|Một nửa 50% (Half),4|1/3 Chiều rộng,3|1/4 Chiều rộng,hidden|Chỉ hiện trên Form (100%)');
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'OrderNo')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'OrderNo', N'Thứ tự ưu tiên', 'Order No', 'nm', 1, '6', 1, 1, 0, 0, 7);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'IsRequired')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'IsRequired', N'Bắt buộc nhập', 'Is Required', 'sw', 0, '6', 1, 1, 0, 0, 8);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'ShowInFilter')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'ShowInFilter', N'Hiển thị bộ lọc', 'Show in Filter', 'sw', 0, '6', 1, 1, 0, 0, 9);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'ShowInAdd')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'ShowInAdd', N'Hiện khi Thêm', 'Show In Add', 'sw', 0, '6', 1, 1, 0, 0, 10);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'ShowInEdit')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'ShowInEdit', N'Hiện khi Sửa', 'Show In Edit', 'sw', 0, '6', 1, 1, 0, 0, 11);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'IsReadOnlyAdd')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'IsReadOnlyAdd', N'Chỉ đọc khi Thêm', 'Is ReadOnly Add', 'sw', 0, '6', 1, 1, 0, 0, 12);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'IsReadOnlyEdit')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'IsReadOnlyEdit', N'Chỉ đọc khi Sửa', 'Is ReadOnly Edit', 'sw', 0, '6', 1, 1, 0, 0, 13);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'DataSource')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'DataSource', N'Nguồn Dữ Liệu (API/Static)', 'Data Source', 't', 0, '12', 1, 1, 0, 0, 14);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'VisibleRule')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'VisibleRule', N'Quy tắc hiển thị (JS)', 'Visible Rule', 't', 0, '12', 1, 1, 0, 0, 15);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'ValidateRule')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'ValidateRule', N'Ràng buộc dữ liệu (JS)', 'Validate Rule', 't', 0, '12', 1, 1, 0, 0, 16);
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'DependsOn')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
+    VALUES ('frmFormBuilder', 'DependsOn', N'Trường phụ thuộc', 'Depends On', 't', 0, '12', 1, 1, 0, 0, 17);
 
 -- 1. Cập nhật Tiêu đề hiển thị (CaptionVN) cho các trường của Form Builder
 UPDATE SY_FormatFields SET CaptionVN = N'Mã Form' WHERE FormName = 'frmFormBuilder' AND FieldName = 'FormName';
