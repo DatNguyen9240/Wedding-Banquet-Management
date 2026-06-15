@@ -135,6 +135,36 @@ SELECT
     kh.Mail AS [Mail],
     kh.CMNDDaiDien AS [BenBCCCD],
     
+    -- Bên A (Thông tin nhà hàng)
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT') AS [BenASDT],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenAEmail')  AS [BenAEmail],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenAMST') AS [BenAMST],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
+    ISNULL(nv.Tennv, td.Manv) AS [BenANhanVienPhuTrach],
+    ISNULL(nv.Dienthoai, '') AS [BenASDTNhanVien],
+
+    -- Bên B (Thông tin khách hàng)
+    kh.Tenkh AS [BenBTenDaiDien],
+    ISNULL(kh.Tenchure, '') + ' & ' + ISNULL(kh.Tencodau, '') AS [BenBTenChuTiec],
+    ISNULL(NULLIF(kh.CMNDDaiDien, ''), ISNULL(NULLIF(kh.CMNDnguoidd, ''), ISNULL(NULLIF(kh.CMNDchure, ''), '...'))) AS [BenBCard],
+    kh.Diachi AS [BenBDiaChi],
+    kh.Dienthoai AS [BenBDienThoai],
+    N'Khách hàng' AS [BenBChucVu],
+    kh.Mail AS [BenBEmail],
+
+    -- Hợp đồng gốc ngày lập
+    RIGHT('0' + CAST(DAY(hd.Ngayhopdong) AS VARCHAR), 2) AS [NgayLapHD],
+    RIGHT('0' + CAST(MONTH(hd.Ngayhopdong) AS VARCHAR), 2) AS [ThangLapHD],
+    CAST(YEAR(hd.Ngayhopdong) AS VARCHAR) AS [NamLapHD],
+
+    -- Loại hình sự kiện & Sảnh & Ca
+    ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)), N'') AS [LoaiHinhSuKien],
+    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = td.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [TenSanhTiec],
+    FORMAT(ISNULL(td.NgayToChucTD, hd.Ngaytochuc), 'HH:mm') AS [TiecGioBatDau],
+    
     -- Ngày tổ chức Dương lịch & Âm lịch
     ISNULL(td.NgayToChucTD, hd.Ngaytochuc) AS [NgayToChuc],
     RIGHT('0' + CAST(DAY(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [NgayToChucDay],
@@ -165,7 +195,7 @@ SELECT
     
     -- Loại tiệc & Ca
     ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid) AS [LoaiTiecID],
-    (SELECT TOP 1 tm.TemplateFile FROM tbmk_LoaitiecAddfile tm WHERE tm.FormName = 'frmHopDong' AND tm.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)) AS [TemplateFile],
+    (SELECT TOP 1 tm.TemplateFile FROM tbmk_LoaitiecAddfile tm WHERE tm.FormName = 'frmPhuLucHopDong' AND tm.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)) AS [TemplateFile],
     ISNULL(td.ThoiGianIDTD, hd.Thoigianid) AS [ThoiGianID],
     
     -- Quy mô bàn & Đơn giá
@@ -181,6 +211,7 @@ SELECT
     ISNULL(td.SobanChaychinhthuc, hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
     ISNULL(td.SobanChayduphong, hd.SobanChayduphong) AS [SobanChayduphong],
     ISNULL(td.TongSoBanTD, hd.TongSoBan) AS [TongSoBan],
+    ISNULL(td.SoBanTang, hd.SoBanTang) AS [BanTang],
 
     -- {#MenuTiec}: ưu tiên chi tiết HĐ (tbmk_Hopdongthucdon*), fallback JsonBanTiec phụ lục
     COALESCE(

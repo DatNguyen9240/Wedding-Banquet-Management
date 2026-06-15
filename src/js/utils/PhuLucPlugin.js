@@ -16,6 +16,10 @@ var PhuLucPlugin = (function () {
         display: flex;
         flex-direction: column;
         gap: 20px;
+        color: var(--color-text, #ffffff);
+      }
+      .phuluc-plugin-wrapper .text-muted {
+        color: var(--color-text-secondary, #94a3b8) !important;
       }
       .phuluc-history-card {
         border: 1px solid var(--color-border);
@@ -38,11 +42,12 @@ var PhuLucPlugin = (function () {
         border: 1px solid var(--color-border);
         padding: 8px 12px;
         text-align: left;
+        color: var(--color-text, #ffffff);
       }
       .phuluc-table th {
         background: var(--color-background);
         font-weight: 600;
-        color: var(--color-text-secondary);
+        color: var(--color-text-secondary, #94a3b8);
       }
     `;
     document.head.appendChild(style);
@@ -581,6 +586,13 @@ var PhuLucPlugin = (function () {
           Status: 'DRAFT',
           UserName: currentUserName,
           JsonData: JSON.stringify({
+            Sothaydoi: soPhuLuc,
+            Sohopdong: sohopdong,
+            Ngaythaydoi: ngayLapPL,
+            Ghichu: thoathuan,
+            Status: 'DRAFT',
+            UserName: currentUserName,
+
             SoPhuLuc: soPhuLuc,
             NgayLapPL: ngayLapPL,
             NgayLapPLDay: nNgay,

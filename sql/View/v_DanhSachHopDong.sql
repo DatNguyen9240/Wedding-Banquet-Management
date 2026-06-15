@@ -99,19 +99,19 @@ SELECT
     RIGHT('0' + CAST(MONTH(h.Ngayhopdong) AS VARCHAR), 2) AS [ThangLapHD],
     CAST(YEAR(h.Ngayhopdong) AS VARCHAR) AS [NamLapHD],
 
-    -- 1. Bên A (Thông tin nhà hàng) - Thường lấy từ bảng Setup hoặc Hardcode tùy dự án
-    N'TRUNG TÂM HỘI NGHỊ TIỆC CƯỚI BIỂN NHỚ' AS [BenATenCongTy],
-    N'01 Nguyễn Tất Thành, Phường 12, Quận 4, TP. HCM' AS [BenADiaChi],
-    N'028 3943 1234' AS [BenASDT],
-    N'info@biennho.vn' AS [BenAEmail],
-    N'0312345678' AS [BenAMST],
-    N'Ông Nguyễn Văn A' AS [BenANguoiDaiDien],
-    N'Giám đốc' AS [BenAChucVu],
+    -- 1. Bên A (Thông tin nhà hàng) - Lấy từ bảng Setup
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT') AS [BenASDT],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenAEmail')  AS [BenAEmail],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenAMST') AS [BenAMST],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
 
     -- 2. Bên B (Thông tin khách hàng)
     k.Tenkh AS [BenBTenDaiDien],
     ISNULL(k.Tenchure, '') + ' & ' + ISNULL(k.Tencodau, '') AS [BenBTenChuTiec],
-    k.CMND AS [BenBCCCD],
+    ISNULL(NULLIF(k.CMNDDaiDien, ''), ISNULL(NULLIF(k.CMNDnguoidd, ''), ISNULL(NULLIF(k.CMNDchure, ''), '...'))) AS [BenBCCCD],
     k.Diachi AS [BenBDiaChi],
     k.Dienthoai AS [BenBDienThoai],
     N'Khách hàng' AS [BenBChucVu],
