@@ -273,21 +273,21 @@ DECLARE @DS_ThamKhao NVARCHAR(MAX) = N'[{"key":"STT","label":"STT","type":"numbe
 UPDATE SY_FormatFields SET
     CaptionVN = N'Danh sách dịch vụ', FormatID = 'js', DataSource = @DS_DichVu,
     FormPosition = '12', OrderNo = 30,
-    ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0,
+    ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0,
     IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmBaoGia' AND FieldName = 'DanhSachDichVu';
 
 UPDATE SY_FormatFields SET
     CaptionVN = N'Danh sách khu vực', FormatID = 'js', DataSource = @DS_KhuVuc,
     FormPosition = '12', OrderNo = 31,
-    ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0,
+    ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0,
     IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmBaoGia' AND FieldName = 'DanhSachKhuVuc';
 
 UPDATE SY_FormatFields SET
     CaptionVN = N'Thực đơn & DV tham khảo', FormatID = 'js', DataSource = @DS_ThamKhao,
     FormPosition = '12', OrderNo = 32,
-    ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0,
+    ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0,
     IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmBaoGia' AND FieldName = 'DanhSachThamKhao';
 GO
@@ -295,27 +295,27 @@ GO
 -- Ghi chú sảnh: textarea chỉ đọc
 UPDATE SY_FormatFields SET
     FormatID = 'ta', FormPosition = '12',
-    ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 1,
+    ShowInAdd = 0, ShowInEdit = 1,
     IsReadOnlyAdd = 1, IsReadOnlyEdit = 1, ShowInFilter = 0
 WHERE FormName = 'frmBaoGia' AND FieldName IN ('GhiChuSanh1', 'GhiChuSanh2', 'GhiChuSanh3');
 GO
 
 -- Lưới chính + form cơ bản
-UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1, OrderNo = 1  WHERE FormName = 'frmBaoGia' AND FieldName = 'Sohopdong';
-UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1, OrderNo = 2  WHERE FormName = 'frmBaoGia' AND FieldName = 'KhachHang';
-UPDATE SY_FormatFields SET FormatID = 'dt', FormPosition = '6', ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 3  WHERE FormName = 'frmBaoGia' AND FieldName = 'NgayToChuc';
-UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 4  WHERE FormName = 'frmBaoGia' AND FieldName = 'SanhDat';
-UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 5  WHERE FormName = 'frmBaoGia' AND FieldName = 'LoaiHinhSuKien';
-UPDATE SY_FormatFields SET FormatID = 'n',  FormPosition = '6', ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 6, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'TongTien';
-UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 0, ShowInFilter = 1, OrderNo = 7  WHERE FormName = 'frmBaoGia' AND FieldName = 'TrangThai';
-UPDATE SY_FormatFields SET FormatID = 'dt', FormPosition = '6', ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 8  WHERE FormName = 'frmBaoGia' AND FieldName = 'NgayBaoGia';
-UPDATE SY_FormatFields SET FormatID = 'ta', FormPosition = '12', ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 20 WHERE FormName = 'frmBaoGia' AND FieldName = 'LuuYChung';
-UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 9, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'TongCongTamTinh';
+UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1, OrderNo = 1  WHERE FormName = 'frmBaoGia' AND FieldName = 'Sohopdong';
+UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1, OrderNo = 2  WHERE FormName = 'frmBaoGia' AND FieldName = 'KhachHang';
+UPDATE SY_FormatFields SET FormatID = 'dt', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 3  WHERE FormName = 'frmBaoGia' AND FieldName = 'NgayToChuc';
+UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 4  WHERE FormName = 'frmBaoGia' AND FieldName = 'SanhDat';
+UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 5  WHERE FormName = 'frmBaoGia' AND FieldName = 'LoaiHinhSuKien';
+UPDATE SY_FormatFields SET FormatID = 'n',  FormPosition = '6', ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 6, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'TongTien';
+UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 0, ShowInEdit = 0, ShowInFilter = 1, OrderNo = 7  WHERE FormName = 'frmBaoGia' AND FieldName = 'TrangThai';
+UPDATE SY_FormatFields SET FormatID = 'dt', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 8  WHERE FormName = 'frmBaoGia' AND FieldName = 'NgayBaoGia';
+UPDATE SY_FormatFields SET FormatID = 'ta', FormPosition = '12', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 20 WHERE FormName = 'frmBaoGia' AND FieldName = 'LuuYChung';
+UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 9, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'TongCongTamTinh';
 GO
 
 -- Ẩn cột trùng / chỉ dùng in Word
 UPDATE SY_FormatFields
-SET ShowInForm = 0, ShowInAdd = 0, ShowInEdit = 0, ShowInFilter = 0, FormPosition = 'hidden'
+SET ShowInAdd = 0, ShowInEdit = 0, ShowInFilter = 0, FormPosition = 'hidden'
 WHERE FormName = 'frmBaoGia'
   AND FieldName IN (
     'Id', 'Makh', 'Sobiennhan', 'TenKhachHang', 'NgayToChucFormat',

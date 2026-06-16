@@ -12,6 +12,17 @@ BEGIN
 END
 GO
 
+-- Cập nhật cấu trúc bảng tbmk_Hopdong
+IF COL_LENGTH('tbmk_Hopdong', 'JsonBanTiec') IS NULL
+    ALTER TABLE tbmk_Hopdong ADD JsonBanTiec NVARCHAR(MAX) NULL;
+IF COL_LENGTH('tbmk_Hopdong', 'JsonThucUong') IS NULL
+    ALTER TABLE tbmk_Hopdong ADD JsonThucUong NVARCHAR(MAX) NULL;
+IF COL_LENGTH('tbmk_Hopdong', 'JsonDichVu') IS NULL
+    ALTER TABLE tbmk_Hopdong ADD JsonDichVu NVARCHAR(MAX) NULL;
+IF COL_LENGTH('tbmk_Hopdong', 'JsonPhatSinh') IS NULL
+    ALTER TABLE tbmk_Hopdong ADD JsonPhatSinh NVARCHAR(MAX) NULL;
+GO
+
 -- XÓA VIEW CŨ TRƯỚC ĐỂ TRÁNH LỖI INVALID COLUMN KHI COMPILE SP
 IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong]'))
     DROP VIEW [dbo].[v_DanhSachHopDong]
@@ -104,7 +115,11 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @Manv VARCHAR(20) = NULL,
     @UserCreate VARCHAR(20) = 'System',
     -- Danh sach Sanh dat (Dang JSON: [{"Sanhtiecid":"S01", "IsSanhchinh": 1}, ...])
-    @JsonSanhTiec NVARCHAR(MAX) = NULL
+    @JsonSanhTiec NVARCHAR(MAX) = NULL,
+    @JsonBanTiec NVARCHAR(MAX) = NULL,
+    @JsonThucUong NVARCHAR(MAX) = NULL,
+    @JsonDichVu NVARCHAR(MAX) = NULL,
+    @JsonPhatSinh NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -297,14 +312,16 @@ BEGIN
                 TuNgaySetup, NgayTraSanhDV,
                 SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong, TongSoBan,
                 Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongtiencoc,
-                Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID
+                Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID,
+                JsonBanTiec, JsonThucUong, JsonDichVu, JsonPhatSinh
             )
             VALUES (
                 @Sohopdong, @Sobiennhan, ISNULL(@NgayHopDongParsed,@Now), @NgayToChucParsed, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
                 @TuNgaySetupParsed, @NgayTraSanhDVParsed,
                 @SobanManchinhthucVal, @SobanManduphongVal, @SobanChaychinhthucVal, @SobanChayduphongVal, @TongSoBanVal,
                 @TongtienhopdongVal, @SotiencocchoVal, @SotiencochopdongVal, @TongtiencocVal,
-                @Manv, @Ghichu, 0, 0, @Now, @UserCreate, ''
+                @Manv, @Ghichu, 0, 0, @Now, @UserCreate, '',
+                @JsonBanTiec, @JsonThucUong, @JsonDichVu, @JsonPhatSinh
             );
             IF (@Sobiennhan IS NOT NULL AND @Sobiennhan != '')
                 UPDATE tbmk_Biennhancoccho SET IsKetthuc=1, DateUpdate=@Now, UserUpdate=@UserCreate WHERE DocumentID=@Sobiennhan;
@@ -326,7 +343,11 @@ BEGIN
                 SobanChaychinhthuc=@SobanChaychinhthucVal, SobanChayduphong=@SobanChayduphongVal,
                 TongSoBan=@TongSoBanVal, Tongtienhopdong=@TongtienhopdongVal,
                 Sotiencoccho=@SotiencocchoVal, Sotiencochopdong=@SotiencochopdongVal,
-                Tongtiencoc=@TongtiencocVal, Ghichu=@Ghichu, DateUpdate=@Now, UserUpdate=@UserCreate
+                Tongtiencoc=@TongtiencocVal, Ghichu=@Ghichu, DateUpdate=@Now, UserUpdate=@UserCreate,
+                JsonBanTiec = COALESCE(@JsonBanTiec, JsonBanTiec),
+                JsonThucUong = COALESCE(@JsonThucUong, JsonThucUong),
+                JsonDichVu = COALESCE(@JsonDichVu, JsonDichVu),
+                JsonPhatSinh = COALESCE(@JsonPhatSinh, JsonPhatSinh)
             WHERE Sohopdong=@Sohopdong;
         END
 
@@ -417,7 +438,7 @@ SELECT
         ELSE N'Đã Ký'
     END AS [TrangThai],
 
-    -- Cf C TR?¯á»"NG THfŠM Má»šI " á»?s PHá»¤C Vá»¤ NHáº¬P LIá»?U/Sá»¬A Há»¢P " á»?TNG (ShowInForm = 1, ShowInGrid = 0)
+    -- CÁC TRƯỜNG THÊM MỚI ĐỂ PHỤC VỤ NHẬP LIỆU/SỬA HỢP ĐỒNG
     k.Tenchure,
     k.Tencodau,
     k.Diachi,
@@ -437,6 +458,10 @@ SELECT
     h.Tongtiencoc,
     h.Ghichu,
     h.JsonLichTrinh,
+    h.JsonBanTiec,
+    h.JsonThucUong,
+    h.JsonDichVu,
+    h.JsonPhatSinh,
     (
         SELECT 
             hs.Sanhtiecid AS [Sanhtiecid],
@@ -719,7 +744,7 @@ VALUES (
     'frmHopDong',
     'Save',
     'API_LuuHopDong',
-    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenBCCCD=N''{BenBCCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @TuNgaySetup=N''{TuNgaySetup}'', @NgayTraSanhDV=N''{NgayTraSanhDV}'', @TenCongTy=N''{TenCongTy}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'''
+    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenBCCCD=N''{BenBCCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @TuNgaySetup=N''{TuNgaySetup}'', @NgayTraSanhDV=N''{NgayTraSanhDV}'', @TenCongTy=N''{TenCongTy}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @JsonBanTiec=N''{JsonBanTiec}'', @JsonThucUong=N''{JsonThucUong}'', @JsonDichVu=N''{JsonDichVu}'', @JsonPhatSinh=N''{JsonPhatSinh}'''
 );
 
 DELETE FROM WA_API WHERE List = 'frmHopDong' AND Func = 'Delete';
@@ -732,20 +757,31 @@ VALUES (
 );
 GO
 
+-- 4.3. Đăng ký API_DanhSachHopDong dùng riêng cho in Word (View)
+DELETE FROM WA_API WHERE List = 'API_DanhSachHopDong' AND Func = 'View';
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES (
+    'API_DanhSachHopDong',
+    'View',
+    'API_DanhSachHopDong',
+    '@TuNgay=N''{TuNgay}'', @DenNgay=N''{DenNgay}'', @Keyword=N''{Keyword}'', @Sohopdong=N''{Sohopdong}'''
+);
+GO
+
 UPDATE SY_FormatFields
-SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '6'
+SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '6'
 WHERE FormName = 'frmHopDong'
   AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail');
 
 UPDATE SY_FormatFields
-SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '3'
+SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '3'
 WHERE FormName = 'frmHopDong'
   AND FieldName IN (
     'SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong'
   );
 
 UPDATE SY_FormatFields
-SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '4'
+SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '4'
 WHERE FormName = 'frmHopDong'
   AND FieldName IN (
     'Ngayhopdong', 'NgayToChuc', 'Nhamngay', 'Loaitiecid', 'Thoigianid',
@@ -753,21 +789,21 @@ WHERE FormName = 'frmHopDong'
   );
 
 UPDATE SY_FormatFields
-SET ShowInForm = 0, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '4'
+SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = 'hidden'
 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
 
 -- Ghi chú bổ sung hiển thị ở Form dưới dạng textarea/textbox lớn
 UPDATE SY_FormatFields
-SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = 'form'
+SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = 'form'
 WHERE FormName = 'frmHopDong' AND FieldName = 'Ghichu';
 
 -- Ẩn các cột chỉ dùng để IN ẤN hoặc thông tin phụ khỏi giao diện Grid/Form
 UPDATE SY_FormatFields
-SET ShowInForm = 0, ShowInEdit = 0, ShowInAdd = 0, ShowInFilter = 0, FormPosition = 'hidden'
+SET ShowInEdit = 0, ShowInAdd = 0, ShowInFilter = 0, FormPosition = 'hidden'
 WHERE FormName = 'frmHopDong' 
   AND FieldName IN (
     'NgayLapHD', 'ThangLapHD', 'NamLapHD',
-    'BenANhanVienPhuTrach', 'BenASDTNhanVien', 'BenAChucVu', 'BenANguoiDaiDien', 'BenATenCongTy', 'BenADiaChi', 'BenASDT', 'BenAEmail', 'BenAMST',
+    'BenANhanVienPhuTrach', 'BenASDTNhanVien', 'BenAChucVu', 'BenANguoiDaiDien', 'BenADaiDien', 'BenATenCongTy', 'BenADiaChi', 'BenASDT', 'BenAEmail', 'BenAMST',
     'BenBTenDaiDien', 'BenBTenChuTiec', 'BenBCCCD', 'BenBDiaChi', 'BenBDienThoai', 'BenBChucVu', 'BenBEmail',
     'TiecGioBatDau', 'TiecGioKetThuc', 'TiecNgayDL', 'TiecThangDL', 'TiecNamDL',
     'TiecNgayAL', 'TiecThangAL', 'TiecNamAL',
@@ -792,12 +828,12 @@ IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND F
 BEGIN
     INSERT INTO SY_FormatFields (
         FormatID, FieldName, FormName, CaptionVN, IsRequired, 
-        FormPosition, ShowInForm, OrderNo, ShowInAdd, ShowInEdit, 
+        FormPosition, OrderNo, ShowInAdd, ShowInEdit, 
         IsReadOnlyAdd, IsReadOnlyEdit, ValidateRule
     )
     VALUES (
         'dt', 'NgayToChuc', 'frmHopDong', N'Ngày tổ chức', 1, 
-        '6', 1, 11, 1, 1, 
+        '6', 1, 1, 1, 
         0, 0, 'trigger:/api/API_Gateway_Router?List=API_TinhLichAm&Func=View'
     );
 END
@@ -869,12 +905,12 @@ WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
 -- Đảm bảo SanhDat hiển thị đẹp trên Grid
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat')
 BEGIN
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInForm, ShowInAdd, ShowInEdit, ShowInFilter, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmHopDong', 'SanhDat', N'Sảnh đãi tiệc', 't', 'hidden', 15, 1, 0, 0, 1, 1, 1);
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit, ShowInFilter, IsReadOnlyAdd, IsReadOnlyEdit)
+    VALUES ('frmHopDong', 'SanhDat', N'Sảnh đãi tiệc', 't', 'hidden', 15, 0, 0, 1, 1, 1);
 END
 ELSE
 BEGIN
-    UPDATE SY_FormatFields SET ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 0, CaptionVN = N'Sảnh đãi tiệc', FormPosition = 'hidden', OrderNo = 15 WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
+    UPDATE SY_FormatFields SET ShowInAdd = 0, ShowInEdit = 0, CaptionVN = N'Sảnh đãi tiệc', FormPosition = 'hidden', OrderNo = 15 WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
 END
 GO
 
@@ -1080,6 +1116,32 @@ UPDATE SY_FormatFields
 SET VisibleRule = 'Loaitiecid=BLT000001|blt000001'
 WHERE FormName = 'frmHopDong' 
   AND FieldName IN ('Tenchure', 'Tencodau', 'DTchure', 'DTcodau');
+GO
+
+-- 4.11. Cấu hình các trường JSON Thực đơn & Dịch vụ (Cho FoodSelectionPlugin)
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'JsonBanTiec')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition, FormatID)
+    VALUES ('frmHopDong', 'JsonBanTiec', N'Thực đơn', 1, 1, 0, 0, 200, '6', 't');
+ELSE
+    UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName = 'JsonBanTiec';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'JsonThucUong')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition, FormatID)
+    VALUES ('frmHopDong', 'JsonThucUong', N'Thức uống', 1, 1, 0, 0, 201, '6', 't');
+ELSE
+    UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName = 'JsonThucUong';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'JsonDichVu')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition, FormatID)
+    VALUES ('frmHopDong', 'JsonDichVu', N'Dịch vụ', 1, 1, 0, 0, 202, '6', 't');
+ELSE
+    UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName = 'JsonDichVu';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'JsonPhatSinh')
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition, FormatID)
+    VALUES ('frmHopDong', 'JsonPhatSinh', N'Phát sinh', 1, 1, 0, 0, 203, '6', 't');
+ELSE
+    UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName = 'JsonPhatSinh';
 GO
 
 PRINT N'Cập nhật toàn bộ phân hệ Hợp đồng thành công!';

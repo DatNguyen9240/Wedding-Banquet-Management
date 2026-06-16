@@ -61,7 +61,7 @@ SELECT
         ELSE N'Đã Ký'
     END AS [TrangThai],
 
-    -- CÁC TRƯỜNG THÊM MỚI ĐỂ PHỤC VỤ NHẬP LIỆU/SỬA HỢP ĐỒNG (ShowInForm = 1, ShowInGrid = 0)
+    -- CÁC TRƯỜNG THÊM MỚI ĐỂ PHỤC VỤ NHẬP LIỆU/SỬA HỢP ĐỒNG (FormPosition = 'hidden')
     k.Tenchure,
     k.Tencodau,
     k.Diachi,

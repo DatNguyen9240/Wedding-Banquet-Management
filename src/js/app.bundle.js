@@ -345,7 +345,8 @@ var DocumentExportPlugin = (function () {
       label: 'Xuất Hợp Đồng',
       icon: 'description',
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'API_DanhSachHopDong'
+      sqlListName: 'API_DanhSachHopDong',
+      convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi', 'DanhSachBanTiec', 'DanhSachThucUong']
     },
     'frmBiennhancoccho': {
       docType: 'phieu_thu',
@@ -359,31 +360,32 @@ var DocumentExportPlugin = (function () {
       label: 'Xuất Quyết Toán',
       icon: 'receipt',
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'API_DanhSachQuyetToan'
+      sqlListName: 'frmQuyetToan',
+      convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi']
     },
     'tbmk_Thaydoi': {
       docType: 'de_nghi_thay_doi',
       label: 'Xuất Phiếu Thay Đổi',
       icon: 'edit_note',
       altKeys: ['Sothaydoi', 'sothaydoi', 'SoThayDoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'API_DanhSachThayDoi',
-      convertFields: ['ThoaThuanPhuLucKhac']
+      sqlListName: 'tbmk_Thaydoi',
+      convertFields: ['ThoaThuanPhuLucKhac', 'ChiTietThayDoi']
     },
     'frmPhuLucHopDong': {
       docType: 'phu_luc_hop_dong',
       label: 'Xuất Phụ Lục HĐ',
       icon: 'description',
       altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'frmPhuLucHopDong',
-      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
+      sqlListName: 'tbmk_Thaydoi',
+      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac', 'ChiTietThayDoi']
     },
     'frmThayDoiBoSung': {
       docType: 'phu_luc_hop_dong',
       label: 'Xuất Phụ Lục HĐ',
       icon: 'description',
       altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'frmPhuLucHopDong',
-      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
+      sqlListName: 'tbmk_Thaydoi',
+      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac', 'ChiTietThayDoi']
     },
     'frmBEO': {
       docType: 'beo_tiec_cuoi',
@@ -1071,6 +1073,7 @@ var WorkflowTransferPlugin = (function () {
                 return data;
             }
         },
+        /*
         'frmHopDong': {
             id: 'btn-transfer-checkout',
             text: 'Quyết Toán',
@@ -1083,6 +1086,7 @@ var WorkflowTransferPlugin = (function () {
                 return data;
             }
         }
+        */
     };
 
     function getExtraButtons(formName, getSelectedRows) {
@@ -2252,7 +2256,7 @@ var FoodSelectionPlugin = (function () {
   }
 
   // Danh sách form name cần kích hoạt plugin
-  var SUPPORTED_FORMS = ['tbmk_Thaydoi', 'frmThayDoiBoSung', 'frmQuyetToan'];
+  var SUPPORTED_FORMS = ['frmHopDong', 'tbmk_Thaydoi', 'frmThayDoiBoSung', 'frmQuyetToan'];
 
   // Tự inject hidden input JSON nếu chưa có trong form
   function _ensureHiddenInputs(modalContent, row) {
@@ -2396,10 +2400,18 @@ var FoodSelectionPlugin = (function () {
             // Lấy .modal-content để dùng làm activeModal
             var modalContentEl = formBody.closest('.modal-content') || formBody;
             _loadCatalog();
-            // Đợi một tick để DFE hoàn thành render form rồi mới inject
-            setTimeout(function () {
-              _interceptForm(modalContentEl, null);
-            }, 50);
+            
+            // DynamicFormEngine load form qua mạng (async), nên cần polling chờ form render xong
+            var checkInterval = setInterval(function () {
+              // Form render xong khi có chứa ít nhất 1 class df-col- hoặc form-group
+              if (modalContentEl.querySelector('.df-col-12, .df-col-6, .df-col-4, .form-group')) {
+                clearInterval(checkInterval);
+                _interceptForm(modalContentEl, null);
+              }
+            }, 100);
+            
+            // Timeout an toàn 5 giây nếu form lỗi không render được
+            setTimeout(function() { clearInterval(checkInterval); }, 5000);
           }
         });
       });
@@ -3276,8 +3288,8 @@ var QuyetToanPlugin = (function () {
         customerId: sohopdong,
         outputFileName: 'quyet_toan_' + sohopdong,
         rowData: { Sohopdong: sohopdong },
-        sqlListName: 'API_DanhSachQuyetToan',
-        convertFields: []
+        sqlListName: 'frmQuyetToan',
+        convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi']
       })
     })
       .then(function (res) { return res.json(); })

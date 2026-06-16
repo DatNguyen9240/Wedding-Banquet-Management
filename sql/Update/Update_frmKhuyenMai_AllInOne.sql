@@ -97,16 +97,16 @@ UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú' WHERE FormName = 'frmKhuyenMa
 
 -- Cấu hình hiển thị (Ẩn các trường không cần nhập)
 -- ApDungSoBan là cột tính toán -> Chỉ hiện trên lưới, không cho nhập
-UPDATE SY_FormatFields SET ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 0 WHERE FormName = 'frmKhuyenMai' AND FieldName = 'ApDungSoBan';
+UPDATE SY_FormatFields SET ShowInAdd = 0, ShowInEdit = 0 WHERE FormName = 'frmKhuyenMai' AND FieldName = 'ApDungSoBan';
 
 -- Tusoluongban, Densoluongban -> Chỉ hiện trong form nhập, ẩn trên lưới
-UPDATE SY_FormatFields SET ShowInForm = 0, ShowInAdd = 1, ShowInEdit = 1 WHERE FormName = 'frmKhuyenMai' AND FieldName IN ('Tusoluongban', 'Densoluongban');
+UPDATE SY_FormatFields SET ShowInAdd = 1, ShowInEdit = 1 WHERE FormName = 'frmKhuyenMai' AND FieldName IN ('Tusoluongban', 'Densoluongban');
 
 -- Các trường nhập hiển thị đầy đủ trên Form
-UPDATE SY_FormatFields SET ShowInForm = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1 WHERE FormName = 'frmKhuyenMai' AND FieldName IN ('Loaitiecid', 'Tungay', 'Denngay', 'IsKetthuc', 'Ghichu');
+UPDATE SY_FormatFields SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1 WHERE FormName = 'frmKhuyenMai' AND FieldName IN ('Loaitiecid', 'Tungay', 'Denngay', 'IsKetthuc', 'Ghichu');
 
 -- Ẩn hoàn toàn các cột hệ thống (Id, DateCreate)
-UPDATE SY_FormatFields SET ShowInForm = 0, ShowInAdd = 0, ShowInEdit = 0, ShowInFilter = 0, FormPosition = 'hidden' WHERE FormName = 'frmKhuyenMai' AND FieldName IN ('Id', 'DateCreate');
+UPDATE SY_FormatFields SET ShowInAdd = 0, ShowInEdit = 0, ShowInFilter = 0, FormPosition = 'hidden' WHERE FormName = 'frmKhuyenMai' AND FieldName IN ('Id', 'DateCreate');
 
 PRINT N'=== HOÀN THÀNH ===';
 GO

@@ -207,12 +207,8 @@ SELECT
     ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
     ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc) + ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SoBanChinhThuc],
     ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) + ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SoBanDuPhong],
-    ISNULL(NULLIF(td.TongSoBanTD, 0), hd.TongSoBan) AS [TongSoBan],
-    ISNULL(NULLIF(td.SoBanTang, 0), hd.SoBanTang) AS [BanTang],
-
-    -- {#MenuTiec}: ưu tiên chi tiết HĐ (tbmk_Hopdongthucdon*), fallback JsonBanTiec phụ lục
-    COALESCE(
-        NULLIF(dbo.fn_DOCX_MenuTiec(td.Sohopdong), '[]'),
+    -- {#MenuTiec}: Lấy từ JsonBanTiec
+    ISNULL(
         (
             SELECT 
                 ISNULL(j.TenHang, ISNULL(j.TenMon, ISNULL(j.Tenhang, j.Mahang))) AS [TenMonAn],
@@ -226,20 +222,18 @@ SELECT
                 Dongia   NVARCHAR(50)  '$.Dongia'
             ) j
             FOR JSON PATH
-        )
+        ),
+        '[]'
     ) AS [MenuTiec],
 
-    COALESCE(
-        NULLIF(dbo.fn_DOCX_MenuTongCong(td.Sohopdong), N'0 VNĐ'),
-        FORMAT(
-            ISNULL((
-                SELECT SUM(ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0))
-                FROM OPENJSON(ISNULL(td.JsonBanTiec, '[]'))
-                WITH (Dongia NVARCHAR(50) '$.Dongia') j
-            ), 0),
-            'N0', 'vi-VN'
-        ) + N' VNĐ'
-    ) AS [MenuTongCong],
+    FORMAT(
+        ISNULL((
+            SELECT SUM(ISNULL(TRY_CAST(j.Dongia AS DECIMAL(18,0)), 0))
+            FROM OPENJSON(ISNULL(td.JsonBanTiec, '[]'))
+            WITH (Dongia NVARCHAR(50) '$.Dongia') j
+        ), 0),
+        'N0', 'vi-VN'
+    ) + N' VNĐ' AS [MenuTongCong],
 
 
 
@@ -435,10 +429,10 @@ BEGIN
                 TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBan') AS INT),
                 TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBanTD') AS INT),
                 
-                JSON_VALUE(@JsonData, '$.JsonBanTiec'),
-                JSON_VALUE(@JsonData, '$.JsonThucUong'),
-                JSON_VALUE(@JsonData, '$.JsonDichVu'),
-                JSON_VALUE(@JsonData, '$.JsonPhatSinh')
+                JSON_QUERY(@JsonData, '$.JsonBanTiec'),
+                JSON_QUERY(@JsonData, '$.JsonThucUong'),
+                JSON_QUERY(@JsonData, '$.JsonDichVu'),
+                JSON_QUERY(@JsonData, '$.JsonPhatSinh')
             );
         END
         ELSE -- UPDATE
@@ -479,10 +473,10 @@ BEGIN
                 SoKhachTrenBan = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBan') AS INT), SoKhachTrenBan),
                 SoKhachTrenBanTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBanTD') AS INT), SoKhachTrenBanTD),
                 
-                JsonBanTiec = COALESCE(JSON_VALUE(@JsonData, '$.JsonBanTiec'), JsonBanTiec),
-                JsonThucUong = COALESCE(JSON_VALUE(@JsonData, '$.JsonThucUong'), JsonThucUong),
-                JsonDichVu = COALESCE(JSON_VALUE(@JsonData, '$.JsonDichVu'), JsonDichVu),
-                JsonPhatSinh = COALESCE(JSON_VALUE(@JsonData, '$.JsonPhatSinh'), JsonPhatSinh)
+                JsonBanTiec = COALESCE(JSON_QUERY(@JsonData, '$.JsonBanTiec'), JsonBanTiec),
+                JsonThucUong = COALESCE(JSON_QUERY(@JsonData, '$.JsonThucUong'), JsonThucUong),
+                JsonDichVu = COALESCE(JSON_QUERY(@JsonData, '$.JsonDichVu'), JsonDichVu),
+                JsonPhatSinh = COALESCE(JSON_QUERY(@JsonData, '$.JsonPhatSinh'), JsonPhatSinh)
             WHERE Sothaydoi = @Sothaydoi;
         END
 

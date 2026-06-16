@@ -121,6 +121,6 @@ GO
 
 -- Cấu hình ẩn trường Makh khỏi Add/Edit nhưng vẫn sinh input ẩn
 UPDATE SY_FormatFields
-SET ShowInForm = 0, ShowInAdd = 0, ShowInEdit = 0
+SET ShowInAdd = 0, ShowInEdit = 0
 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Makh';
 GO

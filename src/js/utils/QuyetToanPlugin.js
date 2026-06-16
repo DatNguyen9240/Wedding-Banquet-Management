@@ -106,8 +106,8 @@ var QuyetToanPlugin = (function () {
         customerId: sohopdong,
         outputFileName: 'quyet_toan_' + sohopdong,
         rowData: { Sohopdong: sohopdong },
-        sqlListName: 'API_DanhSachQuyetToan',
-        convertFields: []
+        sqlListName: 'frmQuyetToan',
+        convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi']
       })
     })
       .then(function (res) { return res.json(); })

@@ -1005,7 +1005,7 @@ var FoodSelectionPlugin = (function () {
   }
 
   // Danh sách form name cần kích hoạt plugin
-  var SUPPORTED_FORMS = ['tbmk_Thaydoi', 'frmThayDoiBoSung', 'frmQuyetToan'];
+  var SUPPORTED_FORMS = ['frmHopDong', 'tbmk_Thaydoi', 'frmThayDoiBoSung', 'frmQuyetToan'];
 
   // Tự inject hidden input JSON nếu chưa có trong form
   function _ensureHiddenInputs(modalContent, row) {

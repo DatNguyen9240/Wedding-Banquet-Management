@@ -15,7 +15,8 @@ var DocumentExportPlugin = (function () {
       label: 'Xuất Hợp Đồng',
       icon: 'description',
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'API_DanhSachHopDong'
+      sqlListName: 'API_DanhSachHopDong',
+      convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi', 'DanhSachBanTiec', 'DanhSachThucUong']
     },
     'frmBiennhancoccho': {
       docType: 'phieu_thu',
@@ -29,31 +30,32 @@ var DocumentExportPlugin = (function () {
       label: 'Xuất Quyết Toán',
       icon: 'receipt',
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'API_DanhSachQuyetToan'
+      sqlListName: 'frmQuyetToan',
+      convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi']
     },
     'tbmk_Thaydoi': {
       docType: 'de_nghi_thay_doi',
       label: 'Xuất Phiếu Thay Đổi',
       icon: 'edit_note',
       altKeys: ['Sothaydoi', 'sothaydoi', 'SoThayDoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'API_DanhSachThayDoi',
-      convertFields: ['ThoaThuanPhuLucKhac']
+      sqlListName: 'tbmk_Thaydoi',
+      convertFields: ['ThoaThuanPhuLucKhac', 'ChiTietThayDoi']
     },
     'frmPhuLucHopDong': {
       docType: 'phu_luc_hop_dong',
       label: 'Xuất Phụ Lục HĐ',
       icon: 'description',
       altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'frmPhuLucHopDong',
-      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
+      sqlListName: 'tbmk_Thaydoi',
+      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac', 'ChiTietThayDoi']
     },
     'frmThayDoiBoSung': {
       docType: 'phu_luc_hop_dong',
       label: 'Xuất Phụ Lục HĐ',
       icon: 'description',
       altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'frmPhuLucHopDong',
-      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac']
+      sqlListName: 'tbmk_Thaydoi',
+      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac', 'ChiTietThayDoi']
     },
     'frmBEO': {
       docType: 'beo_tiec_cuoi',

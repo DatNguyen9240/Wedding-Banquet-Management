@@ -686,6 +686,17 @@ SET Para = '@DocumentID=N''{DocumentID}'', @Makh=N''{Makh}'', @MaChungTu=N''{MaC
 WHERE List = 'frmBiennhancoccho' AND Func = 'Save';
 GO
 
+-- Đăng ký API_DanhSachPhieuCoc dùng riêng cho in Word (View)
+DELETE FROM WA_API WHERE List = 'API_DanhSachPhieuCoc' AND Func = 'View';
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES (
+    'API_DanhSachPhieuCoc',
+    'View',
+    'API_DanhSachPhieuCoc',
+    '@MaChungTu=N''{MaChungTu}'', @DocumentID=N''{DocumentID}'', @SoPhieu=N''{SoPhieu}'''
+);
+GO
+
 -- Đăng ký định tuyến các API danh sách cho dropdown (Ca tiệc, Sảnh, Loại hình tiệc, Tìm người giao dịch)
 DELETE FROM WA_API WHERE List IN ('API_DanhSachCaLam', 'API_DanhSachSanh', 'API_DanhSachLoaiHinhTiec', 'API_TimNguoiGiaoDich');
 GO
@@ -780,7 +791,7 @@ BEGIN
     UPDATE SY_FormatFields SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
 END
 
-UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInForm = 0, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
 
 -- Đảm bảo trường DaCocVND (Số tiền cọc) được hiển thị và cho phép nhập dạng số
 IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DaCocVND')
@@ -835,14 +846,14 @@ GO
 
 -- Ẩn trường Makh khỏi Form nhập liệu nhưng giữ làm input ẩn
 UPDATE SY_FormatFields
-SET ShowInForm = 0, ShowInAdd = 0, ShowInEdit = 0
+SET ShowInAdd = 0, ShowInEdit = 0
 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Makh';
 GO
 
 
 -- Ẩn các trường chỉ dùng để IN ẤN hoặc tính toán khỏi giao diện Grid/Form
 UPDATE SY_FormatFields
-SET ShowInForm = 0, ShowInEdit = 0, ShowInAdd = 0, ShowInFilter = 0, FormPosition = 'hidden'
+SET ShowInEdit = 0, ShowInAdd = 0, ShowInFilter = 0, FormPosition = 'hidden'
 WHERE FormName = 'frmBiennhancoccho'
   AND FieldName IN (
     'DocumentID', 'MaChungTu', 'Sohopdong', 'Makh', 'TemplateFile', 
@@ -855,7 +866,7 @@ GO
 
 -- Đảm bảo trường GoiThucDonID hiển thị đúng định dạng Dropdown sau khi đồng bộ
 UPDATE SY_FormatFields 
-SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, ShowInForm = 1, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View' 
+SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View' 
 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
 GO
 
@@ -878,5 +889,5 @@ BEGIN
 END
 ELSE
 BEGIN
-    UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đãi tiệc', ShowInForm = 1, ShowInAdd = 0, ShowInEdit = 0, FormPosition = 'hidden' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SanhDat';
+    UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đãi tiệc', ShowInAdd = 0, ShowInEdit = 0, FormPosition = 'hidden' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SanhDat';
 END

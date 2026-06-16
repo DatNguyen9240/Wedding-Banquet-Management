@@ -633,59 +633,7 @@ BEGIN
     END
 
     SELECT 
-        (
-            SELECT *
-            FROM (
-                SELECT 
-                    tdm.Mahang,
-                    h.Tenhang AS [TenHang],
-                    h.DVTID AS [DvtID],
-                    @SoBanChinhThuc AS [Soluong],
-                    ISNULL(tdm.Dongia, 0) AS [Dongia],
-                    (@SoBanChinhThuc * ISNULL(tdm.Dongia, 0)) AS [Sotien],
-                    0 AS [Giamgia],
-                    0 AS [Sotiengiamgia],
-                    (@SoBanChinhThuc * ISNULL(tdm.Dongia, 0)) AS [ThanhTien]
-                FROM tbmk_Hopdongthucdonman tdm
-                LEFT JOIN dmHangHoa h ON tdm.Mahang = h.Mahang
-                WHERE tdm.Sohopdong = @Sohopdong
-                
-                UNION ALL
-                
-                SELECT 
-                    tdc.Mahang,
-                    h.Tenhang AS [TenHang],
-                    h.DVTID AS [DvtID],
-                    @SoBanChinhThuc AS [Soluong],
-                    ISNULL(tdc.Dongia, 0) AS [Dongia],
-                    (@SoBanChinhThuc * ISNULL(tdc.Dongia, 0)) AS [Sotien],
-                    0 AS [Giamgia],
-                    0 AS [Sotiengiamgia],
-                    (@SoBanChinhThuc * ISNULL(tdc.Dongia, 0)) AS [ThanhTien]
-                FROM tbmk_Hopdongthucdonchay tdc
-                LEFT JOIN dmHangHoa h ON tdc.Mahang = h.Mahang
-                WHERE tdc.Sohopdong = @Sohopdong
-                
-                UNION ALL
-                
-                SELECT 
-                    h.Mahang,
-                    h.Tenhang AS [TenHang],
-                    h.DVTID AS [DvtID],
-                    @SoBanChinhThuc AS [Soluong],
-                    CASE WHEN h.LoaihangID = 'MONCHAY' THEN @Giabanchay ELSE @Giabanman END AS [Dongia],
-                    (@SoBanChinhThuc * CASE WHEN h.LoaihangID = 'MONCHAY' THEN @Giabanchay ELSE @Giabanman END) AS [Sotien],
-                    0 AS [Giamgia],
-                    0 AS [Sotiengiamgia],
-                    (@SoBanChinhThuc * CASE WHEN h.LoaihangID = 'MONCHAY' THEN @Giabanchay ELSE @Giabanman END) AS [ThanhTien]
-                FROM dmHangHoa h
-                WHERE h.GoiThucDonID = @GoiThucDonID 
-                  AND ISNULL(h.IsNgungSuDung, 0) = 0
-                  AND NOT EXISTS (SELECT 1 FROM tbmk_Hopdongthucdonman WHERE Sohopdong = @Sohopdong)
-                  AND NOT EXISTS (SELECT 1 FROM tbmk_Hopdongthucdonchay WHERE Sohopdong = @Sohopdong)
-            ) sub
-            FOR JSON PATH
-        ) AS [JsonBanTiec],
+        CAST('[]' AS NVARCHAR(MAX)) AS [JsonBanTiec],
 
         (
             SELECT 
@@ -707,41 +655,7 @@ BEGIN
             FOR JSON PATH
         ) AS [JsonThucUong],
 
-        (
-            SELECT *
-            FROM (
-                SELECT 
-                    dv.Mahang,
-                    h.Tenhang AS [TenHang],
-                    h.DVTID AS [DvtID],
-                    ISNULL(dv.Soluong, 0) AS [Soluong],
-                    ISNULL(dv.Dongia, 0) AS [Dongia],
-                    ISNULL(dv.Sotien, 0) AS [Sotien],
-                    0 AS [Giamgia],
-                    0 AS [Sotiengiamgia],
-                    ISNULL(dv.Sotien, 0) AS [ThanhTien]
-                FROM tbmk_Hopdongdichvu dv
-                LEFT JOIN dmHangHoa h ON dv.Mahang = h.Mahang
-                WHERE dv.Sohopdong = @Sohopdong
-                
-                UNION ALL
-                
-                -- Fallback to default package if no detailed services found but Tongtiendichvu > 0
-                SELECT 
-                    'DV-MACDINH' AS [Mahang],
-                    N'Dịch vụ tổ chức & Trang trí tiệc cưới' AS [TenHang],
-                    N'Gói' AS [DvtID],
-                    1 AS [Soluong],
-                    @Tongtiendichvu AS [Dongia],
-                    @Tongtiendichvu AS [Sotien],
-                    0 AS [Giamgia],
-                    0 AS [Sotiengiamgia],
-                    @Tongtiendichvu AS [ThanhTien]
-                WHERE @Tongtiendichvu > 0 
-                  AND NOT EXISTS (SELECT 1 FROM tbmk_Hopdongdichvu WHERE Sohopdong = @Sohopdong)
-            ) sub
-            FOR JSON PATH
-        ) AS [JsonDichVu],
+        CAST('[]' AS NVARCHAR(MAX)) AS [JsonDichVu],
 
         CAST('[]' AS NVARCHAR(MAX)) AS [JsonPhatSinh];
 END;
@@ -778,6 +692,12 @@ BEGIN
         td.JsonThucUong,
         td.JsonDichVu,
         td.JsonPhatSinh,
+        
+        -- Các trường văn bản phụ lục
+        ISNULL(td.DichVuTinhPhiPhuLucTD, td.DichVuTinhPhiPhuLuc) AS [DichVuTinhPhiPhuLuc],
+        ISNULL(td.ThoaThuanPhuLucKhacTD, td.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
+        ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) AS [DanhSachChiPhi],
+        ISNULL(td.BenAChucVuDaiDienTD, td.BenAChucVuDaiDien) AS [BenAChucVuDaiDien],
 
         kh.Tenkh AS [KhachHang],
         ISNULL(nv.Tennv, td.Manv) AS [NVKD],
@@ -927,3 +847,5 @@ GO
 
 PRINT N'>> ĐÃ CẬP NHẬT TOÀN BỘ CHỨC NĂNG QUYẾT TOÁN VÀ THAY ĐỔI CHI TIẾT THÀNH CÔNG!';
 GO
+
+

@@ -50,6 +50,7 @@ var WorkflowTransferPlugin = (function () {
                 return data;
             }
         },
+        /*
         'frmHopDong': {
             id: 'btn-transfer-checkout',
             text: 'Quyết Toán',
@@ -62,6 +63,7 @@ var WorkflowTransferPlugin = (function () {
                 return data;
             }
         }
+        */
     };
 
     function getExtraButtons(formName, getSelectedRows) {
