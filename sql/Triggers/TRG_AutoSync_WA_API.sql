@@ -63,7 +63,7 @@ BEGIN
             -- Trigger sẽ tự động cập nhật lại cột Para cho khớp với code mới nhất!
             UPDATE WA_API
             SET Para = @ParaTemplate
-            WHERE [SQL] = @ObjectName;
+            WHERE [SQL] = @ObjectName AND List = @ObjectName;
         END
     END
 END

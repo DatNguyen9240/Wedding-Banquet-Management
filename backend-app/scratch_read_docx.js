@@ -1,9 +1,23 @@
 import fs from 'fs';
 import PizZip from 'pizzip';
 
-const docxPath = './samples/phu_luc_hop_dong.docx';
+const docxPath = './samples/BEO_Tiec_Cuoi.docx';
 const content = fs.readFileSync(docxPath);
 const zip = new PizZip(content);
+
+// Normalize zip file paths for backslashes
+const fileNames = Object.keys(zip.files);
+for (const name of fileNames) {
+    if (name.includes('\\')) {
+        const normalizedName = name.replace(/\\/g, '/');
+        zip.files[normalizedName] = zip.files[name];
+        if (zip.files[normalizedName]) {
+            zip.files[normalizedName].name = normalizedName;
+        }
+        delete zip.files[name];
+    }
+}
+
 const xml = zip.files['word/document.xml'].asText();
 
 // Match anything between { and }

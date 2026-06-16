@@ -8,7 +8,7 @@
 var FoodSelectionPlugin = (function () {
   var catalogCache = null; // Bộ nhớ đệm danh mục món ăn từ API
   var activeModal = null; // Modal form đang sửa/thêm
-  
+
   // Trạng thái các món đang chọn (lưu tạm)
   var selectedFoodsMan = [];
   var selectedFoodsChay = [];
@@ -275,12 +275,12 @@ var FoodSelectionPlugin = (function () {
     var rawThucUong = [];
     var rawDichVu = [];
 
-    try { if (inpBanTiec && inpBanTiec.value) rawBanTiec = JSON.parse(inpBanTiec.value); } catch (e) {}
-    try { if (inpThucUong && inpThucUong.value) rawThucUong = JSON.parse(inpThucUong.value); } catch (e) {}
-    try { if (inpDichVu && inpDichVu.value) rawDichVu = JSON.parse(inpDichVu.value); } catch (e) {}
+    try { if (inpBanTiec && inpBanTiec.value) rawBanTiec = JSON.parse(inpBanTiec.value); } catch (e) { }
+    try { if (inpThucUong && inpThucUong.value) rawThucUong = JSON.parse(inpThucUong.value); } catch (e) { }
+    try { if (inpDichVu && inpDichVu.value) rawDichVu = JSON.parse(inpDichVu.value); } catch (e) { }
 
     var mappedBanTiec = _mapRawItems(rawBanTiec, 0);
-    
+
     // Tách món mặn & món chay
     selectedFoodsMan = mappedBanTiec.filter(function (x) { return x.IsChay === 0 || x.IsChay === false; });
     selectedFoodsChay = mappedBanTiec.filter(function (x) { return x.IsChay === 1 || x.IsChay === true; });
@@ -508,7 +508,7 @@ var FoodSelectionPlugin = (function () {
       contentHtml += `</tbody></table>`;
     }
 
-    var grandTotal = 
+    var grandTotal =
       selectedFoodsMan.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
       selectedFoodsChay.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
       selectedThucUong.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0) +
@@ -516,7 +516,7 @@ var FoodSelectionPlugin = (function () {
 
     var headerTabs = container.querySelector('.food-modal-tabs');
     if (headerTabs) {
-      headerTabs.innerHTML = 
+      headerTabs.innerHTML =
         renderTabButton('man', 'Món mặn', selectedFoodsMan.length) +
         renderTabButton('chay', 'Món chay', selectedFoodsChay.length) +
         renderTabButton('drink', 'Thức uống', selectedThucUong.length) +
@@ -899,7 +899,7 @@ var FoodSelectionPlugin = (function () {
           var idx = parseInt(this.getAttribute('data-idx'));
           var removed = currentList[idx];
           currentList.splice(idx, 1);
-          
+
           updateTotals();
           renderDrawer();
           renderGrid();
@@ -909,7 +909,7 @@ var FoodSelectionPlugin = (function () {
 
     // Cập nhật tổng số lượng & tổng tiền ở Bottom Bar
     function updateTotals() {
-      var total = 
+      var total =
         tempFoodsMan.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
         tempFoodsChay.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
         tempThucUong.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0) +
@@ -1005,23 +1005,33 @@ var FoodSelectionPlugin = (function () {
   }
 
   // Danh sách form name cần kích hoạt plugin
-  var SUPPORTED_FORMS = ['frmHopDong', 'tbmk_Thaydoi', 'frmThayDoiBoSung', 'frmQuyetToan'];
+  var SUPPORTED_FORMS = ['frmHopDong', 'tbmk_Thaydoi', 'frmThayDoiBoSung', 'frmPhuLucHopDong', 'frmQuyetToan'];
+
+  function _resolveEditRow(modalContent, row) {
+    if (row) return row;
+    var formBody = modalContent.querySelector('[data-form-name]') || modalContent;
+    var rowJson = formBody.dataset ? formBody.dataset.editRowJson : '';
+    if (!rowJson) return null;
+    try { return JSON.parse(rowJson); } catch (e) { return null; }
+  }
 
   // Tự inject hidden input JSON nếu chưa có trong form
   function _ensureHiddenInputs(modalContent, row) {
+    var editRow = _resolveEditRow(modalContent, row);
     var jsonFields = ['JsonBanTiec', 'JsonThucUong', 'JsonDichVu', 'JsonPhatSinh'];
     jsonFields.forEach(function (name) {
+      var rowValue = (editRow && editRow[name]) ? editRow[name] : '[]';
       if (!modalContent.querySelector('[name="' + name + '"]')) {
         var inp = document.createElement('input');
         inp.type = 'hidden';
         inp.name = name;
-        inp.value = (row && row[name]) ? row[name] : '[]';
+        inp.value = rowValue;
         modalContent.appendChild(inp);
       } else {
         // Nếu đã có nhưng rỗng, cố gắng lấy từ row
         var existing = modalContent.querySelector('[name="' + name + '"]');
-        if ((!existing.value || existing.value === '') && row && row[name]) {
-          existing.value = row[name];
+        if ((!existing.value || existing.value === '' || existing.value === '[]') && editRow && editRow[name]) {
+          existing.value = editRow[name];
         }
       }
     });
@@ -1034,12 +1044,7 @@ var FoodSelectionPlugin = (function () {
     modalContent.dataset.foodPluginDone = '1';
 
     activeModal = modalContent;
-    // Tự động nới rộng Modal để đủ chỗ hiển thị bảng
-    if (activeModal && activeModal.style) {
-      activeModal.style.width = '1000px';
-      activeModal.style.maxWidth = '95vw';
-    }
-
+    
     _injectStyles();
 
     // 1. Đảm bảo các hidden input JSON tồn tại (tự tạo nếu chưa có)
@@ -1116,6 +1121,12 @@ var FoodSelectionPlugin = (function () {
       }
       _renderSummaryTables();
     }
+
+    // Đọc lại sau khi DynamicFormEngine gán giá trị vào các input ẩn
+    setTimeout(function () {
+      _readInputs(modalContent);
+      _renderSummaryTables();
+    }, 200);
   }
 
   // Khởi chạy MutationObserver để lắng nghe sự kiện xuất hiện modal mới
@@ -1141,7 +1152,7 @@ var FoodSelectionPlugin = (function () {
             } else {
               // Form name được khai báo nhưng KHÔNG nằm trong danh sách hỗ trợ
               // (Ví dụ: frmHopDong) => Từ chối kích hoạt Plugin
-              return; 
+              return;
             }
           }
 
@@ -1149,10 +1160,14 @@ var FoodSelectionPlugin = (function () {
             // Lấy .modal-content để dùng làm activeModal
             var modalContentEl = formBody.closest('.modal-content') || formBody;
             _loadCatalog();
-            // Đợi một tick để DFE hoàn thành render form rồi mới inject
-            setTimeout(function () {
-              _interceptForm(modalContentEl, null);
-            }, 50);
+            // DynamicFormEngine render form async — polling chờ form render xong
+            var checkInterval = setInterval(function () {
+              if (modalContentEl.querySelector('.df-col-12, .df-col-6, .df-col-4, .form-group, [name="JsonBanTiec"]')) {
+                clearInterval(checkInterval);
+                _interceptForm(modalContentEl, null);
+              }
+            }, 100);
+            setTimeout(function () { clearInterval(checkInterval); }, 5000);
           }
         });
       });
@@ -1172,8 +1187,12 @@ var FoodSelectionPlugin = (function () {
     reloadForm: function (modal) {
       if (modal) {
         activeModal = modal;
-        _readInputs(modal);
-        _renderSummaryTables();
+        if (modal.dataset.foodPluginDone !== '1') {
+          _interceptForm(modal, null);
+        } else {
+          _readInputs(modal);
+          _renderSummaryTables();
+        }
       }
     }
   };

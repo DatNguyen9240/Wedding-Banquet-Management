@@ -53,6 +53,24 @@ var PhuLucPlugin = (function () {
     document.head.appendChild(style);
   }
 
+  function _stringifyJson(val) {
+    if (!val) return '[]';
+    if (typeof val === 'string') {
+      var trimmed = val.trim();
+      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+        return val;
+      }
+      if (val === '[object Object]' || val.indexOf('[object Object]') !== -1) return '[]';
+      return val;
+    }
+    try {
+      return JSON.stringify(val);
+    } catch (e) {
+      console.error('[PhuLucPlugin] Error stringifying JSON:', e);
+      return '[]';
+    }
+  }
+
   function _generateDocument(sothaydoi) {
     var DOC_API_BASE = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER) ? window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API : 'http://localhost:3000/api/document';
     var config = {
@@ -113,10 +131,10 @@ var PhuLucPlugin = (function () {
   function _showPhuLucModal(contractRow, defaultJsonBanTiec, defaultJsonThucUong, defaultJsonDichVu, defaultJsonPhatSinh) {
     _injectStyles();
 
-    defaultJsonBanTiec = defaultJsonBanTiec || '[]';
-    defaultJsonThucUong = defaultJsonThucUong || '[]';
-    defaultJsonDichVu = defaultJsonDichVu || '[]';
-    defaultJsonPhatSinh = defaultJsonPhatSinh || '[]';
+    defaultJsonBanTiec = _stringifyJson(defaultJsonBanTiec);
+    defaultJsonThucUong = _stringifyJson(defaultJsonThucUong);
+    defaultJsonDichVu = _stringifyJson(defaultJsonDichVu);
+    defaultJsonPhatSinh = _stringifyJson(defaultJsonPhatSinh);
 
     var sohopdong = contractRow.Sohopdong || contractRow.sohopdong || contractRow.SoHopDong;
     var khachhang = contractRow.Khachhang || contractRow.Daidiendat || contractRow.TenKhachHang || '';
@@ -359,10 +377,10 @@ var PhuLucPlugin = (function () {
         modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = rec.ThoaThuanPhuLucKhac || '';
         modalContent.querySelector('#inpThoathuan').value = rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || '';
 
-        modalContent.querySelector('#inpJsonBanTiec').value = rec.JsonBanTiec || '[]';
-        modalContent.querySelector('#inpJsonThucUong').value = rec.JsonThucUong || '[]';
-        modalContent.querySelector('#inpJsonDichVu').value = rec.JsonDichVu || '[]';
-        modalContent.querySelector('#inpJsonPhatSinh').value = rec.JsonPhatSinh || '[]';
+        modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(rec.JsonBanTiec);
+        modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(rec.JsonThucUong);
+        modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(rec.JsonDichVu);
+        modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(rec.JsonPhatSinh);
         if (typeof FoodSelectionPlugin !== 'undefined' && typeof FoodSelectionPlugin.reloadForm === 'function') {
           FoodSelectionPlugin.reloadForm(modalContent);
         }
@@ -395,10 +413,10 @@ var PhuLucPlugin = (function () {
         modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = uuDai;
         modalContent.querySelector('#inpThoathuan').value = lyDo;
 
-        modalContent.querySelector('#inpJsonBanTiec').value = defaultJsonBanTiec;
-        modalContent.querySelector('#inpJsonThucUong').value = defaultJsonThucUong;
-        modalContent.querySelector('#inpJsonDichVu').value = defaultJsonDichVu;
-        modalContent.querySelector('#inpJsonPhatSinh').value = defaultJsonPhatSinh;
+        modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(defaultJsonBanTiec);
+        modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(defaultJsonThucUong);
+        modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(defaultJsonDichVu);
+        modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(defaultJsonPhatSinh);
         if (typeof FoodSelectionPlugin !== 'undefined' && typeof FoodSelectionPlugin.reloadForm === 'function') {
           FoodSelectionPlugin.reloadForm(modalContent);
         }
@@ -497,10 +515,14 @@ var PhuLucPlugin = (function () {
       }
 
       // Điền sẵn các giá trị mặc định từ hợp đồng gốc
-      modalContent.querySelector('#inpJsonBanTiec').value = defaultJsonBanTiec;
-      modalContent.querySelector('#inpJsonThucUong').value = defaultJsonThucUong;
-      modalContent.querySelector('#inpJsonDichVu').value = defaultJsonDichVu;
-      modalContent.querySelector('#inpJsonPhatSinh').value = defaultJsonPhatSinh;
+      modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(defaultJsonBanTiec);
+      modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(defaultJsonThucUong);
+      modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(defaultJsonDichVu);
+      modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(defaultJsonPhatSinh);
+      
+      if (typeof FoodSelectionPlugin !== 'undefined' && typeof FoodSelectionPlugin.reloadForm === 'function') {
+        FoodSelectionPlugin.reloadForm(modalContent);
+      }
 
       modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
       modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
@@ -705,18 +727,27 @@ var PhuLucPlugin = (function () {
             UIToast.show('Đang tải thực đơn hợp đồng...', 'info');
           }
 
+          // Gọi API GetDetails của frmHopDong để lấy thực đơn chi tiết từ CSDL
           ApiClient.post(window.API_CONFIG.ENDPOINTS.ROUTER, {
-            List: 'frmQuyetToan',
+            List: 'frmHopDong',
             Func: 'GetDetails',
             Sohopdong: sohopdong
           }).then(function (res) {
-            var details = (res && res.records && res.records[0]) || res || {};
+            var details = {};
+            if (res) {
+              if (res.records && res.records.length > 0)      details = res.records[0];
+              else if (res.data && res.data.length > 0)       details = res.data[0];
+              else if (Array.isArray(res) && res.length > 0)  details = res[0];
+              else if (!res.records && !res.data && !Array.isArray(res)) details = res;
+            }
             var jsonBanTiec = details.JsonBanTiec || '[]';
             var jsonThucUong = details.JsonThucUong || '[]';
             var jsonDichVu = details.JsonDichVu || '[]';
             var jsonPhatSinh = details.JsonPhatSinh || '[]';
 
-            _showPhuLucModal(row, jsonBanTiec, jsonThucUong, jsonDichVu, jsonPhatSinh);
+            // Gộp dữ liệu chi tiết của hợp đồng gốc vào row để điền các trường cũ
+            var mergedRow = Object.assign({}, row, details);
+            _showPhuLucModal(mergedRow, jsonBanTiec, jsonThucUong, jsonDichVu, jsonPhatSinh);
           }).catch(function (err) {
             console.error('[PhuLucPlugin] Lỗi tải thực đơn:', err);
             _showPhuLucModal(row, '[]', '[]', '[]', '[]');

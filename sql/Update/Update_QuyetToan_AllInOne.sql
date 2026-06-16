@@ -700,6 +700,7 @@ BEGIN
         ISNULL(td.BenAChucVuDaiDienTD, td.BenAChucVuDaiDien) AS [BenAChucVuDaiDien],
 
         kh.Tenkh AS [KhachHang],
+        kh.Tenkh AS [BenBDaiDien],
         ISNULL(nv.Tennv, td.Manv) AS [NVKD],
         CONVERT(VARCHAR(10), hd.Ngayhopdong, 103) AS [NgayHopDong],
         hd.Tentiec AS [TenTiec],
@@ -712,9 +713,17 @@ BEGIN
              WHERE hs.Sohopdong = td.Sohopdong), 
             N'Chưa xác định'
         ) AS [SanhTiec],
+        ISNULL(
+            (SELECT TOP 1 s.Tensanhtiec 
+             FROM tbmk_Hopdongsanhtiec hs 
+             INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
+             WHERE hs.Sohopdong = td.Sohopdong), 
+            N'Chưa xác định'
+        ) AS [Sanh],
 
         ISNULL(td.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SoBanChinhThuc],
         ISNULL(td.SoBanTang, hd.SoBanTang) AS [SoBanTang],
+        ISNULL(td.SoBanTang, hd.SoBanTang) AS [BanTang],
         ISNULL(td.SobanManduphong, hd.SobanManduphong) AS [SoBanDuPhong],
 
         CASE 
@@ -726,6 +735,9 @@ BEGIN
         RIGHT('0' + CAST(DAY(td.Ngaythaydoi) AS VARCHAR), 2) AS [NgayThayDoi],
         RIGHT('0' + CAST(MONTH(td.Ngaythaydoi) AS VARCHAR), 2) AS [ThangThayDoi],
         YEAR(td.Ngaythaydoi) AS [NamThayDoi],
+        RIGHT('0' + CAST(DAY(td.Ngaythaydoi) AS VARCHAR), 2) AS [NgayLapPL],
+        RIGHT('0' + CAST(MONTH(td.Ngaythaydoi) AS VARCHAR), 2) AS [ThangLapPL],
+        YEAR(td.Ngaythaydoi) AS [NamLapPL],
 
         CAST(ISNULL(td.SobanManchinhthuc, hd.SobanManchinhthuc) AS VARCHAR) + N' bàn chính thức và ' + 
         CAST(ISNULL(td.SobanManduphong, hd.SobanManduphong) AS VARCHAR) + N' bàn dự phòng' AS [MoTaTongSoBanSauThayDoi],

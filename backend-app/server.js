@@ -360,10 +360,13 @@ app.post('/api/documents/generate', async (req, res) => {
                 return {
                     get: function(scope) {
                         if (tag === '.') return scope;
-                        const lowerTag = tag.toLowerCase();
                         if (scope && typeof scope === 'object') {
                             if (scope[tag] !== undefined) return scope[tag];
-                            const foundKey = Object.keys(scope).find(k => k.toLowerCase() === lowerTag);
+                            const cleanTag = tag.toLowerCase().replace(/_/g, '');
+                            const foundKey = Object.keys(scope).find(k => {
+                                const cleanKey = k.toLowerCase().replace(/_/g, '');
+                                return cleanKey === cleanTag;
+                            });
                             if (foundKey) return scope[foundKey];
                         }
                         return "";

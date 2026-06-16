@@ -81,6 +81,84 @@ SELECT
     h.Tongtiencoc,
     h.Ghichu,
     h.JsonLichTrinh,
+
+    -- Thực đơn & Dịch vụ (JSON cho form sửa hợp đồng — đọc từ bảng chi tiết)
+    ISNULL((
+        SELECT
+            items.Mahang,
+            items.TenHang,
+            items.DvtID,
+            items.Soluong,
+            items.Dongia,
+            items.IsChay
+        FROM (
+            SELECT
+                td.Mahang,
+                ISNULL(hh.Tenhang, td.Mahang) AS TenHang,
+                ISNULL(hh.DVTID, N'Đĩa') AS DvtID,
+                CAST(1 AS DECIMAL(18, 2)) AS Soluong,
+                ISNULL(td.Dongia, 0) AS Dongia,
+                CAST(0 AS BIT) AS IsChay,
+                ISNULL(td.STTmon, 0) AS SortOrder,
+                1 AS TableType
+            FROM tbmk_Hopdongthucdonman td
+            LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+            WHERE td.Sohopdong = h.Sohopdong
+
+            UNION ALL
+
+            SELECT
+                td.Mahang,
+                ISNULL(hh.Tenhang, td.Mahang),
+                ISNULL(hh.DVTID, N'Đĩa'),
+                CAST(1 AS DECIMAL(18, 2)),
+                ISNULL(td.Dongia, 0),
+                CAST(1 AS BIT),
+                ISNULL(td.STTmon, 0),
+                2
+            FROM tbmk_Hopdongthucdonchay td
+            LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+            WHERE td.Sohopdong = h.Sohopdong
+        ) items
+        ORDER BY items.TableType, items.SortOrder, items.Mahang
+        FOR JSON PATH
+    ), '[]') AS [JsonBanTiec],
+
+    ISNULL((
+        SELECT
+            tu.Mahang,
+            ISNULL(hh.Tenhang, tu.Mahang) AS TenHang,
+            ISNULL(tu.Dvt, hh.DVTID) AS DvtID,
+            ISNULL(tu.IsKhuyenmai, 0) AS IsKhuyenmai,
+            ISNULL(tu.Soluong, 0) AS Soluong,
+            ISNULL(tu.Dongia, 0) AS Dongia,
+            CAST(0 AS DECIMAL(18, 2)) AS Soluongle,
+            CAST(0 AS DECIMAL(18, 2)) AS Dongiale,
+            ISNULL(tu.Ghichuthucuong, N'') AS Ghichuthucuong
+        FROM tbmk_Hopdongthucuong tu
+        LEFT JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang
+        WHERE tu.Sohopdong = h.Sohopdong
+        ORDER BY tu.STT, tu.Mahang
+        FOR JSON PATH
+    ), '[]') AS [JsonThucUong],
+
+    ISNULL((
+        SELECT
+            dv.Mahang,
+            ISNULL(hh.Tenhang, dv.Mahang) AS TenHang,
+            ISNULL(hh.DVTID, N'') AS DvtID,
+            ISNULL(dv.Soluong, 0) AS Soluong,
+            ISNULL(dv.Dongia, 0) AS Dongia,
+            ISNULL(dv.Ghichudichvu, N'') AS Ghichudichvu
+        FROM tbmk_Hopdongdichvu dv
+        LEFT JOIN dmHanghoa hh ON dv.Mahang = hh.Mahang
+        WHERE dv.Sohopdong = h.Sohopdong
+        ORDER BY dv.STT, dv.Mahang
+        FOR JSON PATH
+    ), '[]') AS [JsonDichVu],
+
+    CAST('[]' AS NVARCHAR(MAX)) AS [JsonPhatSinh],
+
     (
         SELECT 
             hs.Sanhtiecid AS [Sanhtiecid],
@@ -134,8 +212,8 @@ SELECT
     ISNULL(h.SobanManduphong, 0) + ISNULL(h.SobanChayduphong, 0) AS [TiecSoBanDuPhong],
     ISNULL(h.SoNguoiTrenBan, 10) AS [TiecSoKhach1Ban],
 
-    -- 5. Thực đơn & Dịch vụ (Tạm thời bỏ qua vì CSDL không có bảng tbmk_Hopdongthucdon)
-    NULL AS [DanhSachThucDon],
+    -- 5. Thực đơn & Dịch vụ (cho in ấn docx)
+    [dbo].[fn_DOCX_DanhSachMenu](h.Sohopdong) AS [DanhSachThucDon],
     NULL AS [DichVuTinhPhi],
     NULL AS [DSKhuyenMai],
 

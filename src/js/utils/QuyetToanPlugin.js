@@ -77,6 +77,24 @@ var QuyetToanPlugin = (function () {
     document.head.appendChild(style);
   }
 
+  function _stringifyJson(val) {
+    if (!val) return '[]';
+    if (typeof val === 'string') {
+      var trimmed = val.trim();
+      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+        return val;
+      }
+      if (val === '[object Object]' || val.indexOf('[object Object]') !== -1) return '[]';
+      return val;
+    }
+    try {
+      return JSON.stringify(val);
+    } catch (e) {
+      console.error('[QuyetToanPlugin] Error stringifying JSON:', e);
+      return '[]';
+    }
+  }
+
   function _generateDocument(sohopdong) {
     var DOC_API_BASE = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER) 
       ? window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API 
@@ -304,10 +322,10 @@ var QuyetToanPlugin = (function () {
     modalContent.querySelector('#containerNgayQuyetToan').appendChild(dateInput);
 
     // Gán dữ liệu ban đầu
-    modalContent.querySelector('#inpJsonBanTiec').value = details.JsonBanTiec || '[]';
-    modalContent.querySelector('#inpJsonThucUong').value = details.JsonThucUong || '[]';
-    modalContent.querySelector('#inpJsonDichVu').value = details.JsonDichVu || '[]';
-    modalContent.querySelector('#inpJsonPhatSinh').value = details.JsonPhatSinh || '[]';
+    modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(details.JsonBanTiec);
+    modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(details.JsonThucUong);
+    modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(details.JsonDichVu);
+    modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(details.JsonPhatSinh);
 
     if (existingSettlement) {
       modalContent.querySelector('#inpDocumentID').value = existingSettlement.DocumentID || '';

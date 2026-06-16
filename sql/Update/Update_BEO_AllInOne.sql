@@ -113,7 +113,7 @@ BEGIN
         END AS [KhachHang],
 
         -- ── Thông tin xuất BEO ──────────────────────────────────────────
-        ISNULL(h.NgayRaBEO, h.Ngayhopdong)                     AS [NgayRaBEO],
+        CONVERT(VARCHAR(10), ISNULL(h.NgayRaBEO, h.Ngayhopdong), 103)          AS [NgayRaBEO],
         RIGHT('0' + CAST(DAY  (ISNULL(h.NgayRaBEO, h.Ngayhopdong)) AS VARCHAR), 2) AS [NgayRaBEODay],
         RIGHT('0' + CAST(MONTH(ISNULL(h.NgayRaBEO, h.Ngayhopdong)) AS VARCHAR), 2) AS [ThangRaBEO],
         CAST(YEAR(ISNULL(h.NgayRaBEO, h.Ngayhopdong)) AS VARCHAR)                  AS [NamRaBEO],
@@ -204,6 +204,14 @@ BEGIN
                 THEN k.Tenchure + ' & ' + k.Tencodau
             ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
         END AS [BenBDaiDien],
+        k.Tenchure AS [Tenchure],
+        k.Tencodau AS [Tencodau],
+        k.Tenchure AS [BieuNguCR],
+        k.Tencodau AS [BieuNguCD],
+        k.DTchure AS [Sdtchure],
+        k.DTcodau AS [Sdtcodau],
+        k.Diachi AS [BenB_DiaChi],
+        ISNULL(h.Tentiec, N'LỄ THÀNH HÔN') AS [TenLe],
         ISNULL(k.Diachi, N'...')         AS [BenBDiaChiTemplate], -- backup alias nếu cần
 
         -- NgayHopDong: ngày ký hợp đồng (template dùng {NgayHopDong})
