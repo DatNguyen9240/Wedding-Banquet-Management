@@ -780,7 +780,7 @@ function convertTextToWordXML(text, fieldName = '') {
             xml += `<w:r><w:br/></w:r>`;
         }
     }
-    return xml;
+    return `<w:p>${xml}</w:p>`;
 }
 
 /** Parse đệ quy mọi chuỗi JSON trong object/array (không hardcode field menu/dịch vụ). */

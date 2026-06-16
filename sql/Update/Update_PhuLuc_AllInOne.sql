@@ -20,10 +20,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tb
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'QuyMoBanDenTD')
     ALTER TABLE tbmk_Thaydoi ADD QuyMoBanDenTD INT NULL;
 
-IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'TenDotThanhToan')
-    ALTER TABLE tbmk_Thaydoi ADD TenDotThanhToan NVARCHAR(100) NULL;
-IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'TenDotThanhToanTD')
-    ALTER TABLE tbmk_Thaydoi ADD TenDotThanhToanTD NVARCHAR(100) NULL;
+
 
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Thaydoi]') AND name = 'ThanhToanDot2SoTien')
     ALTER TABLE tbmk_Thaydoi ADD ThanhToanDot2SoTien DECIMAL(18,2) NULL;
@@ -78,8 +75,7 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tb
     ALTER TABLE tbmk_Hopdong ADD QuyMoBanTu INT NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'QuyMoBanDen')
     ALTER TABLE tbmk_Hopdong ADD QuyMoBanDen INT NULL;
-IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'TenDotThanhToan')
-    ALTER TABLE tbmk_Hopdong ADD TenDotThanhToan NVARCHAR(100) NULL;
+
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'ThanhToanDot2SoTien')
     ALTER TABLE tbmk_Hopdong ADD ThanhToanDot2SoTien DECIMAL(18,2) NULL;
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'HinhThucThanhToanDot2')
@@ -117,7 +113,7 @@ SELECT
     td.Sothaydoi AS [SoPhuLuc], -- Biến trong docx
     td.Ngaythaydoi AS [Ngaythaydoi],
     RIGHT('0' + CAST(DAY(td.Ngaythaydoi) AS VARCHAR), 2) AS [NgayLapPL],
-    RIGHT('0' + CAST(DAY(td.Ngaythaydoi) AS VARCHAR), 2) AS [NgayLapPLDay],
+
     RIGHT('0' + CAST(MONTH(td.Ngaythaydoi) AS VARCHAR), 2) AS [ThangLapPL],
     CAST(YEAR(td.Ngaythaydoi) AS VARCHAR) AS [NamLapPL],
     td.Sohopdong AS [Sohopdong],
@@ -139,8 +135,7 @@ SELECT
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT') AS [BenASDT],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenAEmail')  AS [BenAEmail],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenAMST') AS [BenAMST],
+
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenADaiDien],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
@@ -150,11 +145,11 @@ SELECT
     -- Bên B (Thông tin khách hàng)
     kh.Tenkh AS [BenBTenDaiDien],
     ISNULL(kh.Tenchure, '') + ' & ' + ISNULL(kh.Tencodau, '') AS [BenBTenChuTiec],
-    ISNULL(NULLIF(kh.CMNDDaiDien, ''), ISNULL(NULLIF(kh.CMNDnguoidd, ''), ISNULL(NULLIF(kh.CMNDchure, ''), '...'))) AS [BenBCard],
+
     kh.Diachi AS [BenBDiaChi],
     kh.Dienthoai AS [BenBDienThoai],
     N'Khách hàng' AS [BenBChucVu],
-    kh.Mail AS [BenBEmail],
+
 
     -- Hợp đồng gốc ngày lập
     RIGHT('0' + CAST(DAY(hd.Ngayhopdong) AS VARCHAR), 2) AS [NgayLapHD],
@@ -168,7 +163,7 @@ SELECT
     
     -- Ngày tổ chức Dương lịch & Âm lịch
     RIGHT('0' + CAST(DAY(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [NgayToChuc],
-    RIGHT('0' + CAST(DAY(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [NgayToChucDay],
+
     RIGHT('0' + CAST(MONTH(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [ThangToChuc],
     CAST(YEAR(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR) AS [NamToChuc],
     
@@ -246,9 +241,7 @@ SELECT
         ) + N' VNĐ'
     ) AS [MenuTongCong],
 
-    dbo.fn_DOCX_DanhSachMenu(td.Sohopdong)     AS [DanhSachMenu],
-    dbo.fn_DOCX_DanhSachThucUong(td.Sohopdong) AS [DanhSachThucUong],
-    dbo.fn_DOCX_DichVuTinhPhi(td.Sohopdong)    AS [DichVuTinhPhi],
+
 
     -- {#DanhSachChiPhi}{STT}{NoiDung}{DVT}{SoLuong}{DonGia}{ThanhTien}{/DanhSachChiPhi}
     -- Ưu tiên: cột DanhSachChiPhi có sẵn → fallback tổng hợp từ JsonDichVu
@@ -291,7 +284,6 @@ SELECT
     -- ===== KẾT THÚC CỘT DOCX =====
     
     -- Các đợt thanh toán
-    ISNULL(td.TenDotThanhToanTD, td.TenDotThanhToan) AS [TenDotThanhToan],
     ISNULL(td.ThanhToanDot2SoTienTD, td.ThanhToanDot2SoTien) AS [ThanhToanDot2SoTien],
     ISNULL(td.HinhThucThanhToanDot2TD, td.HinhThucThanhToanDot2) AS [HinhThucThanhToanDot2],
     FORMAT(ISNULL(td.HanThanhToanDot2TD, td.HanThanhToanDot2), 'dd/MM/yyyy') AS [HanThanhToanDot2],
@@ -301,15 +293,7 @@ SELECT
     ISNULL(td.ThoaThuanPhuLucKhacTD, td.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
     
     -- Các trường tiền tệ
-    ISNULL(td.TongtienBanmanTD, hd.Tongtienbanman) AS [Tongtienbanman],
-    ISNULL(td.TongtienBanchayTD, hd.Tongtienbanchay) AS [Tongtienbanchay],
-    ISNULL(td.Tongtienthucuong, hd.Tongtienthucuong) AS [Tongtienthucuong],
-    ISNULL(td.TongtienDichvuTD, hd.Tongtiendichvu) AS [Tongtiendichvu],
-    ISNULL(td.TongtienHopdongTD, hd.Tongtienhopdong) AS [TongTien],
-    ISNULL(td.Sotiencoccho, hd.Sotiencoccho) AS [DaCocVND],
-    ISNULL(td.Sotiencochopdong, hd.Sotiencochopdong) AS [Sotiencochopdong],
-    ISNULL(td.Tongtiencoc, hd.Tongtiencoc) AS [Tongtiencoc],
-    ISNULL(td.ConLaiTD, hd.Conlai) AS [ConLai],
+
 
     -- Tổng giá trị tạm tính (format VNĐ) - {TongGiaTriTamTinh}
     FORMAT(ISNULL(td.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
@@ -317,6 +301,7 @@ SELECT
     -- Trạng thái & metadata
     td.LanThayDoi AS [LanThayDoi],
     td.Ghichu AS [Ghichu],
+    td.Ghichu AS [NoiDungPhuLuc],
     td.Status AS [Status],
     CASE 
         WHEN td.Status = 'DRAFT' THEN N'Nháp'
@@ -407,7 +392,7 @@ BEGIN
                 Sothaydoi, Ngaythaydoi, Sohopdong, Sobiennhan, Makh, Manv, LanThayDoi, Ghichu,
                 Status, IsDeleted, UserCreate, DateCreate,
                 QuyMoBanTu, QuyMoBanTuTD, QuyMoBanDen, QuyMoBanDenTD,
-                TenDotThanhToan, TenDotThanhToanTD, ThanhToanDot2SoTien, ThanhToanDot2SoTienTD,
+                ThanhToanDot2SoTien, ThanhToanDot2SoTienTD,
                 HinhThucThanhToanDot2, HinhThucThanhToanDot2TD, HanThanhToanDot2, HanThanhToanDot2TD,
                 DichVuTinhPhiPhuLuc, DichVuTinhPhiPhuLucTD, ThoaThuanPhuLucKhac, ThoaThuanPhuLucKhacTD,
                 DanhSachChiPhi, DanhSachChiPhiTD, BenAChucVuDaiDien, BenAChucVuDaiDienTD,
@@ -427,8 +412,6 @@ BEGIN
                 TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanDen') AS INT),
                 TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanDenTD') AS INT),
                 
-                JSON_VALUE(@JsonData, '$.TenDotThanhToan'),
-                JSON_VALUE(@JsonData, '$.TenDotThanhToanTD'),
                 TRY_CAST(JSON_VALUE(@JsonData, '$.ThanhToanDot2SoTien') AS DECIMAL(18,2)),
                 TRY_CAST(JSON_VALUE(@JsonData, '$.ThanhToanDot2SoTienTD') AS DECIMAL(18,2)),
                 
@@ -473,8 +456,6 @@ BEGIN
                 QuyMoBanDen = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanDen') AS INT), QuyMoBanDen),
                 QuyMoBanDenTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanDenTD') AS INT), QuyMoBanDenTD),
                 
-                TenDotThanhToan = COALESCE(JSON_VALUE(@JsonData, '$.TenDotThanhToan'), TenDotThanhToan),
-                TenDotThanhToanTD = COALESCE(JSON_VALUE(@JsonData, '$.TenDotThanhToanTD'), TenDotThanhToanTD),
                 ThanhToanDot2SoTien = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.ThanhToanDot2SoTien') AS DECIMAL(18,2)), ThanhToanDot2SoTien),
                 ThanhToanDot2SoTienTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.ThanhToanDot2SoTienTD') AS DECIMAL(18,2)), ThanhToanDot2SoTienTD),
                 
@@ -607,7 +588,6 @@ BEGIN
                 -- Đồng bộ các cột mới bổ sung
                 i.QuyMoBanTuTD,
                 i.QuyMoBanDenTD,
-                i.TenDotThanhToanTD,
                 i.ThanhToanDot2SoTienTD,
                 i.HinhThucThanhToanDot2TD,
                 i.HanThanhToanDot2TD,
@@ -688,7 +668,6 @@ BEGIN
             -- Đồng bộ các cột mới bổ sung
             h.QuyMoBanTu = COALESCE(lc.QuyMoBanTuTD, h.QuyMoBanTu),
             h.QuyMoBanDen = COALESCE(lc.QuyMoBanDenTD, h.QuyMoBanDen),
-            h.TenDotThanhToan = COALESCE(lc.TenDotThanhToanTD, h.TenDotThanhToan),
             h.ThanhToanDot2SoTien = COALESCE(lc.ThanhToanDot2SoTienTD, h.ThanhToanDot2SoTien),
             h.HinhThucThanhToanDot2 = COALESCE(lc.HinhThucThanhToanDot2TD, h.HinhThucThanhToanDot2),
             h.HanThanhToanDot2 = COALESCE(lc.HanThanhToanDot2TD, h.HanThanhToanDot2),
@@ -852,9 +831,6 @@ SET CaptionVN = N'Bàn Chay (Dự Phòng)', FormatID = 'n', ShowInAdd = 1, ShowI
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'SobanChayduphong';
 
 -- 6. Đợt thanh toán 2
-UPDATE ff
-SET CaptionVN = N'Tên Đợt Thanh Toán 2', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 16
-FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'TenDotThanhToan';
 
 UPDATE ff
 SET CaptionVN = N'Số Tiền Đợt 2', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 17
