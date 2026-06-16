@@ -328,8 +328,8 @@ SELECT
     ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
     ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc) + ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SoBanChinhThuc],
     ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) + ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SoBanDuPhong],
-    ISNULL(td.SoBanTang, hd.SoBanTang) AS [BanTang],
-    ISNULL(td.SoBanTang, hd.SoBanTang) AS [SoBanTang],
+    ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [BanTang],
+    ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
     -- {#MenuTiec}: Lấy từ bảng con (Thaydoithucdonman & Thaydoithucdonchay)
     ISNULL(
         (

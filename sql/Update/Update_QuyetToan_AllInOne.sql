@@ -722,8 +722,8 @@ BEGIN
         ) AS [Sanh],
 
         ISNULL(td.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SoBanChinhThuc],
-        ISNULL(td.SoBanTang, hd.SoBanTang) AS [SoBanTang],
-        ISNULL(td.SoBanTang, hd.SoBanTang) AS [BanTang],
+        ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
+        ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [BanTang],
         ISNULL(td.SobanManduphong, hd.SobanManduphong) AS [SoBanDuPhong],
 
         CASE 

@@ -393,7 +393,7 @@ var DocumentExportPlugin = (function () {
       icon: 'print',
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
       sqlListName: 'frmBEO',
-      convertFields: ['ThongTinSetup', 'NoteBaoVe', 'NoteBieuNgu', 'NoteKyThuat', 'NoteLobby'],
+      convertFields: ['ThongTinSetup', 'NoteBaoVe', 'NoteBieuNgu', 'NoteKyThuat', 'NoteLobby', 'LuuY'],
       getDocType: function (row) {
         var lh = (row.LoaiHinhSuKien || row.LoaiHinhSK || '').toString().toLowerCase();
         if (lh.includes('hội nghị') || lh.includes('hoi nghi') || lh.includes('conference')) {

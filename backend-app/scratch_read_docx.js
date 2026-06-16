@@ -1,7 +1,7 @@
 import fs from 'fs';
 import PizZip from 'pizzip';
 
-const docxPath = './samples/BEO_Tiec_Cuoi.docx';
+const docxPath = 'c:\\Users\\Dell3070\\Downloads\\phu_luc_hop_dong_PL99767785_1781599677935.docx';
 const content = fs.readFileSync(docxPath);
 const zip = new PizZip(content);
 
@@ -20,12 +20,15 @@ for (const name of fileNames) {
 
 const xml = zip.files['word/document.xml'].asText();
 
-// Match anything between { and }
+// 1. Check for unresolved placeholders
 const matches = xml.match(/\{[^}]+\}/g);
 if (matches) {
-    const uniqueMatches = [...new Set(matches)];
-    console.log("Placeholders found:");
-    uniqueMatches.forEach(m => console.log(m));
+    console.log("Unresolved placeholders found in the document:");
+    console.log([...new Set(matches)]);
 } else {
-    console.log("No placeholders found.");
+    console.log("No unresolved placeholders found (All tags successfully replaced).");
 }
+
+console.log("\n--- Clean Document Text Content ---");
+const text = xml.replace(/<[^>]+>/g, ' ');
+console.log(text.replace(/\s+/g, ' ').substring(0, 1500));
