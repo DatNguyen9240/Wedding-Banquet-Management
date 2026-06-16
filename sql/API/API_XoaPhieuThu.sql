@@ -25,28 +25,18 @@ BEGIN
             RETURN;
         END
 
-        -- Kiểm tra xem bảng thực sự là tbPhieuthu hay tbmk_Phieuthu để xác định bảng cần cập nhật
-        -- Chúng ta hỗ trợ cả hai bảng nếu tồn tại
-        DECLARE @TableName VARCHAR(100) = 'tbPhieuthu';
-        IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'tbPhieuthu')
-        BEGIN
-            SET @TableName = 'tbmk_Phieuthu';
-        END
-
-        -- Sử dụng SQL động để kiểm tra nhằm tránh lỗi biên dịch tĩnh nếu cột Status chưa được tạo đầy đủ
-        DECLARE @CheckStatusSQL NVARCHAR(MAX) = 
-            N'IF EXISTS (SELECT 1 FROM ' + QUOTENAME(@TableName) + 
-            N' WHERE DocumentID IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, '','')) AND Status IN (''SIGNED'', ''COMPLETED''))
-              SET @HasLocked = 1;';
-              
+        -- Kiểm tra xem có phiếu thu nào đã chốt không
         DECLARE @HasLocked INT = 0;
         
-        BEGIN TRY
-            EXEC sp_executesql @CheckStatusSQL, N'@Ids NVARCHAR(MAX), @HasLocked INT OUTPUT', @Ids = @Ids, @HasLocked = @HasLocked OUTPUT;
-        END TRY
-        BEGIN CATCH
-            SET @HasLocked = 0;
-        END CATCH
+        IF EXISTS (
+            SELECT 1 FROM tbmk_Phieuthu 
+            WHERE (DocumentID IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, ',')) 
+               OR Sohopdong IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, ','))) 
+              AND Status IN ('SIGNED', 'COMPLETED')
+        )
+        BEGIN
+            SET @HasLocked = 1;
+        END
 
         IF @HasLocked = 1
         BEGIN
@@ -57,13 +47,13 @@ BEGIN
         BEGIN TRANSACTION;
 
         -- Thực hiện soft delete
-        DECLARE @UpdateSQL NVARCHAR(MAX) = 
-            N'UPDATE ' + QUOTENAME(@TableName) + 
-            N' SET IsDeleted = 1, DeletedAt = GETDATE(), DeletedBy = @User
-              WHERE DocumentID IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, '',''))';
+        UPDATE tbmk_Phieuthu
+        SET IsDeleted = 1, 
+            DeletedAt = GETDATE(), 
+            DeletedBy = @UserName
+        WHERE DocumentID IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, ',')) 
+           OR Sohopdong IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, ','));
               
-        EXEC sp_executesql @UpdateSQL, N'@Ids NVARCHAR(MAX), @User VARCHAR(50)', @Ids = @Ids, @User = @UserName;
-
         DECLARE @RowsAffected INT = @@ROWCOUNT;
 
         COMMIT TRANSACTION;

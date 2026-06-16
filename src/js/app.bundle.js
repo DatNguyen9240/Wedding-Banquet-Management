@@ -1,4 +1,4 @@
-/* --- mockData.js --- */
+﻿/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -542,7 +542,7 @@ var DocumentExportPlugin = (function () {
       }
     }];
 
-    if (formName === 'frmHopDong') {
+    if (formName === 'frmHopDong' || formName === 'frmQuyetToan') {
       buttons.push({
         id: 'btn-export-phatsinh',
         text: 'Xuất BB Phát Sinh',
@@ -551,8 +551,8 @@ var DocumentExportPlugin = (function () {
         onClick: function () {
           var selectedRows = getSelectedRows();
           if (!selectedRows || selectedRows.length !== 1) {
-            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 Hợp Đồng duy nhất.');
-            else alert('Vui lòng chọn 1 Hợp Đồng!');
+            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng dữ liệu duy nhất.');
+            else alert('Vui lòng chọn 1 dòng dữ liệu!');
             return;
           }
           _generateDocument(selectedRows[0], {
@@ -2428,6 +2428,154 @@ var FoodSelectionPlugin = (function () {
 
 
 
+/* --- SanhSelectionPlugin.js --- */
+/**
+ * SanhSelectionPlugin.js
+ * ─────────────────────────────────────────────────────────────────────
+ * Plugin ẩn cột JsonSanhTiec (TextArea) xấu xí và thay thế bằng danh sách 
+ * các nút bấm (Tagbox) cho phép chọn nhiều Sảnh đãi tiệc cùng lúc.
+ */
+var SanhSelectionPlugin = (function() {
+  var catalogCache = null;
+
+  function _loadCatalog() {
+    if (catalogCache) return Promise.resolve(catalogCache);
+    return ApiClient.post(window.API_CONFIG.ENDPOINTS.ROUTER, {
+      List: 'API_DanhSachSanh',
+      Func: 'View'
+    }).then(function(res) {
+      if (res && res.data) {
+        catalogCache = res.data;
+        return res.data;
+      }
+      return [];
+    });
+  }
+
+  function _initSanhSelection(modalBody) {
+    var jsonInput = modalBody.querySelector('[name="JsonSanhTiec"]');
+    // Nếu không có ô JsonSanhTiec hoặc đã khởi tạo rồi thì bỏ qua
+    if (!jsonInput || jsonInput.dataset.sanhPluginInited) return;
+    
+    jsonInput.dataset.sanhPluginInited = 'true';
+    
+    // Ẩn ô nhập JSON thô (Vẫn giữ trên DOM để form submit lấy giá trị)
+    jsonInput.style.display = 'none';
+    
+    // Tìm cái Label của ô JsonSanhTiec để ẩn luôn (do DynamicForm sinh ra)
+    var formGroup = jsonInput.closest('.col-12, .col-md-12, .mb-3');
+    if (formGroup) {
+      var label = formGroup.querySelector('label');
+      if (label) label.style.display = 'none';
+    }
+
+    var container = document.createElement('div');
+    container.className = 'sanh-selection-container mb-3';
+    container.style.border = '1px dashed var(--color-border-strong, #ccc)';
+    container.style.padding = '12px';
+    container.style.borderRadius = '8px';
+    container.style.background = 'var(--color-background, #f8f9fa)';
+    
+    if (formGroup) {
+      formGroup.appendChild(container);
+    } else {
+      jsonInput.parentNode.insertBefore(container, jsonInput);
+    }
+
+    _loadCatalog().then(function(catalog) {
+      var currentVal = [];
+      try {
+        if (jsonInput.value) currentVal = JSON.parse(jsonInput.value);
+      } catch(e) {}
+
+      var html = '<label class="form-label fw-bold d-flex align-items-center gap-2 mb-2"><span class="material-symbols-outlined text-primary">meeting_room</span> Chọn Sảnh Đãi Tiệc</label>';
+      html += '<div class="d-flex flex-wrap gap-2">';
+      
+      if (!catalog || catalog.length === 0) {
+        html += '<span class="text-muted" style="font-size: 13px;">Không tải được danh sách Sảnh.</span>';
+      }
+      
+      catalog.forEach(function(sanh) {
+        // API_DanhSachSanh trả về các cột Value, Label
+        var sanhId = sanh.Value || sanh.Sanhtiecid || sanh.id;
+        var sanhName = sanh.Label || sanh.Tensanhtiec || sanh.name;
+        
+        var isChecked = currentVal.some(function(x) { return x.Sanhtiecid === sanhId; });
+        var btnClass = isChecked ? 'btn-primary' : 'btn-outline-secondary bg-white';
+        var icon = isChecked ? 'check_box' : 'check_box_outline_blank';
+        
+        html += `<button type="button" class="btn btn-sm ${btnClass} sanh-toggle-btn" data-id="${sanhId}" style="border-radius: 20px; padding: 4px 12px;">
+                   <span class="material-symbols-outlined align-middle" style="font-size: 16px;">${icon}</span> 
+                   ${sanhName}
+                 </button>`;
+      });
+      html += '</div>';
+
+      container.innerHTML = html;
+
+      // Đăng ký sự kiện click chọn sảnh
+      container.querySelectorAll('.sanh-toggle-btn').forEach(function(btn) {
+        btn.onclick = function() {
+          var id = this.dataset.id;
+          var idx = currentVal.findIndex(function(x) { return x.Sanhtiecid === id; });
+          
+          if (idx >= 0) {
+            // Bỏ chọn
+            currentVal.splice(idx, 1);
+            this.classList.remove('btn-primary');
+            this.classList.add('btn-outline-secondary', 'bg-white');
+            this.querySelector('.material-symbols-outlined').innerText = 'check_box_outline_blank';
+          } else {
+            // Chọn thêm (Sảnh đầu tiên được chọn sẽ tự động là IsSanhchinh = true)
+            currentVal.push({ Sanhtiecid: id, IsSanhchinh: currentVal.length === 0 });
+            this.classList.remove('btn-outline-secondary', 'bg-white');
+            this.classList.add('btn-primary');
+            this.querySelector('.material-symbols-outlined').innerText = 'check_box';
+          }
+          
+          // Cập nhật giá trị lại cho textarea JSON thô để hệ thống ngầm lưu lại
+          jsonInput.value = JSON.stringify(currentVal);
+          jsonInput.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+      });
+    });
+  }
+
+  function init() {
+    // Theo dõi DOM để phát hiện khi Form chứa JsonSanhTiec được tạo ra (khi mở Modal Thêm/Sửa)
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.addedNodes) {
+          mutation.addedNodes.forEach(function(node) {
+            if (node.nodeType === 1) {
+              // Tìm ngay phần tử mới e rằng có JsonSanhTiec
+              var jsonSanhTiec = node.querySelector ? node.querySelector('[name="JsonSanhTiec"]') : null;
+              if (jsonSanhTiec) {
+                _initSanhSelection(node);
+              }
+            }
+          });
+        }
+      });
+    });
+    
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    // Quét một lần nhỡ modal đã render sẵn (rất hiếm nhưng dự phòng)
+    var existingModal = document.querySelector('.pmql-modal, .modal');
+    if (existingModal) _initSanhSelection(existingModal);
+  }
+
+  return { init: init };
+})();
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', SanhSelectionPlugin.init);
+} else {
+  SanhSelectionPlugin.init();
+}
+
+
 /* --- PhuLucPlugin.js --- */
 /**
  * PhuLucPlugin
@@ -3531,7 +3679,6 @@ var QuyetToanPlugin = (function () {
       var phiNTL = Number(modalContent.querySelector('#inpPhiBuNTL').value || 0);
       var phiPhucVu = Number(modalContent.querySelector('#inpPhiPhucVu').value || 0);
       var phatSinhManual = Number(modalContent.querySelector('#inpSotienphatsinh').value || 0);
-      var banPhatSinh = Number(modalContent.querySelector('#inpBanPhatSinh').value || 0);
 
       var subtotal = totalGrid + phiSanh + phiBanTang + phiTTS + phiNTL + phiPhucVu + phatSinhManual;
       
@@ -3597,7 +3744,7 @@ var QuyetToanPlugin = (function () {
       var phiSanh = Number(modalContent.querySelector('#inpPhiBuSanh').value || 0);
       var phiBanTang = Number(modalContent.querySelector('#inpPhiBuBanTang').value || 0);
       var phiTTS = Number(modalContent.querySelector('#inpPhiBuTTS').value || 0);
-      var phiNTL = Number(modalContent.querySelector('#inpPhiBuNTL').value || 0);
+      var phiBuNTL = Number(modalContent.querySelector('#inpPhiBuNTL').value || 0);
       var phiPhucVu = Number(modalContent.querySelector('#inpPhiPhucVu').value || 0);
       var phatSinh = Number(modalContent.querySelector('#inpSotienphatsinh').value || 0);
       var banPhatSinh = Number(modalContent.querySelector('#inpBanPhatSinh').value || 0);
@@ -3614,7 +3761,7 @@ var QuyetToanPlugin = (function () {
       try { totalDichVu = JSON.parse(modalContent.querySelector('#inpJsonDichVu').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
       try { totalPhatSinh = JSON.parse(modalContent.querySelector('#inpJsonPhatSinh').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
 
-      var subtotal = totalBanTiec + totalThucUong + totalDichVu + totalPhatSinh + phiSanh + phiBanTang + phiTTS + phiNTL + phiPhucVu + phatSinh;
+      var subtotal = totalBanTiec + totalThucUong + totalDichVu + totalPhatSinh + phiSanh + phiBanTang + phiTTS + phiBuNTL + phiPhucVu + phatSinh;
       var tienVAT = Math.round(subtotal * (ptVAT / 100));
       var tongHoaDon = subtotal + tienVAT;
       var conLai = tongHoaDon - tongtiencoc - thanhtoan;
@@ -3641,7 +3788,7 @@ var QuyetToanPlugin = (function () {
         PhiBuSanh: phiSanh,
         PhiBuBantang: phiBanTang,
         PhiBuTTS: phiTTS,
-        PhiBuNTL: phiNTL,
+        PhiBuNTL: phiBuNTL,
         PhiPhucVu: phiPhucVu,
         PTThueVAT: ptVAT,
         TienThueVAT: tienVAT,

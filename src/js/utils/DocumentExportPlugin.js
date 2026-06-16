@@ -212,7 +212,7 @@ var DocumentExportPlugin = (function () {
       }
     }];
 
-    if (formName === 'frmHopDong') {
+    if (formName === 'frmHopDong' || formName === 'frmQuyetToan') {
       buttons.push({
         id: 'btn-export-phatsinh',
         text: 'Xuất BB Phát Sinh',
@@ -221,8 +221,8 @@ var DocumentExportPlugin = (function () {
         onClick: function () {
           var selectedRows = getSelectedRows();
           if (!selectedRows || selectedRows.length !== 1) {
-            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 Hợp Đồng duy nhất.');
-            else alert('Vui lòng chọn 1 Hợp Đồng!');
+            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng dữ liệu duy nhất.');
+            else alert('Vui lòng chọn 1 dòng dữ liệu!');
             return;
           }
           _generateDocument(selectedRows[0], {

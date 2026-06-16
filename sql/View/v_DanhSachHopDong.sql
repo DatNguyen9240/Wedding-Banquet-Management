@@ -36,11 +36,13 @@ SELECT
     ISNULL(h.TongSoBan, 0) AS [SoBan],
     
     (
-        SELECT TOP 1 s.Tensanhtiec 
-        FROM tbmk_Hopdongsanhtiec hs 
-        INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
-        WHERE hs.Sohopdong = h.Sohopdong
-        ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid
+        SELECT STUFF((
+            SELECT ', ' + ISNULL(s.Tensanhtiec, hs.Sanhtiecid)
+            FROM tbmk_Hopdongsanhtiec hs 
+            LEFT JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid 
+            WHERE hs.Sohopdong = h.Sohopdong
+            ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid
+            FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '')
     ) AS [SanhDat],
     ISNULL((
         SELECT s.Tensanhtiec 
@@ -132,43 +134,10 @@ SELECT
     ISNULL(h.SobanManduphong, 0) + ISNULL(h.SobanChayduphong, 0) AS [TiecSoBanDuPhong],
     ISNULL(h.SoNguoiTrenBan, 10) AS [TiecSoKhach1Ban],
 
-    -- 5. Thực đơn & Dịch vụ (Dạng JSON lồng nhau cho Table)
-    (
-        SELECT 
-            ROW_NUMBER() OVER(ORDER BY td.Thucdonid) AS [STT],
-            m.Tenmon AS [TenMon],
-            td.Soluong AS [SL],
-            td.Dongia AS [DG],
-            td.Soluong * td.Dongia AS [ThanhTien]
-        FROM tbmk_Hopdongthucdon td
-        INNER JOIN dmMonan m ON td.Monanid = m.Monanid
-        WHERE td.Sohopdong = h.Sohopdong
-        FOR JSON PATH
-    ) AS [DanhSachThucDon],
-
-    (
-        SELECT 
-            ROW_NUMBER() OVER(ORDER BY dv.Dichvuid) AS [STT],
-            d.Tendichvu AS [TenDichVu],
-            dv.Soluong AS [SL],
-            dv.Dongia AS [DG],
-            dv.Thanhtien AS [ThanhTien],
-            dv.Ghichu AS [GhiChu]
-        FROM tbmk_Hopdongdichvu dv
-        INNER JOIN dmDichvu d ON dv.Dichvuid = d.Dichvuid
-        WHERE dv.Sohopdong = h.Sohopdong AND dv.Dongia > 0
-        FOR JSON PATH
-    ) AS [DichVuTinhPhi],
-
-    (
-        SELECT 
-            d.Tendichvu AS [TenKhuyenMai],
-            dv.Ghichu AS [GhiChu]
-        FROM tbmk_Hopdongdichvu dv
-        INNER JOIN dmDichvu d ON dv.Dichvuid = d.Dichvuid
-        WHERE dv.Sohopdong = h.Sohopdong AND (dv.Dongia = 0 OR dv.Dongia IS NULL)
-        FOR JSON PATH
-    ) AS [DSKhuyenMai],
+    -- 5. Thực đơn & Dịch vụ (Tạm thời bỏ qua vì CSDL không có bảng tbmk_Hopdongthucdon)
+    NULL AS [DanhSachThucDon],
+    NULL AS [DichVuTinhPhi],
+    NULL AS [DSKhuyenMai],
 
     -- 6. Thanh toán & Đặt cọc
     FORMAT(h.Sotiencoccho, 'N0', 'vi-VN') AS [CocLan1SoTien],

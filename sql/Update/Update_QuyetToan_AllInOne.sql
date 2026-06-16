@@ -862,9 +862,9 @@ GO
 PRINT N'Đang đồng bộ cấu hình định tuyến WA_API cho frmQuyetToan và tbmk_Thaydoi...';
 GO
 
--- Quyết toán (View, Save, GetDetails)
+-- Quyết toán (View, Save, GetDetails, Delete)
 DELETE FROM WA_API 
-WHERE (List = 'frmQuyetToan' AND Func IN ('View', 'Save', 'GetDetails'));
+WHERE (List = 'frmQuyetToan' AND Func IN ('View', 'Save', 'GetDetails', 'Delete'));
 GO
 
 INSERT INTO WA_API (List, Func, [SQL], Para)
@@ -886,6 +886,12 @@ VALUES
     'GetDetails', 
     'API_LayChiTietQuyetToan', 
     '@Sohopdong=N''{Sohopdong}'', @Sothaydoi=N''{Sothaydoi}'', @DocumentID=N''{DocumentID}'''
+),
+(
+    'frmQuyetToan', 
+    'Delete', 
+    'API_XoaPhieuThu', 
+    '@Ids=N''{Keyword}'', @UserName=N''{User}'''
 );
 GO
 
