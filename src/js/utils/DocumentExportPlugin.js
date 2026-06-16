@@ -102,7 +102,7 @@ var DocumentExportPlugin = (function () {
 
     // Đọc tên file mẫu từ DB (được cấu hình trong bảng tbmk_LoaitiecAddfile qua View)
     var actualDocType = config.docType;
-    if (row.TemplateFile) {
+    if (row.TemplateFile && !config.ignoreTemplateFile) {
       actualDocType = row.TemplateFile;
     } else if (typeof config.getDocType === 'function') {
       actualDocType = config.getDocType(row);
@@ -178,7 +178,7 @@ var DocumentExportPlugin = (function () {
     var config = FORM_CONFIG[formName];
     if (!config) return [];
 
-    return [{
+    var buttons = [{
       id: 'btn-export-doc-' + config.docType,
       text: config.label,
       icon: config.icon,
@@ -211,6 +211,31 @@ var DocumentExportPlugin = (function () {
         _generateDocument(row, config);
       }
     }];
+
+    if (formName === 'frmHopDong') {
+      buttons.push({
+        id: 'btn-export-phatsinh',
+        text: 'Xuất BB Phát Sinh',
+        icon: 'post_add',
+        type: 'tool',
+        onClick: function () {
+          var selectedRows = getSelectedRows();
+          if (!selectedRows || selectedRows.length !== 1) {
+            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 Hợp Đồng duy nhất.');
+            else alert('Vui lòng chọn 1 Hợp Đồng!');
+            return;
+          }
+          _generateDocument(selectedRows[0], {
+            docType: 'phat_sinh.docx',
+            altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+            sqlListName: 'API_DanhSachPhatSinh',
+            ignoreTemplateFile: true
+          });
+        }
+      });
+    }
+
+    return buttons;
   }
 
   // Đăng ký Plugin vào hệ thống

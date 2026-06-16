@@ -202,10 +202,16 @@ var QuyetToanPlugin = (function () {
 
               <div class="row">
                 <div class="col-6 mb-3">
+                  <label class="form-label fw-bold">Số bàn phát sinh</label>
+                  <input type="number" id="inpBanPhatSinh" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
+                </div>
+                <div class="col-6 mb-3">
                   <label class="form-label fw-bold">Phí phục vụ tiệc (VND)</label>
                   <input type="number" id="inpPhiPhucVu" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
                 </div>
-                <div class="col-6 mb-3">
+              </div>
+              <div class="row">
+                <div class="col-12 mb-3">
                   <label class="form-label fw-bold">Chi phí phát sinh khác (VND)</label>
                   <input type="number" id="inpSotienphatsinh" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
                 </div>
@@ -322,6 +328,7 @@ var QuyetToanPlugin = (function () {
       modalContent.querySelector('#inpPhiPhucVu').value = existingSettlement.PhiPhucVu || 0;
       modalContent.querySelector('#inpSotienphatsinh').value = existingSettlement.Sotienphatsinh || 0;
       modalContent.querySelector('#inpPTThueVAT').value = existingSettlement.PTThueVAT || 0;
+      modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || existingSettlement.BanPhatSinh || contractRow.BanPhatSinh || 0;
       
       modalContent.querySelector('#inpThanhtoan').value = existingSettlement.Thanhtoan || 0;
       modalContent.querySelector('#chkIsKetthuc').checked = existingSettlement.IsKetthuc ? true : false;
@@ -330,6 +337,7 @@ var QuyetToanPlugin = (function () {
       modalContent.querySelector('#inpNguoinop').value = khachhang;
       modalContent.querySelector('#inpThanhtoan').value = 0;
       modalContent.querySelector('#chkIsKetthuc').checked = true;
+      modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || contractRow.BanPhatSinh || 0;
     }
 
     // Thiết lập hiển thị tiền cọc
@@ -418,9 +426,10 @@ var QuyetToanPlugin = (function () {
       var phiSanh = Number(modalContent.querySelector('#inpPhiBuSanh').value || 0);
       var phiBanTang = Number(modalContent.querySelector('#inpPhiBuBanTang').value || 0);
       var phiTTS = Number(modalContent.querySelector('#inpPhiBuTTS').value || 0);
-      var phiNTL = Number(modalContent.querySelector('#inpPhiBuNTL').value || 0);
+      var phiBuNTL = Number(modalContent.querySelector('#inpPhiBuNTL').value || 0);
       var phiPhucVu = Number(modalContent.querySelector('#inpPhiPhucVu').value || 0);
       var phatSinh = Number(modalContent.querySelector('#inpSotienphatsinh').value || 0);
+      var banPhatSinh = Number(modalContent.querySelector('#inpBanPhatSinh').value || 0);
 
       var ptVAT = Number(modalContent.querySelector('#inpPTThueVAT').value || 0);
       var thanhtoan = Number(modalContent.querySelector('#inpThanhtoan').value || 0);
@@ -434,7 +443,7 @@ var QuyetToanPlugin = (function () {
       try { totalDichVu = JSON.parse(modalContent.querySelector('#inpJsonDichVu').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
       try { totalPhatSinh = JSON.parse(modalContent.querySelector('#inpJsonPhatSinh').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
 
-      var subtotal = totalBanTiec + totalThucUong + totalDichVu + totalPhatSinh + phiSanh + phiBanTang + phiTTS + phiNTL + phiPhucVu + phatSinh;
+      var subtotal = totalBanTiec + totalThucUong + totalDichVu + totalPhatSinh + phiSanh + phiBanTang + phiTTS + phiBuNTL + phiPhucVu + phatSinh;
       var tienVAT = Math.round(subtotal * (ptVAT / 100));
       var tongHoaDon = subtotal + tienVAT;
       var conLai = tongHoaDon - tongtiencoc - thanhtoan;
@@ -457,10 +466,11 @@ var QuyetToanPlugin = (function () {
         UserName: currentUserName,
 
         Sotienphatsinh: phatSinh,
+        BanPhatSinh: banPhatSinh,
         PhiBuSanh: phiSanh,
         PhiBuBantang: phiBanTang,
         PhiBuTTS: phiTTS,
-        PhiBuNTL: phiNTL,
+        PhiBuNTL: phiBuNTL,
         PhiPhucVu: phiPhucVu,
         PTThueVAT: ptVAT,
         TienThueVAT: tienVAT,

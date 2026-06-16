@@ -17,8 +17,7 @@ CREATE PROCEDURE [dbo].[API_LuuQuyenToan]
     @IsKetthuc BIT = 0,
     @Ghichu NVARCHAR(500) = NULL,
     @User VARCHAR(50) = NULL,
-
-    -- Extra fields for settlement totals
+    @BanPhatSinh INT = 0,
     @Sotienphatsinh DECIMAL(18,2) = 0,
     @PhiBuSanh DECIMAL(18,2) = 0,
     @PhiBuBantang DECIMAL(18,2) = 0,
@@ -191,11 +190,16 @@ BEGIN
             );
         END
 
-        -- 6. Tự động cập nhật trạng thái của Hợp đồng nếu phiếu thu báo kết thúc
         IF @IsKetthuc = 1 AND @Sohopdong IS NOT NULL
         BEGIN
             UPDATE tbmk_Hopdong 
-            SET IsKetthuc = 1, Conlai = @Conlai
+            SET IsKetthuc = 1, Conlai = @Conlai, BanPhatSinh = @BanPhatSinh
+            WHERE Sohopdong = @Sohopdong;
+        END
+        ELSE IF @Sohopdong IS NOT NULL
+        BEGIN
+            UPDATE tbmk_Hopdong 
+            SET BanPhatSinh = @BanPhatSinh
             WHERE Sohopdong = @Sohopdong;
         END
 

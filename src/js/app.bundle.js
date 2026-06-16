@@ -1,4 +1,4 @@
-﻿/* --- mockData.js --- */
+/* --- mockData.js --- */
 /**
  * Mock Data
  * Dữ liệu mẫu dùng chung cho toàn bộ hệ thống trong lúc chờ tích hợp API thật
@@ -432,7 +432,7 @@ var DocumentExportPlugin = (function () {
 
     // Đọc tên file mẫu từ DB (được cấu hình trong bảng tbmk_LoaitiecAddfile qua View)
     var actualDocType = config.docType;
-    if (row.TemplateFile) {
+    if (row.TemplateFile && !config.ignoreTemplateFile) {
       actualDocType = row.TemplateFile;
     } else if (typeof config.getDocType === 'function') {
       actualDocType = config.getDocType(row);
@@ -508,7 +508,7 @@ var DocumentExportPlugin = (function () {
     var config = FORM_CONFIG[formName];
     if (!config) return [];
 
-    return [{
+    var buttons = [{
       id: 'btn-export-doc-' + config.docType,
       text: config.label,
       icon: config.icon,
@@ -541,6 +541,31 @@ var DocumentExportPlugin = (function () {
         _generateDocument(row, config);
       }
     }];
+
+    if (formName === 'frmHopDong') {
+      buttons.push({
+        id: 'btn-export-phatsinh',
+        text: 'Xuất BB Phát Sinh',
+        icon: 'post_add',
+        type: 'tool',
+        onClick: function () {
+          var selectedRows = getSelectedRows();
+          if (!selectedRows || selectedRows.length !== 1) {
+            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 Hợp Đồng duy nhất.');
+            else alert('Vui lòng chọn 1 Hợp Đồng!');
+            return;
+          }
+          _generateDocument(selectedRows[0], {
+            docType: 'phat_sinh.docx',
+            altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+            sqlListName: 'API_DanhSachPhatSinh',
+            ignoreTemplateFile: true
+          });
+        }
+      });
+    }
+
+    return buttons;
   }
 
   // Đăng ký Plugin vào hệ thống
@@ -3347,10 +3372,16 @@ var QuyetToanPlugin = (function () {
 
               <div class="row">
                 <div class="col-6 mb-3">
+                  <label class="form-label fw-bold">Số bàn phát sinh</label>
+                  <input type="number" id="inpBanPhatSinh" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
+                </div>
+                <div class="col-6 mb-3">
                   <label class="form-label fw-bold">Phí phục vụ tiệc (VND)</label>
                   <input type="number" id="inpPhiPhucVu" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
                 </div>
-                <div class="col-6 mb-3">
+              </div>
+              <div class="row">
+                <div class="col-12 mb-3">
                   <label class="form-label fw-bold">Chi phí phát sinh khác (VND)</label>
                   <input type="number" id="inpSotienphatsinh" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
                 </div>
@@ -3467,6 +3498,7 @@ var QuyetToanPlugin = (function () {
       modalContent.querySelector('#inpPhiPhucVu').value = existingSettlement.PhiPhucVu || 0;
       modalContent.querySelector('#inpSotienphatsinh').value = existingSettlement.Sotienphatsinh || 0;
       modalContent.querySelector('#inpPTThueVAT').value = existingSettlement.PTThueVAT || 0;
+      modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || existingSettlement.BanPhatSinh || contractRow.BanPhatSinh || 0;
       
       modalContent.querySelector('#inpThanhtoan').value = existingSettlement.Thanhtoan || 0;
       modalContent.querySelector('#chkIsKetthuc').checked = existingSettlement.IsKetthuc ? true : false;
@@ -3475,6 +3507,7 @@ var QuyetToanPlugin = (function () {
       modalContent.querySelector('#inpNguoinop').value = khachhang;
       modalContent.querySelector('#inpThanhtoan').value = 0;
       modalContent.querySelector('#chkIsKetthuc').checked = true;
+      modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || contractRow.BanPhatSinh || 0;
     }
 
     // Thiết lập hiển thị tiền cọc
@@ -3498,6 +3531,7 @@ var QuyetToanPlugin = (function () {
       var phiNTL = Number(modalContent.querySelector('#inpPhiBuNTL').value || 0);
       var phiPhucVu = Number(modalContent.querySelector('#inpPhiPhucVu').value || 0);
       var phatSinhManual = Number(modalContent.querySelector('#inpSotienphatsinh').value || 0);
+      var banPhatSinh = Number(modalContent.querySelector('#inpBanPhatSinh').value || 0);
 
       var subtotal = totalGrid + phiSanh + phiBanTang + phiTTS + phiNTL + phiPhucVu + phatSinhManual;
       
@@ -3566,6 +3600,7 @@ var QuyetToanPlugin = (function () {
       var phiNTL = Number(modalContent.querySelector('#inpPhiBuNTL').value || 0);
       var phiPhucVu = Number(modalContent.querySelector('#inpPhiPhucVu').value || 0);
       var phatSinh = Number(modalContent.querySelector('#inpSotienphatsinh').value || 0);
+      var banPhatSinh = Number(modalContent.querySelector('#inpBanPhatSinh').value || 0);
 
       var ptVAT = Number(modalContent.querySelector('#inpPTThueVAT').value || 0);
       var thanhtoan = Number(modalContent.querySelector('#inpThanhtoan').value || 0);
@@ -3602,6 +3637,7 @@ var QuyetToanPlugin = (function () {
         UserName: currentUserName,
 
         Sotienphatsinh: phatSinh,
+        BanPhatSinh: banPhatSinh,
         PhiBuSanh: phiSanh,
         PhiBuBantang: phiBanTang,
         PhiBuTTS: phiTTS,

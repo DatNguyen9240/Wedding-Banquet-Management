@@ -61,5 +61,13 @@ INSERT INTO tbmk_LoaitiecAddfile (FormName, Loaitiecid, TemplateFile, GhiChu) VA
 ('frmQuyetToan', 'BLT000004', N'4. BBNT VÀ QUYẾT TOÁN DỊCH VỤ - 0406 (DÙNG CHUNG CHO 2.1,2.2,3.1,3.2).docx', N'BBNT Hội Nghị - Triển Lãm'),
 ('frmQuyetToan', 'BLT000005', N'4. BBNT VÀ QUYẾT TOÁN DỊCH VỤ - 0406 (DÙNG CHUNG CHO 2.1,2.2,3.1,3.2).docx', N'BBNT Hội Nghị - Triển Lãm');
 
+-- 8. BIÊN BẢN GIAO MÓN PHÁT SINH (frmPhatSinh) -> phat_sinh.docx
+INSERT INTO tbmk_LoaitiecAddfile (FormName, Loaitiecid, TemplateFile, GhiChu) VALUES 
+('frmPhatSinh', 'BLT000001', N'phat_sinh.docx', N'Biên bản phát sinh Tiệc Cưới'),
+('frmPhatSinh', 'BLT000002', N'phat_sinh.docx', N'Biên bản phát sinh Hội Nghị - Triển Lãm'),
+('frmPhatSinh', 'BLT000003', N'phat_sinh.docx', N'Biên bản phát sinh Hội Nghị - Triển Lãm'),
+('frmPhatSinh', 'BLT000004', N'phat_sinh.docx', N'Biên bản phát sinh Hội Nghị - Triển Lãm'),
+('frmPhatSinh', 'BLT000005', N'phat_sinh.docx', N'Biên bản phát sinh Hội Nghị - Triển Lãm');
+
 GO
 PRINT '>> Đã xóa dữ liệu cũ và cập nhật lại toàn bộ File Mẫu (Template) thành công!';
