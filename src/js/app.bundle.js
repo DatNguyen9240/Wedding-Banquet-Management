@@ -567,6 +567,30 @@ var DocumentExportPlugin = (function () {
       });
     }
 
+    if (formName === 'frmQuyetToan') {
+      buttons.push({
+        id: 'btn-export-bbnt',
+        text: 'Xuất BB Nghiệm Thu',
+        icon: 'assignment_turned_in',
+        type: 'tool',
+        onClick: function () {
+          var selectedRows = getSelectedRows();
+          if (!selectedRows || selectedRows.length !== 1) {
+            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng dữ liệu duy nhất.');
+            else alert('Vui lòng chọn 1 dòng dữ liệu!');
+            return;
+          }
+          _generateDocument(selectedRows[0], {
+            docType: 'BBNT_Giao_Nhan_Tiec',
+            altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+            sqlListName: 'frmQuyetToan',
+            ignoreTemplateFile: true,
+            convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi']
+          });
+        }
+      });
+    }
+
     return buttons;
   }
 
@@ -2933,10 +2957,40 @@ var FoodSelectionPlugin = (function () {
  * Tự động tính toán tổng số bàn và tra cứu danh sách quà tặng ưu đãi (khuyến mãi)
  * dựa trên loại tiệc và số bàn chính thức. Tự động điền vào Ghi chú (đối với Phiếu cọc)
  * hoặc Khuyến mãi (đối với Hợp đồng).
+ * Đồng thời chặn lưu form và tô đỏ ô nhập liệu nếu số bàn không hợp lệ so với sảnh.
  */
 var PromotionAutoFillPlugin = (function () {
   var SUPPORTED_FORMS = ['frmBiennhancoccho', 'frmHopDong'];
   var debounceTimeout = null;
+  var hallCache = {};
+
+  // Tải và cache danh sách sảnh kèm sức chứa (Min/Max bàn)
+  function _ensureHallCache() {
+    if (Object.keys(hallCache).length > 0) {
+      return Promise.resolve(hallCache);
+    }
+    return ApiClient.post('/api/API_Gateway_Router', {
+      List: 'API_DanhSachSanh',
+      Func: 'View'
+    }).then(function (res) {
+      var records = (res && res.records) ? res.records : ((res && res.data) ? res.data : (Array.isArray(res) ? res : []));
+      records.forEach(function (r) {
+        var id = r['Mã sảnh'] || r.Sanhtiecid || r.id;
+        if (id) {
+          hallCache[id] = {
+            id: id,
+            name: r['Tên sảnh'] || r.Tensanhtiec || r.text || r.name,
+            min: Number(r['Bàn tối thiểu (Min)'] || r.SLBanMin || 0),
+            max: Number(r['Bàn tối đa (Max)'] || r.SLBanMax || 0)
+          };
+        }
+      });
+      return hallCache;
+    }).catch(function (err) {
+      console.error('[PromotionAutoFillPlugin] Lỗi tải danh sách sảnh:', err);
+      return hallCache;
+    });
+  }
 
   function _getFormFields(modalContent, formName) {
     var loaiTiecEl = modalContent.querySelector('[name="Loaitiecid"]');
@@ -2958,6 +3012,120 @@ var PromotionAutoFillPlugin = (function () {
     };
   }
 
+  function _showErrorLabel(inputEl, msg) {
+    if (!inputEl) return;
+    var container = inputEl.parentNode;
+    if (!container) return;
+
+    var errLabel = container.querySelector('.promo-error-label');
+    if (!errLabel) {
+      errLabel = document.createElement('div');
+      errLabel.className = 'promo-error-label';
+      errLabel.style.cssText = 'color: #ef4444; font-size: 11px; margin-top: 4px; font-weight: 600; display: flex; align-items: center; gap: 4px; line-height: 1.2;';
+    }
+    errLabel.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px; color:#ef4444; font-variation-settings:\'FILL\' 1;">error</span>' + msg;
+    
+    // Chèn ngay dưới inputEl
+    if (inputEl.nextSibling) {
+      container.insertBefore(errLabel, inputEl.nextSibling);
+    } else {
+      container.appendChild(errLabel);
+    }
+  }
+
+  function _clearErrorLabel(inputEl) {
+    if (!inputEl) return;
+    var container = inputEl.parentNode;
+    if (!container) return;
+    var errLabel = container.querySelector('.promo-error-label');
+    if (errLabel) {
+      errLabel.remove();
+    }
+  }
+
+  // Thực thi kiểm tra lỗi trực quan (tô đỏ ô nhập liệu) ngay lập tức
+  function _validateLive(modalContent, formName) {
+    var fields = _getFormFields(modalContent, formName);
+    var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]');
+    if (!fields.banManEl) return;
+
+    var clearError = function () {
+      fields.banManEl.style.removeProperty('border-color');
+      fields.banManEl.style.removeProperty('background-color');
+      fields.banManEl.removeAttribute('title');
+      _clearErrorLabel(fields.banManEl);
+      if (fields.banChayEl) {
+        fields.banChayEl.style.removeProperty('border-color');
+        fields.banChayEl.style.removeProperty('background-color');
+        fields.banChayEl.removeAttribute('title');
+        _clearErrorLabel(fields.banChayEl);
+      }
+    };
+
+    if (!sanhInput || !sanhInput.value) {
+      clearError();
+      return;
+    }
+
+    var banMan = Number(fields.banManEl.value || 0);
+    var banChay = fields.banChayEl ? Number(fields.banChayEl.value || 0) : 0;
+    var totalTables = banMan + banChay;
+
+    var selectedIds = sanhInput.value.split(',').map(function (id) { return id.trim(); }).filter(Boolean);
+    if (selectedIds.length === 0) {
+      clearError();
+      return;
+    }
+
+    var totalMin = 0;
+    var totalMax = 0;
+    var names = [];
+    var hasValidCache = false;
+
+    selectedIds.forEach(function (id) {
+      var hall = hallCache[id];
+      if (hall) {
+        totalMin += hall.min;
+        totalMax += hall.max;
+        names.push(hall.name);
+        hasValidCache = true;
+      }
+    });
+
+    if (!hasValidCache) {
+      clearError();
+      return;
+    }
+
+    var isInvalid = (totalMin > 0 && totalTables < totalMin) || (totalMax > 0 && totalTables > totalMax);
+
+    if (isInvalid) {
+      var msg = '';
+      var shortMsg = '';
+      if (totalMin > 0 && totalTables < totalMin) {
+        msg = 'Tổng số bàn chính thức (' + totalTables + ' bàn) nhỏ hơn số bàn tối thiểu của sảnh ' + names.join(', ') + ' là ' + totalMin + ' bàn.';
+        shortMsg = 'Tổng ' + totalTables + ' bàn (Tối thiểu: ' + totalMin + ')';
+      } else if (totalMax > 0 && totalTables > totalMax) {
+        msg = 'Tổng số bàn chính thức (' + totalTables + ' bàn) vượt quá số bàn tối đa của sảnh ' + names.join(', ') + ' là ' + totalMax + ' bàn.';
+        shortMsg = 'Tổng ' + totalTables + ' bàn (Tối đa: ' + totalMax + ')';
+      }
+
+      fields.banManEl.style.setProperty('border-color', '#ef4444', 'important');
+      fields.banManEl.style.setProperty('background-color', 'rgba(239, 68, 68, 0.08)', 'important');
+      fields.banManEl.setAttribute('title', msg);
+      _showErrorLabel(fields.banManEl, shortMsg);
+
+      if (fields.banChayEl) {
+        fields.banChayEl.style.setProperty('border-color', '#ef4444', 'important');
+        fields.banChayEl.style.setProperty('background-color', 'rgba(239, 68, 68, 0.08)', 'important');
+        fields.banChayEl.setAttribute('title', msg);
+        _showErrorLabel(fields.banChayEl, shortMsg);
+      }
+    } else {
+      clearError();
+    }
+  }
+
   function _fetchAndFill(modalContent, formName) {
     var fields = _getFormFields(modalContent, formName);
     if (!fields.loaiTiecEl || !fields.targetEl) return;
@@ -2974,8 +3142,11 @@ var PromotionAutoFillPlugin = (function () {
     var payload = {
       List: 'API_LayDichVuUuDaiTheoLoaiTiec',
       Func: 'View',
-      Loaitiecid: loaiTiec,
-      Soluongban: totalTables
+      JsonData: JSON.stringify({
+        Loaitiecid: loaiTiec,
+        Soluongban: totalTables,
+        Nhahangid: ''
+      })
     };
 
     ApiClient.post('/api/API_Gateway_Router', payload)
@@ -2985,11 +3156,59 @@ var PromotionAutoFillPlugin = (function () {
           return;
         }
 
-        // Format danh sách khuyến mãi
+        // Format danh sách khuyến mãi với cơ chế fallback thông minh
         var formatted = records.map(function (item, idx) {
-          var qty = Number(item.Soluong || 1);
+          var qty = Number(item.Soluong || item.soluong || 1);
           var qtyStr = qty > 1 ? ' (SL: ' + qty + ')' : '';
-          return (idx + 1) + '. ' + item.Tenhang + qtyStr;
+          
+          // 1. Thử lấy từ các cột tên quen thuộc
+          var name = item.Tenhang || item.TenHang || item.tenhang || item.tenHang || item.TenMon || item.tenMon || item.Tenmon || item.tenmon || '';
+          
+          // 2. Nếu trống, tìm cột nào có chứa chữ 'ten', 'name', 'diengiai', 'desc'
+          if (!name) {
+            var keys = Object.keys(item);
+            for (var i = 0; i < keys.length; i++) {
+              var k = keys[i];
+              var kl = k.toLowerCase();
+              if (kl.indexOf('ten') > -1 || kl.indexOf('name') > -1 || kl.indexOf('diengiai') > -1 || kl.indexOf('desc') > -1) {
+                name = item[k];
+                break;
+              }
+            }
+          }
+          
+          // 3. Nếu vẫn trống, thử lấy từ cột mã hàng quen thuộc
+          if (!name) {
+            name = item.Mahang || item.mahang || item.MaHang || item.maHang || '';
+          }
+          
+          // 4. Nếu vẫn trống, tìm cột nào có chứa chữ 'ma', 'code', 'id' (trừ cột ID hệ thống)
+          if (!name) {
+            var keys = Object.keys(item);
+            for (var i = 0; i < keys.length; i++) {
+              var k = keys[i];
+              var kl = k.toLowerCase();
+              if (kl !== 'userautoid' && kl !== 'documentid' && (kl.indexOf('ma') > -1 || kl.indexOf('id') > -1 || kl.indexOf('code') > -1)) {
+                name = item[k];
+                break;
+              }
+            }
+          }
+
+          // 5. Cuối cùng, nếu vẫn trống, lấy bất kỳ trường nào khác rỗng và không phải ID hệ thống
+          if (!name) {
+            var keys = Object.keys(item);
+            for (var i = 0; i < keys.length; i++) {
+              var k = keys[i];
+              var kl = k.toLowerCase();
+              if (kl !== 'userautoid' && kl !== 'documentid' && kl !== 'stt' && item[k]) {
+                name = item[k];
+                break;
+              }
+            }
+          }
+
+          return (idx + 1) + '. ' + (name || 'Ưu đãi') + qtyStr;
         }).join('\n');
 
         var currentVal = fields.targetEl.value ? fields.targetEl.value.trim() : '';
@@ -3033,6 +3252,8 @@ var PromotionAutoFillPlugin = (function () {
     if (!fields.loaiTiecEl) return;
 
     var handler = function () {
+      _validateLive(modalContent, formName); // Thực thi kiểm tra tô đỏ trực quan ngay lập tức
+
       if (debounceTimeout) clearTimeout(debounceTimeout);
       debounceTimeout = setTimeout(function () {
         _fetchAndFill(modalContent, formName);
@@ -3048,6 +3269,79 @@ var PromotionAutoFillPlugin = (function () {
       fields.banChayEl.addEventListener('input', handler);
       fields.banChayEl.addEventListener('change', handler);
     }
+
+    // Lắng nghe thêm cả sự thay đổi của Sảnh để kích hoạt nạp lại khuyến mãi khi Auto-fill điền bàn
+    var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]');
+    if (sanhInput) {
+      sanhInput.addEventListener('change', handler);
+    }
+
+    // Thực thi check live một lần khi mới mở form
+    _validateLive(modalContent, formName);
+  }
+
+  // Intercept nút Lưu/Thêm để thực thi chặn nếu số bàn không hợp lệ
+  function _bindValidation(modalContent, formName) {
+    var actualModal = modalContent.closest('.modal-content') || modalContent;
+    var saveBtn = actualModal.querySelector('.btn-primary');
+    if (!saveBtn) return;
+
+    if (saveBtn.dataset.promoValidationBound === '1') return;
+    saveBtn.dataset.promoValidationBound = '1';
+
+    saveBtn.addEventListener('click', function (e) {
+      var fields = _getFormFields(modalContent, formName);
+      var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]');
+      if (!sanhInput || !sanhInput.value) return; // Không chọn sảnh => không chặn
+
+      var banMan = fields.banManEl ? Number(fields.banManEl.value || 0) : 0;
+      var banChay = fields.banChayEl ? Number(fields.banChayEl.value || 0) : 0;
+      var totalTables = banMan + banChay;
+
+      var selectedIds = sanhInput.value.split(',').map(function (id) { return id.trim(); }).filter(Boolean);
+      if (selectedIds.length === 0) return;
+
+      var totalMin = 0;
+      var totalMax = 0;
+      var names = [];
+      var hasValidCache = false;
+
+      selectedIds.forEach(function (id) {
+        var hall = hallCache[id];
+        if (hall) {
+          totalMin += hall.min;
+          totalMax += hall.max;
+          names.push(hall.name);
+          hasValidCache = true;
+        }
+      });
+
+      if (!hasValidCache) return; // Nếu chưa kịp load cache sảnh => bỏ qua chặn để an toàn
+
+      if (totalMin > 0 && totalTables < totalMin) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var errMsg = 'Tổng số bàn chính thức (' + totalTables + ' bàn) nhỏ hơn số bàn tối thiểu của sảnh ' + names.join(', ') + ' là ' + totalMin + ' bàn.';
+        if (typeof Alert !== 'undefined') {
+          Alert.error('Lỗi số lượng bàn', errMsg);
+        } else {
+          alert(errMsg);
+        }
+        return false;
+      }
+
+      if (totalMax > 0 && totalTables > totalMax) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var errMsg = 'Tổng số bàn chính thức (' + totalTables + ' bàn) vượt quá số bàn tối đa của sảnh ' + names.join(', ') + ' là ' + totalMax + ' bàn.';
+        if (typeof Alert !== 'undefined') {
+          Alert.error('Lỗi số lượng bàn', errMsg);
+        } else {
+          alert(errMsg);
+        }
+        return false;
+      }
+    }, true); // Dùng capture phase để chạy chặn trước onclick mặc định
   }
 
   var _observer = null;
@@ -3072,12 +3366,15 @@ var PromotionAutoFillPlugin = (function () {
             var modalContentEl = formBody.closest('.modal-content') || formBody;
             var formName = formBody.getAttribute('data-form-name');
             
+            // Đảm bảo cache sảnh đã được tải trước khi người dùng kịp tương tác
+            _ensureHallCache();
+
             var checkInterval = setInterval(function () {
-              // Chờ cho các control input xuất hiện trong form động
               var loaiTiecEl = modalContentEl.querySelector('[name="Loaitiecid"]');
               if (loaiTiecEl) {
                 clearInterval(checkInterval);
                 _bindForm(modalContentEl, formName);
+                _bindValidation(modalContentEl, formName);
               }
             }, 100);
             setTimeout(function () { clearInterval(checkInterval); }, 5000);
@@ -3089,7 +3386,6 @@ var PromotionAutoFillPlugin = (function () {
     _observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  // Khởi chạy khi load plugin
   init();
 
   return {

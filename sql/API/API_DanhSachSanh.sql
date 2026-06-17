@@ -11,7 +11,7 @@ GO
 -- Create date: 2026-04-29
 -- Description: API Lấy danh sách Sảnh Tiệc đang hoạt động
 -- =============================================
-CREATE PROCEDURE [dbo].[API_DanhSachSanh]
+CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachSanh]
     @Keyword NVARCHAR(100) = ''
 AS
 BEGIN
@@ -19,7 +19,10 @@ BEGIN
 
     SELECT 
         Sanhtiecid AS [Mã sảnh],
-        Tensanhtiec AS [Tên sảnh]
+        Tensanhtiec AS [Tên sảnh],
+        SLBanMin AS [Bàn tối thiểu (Min)],
+        SLBanMax AS [Bàn tối đa (Max)],
+        SLBanMin AS [SobanManchinhthuc]
     FROM dmSanhtiec
     WHERE (IsTamngung = 0 OR IsTamngung IS NULL)
       AND (@Keyword = '' OR Tensanhtiec LIKE N'%' + @Keyword + '%' OR Sanhtiecid LIKE '%' + @Keyword + '%')

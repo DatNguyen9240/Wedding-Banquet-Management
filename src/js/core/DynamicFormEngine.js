@@ -1882,7 +1882,7 @@ window.DynamicFormEngine = (function () {
         inputEl = UIInput.createDate(field);
       } else if (field.renderRule === 'tm' || field.renderRule === 'time') {
         inputEl = UIInput.createTime(field);
-      } else if ((field.renderRule === 'sl' || field.renderRule === 'select' || field.renderRule === 'ml') && field.dataSource) {
+      } else if ((field.renderRule === 'sl' || field.renderRule === 'sr' || field.renderRule === 'select' || field.renderRule === 'ml') && field.dataSource) {
         var formGroupWrapper = document.createElement('div');
         formGroupWrapper.className = 'form-group';
 
@@ -1926,7 +1926,7 @@ window.DynamicFormEngine = (function () {
               placeholder: '-- Vui lòng chọn --',
               headers: ['Mã', 'Tên'],
               disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
-              readonlyInput: field.renderRule === 'ml',
+              readonlyInput: field.renderRule === 'ml' || field.renderRule === 'sr',
               multiple: field.renderRule === 'ml',
               getValue: function () { return hiddenInput.value; },
               onSearch: function (q, page) {
@@ -2051,15 +2051,15 @@ window.DynamicFormEngine = (function () {
               placeholder: '-- Vui lòng chọn --',
               headers: ['Mã', 'Tên'],
               disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
-              showAddNew: true, // Bật nút Thêm mới
-              readonlyInput: field.renderRule === 'ml',
+              showAddNew: field.renderRule !== 'sr', // Bật nút Thêm mới nếu không phải readonly
+              readonlyInput: field.renderRule === 'ml' || field.renderRule === 'sr',
               multiple: field.renderRule === 'ml',
               onF2: function () {
                 lazyCombo.querySelector('.ui-input').focus();
               },
               getValue: function () { return hiddenInput.value; },
               onSearch: searchApiCall,
-              onChange: function (val) { hiddenInput.value = val; }, // Hỗ trợ gõ tay
+              onChange: function (val) { if (field.renderRule !== 'sr') hiddenInput.value = val; }, // Hỗ trợ gõ tay nếu không phải readonly
               onSelect: function (row) {
                 hiddenInput.value = row[0];
 

@@ -237,6 +237,30 @@ var DocumentExportPlugin = (function () {
       });
     }
 
+    if (formName === 'frmQuyetToan') {
+      buttons.push({
+        id: 'btn-export-bbnt',
+        text: 'Xuất BB Nghiệm Thu',
+        icon: 'assignment_turned_in',
+        type: 'tool',
+        onClick: function () {
+          var selectedRows = getSelectedRows();
+          if (!selectedRows || selectedRows.length !== 1) {
+            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng dữ liệu duy nhất.');
+            else alert('Vui lòng chọn 1 dòng dữ liệu!');
+            return;
+          }
+          _generateDocument(selectedRows[0], {
+            docType: 'BBNT_Giao_Nhan_Tiec',
+            altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
+            sqlListName: 'frmQuyetToan',
+            ignoreTemplateFile: true,
+            convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi']
+          });
+        }
+      });
+    }
+
     return buttons;
   }
 
