@@ -3,8 +3,8 @@ services:
   backend-app:
     build: ./backend-app
     container_name: backend_app
-    expose:
-      - "8081"
+    ports:
+      - "8081:8081"
     volumes:
       - ./backend-app/uploads:/app/uploads
       - ./backend-app/samples:/app/samples
@@ -14,34 +14,9 @@ services:
   onlyoffice:
     image: onlyoffice/documentserver:latest
     container_name: onlyoffice_server
-    expose:
-      - "80"
-    environment:
-      - JWT_ENABLED=false
-    restart: always
-
-  nginx:
-    image: nginx:alpine
-    container_name: nginx_proxy
     ports:
-      - "8070:443"
-    volumes:
-      # Config nginx
-      - ./backend-app/nginx/conf.d:/etc/nginx/conf.d:ro
-    entrypoint: >
-      /bin/sh -c "
-      mkdir -p /etc/nginx/ssl &&
-      if [ ! -f /etc/nginx/ssl/server.crt ]; then
-        echo 'Generating self-signed SSL certificate...' &&
-        apk add --no-cache openssl &&
-        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-          -keyout /etc/nginx/ssl/server.key \
-          -out /etc/nginx/ssl/server.crt \
-          -subj '/CN=103.190.38.46';
-      fi &&
-      nginx -g 'daemon off;'
-      "
-    depends_on:
-      - backend-app
-      - onlyoffice
+      - "8082:80"
+    environment:
+      # Tắt JWT đi để anh dễ test trên Localhost không bị lỗi chặn Token
+      - JWT_ENABLED=false
     restart: always
