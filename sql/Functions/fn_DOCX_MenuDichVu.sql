@@ -261,10 +261,13 @@ BEGIN
         SELECT
             ROW_NUMBER() OVER (ORDER BY hd.STT, hd.Mahang) AS [STT],
             ISNULL(hh.Tenhang, hd.Mahang) AS [DienGiai],
+            N'' AS [ChiTiet],
             ISNULL(hh.DVTID, N'') AS [DVT],
             FORMAT(ISNULL(hd.Soluong, 0), 'G29') AS [SoLuong],
             FORMAT(ISNULL(hd.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
-            FORMAT(ISNULL(hd.Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien]
+            N'' AS [UuDai],
+            FORMAT(ISNULL(hd.Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien],
+            1 AS [IsData]
         FROM tbmk_Hopdongdichvu hd
         LEFT JOIN dmHanghoa hh ON hd.Mahang = hh.Mahang
         WHERE hd.Sohopdong = @Sohopdong

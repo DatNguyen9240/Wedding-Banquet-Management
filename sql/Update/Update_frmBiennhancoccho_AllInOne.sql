@@ -112,13 +112,6 @@ SELECT
           FOR XML PATH('')
       ), 1, 1, '') AS [JsonSanhTiec],
     
-    (
-        SELECT Sanhtiecid, IsSanhchinh 
-        FROM tbmk_Biennhancocchosanhtiec 
-        WHERE DocumentID = b.DocumentID 
-          AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
-        FOR JSON PATH
-    ) AS [_JsonSanhTiec],
     
     -- FORMAT NGÀY THÁNG LẬP PHIẾU ĐỂ XUẤT WORD
     RIGHT('0' + CAST(DAY(b.DocumentDate) AS VARCHAR), 2) AS [NgayLapHD],
@@ -236,13 +229,6 @@ BEGIN
             END, 0
         ) AS [Sotiencochopdong],
         
-        (
-            SELECT Sanhtiecid, IsSanhchinh 
-            FROM tbmk_Biennhancocchosanhtiec 
-            WHERE DocumentID = b.DocumentID 
-              AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
-            FOR JSON PATH
-        ) AS [_JsonSanhTiec],
         STUFF((
           SELECT ',' + Sanhtiecid 
           FROM tbmk_Biennhancocchosanhtiec 
@@ -883,7 +869,7 @@ WHERE FormName = 'frmBiennhancoccho'
   AND FieldName IN (
     'DocumentID', 'MaChungTu', 'Sohopdong', 'Makh', 'TemplateFile', 
     'TenKhachHang', 'BenBTenDaiDien', 'BenBDiaChi', 'BenBDienThoai', 'BenBEmail', 
-    'DienThoai', 'SoBan', '_JsonSanhTiec', 
+    'DienThoai', 'SoBan', 
     'NgayLapHD', 'ThangLapHD', 'NamLapHD', 
     'HDTenCty', 'HDDiaChi', 'HDMaSoThue', 'HDEmail', 'TrangThai', 'Tenkh', 'GoiTiec'
   );

@@ -71,7 +71,7 @@ VALUES
 ('frmKhuyenMai', 'Delete', 'API_XoaDong', '@List=N''frmKhuyenMai'', @Ids=N''{DocumentID}'', @UserName=N''{User}''');
 
 -- Cập nhật Menu URLPara
-UPDATE WA_Menu SET FormName = 'frmKhuyenMai' WHERE URLPara = 'khuyenmai';
+UPDATE WA_Menu SET FormName = 'frmKhuyenMai', URLPara = '#/khuyenmai' WHERE URLPara = 'khuyenmai' OR URLPara = '#/khuyenmai';
 GO
 
 -- =========================================================================

@@ -126,7 +126,8 @@ BEGIN
                 ISNULL(CAST(s.SLBanMax AS NVARCHAR), N'0') AS [SoBanMax],
                 ISNULL(CAST(s.SLBanMin * 10 AS NVARCHAR), N'0') AS [SucchuaMin],
                 ISNULL(CAST(s.SLBanMax * 10 AS NVARCHAR), N'0') AS [SucchuaMax],
-                ISNULL(hs.Ghichuct, N'') AS [GhiChu]
+                ISNULL(hs.Ghichuct, N'') AS [GhiChu],
+                CASE ROW_NUMBER() OVER (ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid) WHEN 1 THEN 1 ELSE 0 END AS [IsFirst]
             FROM tbmk_Hopdongsanhtiec hs
             INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid
             WHERE hs.Sohopdong = h.Sohopdong
@@ -137,8 +138,14 @@ BEGIN
         (
             SELECT
                 ROW_NUMBER() OVER (ORDER BY src.sort_order, src.TenHang) AS [STT],
-                src.TenHang AS [NoiDung],
-                FORMAT(ISNULL(src.Dongia, 0), 'N0', 'vi-VN') AS [DonGia]
+                src.TenHang AS [DienGiai],
+                N'' AS [ChiTiet],
+                N'' AS [DVT],
+                N'' AS [SoLuong],
+                FORMAT(ISNULL(src.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
+                N'' AS [UuDai],
+                FORMAT(ISNULL(src.Dongia, 0), 'N0', 'vi-VN') AS [ThanhTien],
+                1 AS [IsData]
             FROM (
                 SELECT ISNULL(hh.Tenhang, td.Mahang) AS TenHang, td.Dongia, 1 AS sort_order
                 FROM tbmk_Hopdongthucdonman td
@@ -156,7 +163,19 @@ BEGIN
                 WHERE dv.Sohopdong = h.Sohopdong
             ) src
             FOR JSON PATH
-        ) AS [DanhSachThamKhao]
+        ) AS [DanhSachThamKhao],
+
+        -- Thêm fields scalar bổ sung cho DOCX
+        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Hotline') AS [HotlineWebsiteNhaHang],
+        ISNULL((
+            SELECT TOP 1 tg.Thoigian
+            FROM dmThoigian tg
+            WHERE tg.Thoigianid = h.Thoigianid
+        ), ISNULL(h.Thoigianid, N'')) AS [ThoiGian],
+        0 AS [PhiPhucVu],
+        0 AS [VAT8],
+        0 AS [VAT10],
+        ISNULL(h.Tongtienhopdong, 0) AS [TongCongChuaVAT]
 
     FROM tbmk_Hopdong h
     LEFT JOIN dmkhachhang k ON h.Makh = k.Makh
