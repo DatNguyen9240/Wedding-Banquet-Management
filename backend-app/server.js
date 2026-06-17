@@ -111,6 +111,19 @@ let _setupCache = null;
 let _setupCacheTime = 0;
 const SETUP_CACHE_TTL = 5 * 60 * 1000; // 5 phút
 
+/** Helper function to execute axios requests with retries */
+async function axiosGetWithRetry(url, config = {}, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await axios.get(url, config);
+        } catch (err) {
+            if (i === retries - 1) throw err;
+            console.warn(`[HTTP RETRY] Lần thử ${i + 1} thất bại cho ${url}: ${err.message}. Thử lại sau ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+}
+
 /** Lấy thông tin nhà hàng từ API_LayGiaTriSetup (có cache) */
 async function fetchSetupInfo(authToken) {
     const now = Date.now();
@@ -119,7 +132,7 @@ async function fetchSetupInfo(authToken) {
         const url = `${SQL_API_BASE}/api/API_LayGiaTriSetup`;
         const headers = {};
         if (authToken) headers['Authorization'] = authToken;
-        const resp = await axios.get(url, { headers, timeout: 8000 });
+        const resp = await axiosGetWithRetry(url, { headers, timeout: 8000 }, 3, 1000);
         const json = resp.data;
         // API_LayGiaTriSetup trả về rows có CodeID + CodeValue (xem SQL)
         const rows = json.records || (Array.isArray(json) ? json : []);
@@ -151,10 +164,14 @@ async function fetchFromSQLAPI(listName, keyword, authToken) {
     console.log(`[SQL API] Gọi: ${listName} | Keyword: ${keyword}`);
     const headers = {};
     if (authToken) headers['Authorization'] = authToken;
-    const resp = await axios.get(url, { headers, timeout: 10000 });
-    const json = resp.data;
-    if (json && json.records && json.records.length > 0) return json.records[0];
-    if (json && json.code === 0) return json;
+    try {
+        const resp = await axiosGetWithRetry(url, { headers, timeout: 10000 }, 3, 1000);
+        const json = resp.data;
+        if (json && json.records && json.records.length > 0) return json.records[0];
+        if (json && json.code === 0) return json;
+    } catch (err) {
+        console.error(`[SQL API] Lỗi khi gọi ${listName}:`, err.message);
+    }
     return null;
 }
 

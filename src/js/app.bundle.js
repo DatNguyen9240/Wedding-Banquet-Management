@@ -4611,9 +4611,8 @@ var QuyetToanPlugin = (function () {
       var gridPhiBuNTL = getVal(existingSettlement, 'PhiBuNTL');
       modalContent.querySelector('#inpPhiBuNTL').value = detPhiBuNTL !== undefined && detPhiBuNTL !== null && detPhiBuNTL !== '' ? detPhiBuNTL : (gridPhiBuNTL || 0);
       
-      var gridRawPhiPhucVu = getVal(existingSettlement, 'RawPhiPhucVu');
       var gridPhiPhucVu = getVal(existingSettlement, 'PhiPhucVu');
-      var savedPhiPhucVu = gridRawPhiPhucVu !== undefined && gridRawPhiPhucVu !== '' ? Number(gridRawPhiPhucVu) : parseMoney(gridPhiPhucVu);
+      var savedPhiPhucVu = parseMoney(gridPhiPhucVu);
       var detPhiPhucVu = getVal(details, 'PhiPhucVu');
       modalContent.querySelector('#inpPhiPhucVu').value = detPhiPhucVu !== undefined && detPhiPhucVu !== null && detPhiPhucVu !== '' ? detPhiPhucVu : (savedPhiPhucVu || 0);
       
@@ -4803,7 +4802,6 @@ var QuyetToanPlugin = (function () {
         PhiBuTTS: phiTTS,
         PhiBuNTL: phiBuNTL,
         PhiPhucVu: phiPhucVu,
-        RawPhiPhucVu: phiPhucVu,
         PTThueVAT: ptVAT,
         TienThueVAT: tienVAT,
 

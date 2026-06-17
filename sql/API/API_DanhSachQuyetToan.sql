@@ -1,4 +1,4 @@
-﻿CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachQuyetToan]
+CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachQuyetToan]
     @Keyword NVARCHAR(100) = NULL,
     @DocumentID VARCHAR(50) = NULL,
     @Sohopdong VARCHAR(50) = NULL
