@@ -24,10 +24,23 @@ services:
     image: nginx:alpine
     container_name: nginx_proxy
     ports:
-      - "8070:80"
+      - "8070:443"
     volumes:
       # Config nginx
       - ./backend-app/nginx/conf.d:/etc/nginx/conf.d:ro
+    entrypoint: >
+      /bin/sh -c "
+      mkdir -p /etc/nginx/ssl &&
+      if [ ! -f /etc/nginx/ssl/server.crt ]; then
+        echo 'Generating self-signed SSL certificate...' &&
+        apk add --no-cache openssl &&
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+          -keyout /etc/nginx/ssl/server.key \
+          -out /etc/nginx/ssl/server.crt \
+          -subj '/CN=103.190.38.46';
+      fi &&
+      nginx -g 'daemon off;'
+      "
     depends_on:
       - backend-app
       - onlyoffice

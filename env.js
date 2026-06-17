@@ -24,8 +24,8 @@ const ENV_VARS = {
     get DOCSERVER_BASE() {
         var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
         if (isHttps) {
-            // Production: proxy qua nginx của IIS -> forward sang Docker 8070
-            return 'https://qlt.bms79.com/docserver';
+            // Production: gọi trực tiếp qua HTTPS tự ký của Docker trên cổng 8070
+            return 'https://' + this.BACKEND_HOST + ':8070/docserver';
         }
         // Local dev: gọi qua Nginx port 8070
         return 'http://' + this.BACKEND_HOST + ':8070/docserver';
@@ -50,7 +50,7 @@ window.API_CONFIG = {
             get ONLYOFFICE_API() {
                 var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
                 if (isHttps) {
-                    return 'https://qlt.bms79.com/onlyoffice/web-apps/apps/api/documents/api.js';
+                    return 'https://' + ENV_VARS.ONLYOFFICE_HOST + ':8070/onlyoffice/web-apps/apps/api/documents/api.js';
                 }
                 return 'http://' + ENV_VARS.ONLYOFFICE_HOST + ':8070/onlyoffice/web-apps/apps/api/documents/api.js';
             },
