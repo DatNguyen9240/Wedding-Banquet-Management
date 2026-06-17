@@ -2709,7 +2709,12 @@ var FoodSelectionPlugin = (function () {
     modalContent.dataset.foodPluginDone = '1';
 
     // Cho modal rộng ra vừa phải để hiển thị bảng đối chiếu/thực đơn đẹp hơn (không quá rộng 1200px)
-    modalContent.style.width = '1050px';
+    var actualModal = modalContent.closest('.modal-content');
+    if (actualModal) {
+      actualModal.style.width = '1150px';
+    } else {
+      modalContent.style.width = '1150px';
+    }
 
     activeModal = modalContent;
 
@@ -2720,6 +2725,58 @@ var FoodSelectionPlugin = (function () {
 
     // 2. Quét đọc dữ liệu hiện có
     _readInputs(modalContent);
+
+    // 2.5 Lắng nghe sự thay đổi của Gói tiệc (GoiThucDonID)
+    var selectGoiThucDon = modalContent.querySelector('[name="GoiThucDonID"]');
+    if (selectGoiThucDon) {
+      selectGoiThucDon.addEventListener('change', function (event) {
+        var goiThucDonId = this.value;
+        if (!goiThucDonId) return;
+
+        var hasExisting = selectedFoodsMan.length > 0 || selectedFoodsChay.length > 0 || selectedThucUong.length > 0 || selectedDichVu.length > 0;
+        
+        // Tránh ghi đè/hỏi han khi load form sửa (sự kiện programmatic change khi đã có dữ liệu món)
+        if (!event.isTrusted) {
+          if (hasExisting) {
+            // Đây là lúc load dữ liệu cũ của Hợp đồng/Quyết toán, không được ghi đè
+            return;
+          }
+        } else {
+          // Người dùng trực tiếp thao tác click chọn gói trên UI
+          if (hasExisting && !confirm('Bạn có muốn tự động tải thực đơn mẫu từ gói này không? Thực đơn hiện tại sẽ bị ghi đè.')) {
+            return;
+          }
+        }
+
+        _loadCatalog().then(function (catalog) {
+          // Lọc ra các món ăn thuộc Gói thực đơn
+          var matchedItems = catalog.filter(function (item) {
+            return item.GoiThucDonID === goiThucDonId;
+          });
+
+          if (matchedItems.length === 0) {
+            if (window.Toast) Toast.warning('Gói thực đơn này chưa có cấu hình món ăn mẫu nào!');
+            return;
+          }
+
+          // Phân loại các món
+          selectedFoodsMan = matchedItems.filter(function (x) { return x.IsChay === 0 && x.IsDrink === 0 && x.IsDichVu === 0; });
+          selectedFoodsChay = matchedItems.filter(function (x) { return x.IsChay === 1 && x.IsDrink === 0 && x.IsDichVu === 0; });
+          selectedThucUong = matchedItems.filter(function (x) { return x.IsDrink === 1; });
+          selectedDichVu = matchedItems.filter(function (x) { return x.IsDichVu === 1; });
+
+          // Ghi dữ liệu và vẽ lại bảng
+          _writeInputs(modalContent);
+          
+          if (window.Toast) {
+            var selectedText = selectGoiThucDon.options && selectGoiThucDon.options[selectGoiThucDon.selectedIndex] 
+              ? selectGoiThucDon.options[selectGoiThucDon.selectedIndex].text 
+              : 'gói tiệc';
+            Toast.success('Đã tải thành công thực đơn của ' + selectedText + '!');
+          }
+        });
+      });
+    }
 
     // 3. Ẩn các Form Group của trường JSON thô nếu đang hiển thị
     var rawInputNames = ['JsonBanTiec', 'JsonThucUong', 'JsonDichVu', 'JsonPhatSinh'];
@@ -2867,6 +2924,178 @@ var FoodSelectionPlugin = (function () {
   };
 })();
 
+
+
+/* --- PromotionAutoFillPlugin.js --- */
+/**
+ * PromotionAutoFillPlugin
+ * ─────────────────────────────────────────────────────────────────────
+ * Tự động tính toán tổng số bàn và tra cứu danh sách quà tặng ưu đãi (khuyến mãi)
+ * dựa trên loại tiệc và số bàn chính thức. Tự động điền vào Ghi chú (đối với Phiếu cọc)
+ * hoặc Khuyến mãi (đối với Hợp đồng).
+ */
+var PromotionAutoFillPlugin = (function () {
+  var SUPPORTED_FORMS = ['frmBiennhancoccho', 'frmHopDong'];
+  var debounceTimeout = null;
+
+  function _getFormFields(modalContent, formName) {
+    var loaiTiecEl = modalContent.querySelector('[name="Loaitiecid"]');
+    var banManEl = modalContent.querySelector('[name="SobanManchinhthuc"]');
+    var banChayEl = modalContent.querySelector('[name="SobanChaychinhthuc"]');
+    var targetEl = null;
+
+    if (formName === 'frmBiennhancoccho') {
+      targetEl = modalContent.querySelector('[name="Ghichu"]');
+    } else if (formName === 'frmHopDong') {
+      targetEl = modalContent.querySelector('[name="DSKhuyenMai"]');
+    }
+
+    return {
+      loaiTiecEl: loaiTiecEl,
+      banManEl: banManEl,
+      banChayEl: banChayEl,
+      targetEl: targetEl
+    };
+  }
+
+  function _fetchAndFill(modalContent, formName) {
+    var fields = _getFormFields(modalContent, formName);
+    if (!fields.loaiTiecEl || !fields.targetEl) return;
+
+    var loaiTiec = fields.loaiTiecEl.value;
+    var banMan = fields.banManEl ? Number(fields.banManEl.value || 0) : 0;
+    var banChay = fields.banChayEl ? Number(fields.banChayEl.value || 0) : 0;
+    var totalTables = banMan + banChay;
+
+    if (!loaiTiec || totalTables <= 0) {
+      return;
+    }
+
+    var payload = {
+      List: 'API_LayDichVuUuDaiTheoLoaiTiec',
+      Func: 'View',
+      Loaitiecid: loaiTiec,
+      Soluongban: totalTables
+    };
+
+    ApiClient.post('/api/API_Gateway_Router', payload)
+      .then(function (res) {
+        var records = (res && res.records) ? res.records : ((res && res.data) ? res.data : (Array.isArray(res) ? res : []));
+        if (!records || records.length === 0) {
+          return;
+        }
+
+        // Format danh sách khuyến mãi
+        var formatted = records.map(function (item, idx) {
+          var qty = Number(item.Soluong || 1);
+          var qtyStr = qty > 1 ? ' (SL: ' + qty + ')' : '';
+          return (idx + 1) + '. ' + item.Tenhang + qtyStr;
+        }).join('\n');
+
+        var currentVal = fields.targetEl.value ? fields.targetEl.value.trim() : '';
+        if (currentVal === formatted.trim()) {
+          return;
+        }
+
+        var doUpdate = function () {
+          fields.targetEl.value = formatted;
+          fields.targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+          fields.targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+          
+          // Thêm style đổi màu nhẹ để báo hiệu vừa được điền tự động
+          fields.targetEl.style.setProperty('background-color', 'rgba(16, 185, 129, 0.1)', 'important');
+          fields.targetEl.style.setProperty('border-color', '#10b981', 'important');
+          setTimeout(function () {
+            fields.targetEl.style.removeProperty('background-color');
+            fields.targetEl.style.removeProperty('border-color');
+          }, 2000);
+        };
+
+        if (!currentVal) {
+          doUpdate();
+        } else {
+          // Nếu đã có sẵn nội dung, hỏi xác nhận từ người dùng để tránh đè dữ liệu custom
+          if (confirm('Số lượng bàn hoặc loại tiệc đã thay đổi. Bạn có muốn tự động tải lại danh sách khuyến mãi tương ứng không? Nội dung khuyến mãi hiện tại sẽ bị thay thế.')) {
+            doUpdate();
+          }
+        }
+      })
+      .catch(function (err) {
+        console.error('[PromotionAutoFillPlugin] Lỗi tải ưu đãi:', err);
+      });
+  }
+
+  function _bindForm(modalContent, formName) {
+    if (modalContent.dataset.promoAutofillDone === '1') return;
+    modalContent.dataset.promoAutofillDone = '1';
+
+    var fields = _getFormFields(modalContent, formName);
+    if (!fields.loaiTiecEl) return;
+
+    var handler = function () {
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(function () {
+        _fetchAndFill(modalContent, formName);
+      }, 500);
+    };
+
+    fields.loaiTiecEl.addEventListener('change', handler);
+    if (fields.banManEl) {
+      fields.banManEl.addEventListener('input', handler);
+      fields.banManEl.addEventListener('change', handler);
+    }
+    if (fields.banChayEl) {
+      fields.banChayEl.addEventListener('input', handler);
+      fields.banChayEl.addEventListener('change', handler);
+    }
+  }
+
+  var _observer = null;
+  function init() {
+    if (_observer) _observer.disconnect();
+
+    _observer = new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        mutation.addedNodes.forEach(function (node) {
+          if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+          var formBody = null;
+          var bodyWithFormName = node.querySelector('[data-form-name]');
+          if (bodyWithFormName) {
+            var formName = bodyWithFormName.getAttribute('data-form-name');
+            if (SUPPORTED_FORMS.indexOf(formName) !== -1) {
+              formBody = bodyWithFormName;
+            }
+          }
+
+          if (formBody) {
+            var modalContentEl = formBody.closest('.modal-content') || formBody;
+            var formName = formBody.getAttribute('data-form-name');
+            
+            var checkInterval = setInterval(function () {
+              // Chờ cho các control input xuất hiện trong form động
+              var loaiTiecEl = modalContentEl.querySelector('[name="Loaitiecid"]');
+              if (loaiTiecEl) {
+                clearInterval(checkInterval);
+                _bindForm(modalContentEl, formName);
+              }
+            }, 100);
+            setTimeout(function () { clearInterval(checkInterval); }, 5000);
+          }
+        });
+      });
+    });
+
+    _observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // Khởi chạy khi load plugin
+  init();
+
+  return {
+    init: init
+  };
+})();
 
 
 /* --- PhuLucPlugin.js --- */
@@ -3174,7 +3403,7 @@ var PhuLucPlugin = (function () {
 
       var modalInstance = UIModal.show({
         title: 'Quản Lý Phụ Lục Hợp Đồng',
-        width: '900px',
+        width: '1150px',
         content: modalContent
       });
 
@@ -4047,11 +4276,21 @@ var QuyetToanPlugin = (function () {
     modalContent.querySelector('#inpJsonThucUongHopDong').value = _stringifyJson(details.JsonThucUongHopDong);
     modalContent.querySelector('#inpJsonDichVuHopDong').value = _stringifyJson(details.JsonDichVuHopDong);
 
-    if (existingSettlement) {
-      modalContent.querySelector('#inpDocumentID').value = existingSettlement.DocumentID || '';
-      modalContent.querySelector('#inpNguoinop').value = existingSettlement.Nguoinop || khachhang;
+    var getVal = function (obj, key) {
+      if (!obj) return undefined;
+      if (obj[key] !== undefined) return obj[key];
+      var lower = key.toLowerCase();
+      for (var k in obj) {
+        if (k.toLowerCase() === lower) return obj[k];
+      }
+      return undefined;
+    };
 
-      var docDate = existingSettlement.DocumentDate || '';
+    if (existingSettlement) {
+      modalContent.querySelector('#inpDocumentID').value = getVal(existingSettlement, 'DocumentID') || '';
+      modalContent.querySelector('#inpNguoinop').value = getVal(existingSettlement, 'Nguoinop') || khachhang;
+
+      var docDate = getVal(existingSettlement, 'DocumentDate') || '';
       if (docDate && docDate.indexOf('T') !== -1) docDate = docDate.split('T')[0];
       modalContent.querySelector('#inpDocumentDate').value = docDate;
       if (modalContent.querySelector('#inpDocumentDate_visible')) {
@@ -4059,34 +4298,60 @@ var QuyetToanPlugin = (function () {
         if (parts.length === 3) modalContent.querySelector('#inpDocumentDate_visible').value = parts[2] + '/' + parts[1] + '/' + parts[0];
       }
 
-      modalContent.querySelector('#inpPhiBuSanh').value = details.PhiBuSanh !== undefined ? details.PhiBuSanh : (existingSettlement.PhiBuSanh || 0);
-      modalContent.querySelector('#inpPhiBuBanTang').value = details.PhiBuBantang !== undefined ? details.PhiBuBantang : (existingSettlement.PhiBuBantang || 0);
-      modalContent.querySelector('#inpPhiBuTTS').value = details.PhiBuTTS !== undefined ? details.PhiBuTTS : (existingSettlement.PhiBuTTS || 0);
-      modalContent.querySelector('#inpPhiBuNTL').value = details.PhiBuNTL !== undefined ? details.PhiBuNTL : (existingSettlement.PhiBuNTL || 0);
-      
-      var savedPhiPhucVu = existingSettlement.RawPhiPhucVu !== undefined ? Number(existingSettlement.RawPhiPhucVu) : parseMoney(existingSettlement.PhiPhucVu);
-      modalContent.querySelector('#inpPhiPhucVu').value = details.PhiPhucVu !== undefined ? details.PhiPhucVu : (savedPhiPhucVu || 0);
-      
-      modalContent.querySelector('#inpSotienphatsinh').value = existingSettlement.Sotienphatsinh || 0;
-      modalContent.querySelector('#inpPTThueVAT').value = details.PTThueVAT !== undefined ? details.PTThueVAT : (existingSettlement.PTThueVAT || 0);
-      modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || existingSettlement.BanPhatSinh || contractRow.BanPhatSinh || 0;
+      var detPhiBuSanh = getVal(details, 'PhiBuSanh');
+      var gridPhiBuSanh = getVal(existingSettlement, 'PhiBuSanh');
+      modalContent.querySelector('#inpPhiBuSanh').value = detPhiBuSanh !== undefined && detPhiBuSanh !== null && detPhiBuSanh !== '' ? detPhiBuSanh : (gridPhiBuSanh || 0);
 
-      modalContent.querySelector('#inpThanhtoan').value = existingSettlement.Thanhtoan || 0;
-      modalContent.querySelector('#chkIsKetthuc').checked = existingSettlement.IsKetthuc ? true : false;
-      modalContent.querySelector('#inpGhichu').value = existingSettlement.Ghichu || '';
+      var detPhiBuBantang = getVal(details, 'PhiBuBantang');
+      var gridPhiBuBantang = getVal(existingSettlement, 'PhiBuBantang');
+      modalContent.querySelector('#inpPhiBuBanTang').value = detPhiBuBantang !== undefined && detPhiBuBantang !== null && detPhiBuBantang !== '' ? detPhiBuBantang : (gridPhiBuBantang || 0);
+
+      var detPhiBuTTS = getVal(details, 'PhiBuTTS');
+      var gridPhiBuTTS = getVal(existingSettlement, 'PhiBuTTS');
+      modalContent.querySelector('#inpPhiBuTTS').value = detPhiBuTTS !== undefined && detPhiBuTTS !== null && detPhiBuTTS !== '' ? detPhiBuTTS : (gridPhiBuTTS || 0);
+
+      var detPhiBuNTL = getVal(details, 'PhiBuNTL');
+      var gridPhiBuNTL = getVal(existingSettlement, 'PhiBuNTL');
+      modalContent.querySelector('#inpPhiBuNTL').value = detPhiBuNTL !== undefined && detPhiBuNTL !== null && detPhiBuNTL !== '' ? detPhiBuNTL : (gridPhiBuNTL || 0);
+      
+      var gridRawPhiPhucVu = getVal(existingSettlement, 'RawPhiPhucVu');
+      var gridPhiPhucVu = getVal(existingSettlement, 'PhiPhucVu');
+      var savedPhiPhucVu = gridRawPhiPhucVu !== undefined && gridRawPhiPhucVu !== '' ? Number(gridRawPhiPhucVu) : parseMoney(gridPhiPhucVu);
+      var detPhiPhucVu = getVal(details, 'PhiPhucVu');
+      modalContent.querySelector('#inpPhiPhucVu').value = detPhiPhucVu !== undefined && detPhiPhucVu !== null && detPhiPhucVu !== '' ? detPhiPhucVu : (savedPhiPhucVu || 0);
+      
+      var detSotienphatsinh = getVal(details, 'Sotienphatsinh');
+      var gridSotienphatsinh = getVal(existingSettlement, 'Sotienphatsinh');
+      modalContent.querySelector('#inpSotienphatsinh').value = detSotienphatsinh !== undefined && detSotienphatsinh !== null && detSotienphatsinh !== '' ? detSotienphatsinh : (gridSotienphatsinh || 0);
+      
+      var detPTThueVAT = getVal(details, 'PTThueVAT');
+      var gridPTThueVAT = getVal(existingSettlement, 'PTThueVAT');
+      var savedPTThueVAT = detPTThueVAT !== undefined && detPTThueVAT !== null ? detPTThueVAT : (gridPTThueVAT || 0);
+      modalContent.querySelector('#inpPTThueVAT').value = parseInt(savedPTThueVAT, 10) || 0;
+      
+      var detBanPhatSinh = getVal(details, 'BanPhatSinh');
+      var gridBanPhatSinh = getVal(existingSettlement, 'BanPhatSinh');
+      var contractBanPhatSinh = getVal(contractRow, 'BanPhatSinh');
+      modalContent.querySelector('#inpBanPhatSinh').value = detBanPhatSinh || gridBanPhatSinh || contractBanPhatSinh || 0;
+
+      modalContent.querySelector('#inpThanhtoan').value = getVal(existingSettlement, 'Thanhtoan') || 0;
+      modalContent.querySelector('#chkIsKetthuc').checked = getVal(existingSettlement, 'IsKetthuc') ? true : false;
+      modalContent.querySelector('#inpGhichu').value = getVal(existingSettlement, 'Ghichu') || '';
     } else {
       modalContent.querySelector('#inpNguoinop').value = khachhang;
       modalContent.querySelector('#inpThanhtoan').value = 0;
       modalContent.querySelector('#chkIsKetthuc').checked = true;
-      modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || contractRow.BanPhatSinh || 0;
+      modalContent.querySelector('#inpBanPhatSinh').value = getVal(details, 'BanPhatSinh') || getVal(contractRow, 'BanPhatSinh') || 0;
 
       // Kế thừa các phụ thu từ Hợp đồng / Phụ lục
-      modalContent.querySelector('#inpPhiPhucVu').value = details.PhiPhucVu || contractRow.PhiPhucVu || 0;
-      modalContent.querySelector('#inpPhiBuSanh').value = details.PhiBuSanh || contractRow.PhiBuSanh || 0;
-      modalContent.querySelector('#inpPhiBuBanTang').value = details.PhiBuBantang || contractRow.PhiBuBanTang || 0;
-      modalContent.querySelector('#inpPhiBuTTS').value = details.PhiBuTTS || contractRow.PhiBuTTS || 0;
-      modalContent.querySelector('#inpPhiBuNTL').value = details.PhiBuNTL || contractRow.PhiBuNTL || 0;
-      modalContent.querySelector('#inpPTThueVAT').value = details.PTThueVAT || contractRow.PTThueVAT || 0;
+      modalContent.querySelector('#inpPhiPhucVu').value = getVal(details, 'PhiPhucVu') || getVal(contractRow, 'PhiPhucVu') || 0;
+      modalContent.querySelector('#inpPhiBuSanh').value = getVal(details, 'PhiBuSanh') || getVal(contractRow, 'PhiBuSanh') || 0;
+      modalContent.querySelector('#inpPhiBuBanTang').value = getVal(details, 'PhiBuBantang') || getVal(contractRow, 'PhiBuBanTang') || 0;
+      modalContent.querySelector('#inpPhiBuTTS').value = getVal(details, 'PhiBuTTS') || getVal(contractRow, 'PhiBuTTS') || 0;
+      modalContent.querySelector('#inpPhiBuNTL').value = getVal(details, 'PhiBuNTL') || getVal(contractRow, 'PhiBuNTL') || 0;
+      
+      var defaultPTThueVAT = getVal(details, 'PTThueVAT') || getVal(contractRow, 'PTThueVAT') || 0;
+      modalContent.querySelector('#inpPTThueVAT').value = parseInt(defaultPTThueVAT, 10) || 0;
     }
 
     // Setup money input formatting

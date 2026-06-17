@@ -402,11 +402,21 @@ var QuyetToanPlugin = (function () {
     modalContent.querySelector('#inpJsonThucUongHopDong').value = _stringifyJson(details.JsonThucUongHopDong);
     modalContent.querySelector('#inpJsonDichVuHopDong').value = _stringifyJson(details.JsonDichVuHopDong);
 
-    if (existingSettlement) {
-      modalContent.querySelector('#inpDocumentID').value = existingSettlement.DocumentID || '';
-      modalContent.querySelector('#inpNguoinop').value = existingSettlement.Nguoinop || khachhang;
+    var getVal = function (obj, key) {
+      if (!obj) return undefined;
+      if (obj[key] !== undefined) return obj[key];
+      var lower = key.toLowerCase();
+      for (var k in obj) {
+        if (k.toLowerCase() === lower) return obj[k];
+      }
+      return undefined;
+    };
 
-      var docDate = existingSettlement.DocumentDate || '';
+    if (existingSettlement) {
+      modalContent.querySelector('#inpDocumentID').value = getVal(existingSettlement, 'DocumentID') || '';
+      modalContent.querySelector('#inpNguoinop').value = getVal(existingSettlement, 'Nguoinop') || khachhang;
+
+      var docDate = getVal(existingSettlement, 'DocumentDate') || '';
       if (docDate && docDate.indexOf('T') !== -1) docDate = docDate.split('T')[0];
       modalContent.querySelector('#inpDocumentDate').value = docDate;
       if (modalContent.querySelector('#inpDocumentDate_visible')) {
@@ -414,34 +424,60 @@ var QuyetToanPlugin = (function () {
         if (parts.length === 3) modalContent.querySelector('#inpDocumentDate_visible').value = parts[2] + '/' + parts[1] + '/' + parts[0];
       }
 
-      modalContent.querySelector('#inpPhiBuSanh').value = details.PhiBuSanh !== undefined ? details.PhiBuSanh : (existingSettlement.PhiBuSanh || 0);
-      modalContent.querySelector('#inpPhiBuBanTang').value = details.PhiBuBantang !== undefined ? details.PhiBuBantang : (existingSettlement.PhiBuBantang || 0);
-      modalContent.querySelector('#inpPhiBuTTS').value = details.PhiBuTTS !== undefined ? details.PhiBuTTS : (existingSettlement.PhiBuTTS || 0);
-      modalContent.querySelector('#inpPhiBuNTL').value = details.PhiBuNTL !== undefined ? details.PhiBuNTL : (existingSettlement.PhiBuNTL || 0);
-      
-      var savedPhiPhucVu = existingSettlement.RawPhiPhucVu !== undefined ? Number(existingSettlement.RawPhiPhucVu) : parseMoney(existingSettlement.PhiPhucVu);
-      modalContent.querySelector('#inpPhiPhucVu').value = details.PhiPhucVu !== undefined ? details.PhiPhucVu : (savedPhiPhucVu || 0);
-      
-      modalContent.querySelector('#inpSotienphatsinh').value = existingSettlement.Sotienphatsinh || 0;
-      modalContent.querySelector('#inpPTThueVAT').value = details.PTThueVAT !== undefined ? details.PTThueVAT : (existingSettlement.PTThueVAT || 0);
-      modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || existingSettlement.BanPhatSinh || contractRow.BanPhatSinh || 0;
+      var detPhiBuSanh = getVal(details, 'PhiBuSanh');
+      var gridPhiBuSanh = getVal(existingSettlement, 'PhiBuSanh');
+      modalContent.querySelector('#inpPhiBuSanh').value = detPhiBuSanh !== undefined && detPhiBuSanh !== null && detPhiBuSanh !== '' ? detPhiBuSanh : (gridPhiBuSanh || 0);
 
-      modalContent.querySelector('#inpThanhtoan').value = existingSettlement.Thanhtoan || 0;
-      modalContent.querySelector('#chkIsKetthuc').checked = existingSettlement.IsKetthuc ? true : false;
-      modalContent.querySelector('#inpGhichu').value = existingSettlement.Ghichu || '';
+      var detPhiBuBantang = getVal(details, 'PhiBuBantang');
+      var gridPhiBuBantang = getVal(existingSettlement, 'PhiBuBantang');
+      modalContent.querySelector('#inpPhiBuBanTang').value = detPhiBuBantang !== undefined && detPhiBuBantang !== null && detPhiBuBantang !== '' ? detPhiBuBantang : (gridPhiBuBantang || 0);
+
+      var detPhiBuTTS = getVal(details, 'PhiBuTTS');
+      var gridPhiBuTTS = getVal(existingSettlement, 'PhiBuTTS');
+      modalContent.querySelector('#inpPhiBuTTS').value = detPhiBuTTS !== undefined && detPhiBuTTS !== null && detPhiBuTTS !== '' ? detPhiBuTTS : (gridPhiBuTTS || 0);
+
+      var detPhiBuNTL = getVal(details, 'PhiBuNTL');
+      var gridPhiBuNTL = getVal(existingSettlement, 'PhiBuNTL');
+      modalContent.querySelector('#inpPhiBuNTL').value = detPhiBuNTL !== undefined && detPhiBuNTL !== null && detPhiBuNTL !== '' ? detPhiBuNTL : (gridPhiBuNTL || 0);
+      
+      var gridRawPhiPhucVu = getVal(existingSettlement, 'RawPhiPhucVu');
+      var gridPhiPhucVu = getVal(existingSettlement, 'PhiPhucVu');
+      var savedPhiPhucVu = gridRawPhiPhucVu !== undefined && gridRawPhiPhucVu !== '' ? Number(gridRawPhiPhucVu) : parseMoney(gridPhiPhucVu);
+      var detPhiPhucVu = getVal(details, 'PhiPhucVu');
+      modalContent.querySelector('#inpPhiPhucVu').value = detPhiPhucVu !== undefined && detPhiPhucVu !== null && detPhiPhucVu !== '' ? detPhiPhucVu : (savedPhiPhucVu || 0);
+      
+      var detSotienphatsinh = getVal(details, 'Sotienphatsinh');
+      var gridSotienphatsinh = getVal(existingSettlement, 'Sotienphatsinh');
+      modalContent.querySelector('#inpSotienphatsinh').value = detSotienphatsinh !== undefined && detSotienphatsinh !== null && detSotienphatsinh !== '' ? detSotienphatsinh : (gridSotienphatsinh || 0);
+      
+      var detPTThueVAT = getVal(details, 'PTThueVAT');
+      var gridPTThueVAT = getVal(existingSettlement, 'PTThueVAT');
+      var savedPTThueVAT = detPTThueVAT !== undefined && detPTThueVAT !== null ? detPTThueVAT : (gridPTThueVAT || 0);
+      modalContent.querySelector('#inpPTThueVAT').value = parseInt(savedPTThueVAT, 10) || 0;
+      
+      var detBanPhatSinh = getVal(details, 'BanPhatSinh');
+      var gridBanPhatSinh = getVal(existingSettlement, 'BanPhatSinh');
+      var contractBanPhatSinh = getVal(contractRow, 'BanPhatSinh');
+      modalContent.querySelector('#inpBanPhatSinh').value = detBanPhatSinh || gridBanPhatSinh || contractBanPhatSinh || 0;
+
+      modalContent.querySelector('#inpThanhtoan').value = getVal(existingSettlement, 'Thanhtoan') || 0;
+      modalContent.querySelector('#chkIsKetthuc').checked = getVal(existingSettlement, 'IsKetthuc') ? true : false;
+      modalContent.querySelector('#inpGhichu').value = getVal(existingSettlement, 'Ghichu') || '';
     } else {
       modalContent.querySelector('#inpNguoinop').value = khachhang;
       modalContent.querySelector('#inpThanhtoan').value = 0;
       modalContent.querySelector('#chkIsKetthuc').checked = true;
-      modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || contractRow.BanPhatSinh || 0;
+      modalContent.querySelector('#inpBanPhatSinh').value = getVal(details, 'BanPhatSinh') || getVal(contractRow, 'BanPhatSinh') || 0;
 
       // Kế thừa các phụ thu từ Hợp đồng / Phụ lục
-      modalContent.querySelector('#inpPhiPhucVu').value = details.PhiPhucVu || contractRow.PhiPhucVu || 0;
-      modalContent.querySelector('#inpPhiBuSanh').value = details.PhiBuSanh || contractRow.PhiBuSanh || 0;
-      modalContent.querySelector('#inpPhiBuBanTang').value = details.PhiBuBantang || contractRow.PhiBuBanTang || 0;
-      modalContent.querySelector('#inpPhiBuTTS').value = details.PhiBuTTS || contractRow.PhiBuTTS || 0;
-      modalContent.querySelector('#inpPhiBuNTL').value = details.PhiBuNTL || contractRow.PhiBuNTL || 0;
-      modalContent.querySelector('#inpPTThueVAT').value = details.PTThueVAT || contractRow.PTThueVAT || 0;
+      modalContent.querySelector('#inpPhiPhucVu').value = getVal(details, 'PhiPhucVu') || getVal(contractRow, 'PhiPhucVu') || 0;
+      modalContent.querySelector('#inpPhiBuSanh').value = getVal(details, 'PhiBuSanh') || getVal(contractRow, 'PhiBuSanh') || 0;
+      modalContent.querySelector('#inpPhiBuBanTang').value = getVal(details, 'PhiBuBantang') || getVal(contractRow, 'PhiBuBanTang') || 0;
+      modalContent.querySelector('#inpPhiBuTTS').value = getVal(details, 'PhiBuTTS') || getVal(contractRow, 'PhiBuTTS') || 0;
+      modalContent.querySelector('#inpPhiBuNTL').value = getVal(details, 'PhiBuNTL') || getVal(contractRow, 'PhiBuNTL') || 0;
+      
+      var defaultPTThueVAT = getVal(details, 'PTThueVAT') || getVal(contractRow, 'PTThueVAT') || 0;
+      modalContent.querySelector('#inpPTThueVAT').value = parseInt(defaultPTThueVAT, 10) || 0;
     }
 
     // Setup money input formatting

@@ -47,3 +47,17 @@ BEGIN
     ORDER BY ct.STT ASC;
 END
 GO
+
+-- =========================================================================
+-- ĐĂNG KÝ ĐỊNH TUYẾN TRONG WA_API
+-- =========================================================================
+DELETE FROM WA_API WHERE List = 'API_LayDichVuUuDaiTheoLoaiTiec' AND Func = 'View';
+GO
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES (
+    'API_LayDichVuUuDaiTheoLoaiTiec',
+    'View',
+    'API_LayDichVuUuDaiTheoLoaiTiec',
+    '@Loaitiecid=N''{Loaitiecid}'', @Soluongban=N''{Soluongban}'', @Nhahangid=N''{Nhahangid}'''
+);
+GO

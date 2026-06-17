@@ -302,7 +302,7 @@ var PhuLucPlugin = (function () {
 
       var modalInstance = UIModal.show({
         title: 'Quản Lý Phụ Lục Hợp Đồng',
-        width: '900px',
+        width: '1150px',
         content: modalContent
       });
 

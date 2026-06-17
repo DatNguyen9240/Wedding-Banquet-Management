@@ -584,15 +584,15 @@ SELECT
     h.Loaitiecid,
     (SELECT TOP 1 tm.TemplateFile FROM tbmk_LoaitiecAddfile tm WHERE tm.FormName = 'frmHopDong' AND tm.Loaitiecid = h.Loaitiecid) AS [TemplateFile],
     h.Thoigianid,
-    h.SobanManchinhthuc,
-    h.SobanManduphong,
-    h.SobanChaychinhthuc,
-    h.SobanChayduphong,
+    h.SobanManchinhthuc AS [SobanManchinhthuc],
+    h.SobanManduphong AS [SobanManduphong],
+    h.SobanChaychinhthuc AS [SobanChaychinhthuc],
+    h.SobanChayduphong AS [SobanChayduphong],
     h.Sotiencoccho AS DaCocVND,
-    h.Sotiencochopdong,
-    h.Giabanman,
-    h.Tongtiencoc,
-    h.Ghichu,
+    h.Sotiencochopdong AS [Sotiencochopdong],
+    h.Giabanman AS [Giabanman],
+    h.Tongtiencoc AS [Tongtiencoc],
+    h.Ghichu AS [Ghichu],
     h.JsonLichTrinh,
 
     -- Thực đơn & Dịch vụ: đọc duy nhất từ bảng chi tiết → JSON cho form
@@ -901,8 +901,40 @@ SELECT
 
     -- Tổng giá trị tạm tính bằng chữ
     [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0)) AS [TongGiaTriTamTinhBangChu],
-    FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriTamTinh]
-    
+    FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
+
+    -- Các biến tùy chỉnh ánh xạ trực tiếp đến các file Word mẫu (tránh lệch chữ hoa/thường hoặc thiếu trường)
+    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [TiecSanhTiec],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVuDaiDien],
+    k.Mail AS [BenBEmail],
+    [dbo].[fn_DocTienBangChu](ISNULL(h.Sotiencoccho, 0)) AS [Dot1BangChu],
+    ISNULL((SELECT TOP 1 s.SLBanMin * ISNULL(h.SoNguoiTrenBan, 10) FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong), 0) AS [KhachToiThieu],
+    ISNULL((SELECT TOP 1 CAST(s.ChieuRong AS VARCHAR) + 'm x ' + CAST(s.ChieuDai AS VARCHAR) + 'm' FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC), '...') AS [KichThuocSanh],
+    ISNULL((SELECT CAST(s.ChieuRong AS VARCHAR) + 'm x ' + CAST(s.ChieuDai AS VARCHAR) + 'm' FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), '...') AS [KichThuocSanhPhu],
+    ISNULL((SELECT TOP 1 s.KTSanKhau FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC), '...') AS [KichThuocSanKhau],
+    ISNULL((SELECT s.KTSanKhau FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), '...') AS [KichThuocSanKhauPhu],
+    STUFF((
+        SELECT N', ' + s.Tensanhtiec
+        FROM tbmk_Hopdongsanhtiec hs
+        INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid
+        WHERE hs.Sohopdong = h.Sohopdong
+        ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid
+        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS [SanhTiec],
+    ISNULL((SELECT TOP 1 CASE WHEN hs.KieuSetup = 'ClassRoom' THEN ISNULL(s.ClassRoom, 0) WHEN hs.KieuSetup = 'Theater' THEN ISNULL(s.Theater, 0) WHEN hs.KieuSetup = 'Cluster' THEN ISNULL(s.ClusterHalfRound, 0) ELSE ISNULL(s.SLBanMax * 10, 0) END FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC), 0) AS [SucChuaToiDa],
+    ISNULL((SELECT CASE WHEN hs.KieuSetup = 'ClassRoom' THEN ISNULL(s.ClassRoom, 0) WHEN hs.KieuSetup = 'Theater' THEN ISNULL(s.Theater, 0) WHEN hs.KieuSetup = 'Cluster' THEN ISNULL(s.ClusterHalfRound, 0) ELSE ISNULL(s.SLBanMax * 10, 0) END FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), 0) AS [SucChuaToiDaPhu],
+    ISNULL((SELECT ISNULL(s.SLBanMin * 10, 0) FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), 0) AS [SucChuaToiThieuPhu],
+    ISNULL((SELECT s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), '') AS [TenSanhTiecPhu],
+    ISNULL((SELECT TOP 1 s.KTSanKhau FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC), '...') AS [TenSanKhau],
+    ISNULL((SELECT s.KTSanKhau FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), '...') AS [TenSanKhauPhu],
+    FORMAT(ISNULL((SELECT SUM(ISNULL(hd.Sotien, 0)) FROM tbmk_Hopdongdichvu hd WHERE hd.Sohopdong = h.Sohopdong), 0), 'N0', 'vi-VN') AS [TongTienDichVu],
+    ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), '...') AS [NgayThanhToanDatCoc],
+    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [Sanh],
+    FORMAT(ISNULL(h.Tongtienhopdong, 0) - ISNULL(h.Sotiencoccho, 0) - ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') AS [SoTienConLai],
+    [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0) - ISNULL(h.Sotiencoccho, 0) - ISNULL(h.Sotiencochopdong, 0)) AS [SoTienConLaiBangChu],
+    FORMAT(ISNULL(h.Sotiencoccho, 0) + ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') AS [SoTienDaDatCoc],
+    FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriQuyetToan],
+    [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0)) AS [TongGiaTriQuyetToanBangChu]
+
 FROM tbmk_Hopdong h
 LEFT JOIN dmkhachhang k ON h.Makh = k.Makh
 WHERE ISNULL(h.IsDeleted, 0) = 0;
@@ -1000,8 +1032,41 @@ WHERE FormName = 'frmHopDong'
     'TongThanhTien', 'MucPhiPhucVu', 'PhiPhucVu', 'TongCongChuaVAT', 'VAT8', 'VAT10', 'TongTienFormat',
     'TemplateFile', 'JsonLichTrinh', 'SanhDat2', 'Giabanman', 'DanhSachSanh',
     'JsonBanTiec', 'JsonThucUong', 'JsonDichVu', 'JsonPhatSinh', 'DanhSachMenu', 'DanhSachThucUong', 'MenuTiec', 'MenuTongCong',
-    'DichVuTinhPhi', 'DanhSachNgay', 'DanhSachDichVu', 'Email'
+    'DichVuTinhPhi', 'DanhSachNgay', 'DanhSachDichVu', 'Email',
+    -- Các trường in ấn mới thêm
+    'TiecSanhTiec', 'BenAChucVuDaiDien', 'BenBEmail', 'Dot1BangChu', 'KhachToiThieu',
+    'KichThuocSanh', 'KichThuocSanhPhu', 'KichThuocSanKhau', 'KichThuocSanKhauPhu', 'SanhTiec',
+    'SucChuaToiDa', 'SucChuaToiDaPhu', 'SucChuaToiThieuPhu', 'TenSanhTiecPhu', 'TenSanKhau',
+    'TenSanKhauPhu', 'TongTienDichVu', 'NgayThanhToanDatCoc', 'Sanh', 'SoTienConLai',
+    'SoTienConLaiBangChu', 'SoTienDaDatCoc', 'TongGiaTriQuyetToan', 'TongGiaTriQuyetToanBangChu'
   );
+
+-- Cập nhật Label tiếng Việt có dấu cho các trường in ấn mới thêm
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh tiệc' WHERE FormName = 'frmHopDong' AND FieldName = 'TiecSanhTiec';
+UPDATE SY_FormatFields SET CaptionVN = N'Bên A - Chức vụ đại diện' WHERE FormName = 'frmHopDong' AND FieldName = 'BenAChucVuDaiDien';
+UPDATE SY_FormatFields SET CaptionVN = N'Bên B - Email' WHERE FormName = 'frmHopDong' AND FieldName = 'BenBEmail';
+UPDATE SY_FormatFields SET CaptionVN = N'Đợt 1 bằng chữ' WHERE FormName = 'frmHopDong' AND FieldName = 'Dot1BangChu';
+UPDATE SY_FormatFields SET CaptionVN = N'Khách tối thiểu' WHERE FormName = 'frmHopDong' AND FieldName = 'KhachToiThieu';
+UPDATE SY_FormatFields SET CaptionVN = N'Kích thước sảnh' WHERE FormName = 'frmHopDong' AND FieldName = 'KichThuocSanh';
+UPDATE SY_FormatFields SET CaptionVN = N'Kích thước sảnh phụ' WHERE FormName = 'frmHopDong' AND FieldName = 'KichThuocSanhPhu';
+UPDATE SY_FormatFields SET CaptionVN = N'Kích thước sân khấu' WHERE FormName = 'frmHopDong' AND FieldName = 'KichThuocSanKhau';
+UPDATE SY_FormatFields SET CaptionVN = N'Kích thước sân khấu phụ' WHERE FormName = 'frmHopDong' AND FieldName = 'KichThuocSanKhauPhu';
+UPDATE SY_FormatFields SET CaptionVN = N'Sức chứa tối đa' WHERE FormName = 'frmHopDong' AND FieldName = 'SucChuaToiDa';
+UPDATE SY_FormatFields SET CaptionVN = N'Sức chứa tối đa phụ' WHERE FormName = 'frmHopDong' AND FieldName = 'SucChuaToiDaPhu';
+UPDATE SY_FormatFields SET CaptionVN = N'Sức chứa tối thiểu phụ' WHERE FormName = 'frmHopDong' AND FieldName = 'SucChuaToiThieuPhu';
+UPDATE SY_FormatFields SET CaptionVN = N'Tên sảnh tiệc phụ' WHERE FormName = 'frmHopDong' AND FieldName = 'TenSanhTiecPhu';
+UPDATE SY_FormatFields SET CaptionVN = N'Tên sân khấu' WHERE FormName = 'frmHopDong' AND FieldName = 'TenSanKhau';
+UPDATE SY_FormatFields SET CaptionVN = N'Tên sân khấu phụ' WHERE FormName = 'frmHopDong' AND FieldName = 'TenSanKhauPhu';
+UPDATE SY_FormatFields SET CaptionVN = N'Tổng tiền dịch vụ' WHERE FormName = 'frmHopDong' AND FieldName = 'TongTienDichVu';
+UPDATE SY_FormatFields SET CaptionVN = N'Ngày thanh toán đặt cọc' WHERE FormName = 'frmHopDong' AND FieldName = 'NgayThanhToanDatCoc';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh' WHERE FormName = 'frmHopDong' AND FieldName = 'Sanh';
+UPDATE SY_FormatFields SET CaptionVN = N'Số tiền còn lại' WHERE FormName = 'frmHopDong' AND FieldName = 'SoTienConLai';
+UPDATE SY_FormatFields SET CaptionVN = N'Số tiền còn lại bằng chữ' WHERE FormName = 'frmHopDong' AND FieldName = 'SoTienConLaiBangChu';
+UPDATE SY_FormatFields SET CaptionVN = N'Số tiền đã đặt cọc' WHERE FormName = 'frmHopDong' AND FieldName = 'SoTienDaDatCoc';
+UPDATE SY_FormatFields SET CaptionVN = N'Tổng giá trị quyết toán' WHERE FormName = 'frmHopDong' AND FieldName = 'TongGiaTriQuyetToan';
+UPDATE SY_FormatFields SET CaptionVN = N'Tổng giá trị quyết toán bằng chữ' WHERE FormName = 'frmHopDong' AND FieldName = 'TongGiaTriQuyetToanBangChu';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh tiệc' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhTiec';
+
 
 -- Đảm bảo trường NgayToChuc luôn tồn tại trong cấu hình Form kèm Trigger tính lịch âm
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NgayToChuc')

@@ -1458,7 +1458,12 @@ var FoodSelectionPlugin = (function () {
     modalContent.dataset.foodPluginDone = '1';
 
     // Cho modal rộng ra vừa phải để hiển thị bảng đối chiếu/thực đơn đẹp hơn (không quá rộng 1200px)
-    modalContent.style.width = '1050px';
+    var actualModal = modalContent.closest('.modal-content');
+    if (actualModal) {
+      actualModal.style.width = '1150px';
+    } else {
+      modalContent.style.width = '1150px';
+    }
 
     activeModal = modalContent;
 
@@ -1469,6 +1474,58 @@ var FoodSelectionPlugin = (function () {
 
     // 2. Quét đọc dữ liệu hiện có
     _readInputs(modalContent);
+
+    // 2.5 Lắng nghe sự thay đổi của Gói tiệc (GoiThucDonID)
+    var selectGoiThucDon = modalContent.querySelector('[name="GoiThucDonID"]');
+    if (selectGoiThucDon) {
+      selectGoiThucDon.addEventListener('change', function (event) {
+        var goiThucDonId = this.value;
+        if (!goiThucDonId) return;
+
+        var hasExisting = selectedFoodsMan.length > 0 || selectedFoodsChay.length > 0 || selectedThucUong.length > 0 || selectedDichVu.length > 0;
+        
+        // Tránh ghi đè/hỏi han khi load form sửa (sự kiện programmatic change khi đã có dữ liệu món)
+        if (!event.isTrusted) {
+          if (hasExisting) {
+            // Đây là lúc load dữ liệu cũ của Hợp đồng/Quyết toán, không được ghi đè
+            return;
+          }
+        } else {
+          // Người dùng trực tiếp thao tác click chọn gói trên UI
+          if (hasExisting && !confirm('Bạn có muốn tự động tải thực đơn mẫu từ gói này không? Thực đơn hiện tại sẽ bị ghi đè.')) {
+            return;
+          }
+        }
+
+        _loadCatalog().then(function (catalog) {
+          // Lọc ra các món ăn thuộc Gói thực đơn
+          var matchedItems = catalog.filter(function (item) {
+            return item.GoiThucDonID === goiThucDonId;
+          });
+
+          if (matchedItems.length === 0) {
+            if (window.Toast) Toast.warning('Gói thực đơn này chưa có cấu hình món ăn mẫu nào!');
+            return;
+          }
+
+          // Phân loại các món
+          selectedFoodsMan = matchedItems.filter(function (x) { return x.IsChay === 0 && x.IsDrink === 0 && x.IsDichVu === 0; });
+          selectedFoodsChay = matchedItems.filter(function (x) { return x.IsChay === 1 && x.IsDrink === 0 && x.IsDichVu === 0; });
+          selectedThucUong = matchedItems.filter(function (x) { return x.IsDrink === 1; });
+          selectedDichVu = matchedItems.filter(function (x) { return x.IsDichVu === 1; });
+
+          // Ghi dữ liệu và vẽ lại bảng
+          _writeInputs(modalContent);
+          
+          if (window.Toast) {
+            var selectedText = selectGoiThucDon.options && selectGoiThucDon.options[selectGoiThucDon.selectedIndex] 
+              ? selectGoiThucDon.options[selectGoiThucDon.selectedIndex].text 
+              : 'gói tiệc';
+            Toast.success('Đã tải thành công thực đơn của ' + selectedText + '!');
+          }
+        });
+      });
+    }
 
     // 3. Ẩn các Form Group của trường JSON thô nếu đang hiển thị
     var rawInputNames = ['JsonBanTiec', 'JsonThucUong', 'JsonDichVu', 'JsonPhatSinh'];

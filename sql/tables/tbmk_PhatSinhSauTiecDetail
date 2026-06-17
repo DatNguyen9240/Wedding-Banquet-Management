@@ -1,0 +1,13 @@
+UserAutoid	varchar
+DocumentID	varchar
+Mahang	varchar
+TenHang	nvarchar
+DvtID	nvarchar
+Soluong	decimal
+Dongia	decimal
+Sotien	decimal
+UserCreate	varchar
+UserUpdate	varchar
+DateCreate	datetime
+DateUpdate	datetime
+Ghichuct	nvarchar

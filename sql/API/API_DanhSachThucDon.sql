@@ -32,6 +32,7 @@ BEGIN
         h.Tenhang AS TenMon,
         ISNULL(n.Tennhomhang, N'Khác') AS PhanLoai,
         ISNULL(dg.Dongia, 0) AS DonGia,
+        h.GoiThucDonID AS GoiThucDonID,
 
         -- IsChay: nhóm thực đơn chay (nhóm kết thúc '4', không phải đồ uống/dịch vụ)
         CASE WHEN h.Nhomhangid IN (
