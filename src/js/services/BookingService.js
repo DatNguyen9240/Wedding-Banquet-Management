@@ -123,10 +123,20 @@ var BookingService = (function () {
         ? API_CONFIG.ENDPOINTS.ROUTER
         : '/api/API_Gateway_Router';
 
+      // Chuẩn hóa payload để luôn đảm bảo có thuộc tính DocumentIDs chứa chuỗi phân tách bằng dấu phẩy
+      var normalizedPayload = {};
+      if (typeof payload === 'string') {
+        normalizedPayload.DocumentIDs = payload;
+      } else if (Array.isArray(payload)) {
+        normalizedPayload.DocumentIDs = payload.join(',');
+      } else if (payload && typeof payload === 'object') {
+        normalizedPayload.DocumentIDs = payload.DocumentIDs || payload.DocumentID || '';
+      }
+
       var routerPayload = {
         List: 'frmBiennhancoccho',
         Func: 'Delete',
-        JsonData: JSON.stringify(payload) // Truyền { DocumentIDs: 'ID1,ID2' }
+        JsonData: JSON.stringify(normalizedPayload)
       };
 
       ApiClient.post(endpoint, routerPayload)

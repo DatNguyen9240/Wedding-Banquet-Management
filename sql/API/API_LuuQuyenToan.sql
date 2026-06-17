@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 IF OBJECT_ID('API_LuuQuyenToan', 'P') IS NOT NULL

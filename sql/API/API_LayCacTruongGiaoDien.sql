@@ -16,6 +16,7 @@ BEGIN
         ISNULL(ff.ShowInEdit,     1) AS [showInEdit],
         ISNULL(ff.IsReadOnlyEdit, 0) AS [isReadOnlyEdit],
         ISNULL(ff.IsReadOnlyAdd,  0) AS [isReadOnlyAdd],
+        ISNULL(ff.ShowInGrid,     1) AS [showInGrid],
 
         ISNULL(ff.FormatID, '') AS [renderRule],
         ISNULL(ff.DataSource, '') AS [dataSource],

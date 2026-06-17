@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 -- 1. Cấu hình bảng SY_FrmLstTbl (Để hàm API_TruyVanDong biết tên bảng vật lý và khóa chính)

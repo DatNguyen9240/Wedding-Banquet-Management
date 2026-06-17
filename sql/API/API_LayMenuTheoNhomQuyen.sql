@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 ALTER PROCEDURE [dbo].[API_LayMenuTheoNhomQuyen]

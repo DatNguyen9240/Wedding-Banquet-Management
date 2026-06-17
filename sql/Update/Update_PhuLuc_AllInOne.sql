@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 PRINT N'=== BẮT ĐẦU CẬP NHẬT CẤU TRÚC PHỤ LỤC HỢP ĐỒNG (ALL-IN-ONE) ===';

@@ -1,4 +1,4 @@
-IF OBJECT_ID('API_DanhSachTruongGiaoDien', 'P') IS NOT NULL
+﻿IF OBJECT_ID('API_DanhSachTruongGiaoDien', 'P') IS NOT NULL
     DROP PROCEDURE API_DanhSachTruongGiaoDien;
 GO
 

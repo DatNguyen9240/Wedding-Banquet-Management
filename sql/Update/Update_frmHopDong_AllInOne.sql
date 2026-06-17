@@ -1,4 +1,4 @@
--- Script Update Hợp Đồng All-in-One
+﻿-- Script Update Hợp Đồng All-in-One
 
 SET ANSI_NULLS ON
 GO

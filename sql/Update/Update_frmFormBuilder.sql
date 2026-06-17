@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 -- 0. Khởi tạo/Bổ sung đầy đủ các trường cấu hình cho FormBuilder nếu chưa có

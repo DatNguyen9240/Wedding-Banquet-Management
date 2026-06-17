@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 -- 1. Tạo API Xóa chuyên dụng (Xóa sạch cả sảnh tiệc phụ)

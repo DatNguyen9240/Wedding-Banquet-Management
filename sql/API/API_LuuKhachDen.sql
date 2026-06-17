@@ -6,6 +6,7 @@ CREATE OR ALTER PROCEDURE [dbo].[API_LuuKhachDen]
     @Makh VARCHAR(50) = NULL,
     @Tenkh NVARCHAR(200) = NULL,
     @Dienthoai VARCHAR(50) = NULL,
+    @CCCD VARCHAR(50) = NULL,
     @Ngaytochuc DATE = NULL,
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(50) = NULL,
@@ -50,17 +51,17 @@ BEGIN
         IF (@Makh IS NULL OR @Makh = '')
         BEGIN
             SET @Makh = 'KH' + FORMAT(GETDATE(), 'yyMM') + RIGHT('0000' + CAST((ABS(CHECKSUM(NEWID())) % 10000) AS VARCHAR), 4);
-            INSERT INTO dmkhachhang (Makh, Tenkh, Dienthoai, IsKhachhang, DateCreate)
-            VALUES (@Makh, ISNULL(@Tenkh, N'Khách vãng lai'), @Dienthoai, 1, GETDATE());
+            INSERT INTO dmkhachhang (Makh, Tenkh, Dienthoai, CMNDDaiDien, CMNDnguoidd, IsKhachhang, DateCreate)
+            VALUES (@Makh, ISNULL(@Tenkh, N'Khách vãng lai'), @Dienthoai, @CCCD, @CCCD, 1, GETDATE());
         END
         ELSE IF (@Tenkh IS NOT NULL AND @Tenkh <> '')
         BEGIN
-            UPDATE dmkhachhang SET Tenkh = ISNULL(NULLIF(@Tenkh, ''), Tenkh) WHERE Makh = @Makh;
+            UPDATE dmkhachhang SET Tenkh = ISNULL(NULLIF(@Tenkh, ''), Tenkh), CMNDDaiDien = ISNULL(@CCCD, CMNDDaiDien), CMNDnguoidd = ISNULL(@CCCD, CMNDnguoidd) WHERE Makh = @Makh;
         END
     END
     ELSE IF (@Makh IS NOT NULL AND @Makh <> '')
     BEGIN
-        UPDATE dmkhachhang SET Tenkh = ISNULL(@Tenkh, Tenkh), Dienthoai = ISNULL(@Dienthoai, Dienthoai) WHERE Makh = @Makh;
+        UPDATE dmkhachhang SET Tenkh = ISNULL(@Tenkh, Tenkh), Dienthoai = ISNULL(@Dienthoai, Dienthoai), CMNDDaiDien = ISNULL(@CCCD, CMNDDaiDien), CMNDnguoidd = ISNULL(@CCCD, CMNDnguoidd) WHERE Makh = @Makh;
     END
 
     -- 3. Xử lý fallback cho Gói Thực Đơn

@@ -1,4 +1,4 @@
-IF COL_LENGTH('tbmk_Hopdongthucuong', 'Dvt') IS NULL
+﻿IF COL_LENGTH('tbmk_Hopdongthucuong', 'Dvt') IS NULL
 BEGIN
     ALTER TABLE tbmk_Hopdongthucuong ADD Dvt NVARCHAR(50) NULL;
 END

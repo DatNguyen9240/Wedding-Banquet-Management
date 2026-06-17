@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[tbXuatnvl](
+﻿CREATE TABLE [dbo].[tbXuatnvl](
     [DocumentID] [varchar](50) NOT NULL,
     [DocumentDate] [datetime] NULL,
     [Phieuxuatnvl] [varchar](50) NULL,

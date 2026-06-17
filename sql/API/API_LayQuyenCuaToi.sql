@@ -1,4 +1,4 @@
-CREATE PROCEDURE API_LayQuyenCuaToi
+﻿CREATE PROCEDURE API_LayQuyenCuaToi
     @Username varchar(50)
 AS
 BEGIN

@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 /****** Object:  StoredProcedure [dbo].[API_LuuMenu] ******/

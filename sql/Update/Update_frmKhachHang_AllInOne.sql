@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -39,7 +39,7 @@ VALUES (
     'frmKhachHang',
     'Save',
     'API_LuuKhachHang',
-    '@Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Dienthoai=N''{Dienthoai}'', @Mail=N''{Mail}'', @Diachi=N''{Diachi}'', @Ghichu=N''{Ghichu}'', @UserCreate=N''{User}'', @IsEdit={IsEdit}'
+    '@Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Dienthoai=N''{Dienthoai}'', @Mail=N''{Mail}'', @Diachi=N''{Diachi}'', @Ghichu=N''{Ghichu}'', @CCCD=N''{CCCD}'', @UserCreate=N''{User}'', @IsEdit={IsEdit}'
 );
 
 INSERT INTO WA_API (List, Func, [SQL], Para)
@@ -74,6 +74,7 @@ UPDATE SY_FormatFields SET CaptionVN = N'SĐT chú rể', FormatID = 't', FormPo
 UPDATE SY_FormatFields SET CaptionVN = N'Tên cô dâu', FormatID = 't', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1, OrderNo = 5 WHERE FormName = 'frmKhachHang' AND FieldName = 'Tencodau';
 UPDATE SY_FormatFields SET CaptionVN = N'SĐT cô dâu', FormatID = 't', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1, OrderNo = 6 WHERE FormName = 'frmKhachHang' AND FieldName = 'DTcodau';
 UPDATE SY_FormatFields SET CaptionVN = N'SĐT đại diện', FormatID = 't', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 7 WHERE FormName = 'frmKhachHang' AND FieldName = 'Dienthoai';
+UPDATE SY_FormatFields SET CaptionVN = N'Số CCCD/CMND', FormatID = 't', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 8 WHERE FormName = 'frmKhachHang' AND FieldName = 'CCCD';
 UPDATE SY_FormatFields SET CaptionVN = N'Người giao dịch', FormatID = 't', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 10 WHERE FormName = 'frmKhachHang' AND FieldName = 'Nguoigd';
 UPDATE SY_FormatFields SET CaptionVN = N'Email', FormatID = 't', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 11 WHERE FormName = 'frmKhachHang' AND FieldName = 'Mail';
 UPDATE SY_FormatFields SET CaptionVN = N'Địa chỉ', FormatID = 't', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 12 WHERE FormName = 'frmKhachHang' AND FieldName = 'Diachi';

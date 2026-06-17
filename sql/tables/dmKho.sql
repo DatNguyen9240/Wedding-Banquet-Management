@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[dmKho](
+﻿CREATE TABLE [dbo].[dmKho](
     [Khoid] [varchar](50) NOT NULL,
     [Tenkho] [nvarchar](255) NULL,
     [Manv] [varchar](50) NULL,

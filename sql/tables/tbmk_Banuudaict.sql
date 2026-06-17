@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[tbmk_Banuudaict] (
+﻿CREATE TABLE [dbo].[tbmk_Banuudaict] (
     [UserAutoID] varchar(50) NOT NULL,
     [DocumentID] varchar(20) NULL,
     [Mahang] varchar(30) NULL,

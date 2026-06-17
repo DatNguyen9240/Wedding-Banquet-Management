@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 /****** Object:  StoredProcedure [dbo].[API_LayQuyenNhomDayDu]    Script Date: 10/06/2026 5:32:50 PM ******/
 SET ANSI_NULLS ON

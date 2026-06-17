@@ -6,8 +6,8 @@ var SettingsPage = (function () {
 
   function render($container) {
     fetch('./src/pages/settings/settings.html')
-      .then(function(res) { return res.text(); })
-      .then(function(html) {
+      .then(function (res) { return res.text(); })
+      .then(function (html) {
         $container.innerHTML = html;
         _mountTabs();
       });
@@ -33,28 +33,28 @@ var SettingsPage = (function () {
 
     var uploadNode = UIFileUpload.create({
       accept: 'image/jpeg, image/png',
-      onFileSelect: function(file) {
+      onFileSelect: function (file) {
         if (window.UIToast) UIToast.show('Đang tải lên logo...', 'info');
         var reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
           var base64Data = e.target.result;
           fetch('http://103.190.38.46:8081/api/upload-logo', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fileName: 'logo.jpg', base64: base64Data })
           })
-          .then(function(res) { return res.json(); })
-          .then(function(data) {
-            if (data.success) {
-              if (window.UIToast) UIToast.show('Đã cập nhật Logo thành công!', 'success');
-            } else {
-              if (window.UIToast) UIToast.show('Lỗi: ' + data.message, 'danger');
-            }
-          })
-          .catch(function(err) {
-            console.error(err);
-            if (window.UIToast) UIToast.show('Không thể kết nối máy chủ Document', 'danger');
-          });
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              if (data.success) {
+                if (window.UIToast) UIToast.show('Đã cập nhật Logo thành công!', 'success');
+              } else {
+                if (window.UIToast) UIToast.show('Lỗi: ' + data.message, 'danger');
+              }
+            })
+            .catch(function (err) {
+              console.error(err);
+              if (window.UIToast) UIToast.show('Không thể kết nối máy chủ Document', 'danger');
+            });
         };
         reader.readAsDataURL(file);
       }
@@ -63,38 +63,38 @@ var SettingsPage = (function () {
     return wrapper;
   }
 
-  function _attachFileUploadLogic() {}
+  function _attachFileUploadLogic() { }
 
   function _buildPeriodTab() {
     var wrapper = document.createElement('div');
     var monthsHtml = '';
     var lockedPeriods = window.PeriodManager ? window.PeriodManager.getLockedPeriods() : {};
-    var currentYear = '2026'; 
+    var currentYear = '2026';
 
     for (var i = 1; i <= 12; i++) {
       var key = i + '/' + currentYear;
       var isLocked = lockedPeriods[key] === true;
       var statusHtml = isLocked ? UIBadge.createHTML('Đã Khóa', 'warning', '', 'status-badge') : UIBadge.createHTML('Đang Mở', 'success', '', 'status-badge');
       var checked = isLocked ? 'checked' : '';
-      monthsHtml += '<tr><td>Tháng ' + (i < 10 ? '0' : '') + i + '/' + currentYear + '</td><td>Quý ' + Math.ceil(i/3) + '</td><td class="status-cell">' + statusHtml + '</td><td class="text-end"><label class="ui-checkbox-container" style="display:inline-flex;width:auto;margin:0;"><input type="checkbox" class="chk-lock-period" data-month="'+i+'" data-year="'+currentYear+'" ' + checked + '><span class="checkmark"></span> Khóa dữ liệu</label></td></tr>';
+      monthsHtml += '<tr><td>Tháng ' + (i < 10 ? '0' : '') + i + '/' + currentYear + '</td><td>Quý ' + Math.ceil(i / 3) + '</td><td class="status-cell">' + statusHtml + '</td><td class="text-end"><label class="ui-checkbox-container" style="display:inline-flex;width:auto;margin:0;"><input type="checkbox" class="chk-lock-period" data-month="' + i + '" data-year="' + currentYear + '" ' + checked + '><span class="checkmark"></span> Khóa dữ liệu</label></td></tr>';
     }
 
     wrapper.innerHTML = '<div class="p-4"><div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3"><div style="font-size:var(--font-size-lg); font-weight:600;">Quản lý Năm Sử Dụng & Kỳ Kế Toán</div><div class="d-flex gap-2 flex-wrap">' + UIButton.createHTML({ text: 'Chuyển tới Kỳ Khác', type: 'secondary', onClick: "ConfirmModal.show({title:'Chuyển Kỳ',message:'Chuyển đổi dữ liệu sang kỳ làm việc khác?'})" }) + UIButton.createHTML({ text: 'Tạo Mới Năm 2027', icon: 'add', type: 'primary', iconStyle: 'font-size:18px;margin-right:6px', onClick: "UIToast.show('Đã sinh thành công dữ liệu cho Năm 2027.')" }) + '</div></div><div class="row g-4"><div class="col-md-3"><label class="fw-semibold d-block mb-2">Năm Làm Việc</label><ul style="list-style:none;padding:0;margin:0;" class="d-flex flex-column gap-2"><li class="year-item active" onclick="SettingsPage.selectYear(this,\'2026\')">Năm 2026 (Hiện tại)</li><li class="year-item" onclick="SettingsPage.selectYear(this,\'2025\')">Năm 2025</li><li class="year-item" onclick="SettingsPage.selectYear(this,\'2024\')">Năm 2024</li></ul></div><div class="col-md-9"><div class="d-flex justify-content-between flex-wrap gap-2 align-items-center mb-3"><span class="fw-semibold" id="period-header-year">Tháng / Kỳ trong năm 2026</span>' + UIBadge.createHTML('Kỳ hiện hành: T10/2026', 'success', '', 'status-badge') + '</div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Kỳ (Tháng)</th><th>Phân Quý</th><th>Trạng Thái</th><th class="text-end">Khóa / Mở Kỳ</th></tr></thead><tbody>' + monthsHtml + '</tbody></table></div></div></div></div>';
 
-    wrapper.addEventListener('change', function(e) {
+    wrapper.addEventListener('change', function (e) {
       if (e.target.classList.contains('chk-lock-period')) {
-         var isChecked = e.target.checked;
-         var m = e.target.getAttribute('data-month');
-         var y = e.target.getAttribute('data-year');
-         if (window.PeriodManager) {
-           window.PeriodManager.setLockedPeriod(m, y, isChecked);
-           var tr = e.target.closest('tr');
-           var cell = tr.querySelector('.status-cell');
-           if (cell) {
-             cell.innerHTML = isChecked ? UIBadge.createHTML('Đã Khóa', 'warning', '', 'status-badge') : UIBadge.createHTML('Đang Mở', 'success', '', 'status-badge');
-           }
-           if (window.UIToast) UIToast.show((isChecked ? 'Đã khóa' : 'Đã mở khóa') + ' dữ liệu tháng ' + m + '/' + y, isChecked ? 'warning' : 'success');
-         }
+        var isChecked = e.target.checked;
+        var m = e.target.getAttribute('data-month');
+        var y = e.target.getAttribute('data-year');
+        if (window.PeriodManager) {
+          window.PeriodManager.setLockedPeriod(m, y, isChecked);
+          var tr = e.target.closest('tr');
+          var cell = tr.querySelector('.status-cell');
+          if (cell) {
+            cell.innerHTML = isChecked ? UIBadge.createHTML('Đã Khóa', 'warning', '', 'status-badge') : UIBadge.createHTML('Đang Mở', 'success', '', 'status-badge');
+          }
+          if (window.UIToast) UIToast.show((isChecked ? 'Đã khóa' : 'Đã mở khóa') + ' dữ liệu tháng ' + m + '/' + y, isChecked ? 'warning' : 'success');
+        }
       }
     });
 
@@ -112,7 +112,7 @@ var SettingsPage = (function () {
     var wrapper = document.createElement('div');
     var container = document.createElement('div');
     container.className = 'p-4';
-    
+
     var row = document.createElement('div');
     row.className = 'row g-5';
 
@@ -157,10 +157,10 @@ var SettingsPage = (function () {
 
   return {
     render: render,
-    selectYear: function(el, year) {
+    selectYear: function (el, year) {
       if (!el) return;
       var items = el.parentElement.querySelectorAll('.year-item');
-      items.forEach(function(item) { item.classList.remove('active'); });
+      items.forEach(function (item) { item.classList.remove('active'); });
       el.classList.add('active');
       UIToast.show('Đã chuyển sang xem Kỳ Kế Toán Năm ' + year);
       var headerText = document.getElementById('period-header-year');

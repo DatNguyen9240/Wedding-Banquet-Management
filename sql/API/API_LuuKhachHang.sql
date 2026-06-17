@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 -- =============================================
@@ -16,6 +16,7 @@ CREATE PROCEDURE [dbo].[API_LuuKhachHang]
     @Mail           NVARCHAR(100)  = NULL,
     @Diachi         NVARCHAR(500)  = NULL,
     @Ghichu         NVARCHAR(2000) = NULL,
+    @CCCD           VARCHAR(50)    = NULL,
     @UserCreate     VARCHAR(50)    = 'Admin',
     @IsEdit         TINYINT        = 0   -- 0: Thêm mới, 1: Cập nhật
 AS
@@ -45,7 +46,8 @@ BEGIN
             INSERT INTO dmkhachhang (
                 Makh, Tenkh, Tenchure, Tencodau,
                 DTchure, DTcodau, Dienthoai, Mail, Diachi, Ghichu,
-                IsKhachhang, DateCreate, UserCreate
+                IsKhachhang, DateCreate, UserCreate,
+                CMNDDaiDien, CMNDnguoidd
             )
             VALUES (
                 @Makh,
@@ -57,7 +59,8 @@ BEGIN
                 @DTchure, @DTcodau,
                 ISNULL(@Dienthoai, ISNULL(@DTchure, @DTcodau)),
                 @Mail, @Diachi, @Ghichu,
-                1, @Now, @UserCreate
+                1, @Now, @UserCreate,
+                @CCCD, @CCCD
             );
         END
         ELSE
@@ -77,6 +80,8 @@ BEGIN
                 Mail        = @Mail,
                 Diachi      = @Diachi,
                 Ghichu      = @Ghichu,
+                CMNDDaiDien = @CCCD,
+                CMNDnguoidd = @CCCD,
                 DateUpdate  = @Now,
                 UserUpdate  = @UserCreate
             WHERE Makh = @Makh;

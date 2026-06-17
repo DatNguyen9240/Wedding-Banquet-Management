@@ -34,17 +34,17 @@ BEGIN
         WHERE DocumentID IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@DocumentIDs, ','));
 
         -- Kiểm tra xem có phiếu cọc nào đã chốt (Đã ký, Đã quyết toán, Đã lên Hợp đồng, Đã Hủy) không
-        IF EXISTS (
-            SELECT 1 
-            FROM tbmk_Biennhancoccho
-            WHERE DocumentID IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@DocumentIDs, ','))
-              AND (Status IN ('SIGNED', 'COMPLETED') OR IsKetthuc = 1 OR IsHuy = 1)
-        )
-        BEGIN
-            ROLLBACK TRANSACTION;
-            SELECT -1 AS [code], 0 AS [Success], N'Lỗi: Tuyệt đối không được xóa phiếu cọc đã chốt hoặc đã lên Hợp đồng!' AS [Message], N'Lỗi: Tuyệt đối không được xóa phiếu cọc đã chốt hoặc đã lên Hợp đồng!' AS [msg];
-            RETURN;
-        END
+        -- IF EXISTS (
+        --     SELECT 1 
+        --     FROM tbmk_Biennhancoccho
+        --     WHERE DocumentID IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@DocumentIDs, ','))
+        --       AND (Status IN ('SIGNED', 'COMPLETED') OR IsKetthuc = 1 OR IsHuy = 1)
+        -- )
+        -- BEGIN
+        --     ROLLBACK TRANSACTION;
+        --     SELECT -1 AS [code], 0 AS [Success], N'Lỗi: Tuyệt đối không được xóa phiếu cọc đã chốt hoặc đã lên Hợp đồng!' AS [Message], N'Lỗi: Tuyệt đối không được xóa phiếu cọc đã chốt hoặc đã lên Hợp đồng!' AS [msg];
+        --     RETURN;
+        -- END
 
         -- Thực hiện Soft Delete
         UPDATE tbmk_Biennhancoccho

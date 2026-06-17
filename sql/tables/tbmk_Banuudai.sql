@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[tbmk_Banuudai] (
+﻿CREATE TABLE [dbo].[tbmk_Banuudai] (
     [DocumentID] varchar(20) NOT NULL,
     [DocumentDate] datetime NULL,
     [Tenuudai] nvarchar(250) NULL,

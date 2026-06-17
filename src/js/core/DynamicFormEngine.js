@@ -395,6 +395,7 @@ window.DynamicFormEngine = (function () {
             showInAdd: _bool(item.showInAdd, item.ShowInAdd),
             showInEdit: _bool(item.showInEdit, item.ShowInEdit),
             showInFilter: _bool(item.showInFilter, item.ShowInFilter),
+            showInGrid: (item.showInGrid !== undefined || item.ShowInGrid !== undefined) ? _bool(item.showInGrid, item.ShowInGrid) : true,
             isReadOnlyEdit: _bool(item.isReadOnlyEdit, item.IsReadOnlyEdit),
             isReadOnlyAdd: _bool(item.isReadOnlyAdd, item.IsReadOnlyAdd),
             position: item.FormPosition || item.formPosition || item.position || '6',
@@ -470,22 +471,26 @@ window.DynamicFormEngine = (function () {
                 return Alert.info(MODULE_CONFIG.AlertTitleInfo, MODULE_CONFIG.InfoDeleteDev);
               }
 
-              // Xử lý từng dòng một (Vì API Gateway C# map JSON sang Model, thiếu field sẽ bị NULL update)
-              var deletePromises = selectedRows.map(function (row) {
-                var payload = {
-                  List: MODULE_CONFIG.FormName,
-                  Func: 'Delete',
-                  UserName: _currentUser()
-                };
+              // Thực hiện xóa hàng loạt (Batch Delete) để tối ưu hiệu năng và khớp với API Gateway
+              var pkField = MODULE_CONFIG.primaryKey || 'DocumentID';
+              var pkValues = selectedRows.map(function (row) { return row[pkField]; }).filter(Boolean).join(',');
 
-                // Bơm toàn bộ dữ liệu gốc của row vào để C# binding không bị mất các cột Not Null (như Ngaytochuc)
-                var rowData = Object.assign({}, row);
-                rowData.IsDeleted = 1; // Flag xóa mềm
+              var payload = {
+                List: MODULE_CONFIG.FormName,
+                Func: 'Delete',
+                UserName: _currentUser()
+              };
 
-                payload.JsonData = JSON.stringify(rowData);
+              // Bơm dữ liệu dòng đầu tiên kèm theo danh sách ID dạng batch (comma separated) để tránh mất các cột Not Null
+              var rowData = Object.assign({}, selectedRows[0] || {});
+              rowData.IsDeleted = 1; // Flag xóa mềm
+              rowData[pkField] = pkValues;
+              rowData['DocumentIDs'] = pkValues;
+              rowData['Ids'] = pkValues;
 
-                return ApiClient.post(MODULE_CONFIG.ApiDelete, payload);
-              });
+              payload.JsonData = JSON.stringify(rowData);
+
+              var deletePromises = [ApiClient.post(MODULE_CONFIG.ApiDelete, payload)];
 
               Promise.all(deletePromises).then(function (results) {
                 var allSuccess = results.every(function (res) { return res && res.code === 0; });
@@ -776,7 +781,8 @@ window.DynamicFormEngine = (function () {
       var dictionary = {};
       globalFormSchema.forEach(function (f) {
         var pos = String(f.position || '').trim();
-        if (pos && !isNaN(pos)) {
+        var isGridPos = (pos === 'grid' || (!isNaN(pos) && pos !== ''));
+        if (isGridPos && f.showInGrid !== false && String(f.showInGrid) !== '0' && pos !== 'hidden') {
           dictionary[f.name] = f.label;
         }
       });

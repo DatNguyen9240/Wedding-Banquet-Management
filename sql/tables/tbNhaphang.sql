@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[tbNhaphang](
+﻿CREATE TABLE [dbo].[tbNhaphang](
     [DocumentID] [varchar](50) NOT NULL,
     [DocumentDate] [datetime] NULL,
     [Phieunhap] [varchar](50) NULL,

@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[dmHanghoadinhluong](
+﻿CREATE TABLE [dbo].[dmHanghoadinhluong](
     [UserAutoID] [varchar](50) NOT NULL,
     [Mahang] [varchar](50) NULL,
     [Manvl] [varchar](50) NULL,

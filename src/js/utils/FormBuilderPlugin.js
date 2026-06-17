@@ -363,6 +363,7 @@ var FormBuilderPlugin = (function () {
               ShowInAdd: isAddChecked ? 1 : 0,
               ShowInEdit: isEditChecked ? 1 : 0,
               ShowInFilter: orig.showInFilter !== undefined ? orig.showInFilter : (orig.ShowInFilter !== undefined ? orig.ShowInFilter : 0),
+              ShowInGrid: orig.showInGrid !== undefined ? (orig.showInGrid ? 1 : 0) : (orig.ShowInGrid !== undefined ? (orig.ShowInGrid ? 1 : 0) : 1),
               IsReadOnlyAdd: orig.isReadOnlyAdd !== undefined ? orig.isReadOnlyAdd : (orig.IsReadOnlyAdd !== undefined ? orig.IsReadOnlyAdd : 0),
               IsReadOnlyEdit: orig.isReadOnlyEdit !== undefined ? orig.isReadOnlyEdit : (orig.IsReadOnlyEdit !== undefined ? orig.IsReadOnlyEdit : 0),
               ValidateRule: orig.validateRule || orig.ValidateRule || orig.VALIDATERULE || '',

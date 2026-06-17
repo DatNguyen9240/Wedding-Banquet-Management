@@ -1,4 +1,4 @@
-CREATE TABLE [dbo].[tbmk_Hopdongthucdonman] (
+﻿CREATE TABLE [dbo].[tbmk_Hopdongthucdonman] (
     [UserAutoid] varchar(50) NOT NULL,
     [Sohopdong] varchar(50) NOT NULL,
     [STTmon] tinyint NULL,

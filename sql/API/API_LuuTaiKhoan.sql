@@ -1,4 +1,4 @@
-CREATE OR ALTER PROCEDURE [dbo].[API_LuuTaiKhoan]
+﻿CREATE OR ALTER PROCEDURE [dbo].[API_LuuTaiKhoan]
     @UserName NVARCHAR(50),
     @HoTen NVARCHAR(100) = NULL,
     @TenNgan NVARCHAR(100) = NULL,

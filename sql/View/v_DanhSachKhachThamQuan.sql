@@ -12,24 +12,25 @@ SELECT
     
     -- Các trường dành cho Form Sửa (Edit Binding)
     t.DocumentID,
-    t.Makh AS [_TenKhachHang],    -- Cột ảo chứa ID ngầm cho Form Sửa
+    t.Makh AS [Makh],             -- Cột ID ngầm cho Form Sửa
     k.Tenkh AS [TenKhachHang],    -- Cột thật chứa Tên để in ra Bảng
     ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [DienThoai],
+    k.CMNDDaiDien AS [CCCD],      -- Bổ sung trường CCCD của Khách hàng
     
     t.Ngaytochuc AS [NgayDuKien], -- Hiển thị Lưới (dd/MM/yyyy)
     
     t.Nhamngay AS [NgayAmLich],
-    t.GoiThucDonID AS [_GoiTiec], -- Cột ẩn chứa ID cho Form Sửa
+    t.GoiThucDonID AS [GoiThucDonID], -- Cột chứa ID cho Form Sửa
     gd.TenGoiThucDon AS [GoiTiec], -- Cột hiện Tên Gói Tiệc ra Lưới
     
-    -- Dữ liệu ngầm định khác (Thêm dấu _ để Lưới tự động tàng hình)
-    t.Loaitiecid AS [_Loaitiecid],
-    t.Thoigianid AS [_Thoigianid],
-    t.SobanMan AS [_SobanMan],
-    t.SobanChay AS [_SobanChay],
-    t.Ghichu AS [_Ghichu],
-    t.Ngaytochuc AS [_Ngaytochuc],
-    t.DocumentDate AS [_DocumentDate],
+    -- Dữ liệu ngầm định khác
+    t.Loaitiecid AS [Loaitiecid],
+    t.Thoigianid AS [Thoigianid],
+    t.SobanMan AS [SobanMan],
+    t.SobanChay AS [SobanChay],
+    t.Ghichu AS [Ghichu],
+    t.Ngaytochuc AS [Ngaytochuc],
+    t.DocumentDate AS [DocumentDate],
     
     (
         SELECT TOP 1 s.Tensanhtiec 
@@ -43,7 +44,7 @@ SELECT
         SELECT TOP 1 bs.Sanhtiecid 
         FROM tbmk_Khachthamquansanhtiec bs 
         WHERE bs.DocumentID = t.DocumentID
-    ) AS [_SanhTiec], -- Đổi thành cột chìm chứa ID
+    ) AS [SanhTiecID], -- Đổi thành cột chìm chứa ID
     
     CASE
         WHEN t.IsHuy = 1 THEN N'Đã Hủy'

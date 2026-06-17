@@ -688,13 +688,32 @@ VALUES
 GO
 
 -- =====================================================================
--- 6. CẬP NHẬT ÁNH XẠ THAM SỐ API SAVE TRONG CỔNG WA_API
+-- 6. CẬP NHẬT ÁNH XẠ THAM SỐ API TRONG CỔNG WA_API
 -- =====================================================================
-PRINT N'Đang cấu hình định tuyến tham số API Save trong WA_API...';
+PRINT N'Đang cấu hình định tuyến tham số API trong WA_API...';
 GO
-UPDATE WA_API
-SET Para = '@DocumentID=N''{DocumentID}'', @Makh=N''{Makh}'', @MaChungTu=N''{MaChungTu}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Diachi=N''{Diachi}'', @Nguoigd=N''{Nguoigd}'', @DienThoaiDaiDien=N''{DienThoaiDaiDien}'', @Mail=N''{Mail}'', @Ngaytochuc=N''{NgayToChuc}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @GoiThucDonID=N''{GoiThucDonID}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @Tongtien=N''{DaCocVND}'', @Solan=N''{Solan}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @TaiKhoanNo=N''{TaiKhoanNo}'', @TaiKhoanCo=N''{TaiKhoanCo}'', @Kemtheo=N''{Kemtheo}'', @Lydo=N''{Lydo}'', @HinhThuc=N''{HinhThuc}'''
-WHERE List = 'frmBiennhancoccho' AND Func = 'Save';
+DELETE FROM WA_API WHERE List = 'frmBiennhancoccho' AND Func IN ('View', 'Save', 'Delete');
+GO
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES
+(
+    'frmBiennhancoccho', 
+    'View', 
+    'API_DanhSachPhieuCoc', 
+    '@Keyword=N''{Keyword}'', @TuNgay=N''{TuNgay}'', @DenNgay=N''{DenNgay}'''
+),
+(
+    'frmBiennhancoccho', 
+    'Save', 
+    'API_LuuPhieuCoc', 
+    '@DocumentID=N''{DocumentID}'', @Makh=N''{Makh}'', @MaChungTu=N''{MaChungTu}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Diachi=N''{Diachi}'', @Nguoigd=N''{Nguoigd}'', @DienThoaiDaiDien=N''{DienThoaiDaiDien}'', @Mail=N''{Mail}'', @Ngaytochuc=N''{NgayToChuc}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @GoiThucDonID=N''{GoiThucDonID}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @Tongtien=N''{DaCocVND}'', @Solan=N''{Solan}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @TaiKhoanNo=N''{TaiKhoanNo}'', @TaiKhoanCo=N''{TaiKhoanCo}'', @Kemtheo=N''{Kemtheo}'', @Lydo=N''{Lydo}'', @HinhThuc=N''{HinhThuc}'''
+),
+(
+    'frmBiennhancoccho', 
+    'Delete', 
+    'API_XoaPhieuCoc', 
+    '@DocumentIDs=N''{DocumentIDs}'', @UserName=N''{User}'''
+);
 GO
 
 -- Đăng ký API_DanhSachPhieuCoc dùng riêng cho in Word (View)

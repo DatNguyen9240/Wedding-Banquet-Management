@@ -1,4 +1,4 @@
-CREATE OR ALTER PROCEDURE [dbo].[API_TruyVanDong]
+﻿CREATE OR ALTER PROCEDURE [dbo].[API_TruyVanDong]
     @List VARCHAR(50),
     @Keyword NVARCHAR(200) = '',
     @SortColumn VARCHAR(50) = '',

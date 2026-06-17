@@ -1,4 +1,4 @@
-USE [QLTiec]
+﻿USE [QLTiec]
 GO
 
 -- 1. Tạo bảng Tiec_Documents nếu chưa tồn tại
