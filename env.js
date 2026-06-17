@@ -24,11 +24,11 @@ const ENV_VARS = {
     get DOCSERVER_BASE() {
         var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
         if (isHttps) {
-            // Production: proxy qua nginx (/docserver/ → localhost:8081)
+            // Production: proxy qua nginx của IIS -> forward sang Docker 8070
             return 'https://qlt.bms79.com/docserver';
         }
-        // Local dev: gọi thẳng HTTP
-        return 'http://' + this.BACKEND_HOST + ':8081';
+        // Local dev: gọi qua Nginx port 8070
+        return 'http://' + this.BACKEND_HOST + ':8070/docserver';
     }
 };
 
@@ -47,7 +47,13 @@ window.API_CONFIG = {
         DOCUMENT_MANAGER: {
             NODE_IP: ENV_VARS.BACKEND_HOST,
             BASE_API: ENV_VARS.DOCSERVER_BASE + '/api/documents',
-            ONLYOFFICE_API: 'http://' + ENV_VARS.ONLYOFFICE_HOST + ':8082/web-apps/apps/api/documents/api.js',
+            get ONLYOFFICE_API() {
+                var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
+                if (isHttps) {
+                    return 'https://qlt.bms79.com/onlyoffice/web-apps/apps/api/documents/api.js';
+                }
+                return 'http://' + ENV_VARS.ONLYOFFICE_HOST + ':8070/onlyoffice/web-apps/apps/api/documents/api.js';
+            },
             UPLOADS_URL: ENV_VARS.DOCSERVER_BASE + '/uploads/',
             SAMPLES_URL: ENV_VARS.DOCSERVER_BASE + '/samples/'
         },
