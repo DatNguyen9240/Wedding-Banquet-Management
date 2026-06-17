@@ -145,6 +145,8 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(10) = NULL,
     @Thoigianid VARCHAR(20) = NULL,      -- Ca tiệc
+    @SetupBatDau NVARCHAR(50) = NULL,     -- Giờ bắt đầu Setup
+    @SetupKetThuc NVARCHAR(50) = NULL,    -- Giờ kết thúc Setup
     
     @SobanManchinhthuc NVARCHAR(100) = NULL,
     @SobanManduphong NVARCHAR(100) = NULL,
@@ -233,20 +235,55 @@ BEGIN
     SET @TongtiencocVal        = TRY_CAST(REPLACE(REPLACE(ISNULL(@Tongtiencoc,        '0'), '.', ''), ',', '') AS DECIMAL(18,2));
 
     -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân tách bằng dấu phẩy
+    IF (@JsonSanhTiec = '.' OR @JsonSanhTiec = '')
+    BEGIN
+        SET @JsonSanhTiec = NULL;
+    END
+
     IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
     BEGIN
-        IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+        IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[' OR ISJSON(@JsonSanhTiec) = 0)
         BEGIN
             SET @JsonSanhTiec = (
                 SELECT Sanhtiecid, 1 AS IsSanhchinh
                 FROM (
                     SELECT LTRIM(RTRIM(value)) AS Sanhtiecid 
                     FROM STRING_SPLIT(@JsonSanhTiec, ',')
+                    WHERE value <> '.' AND value <> ''
                 ) s
+                WHERE Sanhtiecid <> ''
+                FOR JSON PATH
+            );
+        END
+        ELSE
+        BEGIN
+            -- Nếu đã là JSON array, chuẩn hóa để loại bỏ phần tử rác (nếu có)
+            SET @JsonSanhTiec = (
+                SELECT Sanhtiecid, IsSanhchinh
+                FROM (
+                    SELECT 
+                        JSON_VALUE(value, '$.Sanhtiecid') AS Sanhtiecid,
+                        ISNULL(CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0) AS IsSanhchinh
+                    FROM OPENJSON(@JsonSanhTiec)
+                ) s
+                WHERE Sanhtiecid IS NOT NULL AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
                 FOR JSON PATH
             );
         END
     END
+
+    -- Chuẩn hóa các tham số JSON chi tiết thực đơn & dịch vụ
+    IF (@JsonBanTiec = '.' OR @JsonBanTiec = '' OR @JsonBanTiec = '[]') SET @JsonBanTiec = NULL;
+    IF (@JsonBanTiec IS NOT NULL AND (LEFT(LTRIM(@JsonBanTiec), 1) <> '[' OR ISJSON(@JsonBanTiec) = 0)) SET @JsonBanTiec = '[' + @JsonBanTiec + ']';
+
+    IF (@JsonThucUong = '.' OR @JsonThucUong = '' OR @JsonThucUong = '[]') SET @JsonThucUong = NULL;
+    IF (@JsonThucUong IS NOT NULL AND (LEFT(LTRIM(@JsonThucUong), 1) <> '[' OR ISJSON(@JsonThucUong) = 0)) SET @JsonThucUong = '[' + @JsonThucUong + ']';
+
+    IF (@JsonDichVu = '.' OR @JsonDichVu = '' OR @JsonDichVu = '[]') SET @JsonDichVu = NULL;
+    IF (@JsonDichVu IS NOT NULL AND (LEFT(LTRIM(@JsonDichVu), 1) <> '[' OR ISJSON(@JsonDichVu) = 0)) SET @JsonDichVu = '[' + @JsonDichVu + ']';
+
+    IF (@JsonPhatSinh = '.' OR @JsonPhatSinh = '' OR @JsonPhatSinh = '[]') SET @JsonPhatSinh = NULL;
+    IF (@JsonPhatSinh IS NOT NULL AND (LEFT(LTRIM(@JsonPhatSinh), 1) <> '[' OR ISJSON(@JsonPhatSinh) = 0)) SET @JsonPhatSinh = '[' + @JsonPhatSinh + ']';
 
     IF (@NgayToChucParsed IS NULL AND @Sohopdong IS NOT NULL AND @Sohopdong <> '')
         SELECT TOP 1 @NgayToChucParsed = Ngaytochuc FROM tbmk_Hopdong WHERE Sohopdong = @Sohopdong;
@@ -344,14 +381,14 @@ BEGIN
             SET @Sohopdong = 'HD' + FORMAT(@Now, 'yyMMddHHmmss');
             INSERT INTO tbmk_Hopdong (
                 Sohopdong, Sobiennhan, Ngayhopdong, Ngaytochuc, Nhamngay, Makh, Loaitiecid, Thoigianid,
-                TuNgaySetup, NgayTraSanhDV,
+                TuNgaySetup, NgayTraSanhDV, TuGioDenGioSetup, DenGioSetup,
                 SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong, TongSoBan,
                 Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongtiencoc,
                 Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID
             )
             VALUES (
                 @Sohopdong, @Sobiennhan, ISNULL(@NgayHopDongParsed,@Now), @NgayToChucParsed, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
-                @TuNgaySetupParsed, @NgayTraSanhDVParsed,
+                @TuNgaySetupParsed, @NgayTraSanhDVParsed, @SetupBatDau, @SetupKetThuc,
                 @SobanManchinhthucVal, @SobanManduphongVal, @SobanChaychinhthucVal, @SobanChayduphongVal, @TongSoBanVal,
                 @TongtienhopdongVal, @SotiencocchoVal, @SotiencochopdongVal, @TongtiencocVal,
                 @Manv, @Ghichu, 0, 0, @Now, @UserCreate, ''
@@ -371,6 +408,8 @@ BEGIN
                 Sobiennhan=@Sobiennhan, Makh=@Makh, Ngayhopdong=@NgayHopDongParsed, Ngaytochuc=@NgayToChucParsed,
                 TuNgaySetup = ISNULL(@TuNgaySetupParsed, TuNgaySetup),
                 NgayTraSanhDV = ISNULL(@NgayTraSanhDVParsed, NgayTraSanhDV),
+                TuGioDenGioSetup = @SetupBatDau,
+                DenGioSetup = @SetupKetThuc,
                 Nhamngay=@Nhamngay, Loaitiecid=@Loaitiecid, Thoigianid=@Thoigianid,
                 SobanManchinhthuc=@SobanManchinhthucVal, SobanManduphong=@SobanManduphongVal,
                 SobanChaychinhthuc=@SobanChaychinhthucVal, SobanChayduphong=@SobanChayduphongVal,
@@ -885,7 +924,7 @@ VALUES (
     'frmHopDong',
     'Save',
     'API_LuuHopDong',
-    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenBCCCD=N''{BenBCCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @TuNgaySetup=N''{TuNgaySetup}'', @NgayTraSanhDV=N''{NgayTraSanhDV}'', @TenCongTy=N''{TenCongTy}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @JsonBanTiec=N''{JsonBanTiec}'', @JsonThucUong=N''{JsonThucUong}'', @JsonDichVu=N''{JsonDichVu}'', @JsonPhatSinh=N''{JsonPhatSinh}'''
+    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenBCCCD=N''{BenBCCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @TuNgaySetup=N''{TuNgaySetup}'', @NgayTraSanhDV=N''{NgayTraSanhDV}'', @TenCongTy=N''{TenCongTy}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SetupBatDau=N''{SetupBatDau}'', @SetupKetThuc=N''{SetupKetThuc}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @JsonBanTiec=N''{JsonBanTiec}'', @JsonThucUong=N''{JsonThucUong}'', @JsonDichVu=N''{JsonDichVu}'', @JsonPhatSinh=N''{JsonPhatSinh}'''
 );
 
 DELETE FROM WA_API WHERE List = 'frmHopDong' AND Func = 'Delete';
@@ -960,7 +999,7 @@ WHERE FormName = 'frmHopDong'
     'Dot1SoTien', 'Dot1Ngay', 'Dot1HinhThuc', 'Dot2SoTien', 'Dot2HinhThuc', 'DotCuoiGhiChu',
     'TongThanhTien', 'MucPhiPhucVu', 'PhiPhucVu', 'TongCongChuaVAT', 'VAT8', 'VAT10', 'TongTienFormat',
     'TemplateFile', 'JsonLichTrinh', 'SanhDat2', 'Giabanman', 'DanhSachSanh',
-    'DanhSachMenu', 'DanhSachThucUong', 'MenuTiec', 'MenuTongCong',
+    'JsonBanTiec', 'JsonThucUong', 'JsonDichVu', 'JsonPhatSinh', 'DanhSachMenu', 'DanhSachThucUong', 'MenuTiec', 'MenuTongCong',
     'DichVuTinhPhi', 'DanhSachNgay', 'DanhSachDichVu', 'Email'
   );
 
@@ -1043,6 +1082,10 @@ UPDATE SY_FormatFields
 SET DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View'
 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
 
+UPDATE SY_FormatFields
+SET FormatID = 'tm', DataSource = NULL
+WHERE FormName = 'frmHopDong' AND FieldName IN ('SetupBatDau', 'SetupKetThuc');
+
 -- Đảm bảo SanhDat hiển thị đẹp trên Grid
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat')
 BEGIN
@@ -1065,8 +1108,8 @@ UPDATE SY_FormatFields SET CaptionVN = N'Ngày bắt đầu Setup' WHERE FormNam
 UPDATE SY_FormatFields SET CaptionVN = N'Ngày trả sảnh' WHERE FormName = 'frmHopDong' AND FieldName = 'NgayTraSanhDV';
 UPDATE SY_FormatFields SET CaptionVN = N'Sảnh phụ (nếu có)' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat2';
 
-UPDATE SY_FormatFields SET CaptionVN = N'Giờ bắt đầu Setup', FormPosition = '6', OrderNo = 80 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupBatDau';
-UPDATE SY_FormatFields SET CaptionVN = N'Giờ kết thúc Setup', FormPosition = '6', OrderNo = 81 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupKetThuc';
+UPDATE SY_FormatFields SET CaptionVN = N'Giờ bắt đầu Setup', FormPosition = '6', OrderNo = 80, ShowInAdd = 1, ShowInEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupBatDau';
+UPDATE SY_FormatFields SET CaptionVN = N'Giờ kết thúc Setup', FormPosition = '6', OrderNo = 81, ShowInAdd = 1, ShowInEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupKetThuc';
 UPDATE SY_FormatFields SET CaptionVN = N'Nội dung Setup 1', FormPosition = '12', OrderNo = 82 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupNoiDung1';
 UPDATE SY_FormatFields SET CaptionVN = N'Nội dung Setup 2', FormPosition = '12', OrderNo = 83 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupNoiDung2';
 UPDATE SY_FormatFields SET CaptionVN = N'Nội dung Tổ chức', FormPosition = '12', OrderNo = 84 WHERE FormName = 'frmHopDong' AND FieldName = 'ToChucNoiDung';

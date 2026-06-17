@@ -1266,6 +1266,12 @@ var FoodSelectionPlugin = (function () {
   var selectedThucUong = [];
   var selectedDichVu = [];
 
+  // Trạng thái các món gốc trong Hợp đồng/Phụ lục để đối chiếu (Quyết toán)
+  var contractFoodsMan = [];
+  var contractFoodsChay = [];
+  var contractThucUong = [];
+  var contractDichVu = [];
+
   // Thêm styles cho giao diện plugin
   function _injectStyles() {
     if (document.getElementById('food-selection-plugin-styles')) return;
@@ -1279,6 +1285,8 @@ var FoodSelectionPlugin = (function () {
         background: var(--color-surface);
         padding: 20px;
         box-shadow: var(--shadow-sm);
+        max-width: 100%;
+        box-sizing: border-box;
       }
       .food-plugin-header {
         display: flex;
@@ -1499,6 +1507,9 @@ var FoodSelectionPlugin = (function () {
       else if (rawItem.IsChay !== undefined) isChayVal = rawItem.IsChay;
       else if (rawItem.TenHang && rawItem.TenHang.toLowerCase().includes('chay')) isChayVal = 1;
 
+      // Chuẩn hóa thành 0 hoặc 1 (để tránh lệch kiểu dữ liệu string "0"/"1" từ API)
+      isChayVal = (isChayVal == 1 || isChayVal === true) ? 1 : 0;
+
       return {
         MaMon: maMon,
         Mahang: maMon,
@@ -1538,6 +1549,25 @@ var FoodSelectionPlugin = (function () {
 
     selectedThucUong = _mapRawItems(rawThucUong, 0);
     selectedDichVu = _mapRawItems(rawDichVu, 0);
+
+    // Đọc dữ liệu hợp đồng đối chiếu (dành cho Quyết toán)
+    var inpBanTiecHD = modal.querySelector('[name="JsonBanTiecHopDong"]');
+    var inpThucUongHD = modal.querySelector('[name="JsonThucUongHopDong"]');
+    var inpDichVuHD = modal.querySelector('[name="JsonDichVuHopDong"]');
+
+    var rawBanTiecHD = [];
+    var rawThucUongHD = [];
+    var rawDichVuHD = [];
+
+    try { if (inpBanTiecHD && inpBanTiecHD.value) rawBanTiecHD = JSON.parse(inpBanTiecHD.value); } catch (e) { }
+    try { if (inpThucUongHD && inpThucUongHD.value) rawThucUongHD = JSON.parse(inpThucUongHD.value); } catch (e) { }
+    try { if (inpDichVuHD && inpDichVuHD.value) rawDichVuHD = JSON.parse(inpDichVuHD.value); } catch (e) { }
+
+    var mappedBanTiecHD = _mapRawItems(rawBanTiecHD, 0);
+    contractFoodsMan = mappedBanTiecHD.filter(function (x) { return x.IsChay === 0 || x.IsChay === false; });
+    contractFoodsChay = mappedBanTiecHD.filter(function (x) { return x.IsChay === 1 || x.IsChay === true; });
+    contractThucUong = _mapRawItems(rawThucUongHD, 0);
+    contractDichVu = _mapRawItems(rawDichVuHD, 0);
   }
 
   // Ghi dữ liệu ngược lại các input ẩn và phát sự kiện change
@@ -1601,169 +1631,468 @@ var FoodSelectionPlugin = (function () {
     _renderSummaryTables();
   }
 
+  // Lấy danh sách đối chiếu so sánh giữa thực tế và hợp đồng
+  function _getComparisonList(selectedList, contractList) {
+    var result = [];
+    var processedMaMons = {};
+
+    selectedList.forEach(function (selItem) {
+      var maMon = selItem.MaMon || selItem.Mahang || '';
+      processedMaMons[maMon] = true;
+
+      var conItem = contractList.find(function (c) {
+        return (c.MaMon || c.Mahang) === maMon;
+      });
+
+      var contractQty = conItem ? (conItem.SoLuong || conItem.Soluong || 0) : 0;
+      var contractPrice = conItem ? (conItem.DonGia || conItem.Dongia || 0) : 0;
+      var actualQty = selItem.SoLuong || selItem.Soluong || 0;
+      var actualPrice = selItem.DonGia || selItem.Dongia || 0;
+
+      var status = 'normal';
+      if (!conItem) {
+        status = 'added';
+      } else if (contractQty !== actualQty || contractPrice !== actualPrice) {
+        status = 'modified';
+      }
+
+      result.push({
+        MaMon: maMon,
+        TenMon: selItem.TenMon || selItem.TenHang || '',
+        PhanLoai: selItem.PhanLoai || 'Khác',
+        DvtID: selItem.DvtID || 'Đĩa',
+        contractQty: contractQty,
+        contractPrice: contractPrice,
+        actualQty: actualQty,
+        actualPrice: actualPrice,
+        contractSubtotal: contractQty * contractPrice,
+        actualSubtotal: actualQty * actualPrice,
+        diffQty: actualQty - contractQty,
+        diffSubtotal: (actualQty * actualPrice) - (contractQty * contractPrice),
+        status: status,
+        rawItem: selItem
+      });
+    });
+
+    contractList.forEach(function (conItem) {
+      var maMon = conItem.MaMon || conItem.Mahang || '';
+      if (processedMaMons[maMon]) return;
+
+      var contractQty = conItem.SoLuong || conItem.Soluong || 0;
+      var contractPrice = conItem.DonGia || conItem.Dongia || 0;
+
+      result.push({
+        MaMon: maMon,
+        TenMon: conItem.TenMon || conItem.TenHang || '',
+        PhanLoai: conItem.PhanLoai || 'Khác',
+        DvtID: conItem.DvtID || 'Đĩa',
+        contractQty: contractQty,
+        contractPrice: contractPrice,
+        actualQty: 0,
+        actualPrice: conItem.DonGia || conItem.Dongia || 0,
+        contractSubtotal: contractQty * contractPrice,
+        actualSubtotal: 0,
+        diffQty: -contractQty,
+        diffSubtotal: -(contractQty * contractPrice),
+        status: 'deleted',
+        rawItem: conItem
+      });
+    });
+
+    return result;
+  }
+
+  // Lấy chi tiết tính tổng của một tab
+  function _getTabSums(type) {
+    var selectedList = [];
+    var contractList = [];
+
+    if (type === 'man') {
+      selectedList = selectedFoodsMan;
+      contractList = contractFoodsMan;
+    } else if (type === 'chay') {
+      selectedList = selectedFoodsChay;
+      contractList = contractFoodsChay;
+    } else if (type === 'drink') {
+      selectedList = selectedThucUong;
+      contractList = contractThucUong;
+    } else if (type === 'service') {
+      selectedList = selectedDichVu;
+      contractList = contractDichVu;
+    }
+
+    var isFood = (type === 'man' || type === 'chay');
+
+    var contractSum = contractList.reduce(function (sum, item) {
+      var qty = isFood ? 1 : (item.SoLuong || item.Soluong || 0);
+      var price = item.DonGia || item.Dongia || 0;
+      return sum + (qty * price);
+    }, 0);
+
+    var actualSum = selectedList.reduce(function (sum, item) {
+      var qty = isFood ? 1 : (item.SoLuong || item.Soluong || 0);
+      var price = item.DonGia || item.Dongia || 0;
+      return sum + (qty * price);
+    }, 0);
+
+    return {
+      contract: contractSum,
+      actual: actualSum,
+      diff: actualSum - contractSum
+    };
+  }
+
   // Vẽ các bảng hiển thị tóm tắt trong Form cha
   function _renderSummaryTables() {
     var container = activeModal.querySelector('.food-selection-tables-wrapper');
     if (!container) return;
 
     var activeTab = container.dataset.activeTab || 'man';
+    var formBody = activeModal ? (activeModal.querySelector('[data-form-name]') || activeModal) : null;
+    var isQuyetToan = formBody && formBody.getAttribute('data-form-name') === 'frmQuyetToan';
 
     var renderTabButton = function (tabId, label, count) {
       var cls = activeTab === tabId ? 'active' : '';
-      return `<button type="button" class="food-modal-tab-btn ${cls}" onclick="FoodSelectionPlugin.switchSummaryTab('${tabId}')">${label} (${count})</button>`;
+      if (isQuyetToan) {
+        var sums = _getTabSums(tabId);
+        var diffText = '';
+        if (sums.diff > 0) {
+          diffText = ` <span style="font-size:11px; color:#ef4444; font-weight:700;">(+${sums.diff.toLocaleString('vi-VN')}đ)</span>`;
+        } else if (sums.diff < 0) {
+          diffText = ` <span style="font-size:11px; color:#10b981; font-weight:700;">(-${Math.abs(sums.diff).toLocaleString('vi-VN')}đ)</span>`;
+        }
+
+        var selectedList = (tabId === 'man') ? selectedFoodsMan : (tabId === 'chay') ? selectedFoodsChay : (tabId === 'drink') ? selectedThucUong : selectedDichVu;
+        var contractList = (tabId === 'man') ? contractFoodsMan : (tabId === 'chay') ? contractFoodsChay : (tabId === 'drink') ? contractThucUong : contractDichVu;
+        var hasChanges = (sums.diff !== 0) || (selectedList.length !== contractList.length) ||
+          selectedList.some(function (sel) {
+            var con = contractList.find(function (c) { return (c.MaMon || c.Mahang) === (sel.MaMon || sel.Mahang); });
+            return !con || (sel.SoLuong || sel.Soluong) !== (con.SoLuong || con.Soluong) || (sel.DonGia || sel.Dongia) !== (con.DonGia || con.Dongia);
+          });
+
+        var changeIndicator = hasChanges ? `<span class="material-symbols-outlined" style="font-size:14px; color:#f59e0b; vertical-align:middle; margin-left:3px;" title="Có thay đổi so với hợp đồng">warning</span>` : '';
+        return `<button type="button" class="food-modal-tab-btn ${cls}" onclick="FoodSelectionPlugin.switchSummaryTab('${tabId}')">${label} (${count})${diffText}${changeIndicator}</button>`;
+      } else {
+        return `<button type="button" class="food-modal-tab-btn ${cls}" onclick="FoodSelectionPlugin.switchSummaryTab('${tabId}')">${label} (${count})</button>`;
+      }
     };
 
     var contentHtml = '';
     var totalText = '0 đ';
 
-    if (activeTab === 'man') {
-      var total = selectedFoodsMan.reduce(function (sum, item) { return sum + item.DonGia; }, 0);
-      totalText = total.toLocaleString('vi-VN') + ' đ';
-      contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
-        <thead>
-          <tr>
-            <th class="text-center" style="width: 60px;">STT</th>
-            <th>Phân Loại</th>
-            <th>Tên Món Ăn</th>
-            <th class="text-end" style="width: 140px;">Đơn Giá</th>
-            <th class="text-center" style="width: 60px;">Xóa</th>
-          </tr>
-        </thead>
-        <tbody>`;
-      if (selectedFoodsMan.length === 0) {
-        contentHtml += '<tr><td colspan="5" class="text-center text-muted py-3">Chưa chọn món mặn nào.</td></tr>';
-      } else {
-        selectedFoodsMan.forEach(function (item, idx) {
-          contentHtml += `<tr>
-            <td class="text-center">${idx + 1}</td>
-            <td><span class="food-badge-type">${item.PhanLoai}</span></td>
-            <td class="fw-medium">${item.TenMon}</td>
-            <td class="text-end text-danger fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
-            <td class="text-center">
-              <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('man', ${idx})">delete</span>
-            </td>
-          </tr>`;
-        });
-      }
-      contentHtml += `</tbody></table>`;
+    if (isQuyetToan) {
+      // RENDERING COMPARISON TABLE
+      if (activeTab === 'man' || activeTab === 'chay') {
+        var compList = _getComparisonList(
+          activeTab === 'man' ? selectedFoodsMan : selectedFoodsChay,
+          activeTab === 'man' ? contractFoodsMan : contractFoodsChay
+        );
 
-    } else if (activeTab === 'chay') {
-      var total = selectedFoodsChay.reduce(function (sum, item) { return sum + item.DonGia; }, 0);
-      totalText = total.toLocaleString('vi-VN') + ' đ';
-      contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
-        <thead>
-          <tr>
-            <th class="text-center" style="width: 60px;">STT</th>
-            <th>Phân Loại</th>
-            <th>Tên Món Chay</th>
-            <th class="text-end" style="width: 140px;">Đơn Giá</th>
-            <th class="text-center" style="width: 60px;">Xóa</th>
-          </tr>
-        </thead>
-        <tbody>`;
-      if (selectedFoodsChay.length === 0) {
-        contentHtml += '<tr><td colspan="5" class="text-center text-muted py-3">Chưa chọn món chay nào.</td></tr>';
-      } else {
-        selectedFoodsChay.forEach(function (item, idx) {
-          contentHtml += `<tr>
-            <td class="text-center">${idx + 1}</td>
-            <td><span class="food-badge-type">${item.PhanLoai}</span></td>
-            <td class="fw-medium">${item.TenMon}</td>
-            <td class="text-end text-success fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
-            <td class="text-center">
-              <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('chay', ${idx})">delete</span>
-            </td>
-          </tr>`;
-        });
-      }
-      contentHtml += `</tbody></table>`;
+        contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 50px;">STT</th>
+              <th style="width: 100px;">Phân Loại</th>
+              <th>Tên Món Ăn</th>
+              <th class="text-center" style="width: 60px;">HĐ</th>
+              <th class="text-center" style="width: 80px;">Thực Tế</th>
+              <th class="text-center" style="width: 100px;">Trạng Thái</th>
+              <th class="text-end" style="width: 120px;">Đơn Giá</th>
+              <th class="text-center" style="width: 100px;">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>`;
 
-    } else if (activeTab === 'drink') {
-      var total = selectedThucUong.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
-      totalText = total.toLocaleString('vi-VN') + ' đ';
-      contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
-        <thead>
-          <tr>
-            <th class="text-center" style="width: 60px;">STT</th>
-            <th>Tên Đồ Uống / Dịch Vụ Phục Vụ</th>
-            <th class="text-end" style="width: 130px;">Đơn Giá</th>
-            <th class="text-center" style="width: 120px;">Số Lượng</th>
-            <th class="text-end" style="width: 140px;">Thành Tiền</th>
-            <th class="text-center" style="width: 60px;">Xóa</th>
-          </tr>
-        </thead>
-        <tbody>`;
-      if (selectedThucUong.length === 0) {
-        contentHtml += '<tr><td colspan="6" class="text-center text-muted py-3">Chưa chọn thức uống nào.</td></tr>';
-      } else {
-        selectedThucUong.forEach(function (item, idx) {
-          var sub = item.DonGia * item.SoLuong;
-          contentHtml += `<tr>
-            <td class="text-center">${idx + 1}</td>
-            <td class="fw-medium">${item.TenMon}</td>
-            <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
-            <td class="text-center">
-              <div class="d-inline-flex align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('drink', ${idx}, -1)">-</button>
-                <span style="min-width: 24px; display:inline-block;" class="fw-bold">${item.SoLuong}</span>
-                <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('drink', ${idx}, 1)">+</button>
-              </div>
-            </td>
-            <td class="text-end text-danger fw-semibold">${sub.toLocaleString('vi-VN')} đ</td>
-            <td class="text-center">
-              <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('drink', ${idx})">delete</span>
-            </td>
-          </tr>`;
-        });
-      }
-      contentHtml += `</tbody></table>`;
+        if (compList.length === 0) {
+          contentHtml += `<tr><td colspan="8" class="text-center text-muted py-3">Không có món nào.</td></tr>`;
+        } else {
+          compList.forEach(function (item, idx) {
+            var rowStyle = '';
+            var statusBadge = '';
+            var actionButton = '';
+            var nameStyle = 'fw-medium';
 
-    } else if (activeTab === 'service') {
-      var total = selectedDichVu.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
-      totalText = total.toLocaleString('vi-VN') + ' đ';
-      contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
-        <thead>
-          <tr>
-            <th class="text-center" style="width: 60px;">STT</th>
-            <th>Tên Dịch Vụ & Nghi Lễ Đi Kèm</th>
-            <th class="text-end" style="width: 130px;">Đơn Giá</th>
-            <th class="text-center" style="width: 120px;">Số Lượng</th>
-            <th class="text-end" style="width: 140px;">Thành Tiền</th>
-            <th class="text-center" style="width: 60px;">Xóa</th>
-          </tr>
-        </thead>
-        <tbody>`;
-      if (selectedDichVu.length === 0) {
-        contentHtml += '<tr><td colspan="6" class="text-center text-muted py-3">Chưa chọn dịch vụ nào.</td></tr>';
-      } else {
-        selectedDichVu.forEach(function (item, idx) {
-          var sub = item.DonGia * item.SoLuong;
-          contentHtml += `<tr>
-            <td class="text-center">${idx + 1}</td>
-            <td class="fw-medium">${item.TenMon}</td>
-            <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
-            <td class="text-center">
-              <div class="d-inline-flex align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('service', ${idx}, -1)">-</button>
-                <span style="min-width: 24px; display:inline-block;" class="fw-bold">${item.SoLuong}</span>
-                <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('service', ${idx}, 1)">+</button>
-              </div>
-            </td>
-            <td class="text-end text-danger fw-semibold">${sub.toLocaleString('vi-VN')} đ</td>
-            <td class="text-center">
-              <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('service', ${idx})">delete</span>
-            </td>
-          </tr>`;
-        });
+            var hdCheck = item.contractQty > 0 ? '<span class="material-symbols-outlined text-primary" style="font-size: 18px;">check</span>' : '';
+            var ttCheck = item.actualQty > 0 ? '<span class="material-symbols-outlined text-success" style="font-size: 18px;">check</span>' : '';
+
+            if (item.status === 'added') {
+              statusBadge = '<span class="badge" style="background-color:#dcfce7; color:#15803d; padding:4px 8px; border-radius:4px;">Thêm mới</span>';
+              actionButton = `<span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('${activeTab}', '${item.MaMon}')">delete</span>`;
+              rowStyle = 'style="background-color: rgba(220, 252, 231, 0.25);"';
+            } else if (item.status === 'deleted') {
+              statusBadge = '<span class="badge" style="background-color:#fee2e2; color:#b91c1c; padding:4px 8px; border-radius:4px;">Đã bỏ</span>';
+              actionButton = `<button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 d-inline-flex align-items-center gap-1" style="font-size: 11px; font-weight:600;" onclick="FoodSelectionPlugin.addBack('${activeTab}', '${item.MaMon}')"><span class="material-symbols-outlined" style="font-size:14px;">add</span> Thêm lại</button>`;
+              nameStyle = 'text-decoration: line-through; color: #94a3b8; font-style: italic;';
+              rowStyle = 'style="background-color: rgba(254, 226, 226, 0.25);"';
+            } else {
+              statusBadge = '<span class="badge" style="background-color:#f1f5f9; color:#475569; padding:4px 8px; border-radius:4px;">Hợp đồng</span>';
+              actionButton = `<span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('${activeTab}', '${item.MaMon}')">delete</span>`;
+            }
+
+            contentHtml += `<tr ${rowStyle}>
+              <td class="text-center">${idx + 1}</td>
+              <td><span class="food-badge-type">${item.PhanLoai}</span></td>
+              <td style="${nameStyle}">${item.TenMon}</td>
+              <td class="text-center">${hdCheck}</td>
+              <td class="text-center">${ttCheck}</td>
+              <td class="text-center">${statusBadge}</td>
+              <td class="text-end text-danger fw-semibold">${item.actualPrice.toLocaleString('vi-VN')} đ</td>
+              <td class="text-center">${actionButton}</td>
+            </tr>`;
+          });
+        }
+        contentHtml += `</tbody></table>`;
+      } else if (activeTab === 'drink' || activeTab === 'service') {
+        var compList = _getComparisonList(
+          activeTab === 'drink' ? selectedThucUong : selectedDichVu,
+          activeTab === 'drink' ? contractThucUong : contractDichVu
+        );
+
+        contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 45px;">STT</th>
+              <th>Tên Mặt Hàng</th>
+              <th class="text-end" style="width: 100px;">Đơn Giá</th>
+              <th class="text-center" style="width: 70px;">Lượng HĐ</th>
+              <th class="text-center" style="width: 125px;">Lượng TT</th>
+              <th class="text-center" style="width: 80px;">Lệch</th>
+              <th class="text-center" style="width: 90px;">Trạng Thái</th>
+              <th class="text-end" style="width: 110px;">Thành Tiền TT</th>
+              <th class="text-end" style="width: 110px;">Chênh Lệch</th>
+              <th class="text-center" style="width: 90px;">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        if (compList.length === 0) {
+          contentHtml += `<tr><td colspan="10" class="text-center text-muted py-3">Không có mặt hàng nào.</td></tr>`;
+        } else {
+          compList.forEach(function (item, idx) {
+            var rowStyle = '';
+            var statusBadge = '';
+            var actionButton = '';
+            var nameStyle = 'fw-medium';
+            var qtyControls = '';
+
+            var diffQtyText = item.diffQty > 0 ? `+${item.diffQty}` : item.diffQty;
+            var diffQtyClass = item.diffQty > 0 ? 'text-danger fw-bold' : (item.diffQty < 0 ? 'text-success fw-bold' : 'text-muted');
+
+            var diffSubText = item.diffSubtotal > 0 ? `+${item.diffSubtotal.toLocaleString('vi-VN')} đ` : (item.diffSubtotal < 0 ? `-${Math.abs(item.diffSubtotal).toLocaleString('vi-VN')} đ` : '0 đ');
+            var diffSubClass = item.diffSubtotal > 0 ? 'text-danger fw-bold' : (item.diffSubtotal < 0 ? 'text-success fw-bold' : 'text-muted');
+
+            if (item.status === 'added') {
+              statusBadge = '<span class="badge" style="background-color:#dcfce7; color:#15803d; padding:4px 8px; border-radius:4px;">Thêm mới</span>';
+              actionButton = `<span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('${activeTab}', '${item.MaMon}')">delete</span>`;
+              rowStyle = 'style="background-color: rgba(220, 252, 231, 0.25);"';
+              qtyControls = `
+                <div class="d-inline-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('${activeTab}', '${item.MaMon}', -1)">-</button>
+                  <span style="min-width: 20px; display:inline-block;" class="fw-bold text-success">${item.actualQty}</span>
+                  <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('${activeTab}', '${item.MaMon}', 1)">+</button>
+                </div>`;
+            } else if (item.status === 'deleted') {
+              statusBadge = '<span class="badge" style="background-color:#fee2e2; color:#b91c1c; padding:4px 8px; border-radius:4px;">Đã bỏ</span>';
+              actionButton = `<button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 d-inline-flex align-items-center gap-1" style="font-size: 11px; font-weight:600;" onclick="FoodSelectionPlugin.addBack('${activeTab}', '${item.MaMon}')"><span class="material-symbols-outlined" style="font-size:14px;">add</span> Thêm lại</button>`;
+              nameStyle = 'text-decoration: line-through; color: #94a3b8; font-style: italic;';
+              rowStyle = 'style="background-color: rgba(254, 226, 226, 0.25);"';
+              qtyControls = `<span class="text-muted fw-bold">0</span>`;
+            } else if (item.status === 'modified') {
+              statusBadge = '<span class="badge" style="background-color:#fef3c7; color:#b45309; padding:4px 8px; border-radius:4px;">Sửa lượng</span>';
+              actionButton = `<span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('${activeTab}', '${item.MaMon}')">delete</span>`;
+              rowStyle = 'style="background-color: rgba(254, 243, 199, 0.25);"';
+              qtyControls = `
+                <div class="d-inline-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('${activeTab}', '${item.MaMon}', -1)">-</button>
+                  <span style="min-width: 20px; display:inline-block;" class="fw-bold text-warning">${item.actualQty}</span>
+                  <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('${activeTab}', '${item.MaMon}', 1)">+</button>
+                </div>`;
+            } else {
+              statusBadge = '<span class="badge" style="background-color:#f1f5f9; color:#475569; padding:4px 8px; border-radius:4px;">Hợp đồng</span>';
+              actionButton = `<span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('${activeTab}', '${item.MaMon}')">delete</span>`;
+              qtyControls = `
+                <div class="d-inline-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('${activeTab}', '${item.MaMon}', -1)">-</button>
+                  <span style="min-width: 20px; display:inline-block;" class="fw-bold text-dark">${item.actualQty}</span>
+                  <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('${activeTab}', '${item.MaMon}', 1)">+</button>
+                </div>`;
+            }
+
+            contentHtml += `<tr ${rowStyle}>
+              <td class="text-center">${idx + 1}</td>
+              <td style="${nameStyle}">${item.TenMon}</td>
+              <td class="text-end">${item.actualPrice.toLocaleString('vi-VN')} đ</td>
+              <td class="text-center fw-semibold text-secondary">${item.contractQty}</td>
+              <td class="text-center">${qtyControls}</td>
+              <td class="text-center ${diffQtyClass}">${diffQtyText}</td>
+              <td class="text-center">${statusBadge}</td>
+              <td class="text-end text-dark fw-bold">${item.actualSubtotal.toLocaleString('vi-VN')} đ</td>
+              <td class="text-end ${diffSubClass}">${diffSubText}</td>
+              <td class="text-center">${actionButton}</td>
+            </tr>`;
+          });
+        }
+        contentHtml += `</tbody></table>`;
       }
-      contentHtml += `</tbody></table>`;
+    } else {
+      // RENDERING STANDARD TAB VIEWS
+      if (activeTab === 'man') {
+        var total = selectedFoodsMan.reduce(function (sum, item) { return sum + item.DonGia; }, 0);
+        totalText = total.toLocaleString('vi-VN') + ' đ';
+        contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 60px;">STT</th>
+              <th>Phân Loại</th>
+              <th>Tên Món Ăn</th>
+              <th class="text-end" style="width: 140px;">Đơn Giá</th>
+              <th class="text-center" style="width: 60px;">Xóa</th>
+            </tr>
+          </thead>
+          <tbody>`;
+        if (selectedFoodsMan.length === 0) {
+          contentHtml += '<tr><td colspan="5" class="text-center text-muted py-3">Chưa chọn món mặn nào.</td></tr>';
+        } else {
+          selectedFoodsMan.forEach(function (item, idx) {
+            contentHtml += `<tr>
+              <td class="text-center">${idx + 1}</td>
+              <td><span class="food-badge-type">${item.PhanLoai}</span></td>
+              <td class="fw-medium">${item.TenMon}</td>
+              <td class="text-end text-danger fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
+              <td class="text-center">
+                <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('man', ${idx})">delete</span>
+              </td>
+            </tr>`;
+          });
+        }
+        contentHtml += `</tbody></table>`;
+
+      } else if (activeTab === 'chay') {
+        var total = selectedFoodsChay.reduce(function (sum, item) { return sum + item.DonGia; }, 0);
+        totalText = total.toLocaleString('vi-VN') + ' đ';
+        contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 60px;">STT</th>
+              <th>Phân Loại</th>
+              <th>Tên Món Chay</th>
+              <th class="text-end" style="width: 140px;">Đơn Giá</th>
+              <th class="text-center" style="width: 60px;">Xóa</th>
+            </tr>
+          </thead>
+          <tbody>`;
+        if (selectedFoodsChay.length === 0) {
+          contentHtml += '<tr><td colspan="5" class="text-center text-muted py-3">Chưa chọn món chay nào.</td></tr>';
+        } else {
+          selectedFoodsChay.forEach(function (item, idx) {
+            contentHtml += `<tr>
+              <td class="text-center">${idx + 1}</td>
+              <td><span class="food-badge-type">${item.PhanLoai}</span></td>
+              <td class="fw-medium">${item.TenMon}</td>
+              <td class="text-end text-success fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
+              <td class="text-center">
+                <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('chay', ${idx})">delete</span>
+              </td>
+            </tr>`;
+          });
+        }
+        contentHtml += `</tbody></table>`;
+
+      } else if (activeTab === 'drink') {
+        var total = selectedThucUong.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
+        totalText = total.toLocaleString('vi-VN') + ' đ';
+        contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 60px;">STT</th>
+              <th>Tên Đồ Uống / Dịch Vụ Phục Vụ</th>
+              <th class="text-end" style="width: 130px;">Đơn Giá</th>
+              <th class="text-center" style="width: 120px;">Số Lượng</th>
+              <th class="text-end" style="width: 140px;">Thành Tiền</th>
+              <th class="text-center" style="width: 60px;">Xóa</th>
+            </tr>
+          </thead>
+          <tbody>`;
+        if (selectedThucUong.length === 0) {
+          contentHtml += '<tr><td colspan="6" class="text-center text-muted py-3">Chưa chọn thức uống nào.</td></tr>';
+        } else {
+          selectedThucUong.forEach(function (item, idx) {
+            var sub = item.DonGia * item.SoLuong;
+            contentHtml += `<tr>
+              <td class="text-center">${idx + 1}</td>
+              <td class="fw-medium">${item.TenMon}</td>
+              <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
+              <td class="text-center">
+                <div class="d-inline-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('drink', ${idx}, -1)">-</button>
+                  <span style="min-width: 24px; display:inline-block;" class="fw-bold">${item.SoLuong}</span>
+                  <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('drink', ${idx}, 1)">+</button>
+                </div>
+              </td>
+              <td class="text-end text-danger fw-semibold">${sub.toLocaleString('vi-VN')} đ</td>
+              <td class="text-center">
+                <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('drink', ${idx})">delete</span>
+              </td>
+            </tr>`;
+          });
+        }
+        contentHtml += `</tbody></table>`;
+
+      } else if (activeTab === 'service') {
+        var total = selectedDichVu.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
+        totalText = total.toLocaleString('vi-VN') + ' đ';
+        contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 60px;">STT</th>
+              <th>Tên Dịch Vụ & Nghi Lễ Đi Kèm</th>
+              <th class="text-end" style="width: 130px;">Đơn Giá</th>
+              <th class="text-center" style="width: 120px;">Số Lượng</th>
+              <th class="text-end" style="width: 140px;">Thành Tiền</th>
+              <th class="text-center" style="width: 60px;">Xóa</th>
+            </tr>
+          </thead>
+          <tbody>`;
+        if (selectedDichVu.length === 0) {
+          contentHtml += '<tr><td colspan="6" class="text-center text-muted py-3">Chưa chọn dịch vụ nào.</td></tr>';
+        } else {
+          selectedDichVu.forEach(function (item, idx) {
+            var sub = item.DonGia * item.SoLuong;
+            contentHtml += `<tr>
+              <td class="text-center">${idx + 1}</td>
+              <td class="fw-medium">${item.TenMon}</td>
+              <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
+              <td class="text-center">
+                <div class="d-inline-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('service', ${idx}, -1)">-</button>
+                  <span style="min-width: 24px; display:inline-block;" class="fw-bold">${item.SoLuong}</span>
+                  <button type="button" class="btn btn-sm btn-light p-1" style="line-height:1" onclick="FoodSelectionPlugin.changeQty('service', ${idx}, 1)">+</button>
+                </div>
+              </td>
+              <td class="text-end text-danger fw-semibold">${sub.toLocaleString('vi-VN')} đ</td>
+              <td class="text-center">
+                <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('service', ${idx})">delete</span>
+              </td>
+            </tr>`;
+          });
+        }
+        contentHtml += `</tbody></table>`;
+      }
     }
 
+    var grandContract =
+      contractFoodsMan.reduce(function (sum, item) { return sum + (item.DonGia || item.Dongia || 0); }, 0) +
+      contractFoodsChay.reduce(function (sum, item) { return sum + (item.DonGia || item.Dongia || 0); }, 0) +
+      contractThucUong.reduce(function (sum, item) { return sum + (item.DonGia || item.Dongia || 0) * (item.SoLuong || item.Soluong || 0); }, 0) +
+      contractDichVu.reduce(function (sum, item) { return sum + (item.DonGia || item.Dongia || 0) * (item.SoLuong || item.Soluong || 0); }, 0);
+
     var grandTotal =
-      selectedFoodsMan.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
-      selectedFoodsChay.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
-      selectedThucUong.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0) +
-      selectedDichVu.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
+      selectedFoodsMan.reduce(function (sum, item) { return sum + (item.DonGia || item.Dongia || 0); }, 0) +
+      selectedFoodsChay.reduce(function (sum, item) { return sum + (item.DonGia || item.Dongia || 0); }, 0) +
+      selectedThucUong.reduce(function (sum, item) { return sum + (item.DonGia || item.Dongia || 0) * (item.SoLuong || item.Soluong || 0); }, 0) +
+      selectedDichVu.reduce(function (sum, item) { return sum + (item.DonGia || item.Dongia || 0) * (item.SoLuong || item.Soluong || 0); }, 0);
+
+    var grandDiff = grandTotal - grandContract;
 
     var headerTabs = container.querySelector('.food-modal-tabs');
     if (headerTabs) {
@@ -1777,11 +2106,39 @@ var FoodSelectionPlugin = (function () {
     var gridBody = container.querySelector('.food-summary-grid-body');
     if (gridBody) gridBody.innerHTML = contentHtml;
 
-    var tabTotal = container.querySelector('.food-tab-total');
-    if (tabTotal) tabTotal.innerText = totalText;
+    // Cập nhật Footer Container động
+    var footerContainer = container.querySelector('.food-footer-container');
+    if (footerContainer) {
+      if (isQuyetToan) {
+        var sums = _getTabSums(activeTab);
+        var diffColor = sums.diff > 0 ? '#ef4444' : (sums.diff < 0 ? '#10b981' : 'var(--color-text)');
+        var diffSign = sums.diff > 0 ? '+' : '';
 
-    var sumTotal = container.querySelector('.food-sum-total');
-    if (sumTotal) sumTotal.innerText = grandTotal.toLocaleString('vi-VN') + ' đ';
+        var tabDetailHtml = `Tab này: HĐ gốc: <strong class="text-dark">${sums.contract.toLocaleString('vi-VN')} đ</strong> | Thực tế: <strong class="text-primary">${sums.actual.toLocaleString('vi-VN')} đ</strong> | Chênh lệch: <strong style="color:${diffColor};">${diffSign}${sums.diff.toLocaleString('vi-VN')} đ</strong>`;
+
+        var grandDiffColor = grandDiff > 0 ? '#ef4444' : (grandDiff < 0 ? '#10b981' : 'var(--color-text)');
+        var grandDiffSign = grandDiff > 0 ? '+' : '';
+        var grandDetailHtml = `Tổng Quyết Toán: HĐ gốc: <strong class="text-dark">${grandContract.toLocaleString('vi-VN')} đ</strong> | Thực tế: <strong class="text-primary">${grandTotal.toLocaleString('vi-VN')} đ</strong> | Bù/Bớt: <strong style="color:${grandDiffColor}; font-size:16px;">${grandDiffSign}${grandDiff.toLocaleString('vi-VN')} đ</strong>`;
+
+        footerContainer.innerHTML = `
+          <div style="font-size:13px; color:var(--color-text-secondary); display:flex; flex-direction:column; gap:4px;">
+            ${tabDetailHtml}
+          </div>
+          <div style="font-size:14px; font-weight:700; text-align:right; display:flex; flex-direction:column; gap:4px;">
+            ${grandDetailHtml}
+          </div>
+        `;
+      } else {
+        footerContainer.innerHTML = `
+          <div style="font-size:13px; color:var(--color-text-secondary);">
+            Tổng cộng Tab: <strong class="food-tab-total text-danger" style="font-size:14px;">${totalText}</strong>
+          </div>
+          <div style="font-size:14px; font-weight:700;">
+            Tổng cộng Hợp đồng: <strong class="food-sum-total text-danger" style="font-size:16px;">${grandTotal.toLocaleString('vi-VN')} đ</strong>
+          </div>
+        `;
+      }
+    }
   }
 
   // Chuyển tab tóm tắt ngoài form cha
@@ -1794,26 +2151,76 @@ var FoodSelectionPlugin = (function () {
   }
 
   // Thay đổi số lượng ngoài form cha
-  function changeQty(type, index, delta) {
-    if (type === 'drink') {
-      var item = selectedThucUong[index];
+  function changeQty(type, key, delta) {
+    var list = [];
+    if (type === 'drink') list = selectedThucUong;
+    else if (type === 'service') list = selectedDichVu;
+
+    var item = null;
+    if (typeof key === 'number') {
+      item = list[key];
+    } else {
+      item = list.find(function (x) { return (x.MaMon || x.Mahang) === key; });
+    }
+
+    if (item) {
       item.SoLuong = Math.max(1, item.SoLuong + delta);
-    } else if (type === 'service') {
-      var item = selectedDichVu[index];
-      item.SoLuong = Math.max(1, item.SoLuong + delta);
+      item.Soluong = item.SoLuong;
     }
     _writeInputs(activeModal);
   }
 
   // Xóa món ngoài form cha
-  function removeItem(type, index) {
-    if (type === 'man') selectedFoodsMan.splice(index, 1);
-    else if (type === 'chay') selectedFoodsChay.splice(index, 1);
-    else if (type === 'drink') selectedThucUong.splice(index, 1);
-    else if (type === 'service') selectedDichVu.splice(index, 1);
+  function removeItem(type, key) {
+    var list = [];
+    if (type === 'man') list = selectedFoodsMan;
+    else if (type === 'chay') list = selectedFoodsChay;
+    else if (type === 'drink') list = selectedThucUong;
+    else if (type === 'service') list = selectedDichVu;
+
+    if (typeof key === 'number') {
+      list.splice(key, 1);
+    } else {
+      var idx = list.findIndex(function (x) { return (x.MaMon || x.Mahang) === key; });
+      if (idx > -1) list.splice(idx, 1);
+    }
 
     _writeInputs(activeModal);
-    if (window.Toast) Toast.success('Đã xóa món ăn khỏi thực đơn!');
+    if (window.Toast) Toast.success('Đã xóa món khỏi thực đơn!');
+  }
+
+  // Thêm lại món từ hợp đồng
+  function addBack(type, maMon) {
+    var contractList = [];
+    var selectedList = [];
+
+    if (type === 'man') {
+      contractList = contractFoodsMan;
+      selectedList = selectedFoodsMan;
+    } else if (type === 'chay') {
+      contractList = contractFoodsChay;
+      selectedList = selectedFoodsChay;
+    } else if (type === 'drink') {
+      contractList = contractThucUong;
+      selectedList = selectedThucUong;
+    } else if (type === 'service') {
+      contractList = contractDichVu;
+      selectedList = selectedDichVu;
+    }
+
+    var conItem = contractList.find(function (c) {
+      return (c.MaMon || c.Mahang) === maMon;
+    });
+
+    if (conItem) {
+      var newItem = JSON.parse(JSON.stringify(conItem));
+      newItem.SoLuong = conItem.SoLuong || conItem.Soluong || 1;
+      newItem.Soluong = newItem.SoLuong;
+      selectedList.push(newItem);
+
+      _writeInputs(activeModal);
+      if (window.Toast) Toast.success('Đã khôi phục món từ hợp đồng!');
+    }
   }
 
   // Mở popup modal chọn món tập trung (Có Tabs trượt)
@@ -1926,13 +2333,13 @@ var FoodSelectionPlugin = (function () {
         if (kw && !name.includes(kw) && !code.includes(kw)) return false;
 
         // Dùng == 1 (loose equality) vì API gateway trả flags về dạng string "0"/"1"
-        var isChay   = item.IsChay   == 1;
-        var isDrink  = item.IsDrink  == 1;
-        var isService= item.IsDichVu == 1;
+        var isChay = item.IsChay == 1;
+        var isDrink = item.IsDrink == 1;
+        var isService = item.IsDichVu == 1;
 
-        if (tab === 'man')     return !isChay && !isDrink && !isService;
-        if (tab === 'chay')    return  isChay && !isDrink && !isService;
-        if (tab === 'drink')   return isDrink;
+        if (tab === 'man') return !isChay && !isDrink && !isService;
+        if (tab === 'chay') return isChay && !isDrink && !isService;
+        if (tab === 'drink') return isDrink;
         if (tab === 'service') return isService;
 
         return false;
@@ -1976,7 +2383,7 @@ var FoodSelectionPlugin = (function () {
         groupItems.forEach(function (item) {
           var code = item.Mahang || item.MaMon;
           var name = item.Tenhang || item.TenMon;
-          var price = item.Dongia || item.DonGia || 0;
+          var price = parseFloat(item.Dongia || item.DonGia || 0);
           var unit = item.DvtID || 'Đĩa';
 
           var currentList = getTempListByTab(modalTab);
@@ -2267,20 +2674,29 @@ var FoodSelectionPlugin = (function () {
   // Tự inject hidden input JSON nếu chưa có trong form
   function _ensureHiddenInputs(modalContent, row) {
     var editRow = _resolveEditRow(modalContent, row);
-    var jsonFields = ['JsonBanTiec', 'JsonThucUong', 'JsonDichVu', 'JsonPhatSinh'];
+    var jsonFields = ['JsonBanTiec', 'JsonThucUong', 'JsonDichVu', 'JsonPhatSinh', 'JsonBanTiecHopDong', 'JsonThucUongHopDong', 'JsonDichVuHopDong'];
     jsonFields.forEach(function (name) {
-      var rowValue = (editRow && editRow[name]) ? editRow[name] : '[]';
+      var rawVal = (editRow && editRow[name]) ? editRow[name] : '[]';
+      var stringVal = '[]';
+      if (rawVal) {
+        if (typeof rawVal === 'string') {
+          stringVal = rawVal;
+        } else {
+          try { stringVal = JSON.stringify(rawVal); } catch (e) { stringVal = '[]'; }
+        }
+      }
+
       if (!modalContent.querySelector('[name="' + name + '"]')) {
         var inp = document.createElement('input');
         inp.type = 'hidden';
         inp.name = name;
-        inp.value = rowValue;
+        inp.value = stringVal;
         modalContent.appendChild(inp);
       } else {
-        // Nếu đã có nhưng rỗng, cố gắng lấy từ row
+        // Nếu đã có nhưng rỗng hoặc bị cast thành [object Object], ghi đè lại bằng JSON string
         var existing = modalContent.querySelector('[name="' + name + '"]');
-        if ((!existing.value || existing.value === '' || existing.value === '[]') && editRow && editRow[name]) {
-          existing.value = editRow[name];
+        if ((!existing.value || existing.value === '' || existing.value === '[]' || existing.value.indexOf('[object Object]') !== -1) && editRow && editRow[name]) {
+          existing.value = stringVal;
         }
       }
     });
@@ -2292,8 +2708,11 @@ var FoodSelectionPlugin = (function () {
     if (modalContent.dataset.foodPluginDone === '1') return;
     modalContent.dataset.foodPluginDone = '1';
 
+    // Cho modal rộng ra vừa phải để hiển thị bảng đối chiếu/thực đơn đẹp hơn (không quá rộng 1200px)
+    modalContent.style.width = '1050px';
+
     activeModal = modalContent;
-    
+
     _injectStyles();
 
     // 1. Đảm bảo các hidden input JSON tồn tại (tự tạo nếu chưa có)
@@ -2347,12 +2766,12 @@ var FoodSelectionPlugin = (function () {
         </div>
 
         <!-- Bảng danh sách mặt hàng -->
-        <div class="table-responsive food-summary-grid-body" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: 8px;">
+        <div class="table-responsive food-summary-grid-body" style="max-height: 280px; overflow-y: auto; overflow-x: auto; width: 100%; border: 1px solid var(--color-border); border-radius: 8px;">
           <!-- Tải động từ render -->
         </div>
 
         <!-- Footer tóm tắt tiền -->
-        <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid var(--color-border);">
+        <div class="food-footer-container d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid var(--color-border);">
           <div style="font-size:13px; color:var(--color-text-secondary);">
             Tổng cộng Tab: <strong class="food-tab-total text-danger" style="font-size:14px;">0 đ</strong>
           </div>
@@ -2433,6 +2852,7 @@ var FoodSelectionPlugin = (function () {
     switchSummaryTab: switchSummaryTab,
     removeItem: removeItem,
     changeQty: changeQty,
+    addBack: addBack,
     reloadForm: function (modal) {
       if (modal) {
         activeModal = modal;
@@ -2580,7 +3000,7 @@ var PhuLucPlugin = (function () {
       });
   }
 
-  function _showPhuLucModal(contractRow, defaultJsonBanTiec, defaultJsonThucUong, defaultJsonDichVu, defaultJsonPhatSinh) {
+  function _showPhuLucModal(contractRow, defaultJsonBanTiec, defaultJsonThucUong, defaultJsonDichVu, defaultJsonPhatSinh, onReload) {
     _injectStyles();
 
     defaultJsonBanTiec = _stringifyJson(defaultJsonBanTiec);
@@ -2884,11 +3304,11 @@ var PhuLucPlugin = (function () {
                 var overlay = document.querySelector('.modal-overlay');
                 if (overlay) overlay.remove();
               }
-              if (typeof UIToast !== 'undefined') {
-                UIToast.show('Đã xóa thành công phụ lục: ' + id, 'success');
+              if (typeof onReload === 'function') {
+                try { onReload(); } catch (err) { }
               }
               // Mở lại modal để refresh danh sách
-              _showPhuLucModal(contractRow);
+              _showPhuLucModal(contractRow, defaultJsonBanTiec, defaultJsonThucUong, defaultJsonDichVu, defaultJsonPhatSinh, onReload);
             } else {
               var errMsg = (res && (res.message || res.msg)) || 'Có lỗi khi xóa phụ lục.';
               if (typeof Alert !== 'undefined') {
@@ -3130,6 +3550,9 @@ var PhuLucPlugin = (function () {
             if (typeof UIToast !== 'undefined') {
               UIToast.show('Đã lưu phụ lục: ' + soPhuLuc, 'success');
             }
+            if (typeof onReload === 'function') {
+              try { onReload(); } catch (err) { }
+            }
             // Sinh tài liệu DOCX ngay lập tức
             try {
               _generateDocument(soPhuLuc);
@@ -3152,7 +3575,7 @@ var PhuLucPlugin = (function () {
     });
   }
 
-  function getExtraButtons(formName, getSelectedRows) {
+  function getExtraButtons(formName, getSelectedRows, moduleConfig, onReload) {
     if (formName !== 'frmHopDong') return [];
 
     return [{
@@ -3199,13 +3622,13 @@ var PhuLucPlugin = (function () {
 
             // Gộp dữ liệu chi tiết của hợp đồng gốc vào row để điền các trường cũ
             var mergedRow = Object.assign({}, row, details);
-            _showPhuLucModal(mergedRow, jsonBanTiec, jsonThucUong, jsonDichVu, jsonPhatSinh);
+            _showPhuLucModal(mergedRow, jsonBanTiec, jsonThucUong, jsonDichVu, jsonPhatSinh, onReload);
           }).catch(function (err) {
             console.error('[PhuLucPlugin] Lỗi tải thực đơn:', err);
-            _showPhuLucModal(row, '[]', '[]', '[]', '[]');
+            _showPhuLucModal(row, '[]', '[]', '[]', '[]', onReload);
           });
         } else {
-          _showPhuLucModal(row, '[]', '[]', '[]', '[]');
+          _showPhuLucModal(row, '[]', '[]', '[]', '[]', onReload);
         }
       }
     }];
@@ -3237,24 +3660,31 @@ var QuyetToanPlugin = (function () {
       .quyettoan-plugin-wrapper {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 12px;
         font-family: inherit;
+        max-width: 100%;
+        box-sizing: border-box;
       }
       .quyettoan-card {
         border: 1px solid var(--color-border, #cbd5e1);
         border-radius: 8px;
         background: var(--color-surface, #fff);
-        padding: 16px;
+        padding: 12px;
+        max-width: 100%;
+        box-sizing: border-box;
       }
       .quyettoan-title-sub {
-        margin: 0 0 12px 0;
-        font-size: 14px;
+        margin: 0 0 8px 0;
+        font-size: 13px;
         color: var(--color-text-secondary, #64748b);
       }
       .quyettoan-form-section {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
+        gap: 12px;
+      }
+      .quyettoan-form-section > div {
+        min-width: 0;
       }
       @media (max-width: 768px) {
         .quyettoan-form-section {
@@ -3263,21 +3693,21 @@ var QuyetToanPlugin = (function () {
       }
       .quyettoan-right-col {
         border-left: 1px solid var(--color-border, #e2e8f0);
-        padding-left: 20px;
+        padding-left: 14px;
       }
       @media (max-width: 768px) {
         .quyettoan-right-col {
           border-left: none;
           padding-left: 0;
           border-top: 1px solid var(--color-border, #e2e8f0);
-          padding-top: 16px;
+          padding-top: 12px;
         }
       }
       .quyettoan-summary-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 8px 0;
+        padding: 5px 0;
         border-bottom: 1px dashed var(--color-border, #e2e8f0);
       }
       .quyettoan-summary-row:last-child {
@@ -3285,15 +3715,58 @@ var QuyetToanPlugin = (function () {
       }
       .quyettoan-summary-label {
         font-weight: 500;
-        color: var(--color-text-secondary, #475569);
+        font-size: 13px;
+        color: var(--color-text-secondary, #64748b);
       }
       .quyettoan-summary-value {
         font-weight: 700;
-        color: var(--color-text, #1e293b);
+        font-size: 13px;
+        color: var(--color-text, #0f172a);
       }
       .quyettoan-summary-value.highlight {
+        font-size: 14px;
         color: var(--color-danger, #ef4444);
-        font-size: 16px;
+      }
+
+      /* Tối ưu hóa thu nhỏ giao diện bên trong */
+      .quyettoan-plugin-wrapper .form-label {
+        font-size: 12px !important;
+        margin-bottom: 4px !important;
+      }
+      .quyettoan-plugin-wrapper .ui-input,
+      .quyettoan-plugin-wrapper select.ui-input,
+      .quyettoan-plugin-wrapper textarea.ui-input {
+        padding: 6px 10px !important;
+        font-size: 13px !important;
+        height: auto !important;
+      }
+      .quyettoan-plugin-wrapper .mb-3 {
+        margin-bottom: 8px !important;
+      }
+      .quyettoan-plugin-wrapper .mt-3 {
+        margin-top: 8px !important;
+      }
+      .quyettoan-plugin-wrapper .table th,
+      .quyettoan-plugin-wrapper .table td {
+        padding: 5px 8px !important;
+        font-size: 12px !important;
+      }
+      .quyettoan-plugin-wrapper .food-plugin-header {
+        margin-bottom: 8px !important;
+      }
+      .quyettoan-plugin-wrapper .food-plugin-title {
+        font-size: 13px !important;
+      }
+      .quyettoan-plugin-wrapper .food-modal-tabs {
+        margin-bottom: 8px !important;
+      }
+      .quyettoan-plugin-wrapper .food-modal-tab-btn {
+        padding: 3px 8px !important;
+        font-size: 12px !important;
+      }
+      .quyettoan-plugin-wrapper .food-footer-container {
+        margin-top: 8px !important;
+        padding-top: 8px !important;
       }
     `;
     document.head.appendChild(style);
@@ -3372,7 +3845,7 @@ var QuyetToanPlugin = (function () {
       });
   }
 
-  function _showQuyetToanModal(contractRow, existingSettlement, details) {
+  function _showQuyetToanModal(contractRow, existingSettlement, details, onReload) {
     _injectStyles();
 
     var sohopdong = contractRow.Sohopdong || contractRow.sohopdong || contractRow.SoHopDong;
@@ -3403,6 +3876,9 @@ var QuyetToanPlugin = (function () {
           <input type="hidden" name="JsonThucUong" id="inpJsonThucUong" value="[]">
           <input type="hidden" name="JsonDichVu" id="inpJsonDichVu" value="[]">
           <input type="hidden" name="JsonPhatSinh" id="inpJsonPhatSinh" value="[]">
+          <input type="hidden" name="JsonBanTiecHopDong" id="inpJsonBanTiecHopDong" value="[]">
+          <input type="hidden" name="JsonThucUongHopDong" id="inpJsonThucUongHopDong" value="[]">
+          <input type="hidden" name="JsonDichVuHopDong" id="inpJsonDichVuHopDong" value="[]">
 
           <div class="quyettoan-form-section">
             <!-- Cột trái: Thông tin chung & các chi phí phụ thu -->
@@ -3418,43 +3894,48 @@ var QuyetToanPlugin = (function () {
                 <input type="text" id="inpNguoinop" class="ui-input" placeholder="Tên khách hàng nộp quyết toán..." style="width:100%;" required>
               </div>
 
-              <div class="row">
-                <div class="col-6 mb-3">
+              <div class="d-flex gap-3">
+                <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Bù chênh lệch sảnh (VND)</label>
-                  <input type="number" id="inpPhiBuSanh" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
+                  <input type="text" inputmode="numeric" id="inpPhiBuSanh" class="ui-input fee-trigger" value="0" style="width:100%;">
+                  <div class="money-words-text" id="wordPhiBuSanh" style="font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;"></div>
                 </div>
-                <div class="col-6 mb-3">
+                <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Bù bàn tăng (VND)</label>
-                  <input type="number" id="inpPhiBuBanTang" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
+                  <input type="text" inputmode="numeric" id="inpPhiBuBanTang" class="ui-input fee-trigger" value="0" style="width:100%;">
+                  <div class="money-words-text" id="wordPhiBuBanTang" style="font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;"></div>
                 </div>
               </div>
 
-              <div class="row">
-                <div class="col-6 mb-3">
+              <div class="d-flex gap-3">
+                <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Bù trang trí sảnh (VND)</label>
-                  <input type="number" id="inpPhiBuTTS" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
+                  <input type="text" inputmode="numeric" id="inpPhiBuTTS" class="ui-input fee-trigger" value="0" style="width:100%;">
+                  <div class="money-words-text" id="wordPhiBuTTS" style="font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;"></div>
                 </div>
-                <div class="col-6 mb-3">
+                <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Bù nước ngọt ngọt (VND)</label>
-                  <input type="number" id="inpPhiBuNTL" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
+                  <input type="text" inputmode="numeric" id="inpPhiBuNTL" class="ui-input fee-trigger" value="0" style="width:100%;">
+                  <div class="money-words-text" id="wordPhiBuNTL" style="font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;"></div>
                 </div>
               </div>
 
-              <div class="row">
-                <div class="col-6 mb-3">
+              <div class="d-flex gap-3">
+                <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Số bàn phát sinh</label>
                   <input type="number" id="inpBanPhatSinh" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
                 </div>
-                <div class="col-6 mb-3">
+                <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Phí phục vụ tiệc (VND)</label>
-                  <input type="number" id="inpPhiPhucVu" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
+                  <input type="text" inputmode="numeric" id="inpPhiPhucVu" class="ui-input fee-trigger" value="0" style="width:100%;">
+                  <div class="money-words-text" id="wordPhiPhucVu" style="font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;"></div>
                 </div>
               </div>
-              <div class="row">
-                <div class="col-12 mb-3">
-                  <label class="form-label fw-bold">Chi phí phát sinh khác (VND)</label>
-                  <input type="number" id="inpSotienphatsinh" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
-                </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">Chi phí phát sinh khác (VND)</label>
+                <input type="text" inputmode="numeric" id="inpSotienphatsinh" class="ui-input fee-trigger" value="0" style="width:100%;">
+                <div class="money-words-text" id="wordSotienphatsinh" style="font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;"></div>
               </div>
             </div>
 
@@ -3493,7 +3974,8 @@ var QuyetToanPlugin = (function () {
 
               <div class="mb-3 mt-3">
                 <label class="form-label fw-bold" style="color:var(--color-primary);">Thanh toán quyết toán đợt cuối (VND)</label>
-                <input type="number" id="inpThanhtoan" class="ui-input fee-trigger" min="0" style="width:100%; font-weight:700; color:var(--color-primary); font-size:16px;">
+                <input type="text" inputmode="numeric" id="inpThanhtoan" class="ui-input fee-trigger" style="width:100%; font-weight:700; color:var(--color-primary); font-size:16px;">
+                <div class="money-words-text" id="wordThanhtoan" style="font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;"></div>
               </div>
 
               <div class="quyettoan-summary-row">
@@ -3533,7 +4015,7 @@ var QuyetToanPlugin = (function () {
 
     var btnCancel = document.getElementById('btnCancelQuyetToan');
     if (btnCancel) {
-      btnCancel.addEventListener('click', function() {
+      btnCancel.addEventListener('click', function () {
         if (modalInstance && typeof modalInstance.closeNow === 'function') {
           modalInstance.closeNow();
         }
@@ -3552,11 +4034,18 @@ var QuyetToanPlugin = (function () {
     });
     modalContent.querySelector('#containerNgayQuyetToan').appendChild(dateInput);
 
+    var parseMoney = function (val) {
+      return Number(String(val || '').replace(/\D/g, '')) || 0;
+    };
+
     // Gán dữ liệu ban đầu
     modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(details.JsonBanTiec);
     modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(details.JsonThucUong);
     modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(details.JsonDichVu);
     modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(details.JsonPhatSinh);
+    modalContent.querySelector('#inpJsonBanTiecHopDong').value = _stringifyJson(details.JsonBanTiecHopDong);
+    modalContent.querySelector('#inpJsonThucUongHopDong').value = _stringifyJson(details.JsonThucUongHopDong);
+    modalContent.querySelector('#inpJsonDichVuHopDong').value = _stringifyJson(details.JsonDichVuHopDong);
 
     if (existingSettlement) {
       modalContent.querySelector('#inpDocumentID').value = existingSettlement.DocumentID || '';
@@ -3570,13 +4059,16 @@ var QuyetToanPlugin = (function () {
         if (parts.length === 3) modalContent.querySelector('#inpDocumentDate_visible').value = parts[2] + '/' + parts[1] + '/' + parts[0];
       }
 
-      modalContent.querySelector('#inpPhiBuSanh').value = existingSettlement.PhiBuSanh || 0;
-      modalContent.querySelector('#inpPhiBuBanTang').value = existingSettlement.PhiBuBantang || 0;
-      modalContent.querySelector('#inpPhiBuTTS').value = existingSettlement.PhiBuTTS || 0;
-      modalContent.querySelector('#inpPhiBuNTL').value = existingSettlement.PhiBuNTL || 0;
-      modalContent.querySelector('#inpPhiPhucVu').value = existingSettlement.PhiPhucVu || 0;
+      modalContent.querySelector('#inpPhiBuSanh').value = details.PhiBuSanh !== undefined ? details.PhiBuSanh : (existingSettlement.PhiBuSanh || 0);
+      modalContent.querySelector('#inpPhiBuBanTang').value = details.PhiBuBantang !== undefined ? details.PhiBuBantang : (existingSettlement.PhiBuBantang || 0);
+      modalContent.querySelector('#inpPhiBuTTS').value = details.PhiBuTTS !== undefined ? details.PhiBuTTS : (existingSettlement.PhiBuTTS || 0);
+      modalContent.querySelector('#inpPhiBuNTL').value = details.PhiBuNTL !== undefined ? details.PhiBuNTL : (existingSettlement.PhiBuNTL || 0);
+      
+      var savedPhiPhucVu = existingSettlement.RawPhiPhucVu !== undefined ? Number(existingSettlement.RawPhiPhucVu) : parseMoney(existingSettlement.PhiPhucVu);
+      modalContent.querySelector('#inpPhiPhucVu').value = details.PhiPhucVu !== undefined ? details.PhiPhucVu : (savedPhiPhucVu || 0);
+      
       modalContent.querySelector('#inpSotienphatsinh').value = existingSettlement.Sotienphatsinh || 0;
-      modalContent.querySelector('#inpPTThueVAT').value = existingSettlement.PTThueVAT || 0;
+      modalContent.querySelector('#inpPTThueVAT').value = details.PTThueVAT !== undefined ? details.PTThueVAT : (existingSettlement.PTThueVAT || 0);
       modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || existingSettlement.BanPhatSinh || contractRow.BanPhatSinh || 0;
 
       modalContent.querySelector('#inpThanhtoan').value = existingSettlement.Thanhtoan || 0;
@@ -3587,7 +4079,31 @@ var QuyetToanPlugin = (function () {
       modalContent.querySelector('#inpThanhtoan').value = 0;
       modalContent.querySelector('#chkIsKetthuc').checked = true;
       modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || contractRow.BanPhatSinh || 0;
+
+      // Kế thừa các phụ thu từ Hợp đồng / Phụ lục
+      modalContent.querySelector('#inpPhiPhucVu').value = details.PhiPhucVu || contractRow.PhiPhucVu || 0;
+      modalContent.querySelector('#inpPhiBuSanh').value = details.PhiBuSanh || contractRow.PhiBuSanh || 0;
+      modalContent.querySelector('#inpPhiBuBanTang').value = details.PhiBuBantang || contractRow.PhiBuBanTang || 0;
+      modalContent.querySelector('#inpPhiBuTTS').value = details.PhiBuTTS || contractRow.PhiBuTTS || 0;
+      modalContent.querySelector('#inpPhiBuNTL').value = details.PhiBuNTL || contractRow.PhiBuNTL || 0;
+      modalContent.querySelector('#inpPTThueVAT').value = details.PTThueVAT || contractRow.PTThueVAT || 0;
     }
+
+    // Setup money input formatting
+    var setupMoney = function (selector, wordSelector) {
+      var el = modalContent.querySelector(selector);
+      var wordEl = modalContent.querySelector(wordSelector);
+      if (el && typeof UIInput !== 'undefined' && typeof UIInput.setupMoneyInput === 'function') {
+        UIInput.setupMoneyInput(el, wordEl);
+      }
+    };
+    setupMoney('#inpPhiBuSanh', '#wordPhiBuSanh');
+    setupMoney('#inpPhiBuBanTang', '#wordPhiBuBanTang');
+    setupMoney('#inpPhiBuTTS', '#wordPhiBuTTS');
+    setupMoney('#inpPhiBuNTL', '#wordPhiBuNTL');
+    setupMoney('#inpPhiPhucVu', '#wordPhiPhucVu');
+    setupMoney('#inpSotienphatsinh', '#wordSotienphatsinh');
+    setupMoney('#inpThanhtoan', '#wordThanhtoan');
 
     // Thiết lập hiển thị tiền cọc
     modalContent.querySelector('#valTongtiencoc').innerText = tongtiencoc.toLocaleString('vi-VN') + ' đ';
@@ -3604,12 +4120,12 @@ var QuyetToanPlugin = (function () {
       var totalGrid = totalBanTiec + totalThucUong + totalDichVu + totalPhatSinh;
 
       // 2. Chi phí phụ thu khác
-      var phiSanh = Number(modalContent.querySelector('#inpPhiBuSanh').value || 0);
-      var phiBanTang = Number(modalContent.querySelector('#inpPhiBuBanTang').value || 0);
-      var phiTTS = Number(modalContent.querySelector('#inpPhiBuTTS').value || 0);
-      var phiNTL = Number(modalContent.querySelector('#inpPhiBuNTL').value || 0);
-      var phiPhucVu = Number(modalContent.querySelector('#inpPhiPhucVu').value || 0);
-      var phatSinhManual = Number(modalContent.querySelector('#inpSotienphatsinh').value || 0);
+      var phiSanh = parseMoney(modalContent.querySelector('#inpPhiBuSanh').value);
+      var phiBanTang = parseMoney(modalContent.querySelector('#inpPhiBuBanTang').value);
+      var phiTTS = parseMoney(modalContent.querySelector('#inpPhiBuTTS').value);
+      var phiNTL = parseMoney(modalContent.querySelector('#inpPhiBuNTL').value);
+      var phiPhucVu = parseMoney(modalContent.querySelector('#inpPhiPhucVu').value);
+      var phatSinhManual = parseMoney(modalContent.querySelector('#inpSotienphatsinh').value);
 
       var subtotal = totalGrid + phiSanh + phiBanTang + phiTTS + phiNTL + phiPhucVu + phatSinhManual;
 
@@ -3619,12 +4135,16 @@ var QuyetToanPlugin = (function () {
       var tongHoaDon = subtotal + tienVAT;
 
       // Nếu lần đầu tạo mới, thiết lập đề xuất thanh toán = tổng hóa đơn trừ đi cọc
-      if (!existingSettlement && Number(modalContent.querySelector('#inpThanhtoan').value || 0) === 0) {
+      if (!existingSettlement && parseMoney(modalContent.querySelector('#inpThanhtoan').value) === 0) {
         var suggestPayment = Math.max(0, tongHoaDon - tongtiencoc);
-        modalContent.querySelector('#inpThanhtoan').value = suggestPayment;
+        var inpThanhToanEl = modalContent.querySelector('#inpThanhtoan');
+        if (parseMoney(inpThanhToanEl.value) !== suggestPayment) {
+          inpThanhToanEl.value = suggestPayment;
+          inpThanhToanEl.dispatchEvent(new Event('input', { bubbles: true }));
+        }
       }
 
-      var thanhToan = Number(modalContent.querySelector('#inpThanhtoan').value || 0);
+      var thanhToan = parseMoney(modalContent.querySelector('#inpThanhtoan').value);
       var conLai = tongHoaDon - tongtiencoc - thanhToan;
 
       // Cập nhật lên giao diện
@@ -3672,16 +4192,16 @@ var QuyetToanPlugin = (function () {
       var ngayLap = modalContent.querySelector('#inpDocumentDate').value;
       var nguoinop = modalContent.querySelector('#inpNguoinop').value.trim();
 
-      var phiSanh = Number(modalContent.querySelector('#inpPhiBuSanh').value || 0);
-      var phiBanTang = Number(modalContent.querySelector('#inpPhiBuBanTang').value || 0);
-      var phiTTS = Number(modalContent.querySelector('#inpPhiBuTTS').value || 0);
-      var phiBuNTL = Number(modalContent.querySelector('#inpPhiBuNTL').value || 0);
-      var phiPhucVu = Number(modalContent.querySelector('#inpPhiPhucVu').value || 0);
-      var phatSinh = Number(modalContent.querySelector('#inpSotienphatsinh').value || 0);
+      var phiSanh = parseMoney(modalContent.querySelector('#inpPhiBuSanh').value);
+      var phiBanTang = parseMoney(modalContent.querySelector('#inpPhiBuBanTang').value);
+      var phiTTS = parseMoney(modalContent.querySelector('#inpPhiBuTTS').value);
+      var phiBuNTL = parseMoney(modalContent.querySelector('#inpPhiBuNTL').value);
+      var phiPhucVu = parseMoney(modalContent.querySelector('#inpPhiPhucVu').value);
+      var phatSinh = parseMoney(modalContent.querySelector('#inpSotienphatsinh').value);
       var banPhatSinh = Number(modalContent.querySelector('#inpBanPhatSinh').value || 0);
 
       var ptVAT = Number(modalContent.querySelector('#inpPTThueVAT').value || 0);
-      var thanhtoan = Number(modalContent.querySelector('#inpThanhtoan').value || 0);
+      var thanhtoan = parseMoney(modalContent.querySelector('#inpThanhtoan').value);
       var checkKetThuc = modalContent.querySelector('#chkIsKetthuc').checked ? 1 : 0;
       var ghichu = modalContent.querySelector('#inpGhichu').value.trim();
 
@@ -3721,6 +4241,7 @@ var QuyetToanPlugin = (function () {
         PhiBuTTS: phiTTS,
         PhiBuNTL: phiBuNTL,
         PhiPhucVu: phiPhucVu,
+        RawPhiPhucVu: phiPhucVu,
         PTThueVAT: ptVAT,
         TienThueVAT: tienVAT,
 
@@ -3748,6 +4269,15 @@ var QuyetToanPlugin = (function () {
             UIToast.show('Đã lưu phiếu quyết toán thành công!', 'success');
           }
 
+          // Tải lại dữ liệu ở trang hợp đồng để đồng bộ (nếu có callback onReload)
+          if (typeof onReload === 'function') {
+            try {
+              onReload();
+            } catch (err) {
+              console.error('[QuyetToanPlugin] Lỗi đồng bộ danh sách hợp đồng:', err);
+            }
+          }
+
           // Sinh file quyết toán Word
           try {
             _generateDocument(sohopdong);
@@ -3769,7 +4299,7 @@ var QuyetToanPlugin = (function () {
     };
   }
 
-  function getExtraButtons(formName, getSelectedRows) {
+  function getExtraButtons(formName, getSelectedRows, moduleConfig, onReload) {
     if (formName !== 'frmHopDong') return [];
 
     return [{
@@ -3802,27 +4332,27 @@ var QuyetToanPlugin = (function () {
             if (existingSettlement) {
               // Đã có quyết toán
               CheckoutService.getDetails({ DocumentID: existingSettlement.DocumentID }).then(function (details) {
-                _showQuyetToanModal(row, existingSettlement, details || {});
+                _showQuyetToanModal(row, existingSettlement, details || {}, onReload);
               }).catch(function (err) {
                 console.error('[QuyetToanPlugin] Lỗi tải chi tiết quyết toán cũ:', err);
-                _showQuyetToanModal(row, existingSettlement, {});
+                _showQuyetToanModal(row, existingSettlement, {}, onReload);
               });
             } else {
               // Chưa có quyết toán, tải từ hợp đồng/phụ lục
               CheckoutService.getDetails({ Sohopdong: sohopdong }).then(function (details) {
-                _showQuyetToanModal(row, null, details || {});
+                _showQuyetToanModal(row, null, details || {}, onReload);
               }).catch(function (err) {
                 console.error('[QuyetToanPlugin] Lỗi tải chi tiết từ hợp đồng:', err);
-                _showQuyetToanModal(row, null, {});
+                _showQuyetToanModal(row, null, {}, onReload);
               });
             }
           }).catch(function (err) {
             console.error('[QuyetToanPlugin] Lỗi check lịch sử quyết toán:', err);
             // Fallback load default
             CheckoutService.getDetails({ Sohopdong: sohopdong }).then(function (details) {
-              _showQuyetToanModal(row, null, details || {});
+              _showQuyetToanModal(row, null, details || {}, onReload);
             }).catch(function () {
-              _showQuyetToanModal(row, null, {});
+              _showQuyetToanModal(row, null, {}, onReload);
             });
           });
         } else {
@@ -8617,7 +9147,7 @@ var UIModal = (function () {
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
-        <div class="card-body ui-modal-body" style="overflow-y: auto; padding: 16px;"></div>
+        <div class="card-body ui-modal-body" style="overflow-y: auto; padding: 16px; flex: 1; min-height: 0;"></div>
         <div class="modal-footer" style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--color-surface); border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
       </div>
     `;
@@ -8866,6 +9396,8 @@ var FilterComponent = (function () {
         controlWrapper = UIInput.createSelect(config, opts);
       } else if (f.type === 'date') {
         controlWrapper = UIInput.createDate(config);
+      } else if (f.type === 'time') {
+        controlWrapper = UIInput.createTime(config);
       } else if (f.type === 'number') {
         controlWrapper = UIInput.createNumber(config);
       } else {
@@ -9176,6 +9708,13 @@ var UIInput = (function () {
   function createMoney(config) {
     var conf = Object.assign({}, config, { isMoney: true });
     return _createBaseWrapper(conf, 'text').wrapper;
+  }
+
+  /**
+   * Ô chọn Giờ
+   */
+  function createTime(config) {
+    return _createBaseWrapper(config, 'time').wrapper;
   }
 
   /**
@@ -9671,6 +10210,7 @@ var UIInput = (function () {
     createNumber: createNumber,
     createMoney: createMoney,
     createDate: createDate,
+    createTime: createTime,
     createPassword: createPassword,
     createSwitch: createSwitch,
     createSelect: createSelect,

@@ -315,17 +315,17 @@ BEGIN
     DECLARE @Now DATETIME = GETDATE();
 
     -- Chuẩn hóa các tham số JSON chi tiết
-    IF @JsonBanTiec IS NOT NULL AND LTRIM(RTRIM(@JsonBanTiec)) = '' SET @JsonBanTiec = NULL;
-    IF @JsonBanTiec IS NOT NULL AND LEFT(LTRIM(@JsonBanTiec), 1) <> '[' SET @JsonBanTiec = '[' + @JsonBanTiec + ']';
+    IF (@JsonBanTiec = '.' OR @JsonBanTiec = '' OR @JsonBanTiec = '[]') SET @JsonBanTiec = NULL;
+    IF (@JsonBanTiec IS NOT NULL AND (LEFT(LTRIM(@JsonBanTiec), 1) <> '[' OR ISJSON(@JsonBanTiec) = 0)) SET @JsonBanTiec = '[' + @JsonBanTiec + ']';
 
-    IF @JsonThucUong IS NOT NULL AND LTRIM(RTRIM(@JsonThucUong)) = '' SET @JsonThucUong = NULL;
-    IF @JsonThucUong IS NOT NULL AND LEFT(LTRIM(@JsonThucUong), 1) <> '[' SET @JsonThucUong = '[' + @JsonThucUong + ']';
+    IF (@JsonThucUong = '.' OR @JsonThucUong = '' OR @JsonThucUong = '[]') SET @JsonThucUong = NULL;
+    IF (@JsonThucUong IS NOT NULL AND (LEFT(LTRIM(@JsonThucUong), 1) <> '[' OR ISJSON(@JsonThucUong) = 0)) SET @JsonThucUong = '[' + @JsonThucUong + ']';
 
-    IF @JsonDichVu IS NOT NULL AND LTRIM(RTRIM(@JsonDichVu)) = '' SET @JsonDichVu = NULL;
-    IF @JsonDichVu IS NOT NULL AND LEFT(LTRIM(@JsonDichVu), 1) <> '[' SET @JsonDichVu = '[' + @JsonDichVu + ']';
+    IF (@JsonDichVu = '.' OR @JsonDichVu = '' OR @JsonDichVu = '[]') SET @JsonDichVu = NULL;
+    IF (@JsonDichVu IS NOT NULL AND (LEFT(LTRIM(@JsonDichVu), 1) <> '[' OR ISJSON(@JsonDichVu) = 0)) SET @JsonDichVu = '[' + @JsonDichVu + ']';
 
-    IF @JsonPhatSinh IS NOT NULL AND LTRIM(RTRIM(@JsonPhatSinh)) = '' SET @JsonPhatSinh = NULL;
-    IF @JsonPhatSinh IS NOT NULL AND LEFT(LTRIM(@JsonPhatSinh), 1) <> '[' SET @JsonPhatSinh = '[' + @JsonPhatSinh + ']';
+    IF (@JsonPhatSinh = '.' OR @JsonPhatSinh = '' OR @JsonPhatSinh = '[]') SET @JsonPhatSinh = NULL;
+    IF (@JsonPhatSinh IS NOT NULL AND (LEFT(LTRIM(@JsonPhatSinh), 1) <> '[' OR ISJSON(@JsonPhatSinh) = 0)) SET @JsonPhatSinh = '[' + @JsonPhatSinh + ']';
 
     BEGIN TRY
         BEGIN TRANSACTION;

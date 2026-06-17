@@ -585,6 +585,7 @@ window.DynamicFormEngine = (function () {
             var filterType = 'text';
             if (f.renderRule === 'dt') filterType = 'date';
             if (f.renderRule === 'nm') filterType = 'number';
+            if (f.renderRule === 'tm' || f.renderRule === 'time') filterType = 'time';
 
             var filterObj = {
               id: f.name,
@@ -1112,6 +1113,7 @@ window.DynamicFormEngine = (function () {
             <option value="">Chữ (Text)</option>
             <option value="nm">Số (Number)</option>
             <option value="dt">Ngày tháng (Date)</option>
+            <option value="tm">Giờ (Time)</option>
             <option value="sw">Công tắc (Switch)</option>
             <option value="sl">Dropdown (Select)</option>
           </select>
@@ -1383,6 +1385,8 @@ window.DynamicFormEngine = (function () {
           inputEl = UIInput.createSwitch(field);
         } else if (field.renderRule === 'dt' || field.renderRule === 'date') {
           inputEl = UIInput.createDate(field);
+        } else if (field.renderRule === 'tm' || field.renderRule === 'time') {
+          inputEl = UIInput.createTime(field);
         } else if ((field.renderRule === 'sl' || field.renderRule === 'select' || field.renderRule === 'ml') && field.dataSource) {
           inputEl = document.createElement('div');
           inputEl.className = 'form-group';
@@ -1876,6 +1880,8 @@ window.DynamicFormEngine = (function () {
         inputEl = UIInput.createSwitch(field);
       } else if (field.renderRule === 'dt' || field.renderRule === 'date') {
         inputEl = UIInput.createDate(field);
+      } else if (field.renderRule === 'tm' || field.renderRule === 'time') {
+        inputEl = UIInput.createTime(field);
       } else if ((field.renderRule === 'sl' || field.renderRule === 'select' || field.renderRule === 'ml') && field.dataSource) {
         var formGroupWrapper = document.createElement('div');
         formGroupWrapper.className = 'form-group';

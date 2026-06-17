@@ -26,10 +26,15 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     
     -- Thông tin Hợp đồng Tiệc
     @Ngayhopdong NVARCHAR(100) = NULL,
+    @TuNgaySetup NVARCHAR(100) = NULL,
+    @NgayTraSanhDV NVARCHAR(100) = NULL,
+    @TenCongTy NVARCHAR(255) = NULL,
     @NgayToChuc NVARCHAR(100) = NULL,
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(10) = NULL,
     @Thoigianid VARCHAR(20) = NULL,      -- Ca tiệc
+    @SetupBatDau NVARCHAR(50) = NULL,     -- Giờ bắt đầu Setup
+    @SetupKetThuc NVARCHAR(50) = NULL,    -- Giờ kết thúc Setup
     
     @SobanManchinhthuc NVARCHAR(100) = NULL,
     @SobanManduphong NVARCHAR(100) = NULL,
@@ -50,46 +55,39 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @JsonSanhTiec NVARCHAR(MAX) = NULL,
     @JsonBanTiec NVARCHAR(MAX) = NULL,
     @JsonThucUong NVARCHAR(MAX) = NULL,
-    @JsonDichVu NVARCHAR(MAX) = NULL
+    @JsonDichVu NVARCHAR(MAX) = NULL,
+    @JsonPhatSinh NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
     
     DECLARE @Now DATETIME = GETDATE();
-
     DECLARE @NgayToChucParsed DATETIME = NULL;
-
     DECLARE @SobanManchinhthucVal INT = 0;
     DECLARE @SobanManduphongVal INT = 0;
     DECLARE @SobanChaychinhthucVal INT = 0;
     DECLARE @SobanChayduphongVal INT = 0;
     DECLARE @TongSoBanVal DECIMAL(18,2) = 0;
-    
     DECLARE @TongtienhopdongVal DECIMAL(18,2) = 0;
     DECLARE @SotiencocchoVal DECIMAL(18,2) = 0;
     DECLARE @SotiencochopdongVal DECIMAL(18,2) = 0;
     DECLARE @TongtiencocVal DECIMAL(18,2) = 0;
 
-    -- Parse @Ngayhopdong từ các định dạng phổ biến
     DECLARE @NgayHopDongParsed DATETIME = NULL;
-    IF (UPPER(LTRIM(RTRIM(@Ngayhopdong))) = 'NULL' OR LTRIM(RTRIM(@Ngayhopdong)) = '')
-        SET @Ngayhopdong = NULL;
-        
-    IF (UPPER(LTRIM(RTRIM(@NgayToChuc))) = 'NULL' OR LTRIM(RTRIM(@NgayToChuc)) = '')
-        SET @NgayToChuc = NULL;
+    IF (UPPER(LTRIM(RTRIM(@Ngayhopdong))) = 'NULL' OR LTRIM(RTRIM(@Ngayhopdong)) = '') SET @Ngayhopdong = NULL;
+    IF (UPPER(LTRIM(RTRIM(@TuNgaySetup))) = 'NULL' OR LTRIM(RTRIM(@TuNgaySetup)) = '') SET @TuNgaySetup = NULL;
+    IF (UPPER(LTRIM(RTRIM(@NgayTraSanhDV))) = 'NULL' OR LTRIM(RTRIM(@NgayTraSanhDV)) = '') SET @NgayTraSanhDV = NULL;
+    IF (UPPER(LTRIM(RTRIM(@NgayToChuc))) = 'NULL' OR LTRIM(RTRIM(@NgayToChuc)) = '') SET @NgayToChuc = NULL;
 
-    -- Parse @Ngayhopdong từ các định dạng phổ biến
     IF (@Ngayhopdong IS NOT NULL)
     BEGIN
         SET @NgayHopDongParsed = TRY_CAST(@Ngayhopdong AS DATETIME);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 103); -- dd/mm/yyyy
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 105); -- dd-mm-yyyy
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 120); -- yyyy-mm-dd
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 111); -- yyyy/mm/dd
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 101); -- mm/dd/yyyy
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 103);
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 105);
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 120);
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 111);
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 101);
     END
-
-    -- Parse @Ngaytochuc từ các định dạng phổ biến
     IF (@Ngaytochuc IS NOT NULL)
     BEGIN
         SET @NgayToChucParsed = TRY_CAST(@Ngaytochuc AS DATETIME);
@@ -99,90 +97,112 @@ BEGIN
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 111);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 101);
     END
-
-
-
-    -- Chuẩn hóa và parse các tham số số học (bỏ dấu chấm/phẩy phân tách hàng ngàn)
-    SET @SobanManchinhthucVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanManchinhthuc, '0'), '.', ''), ',', '') AS INT);
-    SET @SobanManduphongVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanManduphong, '0'), '.', ''), ',', '') AS INT);
-    SET @SobanChaychinhthucVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanChaychinhthuc, '0'), '.', ''), ',', '') AS INT);
-    SET @SobanChayduphongVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanChayduphong, '0'), '.', ''), ',', '') AS INT);
     
-    SET @TongSoBanVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@TongSoBan, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
-    SET @TongtienhopdongVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@Tongtienhopdong, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
-    SET @SotiencocchoVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@Sotiencoccho, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
-    SET @SotiencochopdongVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@Sotiencochopdong, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
-    SET @TongtiencocVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@Tongtiencoc, '0'), '.', ''), ',', '') AS DECIMAL(18,2));
+    DECLARE @TuNgaySetupParsed DATETIME = NULL;
+    IF (@TuNgaySetup IS NOT NULL)
+    BEGIN
+        SET @TuNgaySetupParsed = TRY_CAST(@TuNgaySetup AS DATETIME);
+        IF (@TuNgaySetupParsed IS NULL) SET @TuNgaySetupParsed = TRY_CONVERT(DATETIME, @TuNgaySetup, 103);
+    END
+    
+    DECLARE @NgayTraSanhDVParsed DATETIME = NULL;
+    IF (@NgayTraSanhDV IS NOT NULL)
+    BEGIN
+        SET @NgayTraSanhDVParsed = TRY_CAST(@NgayTraSanhDV AS DATETIME);
+        IF (@NgayTraSanhDVParsed IS NULL) SET @NgayTraSanhDVParsed = TRY_CONVERT(DATETIME, @NgayTraSanhDV, 103);
+    END
+
+    SET @SobanManchinhthucVal  = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanManchinhthuc,  '0'), '.', ''), ',', '') AS INT);
+    SET @SobanManduphongVal    = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanManduphong,    '0'), '.', ''), ',', '') AS INT);
+    SET @SobanChaychinhthucVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanChaychinhthuc, '0'), '.', ''), ',', '') AS INT);
+    SET @SobanChayduphongVal   = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanChayduphong,   '0'), '.', ''), ',', '') AS INT);
+    SET @TongSoBanVal          = TRY_CAST(REPLACE(REPLACE(ISNULL(@TongSoBan,          '0'), '.', ''), ',', '') AS DECIMAL(18,2));
+    SET @TongtienhopdongVal    = TRY_CAST(REPLACE(REPLACE(ISNULL(@Tongtienhopdong,    '0'), '.', ''), ',', '') AS DECIMAL(18,2));
+    SET @SotiencocchoVal       = TRY_CAST(REPLACE(REPLACE(ISNULL(@Sotiencoccho,       '0'), '.', ''), ',', '') AS DECIMAL(18,2));
+    SET @SotiencochopdongVal   = TRY_CAST(REPLACE(REPLACE(ISNULL(@Sotiencochopdong,   '0'), '.', ''), ',', '') AS DECIMAL(18,2));
+    SET @TongtiencocVal        = TRY_CAST(REPLACE(REPLACE(ISNULL(@Tongtiencoc,        '0'), '.', ''), ',', '') AS DECIMAL(18,2));
 
     -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân tách bằng dấu phẩy
+    IF (@JsonSanhTiec = '.' OR @JsonSanhTiec = '')
+    BEGIN
+        SET @JsonSanhTiec = NULL;
+    END
+
     IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
     BEGIN
-        IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+        IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[' OR ISJSON(@JsonSanhTiec) = 0)
         BEGIN
             SET @JsonSanhTiec = (
                 SELECT Sanhtiecid, 1 AS IsSanhchinh
                 FROM (
                     SELECT LTRIM(RTRIM(value)) AS Sanhtiecid 
                     FROM STRING_SPLIT(@JsonSanhTiec, ',')
+                    WHERE value <> '.' AND value <> ''
                 ) s
+                WHERE Sanhtiecid <> ''
+                FOR JSON PATH
+            );
+        END
+        ELSE
+        BEGIN
+            -- Nếu đã là JSON array, chuẩn hóa để loại bỏ phần tử rác (nếu có)
+            SET @JsonSanhTiec = (
+                SELECT Sanhtiecid, IsSanhchinh
+                FROM (
+                    SELECT 
+                        JSON_VALUE(value, '$.Sanhtiecid') AS Sanhtiecid,
+                        ISNULL(CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0) AS IsSanhchinh
+                    FROM OPENJSON(@JsonSanhTiec)
+                ) s
+                WHERE Sanhtiecid IS NOT NULL AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
                 FOR JSON PATH
             );
         END
     END
 
-    -- Fallback 1: Nếu rỗng và là cập nhật hợp đồng cũ, lấy từ hợp đồng hiện tại
+    -- Chuẩn hóa các tham số JSON chi tiết thực đơn & dịch vụ
+    IF (@JsonBanTiec = '.' OR @JsonBanTiec = '' OR @JsonBanTiec = '[]') SET @JsonBanTiec = NULL;
+    IF (@JsonBanTiec IS NOT NULL AND (LEFT(LTRIM(@JsonBanTiec), 1) <> '[' OR ISJSON(@JsonBanTiec) = 0)) SET @JsonBanTiec = '[' + @JsonBanTiec + ']';
+
+    IF (@JsonThucUong = '.' OR @JsonThucUong = '' OR @JsonThucUong = '[]') SET @JsonThucUong = NULL;
+    IF (@JsonThucUong IS NOT NULL AND (LEFT(LTRIM(@JsonThucUong), 1) <> '[' OR ISJSON(@JsonThucUong) = 0)) SET @JsonThucUong = '[' + @JsonThucUong + ']';
+
+    IF (@JsonDichVu = '.' OR @JsonDichVu = '' OR @JsonDichVu = '[]') SET @JsonDichVu = NULL;
+    IF (@JsonDichVu IS NOT NULL AND (LEFT(LTRIM(@JsonDichVu), 1) <> '[' OR ISJSON(@JsonDichVu) = 0)) SET @JsonDichVu = '[' + @JsonDichVu + ']';
+
+    IF (@JsonPhatSinh = '.' OR @JsonPhatSinh = '' OR @JsonPhatSinh = '[]') SET @JsonPhatSinh = NULL;
+    IF (@JsonPhatSinh IS NOT NULL AND (LEFT(LTRIM(@JsonPhatSinh), 1) <> '[' OR ISJSON(@JsonPhatSinh) = 0)) SET @JsonPhatSinh = '[' + @JsonPhatSinh + ']';
+
     IF (@NgayToChucParsed IS NULL AND @Sohopdong IS NOT NULL AND @Sohopdong <> '')
-    BEGIN
-        SELECT TOP 1 @NgayToChucParsed = Ngaytochuc
-        FROM tbmk_Hopdong
-        WHERE Sohopdong = @Sohopdong;
-    END
+        SELECT TOP 1 @NgayToChucParsed = Ngaytochuc FROM tbmk_Hopdong WHERE Sohopdong = @Sohopdong;
 
-    -- Fallback 2: Nếu rỗng và có liên kết biên nhận cọc, lấy từ biên nhận cọc
     IF (@NgayToChucParsed IS NULL AND @Sobiennhan IS NOT NULL AND @Sobiennhan <> '')
-    BEGIN
-        SELECT TOP 1 @NgayToChucParsed = Ngaytochuc
-        FROM tbmk_Biennhancoccho
-        WHERE DocumentID = @Sobiennhan OR SoBN = @Sobiennhan;
-    END
+        SELECT TOP 1 @NgayToChucParsed = Ngaytochuc FROM tbmk_Biennhancoccho WHERE DocumentID = @Sobiennhan OR SoBN = @Sobiennhan;
 
-    -- Kiểm tra Ngày tổ chức bắt buộc phải hợp lệ
     IF (@NgayToChucParsed IS NULL)
     BEGIN
-        SELECT 0 AS [Success], N'Lỗi: Ngày tổ chức không được để trống hoặc định dạng ngày không hợp lệ (Nhập vào: ''' + COALESCE(@Ngaytochuc, 'NULL') + ''')' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+        SELECT 0 AS [Success], N'Lỗi: Ngày tổ chức không được để trống hoặc định dạng ngày không hợp lệ.' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
         RETURN;
     END
 
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        -- ==========================================================
-        -- 0. KIỂM TRA TRÙNG LỊCH SẢNH (CONFLICT VALIDATION)
-        -- ==========================================================
+        -- 0. KIEM TRA TRUNG LICH SANH
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
             IF EXISTS (
-                -- Kiểm tra trùng với Hợp đồng khác
-                SELECT 1 
-                FROM tbmk_Hopdong h
+                SELECT 1 FROM tbmk_Hopdong h
                 INNER JOIN tbmk_Hopdongsanhtiec hs ON h.Sohopdong = hs.Sohopdong
                 INNER JOIN OPENJSON(@JsonSanhTiec) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
-                WHERE h.Ngaytochuc = @NgayToChucParsed 
-                  AND h.Thoigianid = @Thoigianid
-                  AND ISNULL(h.IsHuy, 0) = 0
-                  AND h.Sohopdong != ISNULL(@Sohopdong, '')
-                  
+                WHERE h.Ngaytochuc = @NgayToChucParsed AND h.Thoigianid = @Thoigianid
+                  AND ISNULL(h.IsHuy, 0) = 0 AND h.Sohopdong != ISNULL(@Sohopdong, '')
                 UNION ALL
-                
-                -- Kiểm tra trùng với Cọc chỗ khác (chưa lên Hợp đồng)
-                SELECT 1 
-                FROM tbmk_Biennhancoccho b
+                SELECT 1 FROM tbmk_Biennhancoccho b
                 INNER JOIN tbmk_Biennhancocchosanhtiec bs ON b.DocumentID = bs.DocumentID
                 INNER JOIN OPENJSON(@JsonSanhTiec) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
-                WHERE b.Ngaytochuc = @NgayToChucParsed 
-                  AND b.Thoigianid = @Thoigianid
-                  AND ISNULL(b.IsHuy, 0) = 0
-                  AND ISNULL(b.IsKetthuc, 0) = 0
+                WHERE b.Ngaytochuc = @NgayToChucParsed AND b.Thoigianid = @Thoigianid
+                  AND ISNULL(b.IsHuy, 0) = 0 AND ISNULL(b.IsKetthuc, 0) = 0
                   AND b.DocumentID != ISNULL(@Sobiennhan, '')
             )
             BEGIN
@@ -192,164 +212,108 @@ BEGIN
             END
         END
 
-        -- ==========================================================
-        -- 1. XỬ LÝ KHÁCH HÀNG (dmkhachhang)
-        -- ==========================================================
+        -- 1. XU LY KHACH HANG
         IF (@Makh IS NULL OR @Makh = '')
         BEGIN
-            -- Tìm khách hàng đã có theo SĐT trước (tránh tạo duplicate)
             IF (@Dienthoai IS NOT NULL AND @Dienthoai <> '')
-            BEGIN
-                SELECT TOP 1 @Makh = Makh
-                FROM dmkhachhang
-                WHERE Dienthoai = @Dienthoai
-                  AND ISNULL(IsKhachhang, 0) = 1
-                ORDER BY DateCreate ASC;  -- Lấy record cũ nhất (gốc)
-            END
+                SELECT TOP 1 @Makh = Makh FROM dmkhachhang
+                WHERE Dienthoai = @Dienthoai AND ISNULL(IsKhachhang, 0) = 1 ORDER BY DateCreate ASC;
 
-            -- Không tìm thấy → tạo mới
             IF (@Makh IS NULL OR @Makh = '')
             BEGIN
                 SET @Makh = 'KH' + FORMAT(@Now, 'yyMMddHHmmss');
-
-                INSERT INTO dmkhachhang (
-                    Makh, Tenkh, Tenchure, Tencodau, Dienthoai, Diachi, Mail, 
-                    CMNDDaiDien, CMNDchure, CMNDcodau,
-                    IsKhachhang, DateCreate, UserCreate
-                )
-                VALUES (
-                    @Makh, 
-                    CASE 
-                        WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure, '')
-                        ELSE ISNULL(@Tenchure, '') + ' & ' + ISNULL(@Tencodau, '') 
-                    END, 
-                    @Tenchure, @Tencodau, @Dienthoai, @Diachi, @Mail, 
-                    @BenBCCCD, @BenBCCCD, @BenBCCCD,
-                    1, @Now, @UserCreate
-                );
+                INSERT INTO dmkhachhang (Makh, Tenkh, Tenchure, Tencodau, Dienthoai, Diachi, Mail, CMNDDaiDien, CMNDchure, CMNDcodau, IsKhachhang, DateCreate, UserCreate)
+                VALUES (@Makh, CASE WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure,'') ELSE ISNULL(@Tenchure,'') + ' & ' + ISNULL(@Tencodau,'') END,
+                    @Tenchure, @Tencodau, @Dienthoai, @Diachi, @Mail, @BenBCCCD, @BenBCCCD, @BenBCCCD, 1, @Now, @UserCreate);
             END
             ELSE
             BEGIN
-                -- Tìm thấy khách cũ → cập nhật thông tin nếu có thay đổi
-                UPDATE dmkhachhang
-                SET
-                    Tenchure    = ISNULL(NULLIF(@Tenchure, ''), Tenchure),
-                    Tencodau    = ISNULL(NULLIF(@Tencodau, ''), Tencodau),
-                    Diachi      = ISNULL(NULLIF(@Diachi,   ''), Diachi),
-                    Mail        = ISNULL(NULLIF(@Mail,     ''), Mail),
-                    CMNDDaiDien = ISNULL(NULLIF(@BenBCCCD, ''), CMNDDaiDien),
-                    CMNDchure   = ISNULL(NULLIF(@BenBCCCD, ''), CMNDchure),
-                    CMNDcodau   = ISNULL(NULLIF(@BenBCCCD, ''), CMNDcodau),
-                    DateUpdate  = @Now,
-                    UserUpdate  = @UserCreate
+                -- Cap nhat khach cu: chi ghi de khi co gia tri moi
+                UPDATE dmkhachhang SET
+                    Tenchure    = ISNULL(NULLIF(@Tenchure,   ''), Tenchure),
+                    Tencodau    = ISNULL(NULLIF(@Tencodau,   ''), Tencodau),
+                    Diachi      = ISNULL(NULLIF(@Diachi,     ''), Diachi),
+                    Mail        = ISNULL(NULLIF(@Mail,       ''), Mail),
+                    CMNDDaiDien = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDDaiDien),
+                    CMNDchure   = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDchure),
+                    CMNDcodau   = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDcodau),
+                    DateUpdate  = @Now, UserUpdate = @UserCreate
                 WHERE Makh = @Makh;
             END
         END
         ELSE
         BEGIN
-            -- Cập nhật khách hàng: chỉ ghi đè khi giá trị mới KHÔNG rỗng
-            -- tránh xóa thông tin cũ của các HĐ/phiếu cọc khác cùng khách
-            UPDATE dmkhachhang
-            SET 
-                Tenkh = CASE 
-                            WHEN ISNULL(@Tencodau, '') = '' THEN ISNULL(NULLIF(@Tenchure, ''), Tenkh)
-                            WHEN ISNULL(@Tenchure, '') = '' THEN ISNULL(NULLIF(@Tencodau, ''), Tenkh)
+            -- Co Makh truyen vao: chi ghi de khi gia tri moi KHONG rong
+            UPDATE dmkhachhang SET
+                Tenkh = CASE
+                            WHEN ISNULL(@TenCongTy,'') <> '' THEN @TenCongTy
+                            WHEN ISNULL(@Tencodau,'')='' THEN ISNULL(NULLIF(@Tenchure,''), Tenkh)
+                            WHEN ISNULL(@Tenchure,'')='' THEN ISNULL(NULLIF(@Tencodau,''), Tenkh)
                             ELSE @Tenchure + ' & ' + @Tencodau
                         END,
-                Tenchure    = ISNULL(NULLIF(@Tenchure, ''), Tenchure),
-                Tencodau    = ISNULL(NULLIF(@Tencodau, ''), Tencodau),
-                Dienthoai   = ISNULL(NULLIF(@Dienthoai, ''), Dienthoai),
-                Diachi      = ISNULL(NULLIF(@Diachi,    ''), Diachi),
-                Mail        = ISNULL(NULLIF(@Mail,      ''), Mail),
-                CMNDDaiDien = ISNULL(NULLIF(@BenBCCCD, ''), CMNDDaiDien),
-                CMNDchure   = ISNULL(NULLIF(@BenBCCCD, ''), CMNDchure),
-                CMNDcodau   = ISNULL(NULLIF(@BenBCCCD, ''), CMNDcodau),
-                DateUpdate  = @Now,
-                UserUpdate  = @UserCreate
+                Tenchure    = ISNULL(NULLIF(@Tenchure,   ''), Tenchure),
+                Tencodau    = ISNULL(NULLIF(@Tencodau,   ''), Tencodau),
+                Dienthoai   = ISNULL(NULLIF(@Dienthoai,  ''), Dienthoai),
+                Diachi      = ISNULL(NULLIF(@Diachi,     ''), Diachi),
+                Mail        = ISNULL(NULLIF(@Mail,       ''), Mail),
+                CMNDDaiDien = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDDaiDien),
+                CMNDchure   = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDchure),
+                CMNDcodau   = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDcodau),
+                DateUpdate  = @Now, UserUpdate = @UserCreate
             WHERE Makh = @Makh;
         END
 
-        -- ==========================================================
-        -- 2. XỬ LÝ HỢP ĐỒNG (tbmk_Hopdong)
-        -- ==========================================================
+        -- 2. XU LY HOP DONG
         IF (@Sohopdong IS NULL OR @Sohopdong = '')
         BEGIN
-            -- Phát sinh mã Hợp Đồng (Max 20 chars)
             SET @Sohopdong = 'HD' + FORMAT(@Now, 'yyMMddHHmmss');
-
             INSERT INTO tbmk_Hopdong (
                 Sohopdong, Sobiennhan, Ngayhopdong, Ngaytochuc, Nhamngay, Makh, Loaitiecid, Thoigianid,
+                TuNgaySetup, NgayTraSanhDV, TuGioDenGioSetup, DenGioSetup,
                 SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong, TongSoBan,
                 Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongtiencoc,
                 Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID
             )
             VALUES (
-                @Sohopdong, @Sobiennhan, ISNULL(@NgayHopDongParsed, @Now), @NgayToChucParsed, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
+                @Sohopdong, @Sobiennhan, ISNULL(@NgayHopDongParsed,@Now), @NgayToChucParsed, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
+                @TuNgaySetupParsed, @NgayTraSanhDVParsed, @SetupBatDau, @SetupKetThuc,
                 @SobanManchinhthucVal, @SobanManduphongVal, @SobanChaychinhthucVal, @SobanChayduphongVal, @TongSoBanVal,
                 @TongtienhopdongVal, @SotiencocchoVal, @SotiencochopdongVal, @TongtiencocVal,
                 @Manv, @Ghichu, 0, 0, @Now, @UserCreate, ''
             );
-
-            -- Cập nhật trạng thái phiếu cọc nếu có truyền Sobiennhan
             IF (@Sobiennhan IS NOT NULL AND @Sobiennhan != '')
-            BEGIN
-                UPDATE tbmk_Biennhancoccho 
-                SET IsKetthuc = 1, DateUpdate = @Now, UserUpdate = @UserCreate
-                WHERE DocumentID = @Sobiennhan;
-            END
+                UPDATE tbmk_Biennhancoccho SET IsKetthuc=1, DateUpdate=@Now, UserUpdate=@UserCreate WHERE DocumentID=@Sobiennhan;
         END
         ELSE
         BEGIN
-            -- Kiểm tra xem hợp đồng đã có trạng thái "Đã Ký" hoặc "Đã Quyết Toán" chưa (Khóa thay đổi)
-            IF EXISTS (
-                SELECT 1 FROM tbmk_Hopdong 
-                WHERE Sohopdong = @Sohopdong 
-                  AND (Status IN ('SIGNED', 'COMPLETED') OR IsKetthuc = 1 OR IsHuy = 1)
-            )
+            IF EXISTS (SELECT 1 FROM tbmk_Hopdong WHERE Sohopdong=@Sohopdong AND (Status IN ('SIGNED','COMPLETED') OR IsKetthuc=1 OR IsHuy=1))
             BEGIN
                 ROLLBACK TRANSACTION;
-                SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã chốt (Đã ký hoặc Quyết toán). Vui lòng dùng chức năng Phụ lục!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+                SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã chốt. Vui lòng dùng chức năng Phụ lục!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
                 RETURN;
             END
-
-            -- Cập nhật Hợp Đồng
-            UPDATE tbmk_Hopdong
-            SET 
-                Sobiennhan = @Sobiennhan,
-                Makh = @Makh,
-                Ngayhopdong = @NgayHopDongParsed,
-                Ngaytochuc = @NgayToChucParsed,
-                Nhamngay = @Nhamngay,
-                Loaitiecid = @Loaitiecid,
-                Thoigianid = @Thoigianid,
-                SobanManchinhthuc = @SobanManchinhthucVal,
-                SobanManduphong = @SobanManduphongVal,
-                SobanChaychinhthuc = @SobanChaychinhthucVal,
-                SobanChayduphong = @SobanChayduphongVal,
-                TongSoBan = @TongSoBanVal,
-                Tongtienhopdong = @TongtienhopdongVal,
-                Sotiencoccho = @SotiencocchoVal,
-                Sotiencochopdong = @SotiencochopdongVal,
-                Tongtiencoc = @TongtiencocVal,
-                Ghichu = @Ghichu,
-                DateUpdate = @Now,
-                UserUpdate = @UserCreate
-            WHERE Sohopdong = @Sohopdong;
+            UPDATE tbmk_Hopdong SET
+                Sobiennhan=@Sobiennhan, Makh=@Makh, Ngayhopdong=@NgayHopDongParsed, Ngaytochuc=@NgayToChucParsed,
+                TuNgaySetup = ISNULL(@TuNgaySetupParsed, TuNgaySetup),
+                NgayTraSanhDV = ISNULL(@NgayTraSanhDVParsed, NgayTraSanhDV),
+                TuGioDenGioSetup = @SetupBatDau,
+                DenGioSetup = @SetupKetThuc,
+                Nhamngay=@Nhamngay, Loaitiecid=@Loaitiecid, Thoigianid=@Thoigianid,
+                SobanManchinhthuc=@SobanManchinhthucVal, SobanManduphong=@SobanManduphongVal,
+                SobanChaychinhthuc=@SobanChaychinhthucVal, SobanChayduphong=@SobanChayduphongVal,
+                TongSoBan=@TongSoBanVal, Tongtienhopdong=@TongtienhopdongVal,
+                Sotiencoccho=@SotiencocchoVal, Sotiencochopdong=@SotiencochopdongVal,
+                Tongtiencoc=@TongtiencocVal, Ghichu=@Ghichu, DateUpdate=@Now, UserUpdate=@UserCreate
+            WHERE Sohopdong=@Sohopdong;
         END
 
-        -- ==========================================================
-        -- 3. XỬ LÝ CHI TIẾT SẢNH TIỆC (tbmk_Hopdongsanhtiec)
-        -- ==========================================================
+        -- 3. XU LY SANH TIEC
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
-            -- Xóa sảnh cũ
-            DELETE FROM tbmk_Hopdongsanhtiec WHERE Sohopdong = @Sohopdong;
-
-            -- Insert sảnh mới từ JSON
+            DELETE FROM tbmk_Hopdongsanhtiec WHERE Sohopdong=@Sohopdong;
             INSERT INTO tbmk_Hopdongsanhtiec (
                 UserAutoid, Sohopdong, Sanhtiecid, IsSanhchinh, 
-                KieuSetup, Ghichuct,
-                DateCreate, UserCreate
+                KieuSetup, Ghichuct, DateCreate, UserCreate
             )
             SELECT 
                 NEWID(), 
@@ -363,111 +327,80 @@ BEGIN
             FROM OPENJSON(@JsonSanhTiec);
         END
 
-        -- ==========================================================
-        -- 4. XỬ LÝ CHI TIẾT THỰC ĐƠN BÀN TIỆC (tbmk_Hopdongthucdonman, tbmk_Hopdongthucdonchay)
-        -- ==========================================================
+        -- 4. ĐỒNG BỘ CHI TIẾT THỰC ĐƠN VÀO BẢNG CON (phục vụ in ấn & view)
         IF (@JsonBanTiec IS NOT NULL)
         BEGIN
             DELETE FROM tbmk_Hopdongthucdonman WHERE Sohopdong = @Sohopdong;
             DELETE FROM tbmk_Hopdongthucdonchay WHERE Sohopdong = @Sohopdong;
-            
-            -- Insert món mặn: Tên hàng không chứa chữ 'chay'
+
             INSERT INTO tbmk_Hopdongthucdonman (
-                UserAutoid, Sohopdong, STTmon, Mahang, Dongia, 
+                UserAutoid, Sohopdong, STTmon, Mahang, Dongia,
                 UserCreate, DateCreate, Ghichuthucdonman, IsKhaividaugio
             )
-            SELECT 
+            SELECT
                 NEWID(), @Sohopdong, ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), j.Mahang, j.Dongia,
                 @UserCreate, @Now, NULL, 0
             FROM OPENJSON(@JsonBanTiec)
-            WITH (
-                Mahang VARCHAR(50),
-                TenHang NVARCHAR(255),
-                Dongia DECIMAL(18,2)
-            ) j
-            LEFT JOIN dmHanghoa h ON j.Mahang = h.Mahang
-            WHERE ISNULL(h.Tenhang, j.TenHang) NOT LIKE N'%chay%';
+            WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+            LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
+            WHERE ISNULL(hh.Tenhang, j.TenHang) NOT LIKE N'%chay%';
 
-            -- Insert món chay: Tên hàng chứa chữ 'chay'
             INSERT INTO tbmk_Hopdongthucdonchay (
-                UserAutoid, Sohopdong, STTmon, Mahang, Dongia, 
+                UserAutoid, Sohopdong, STTmon, Mahang, Dongia,
                 UserCreate, DateCreate, Ghichuthucdonchay, IsKhaividaugio, IsPhan
             )
-            SELECT 
+            SELECT
                 NEWID(), @Sohopdong, ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), j.Mahang, j.Dongia,
                 @UserCreate, @Now, NULL, 0, 0
             FROM OPENJSON(@JsonBanTiec)
-            WITH (
-                Mahang VARCHAR(50),
-                TenHang NVARCHAR(255),
-                Dongia DECIMAL(18,2)
-            ) j
-            LEFT JOIN dmHanghoa h ON j.Mahang = h.Mahang
-            WHERE ISNULL(h.Tenhang, j.TenHang) LIKE N'%chay%';
+            WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+            LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
+            WHERE ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%';
         END
 
-        -- ==========================================================
-        -- 5. XỬ LÝ CHI TIẾT THỨC UỐNG (tbmk_Hopdongthucuong)
-        -- ==========================================================
         IF (@JsonThucUong IS NOT NULL)
         BEGIN
             DELETE FROM tbmk_Hopdongthucuong WHERE Sohopdong = @Sohopdong;
-            
             INSERT INTO tbmk_Hopdongthucuong (
                 UserAutoid, Sohopdong, Mahang, Soluong, Dongia, Sotien,
                 IsKhuyenmai, Ghichuthucuong, Giamgia, UserCreate, DateCreate, STT, Dvt
             )
-            SELECT 
+            SELECT
                 NEWID(), @Sohopdong, j.Mahang, j.Soluong, j.Dongia, (j.Soluong * j.Dongia),
                 ISNULL(j.IsKhuyenmai, 0), j.Ghichuthucuong, ISNULL(j.Giamgia, 0), @UserCreate, @Now,
-                ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), h.DVTID
+                ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), hh.DVTID
             FROM OPENJSON(@JsonThucUong)
             WITH (
-                Mahang VARCHAR(50),
-                Soluong DECIMAL(18,2),
-                Dongia DECIMAL(18,2),
-                IsKhuyenmai BIT,
-                Ghichuthucuong NVARCHAR(500),
-                Giamgia DECIMAL(18,2)
+                Mahang VARCHAR(50), Soluong DECIMAL(18,2), Dongia DECIMAL(18,2),
+                IsKhuyenmai BIT, Ghichuthucuong NVARCHAR(500), Giamgia DECIMAL(18,2)
             ) j
-            LEFT JOIN dmHanghoa h ON j.Mahang = h.Mahang;
+            LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang;
         END
 
-        -- ==========================================================
-        -- 6. XỬ LÝ CHI TIẾT DỊCH VỤ (tbmk_Hopdongdichvu)
-        -- ==========================================================
         IF (@JsonDichVu IS NOT NULL)
         BEGIN
             DELETE FROM tbmk_Hopdongdichvu WHERE Sohopdong = @Sohopdong;
-            
             INSERT INTO tbmk_Hopdongdichvu (
                 UserAutoid, Sohopdong, Mahang, Soluong, Dongia, Sotien,
                 IsKhuyenmai, Ghichudichvu, UserCreate, DateCreate, STT
             )
-            SELECT 
+            SELECT
                 NEWID(), @Sohopdong, j.Mahang, j.Soluong, j.Dongia, (j.Soluong * j.Dongia),
                 ISNULL(j.IsKhuyenmai, 0), j.Ghichudichvu, @UserCreate, @Now,
                 ROW_NUMBER() OVER(ORDER BY (SELECT NULL))
             FROM OPENJSON(@JsonDichVu)
             WITH (
-                Mahang VARCHAR(50),
-                Soluong DECIMAL(18,2),
-                Dongia DECIMAL(18,2),
-                IsKhuyenmai BIT,
-                Ghichudichvu NVARCHAR(500)
+                Mahang VARCHAR(50), Soluong DECIMAL(18,2), Dongia DECIMAL(18,2),
+                IsKhuyenmai BIT, Ghichudichvu NVARCHAR(500)
             ) j;
         END
 
         COMMIT TRANSACTION;
-        
-        -- Trả về kết quả
         SELECT 1 AS [Success], N'Lưu Hợp đồng Tiệc Cưới thành công' AS [Message], @Sohopdong AS [Sohopdong], @Makh AS [Makh];
         
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-            
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
         SELECT 0 AS [Success], ERROR_MESSAGE() AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
     END CATCH
 END

@@ -108,12 +108,14 @@ BEGIN
             SELECT Sanhtiecid, IsSanhchinh 
             FROM tbmk_Biennhancocchosanhtiec 
             WHERE DocumentID = b.DocumentID 
+              AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
             FOR JSON PATH
         ) AS [_JsonSanhTiec],
         (
             SELECT TOP 1 Sanhtiecid 
             FROM tbmk_Biennhancocchosanhtiec 
             WHERE DocumentID = b.DocumentID 
+              AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
             ORDER BY IsSanhchinh DESC
         ) AS [JsonSanhTiec],
         

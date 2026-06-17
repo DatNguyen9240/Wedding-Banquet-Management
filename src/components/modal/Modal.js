@@ -24,7 +24,7 @@ var UIModal = (function () {
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
-        <div class="card-body ui-modal-body" style="overflow-y: auto; padding: 16px;"></div>
+        <div class="card-body ui-modal-body" style="overflow-y: auto; padding: 16px; flex: 1; min-height: 0;"></div>
         <div class="modal-footer" style="flex-shrink: 0; padding: 16px 24px; border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 12px; background: var(--color-surface); border-radius: 0 0 var(--radius-lg) var(--radius-lg);"></div>
       </div>
     `;

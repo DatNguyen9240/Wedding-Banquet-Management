@@ -128,7 +128,7 @@ var PhuLucPlugin = (function () {
       });
   }
 
-  function _showPhuLucModal(contractRow, defaultJsonBanTiec, defaultJsonThucUong, defaultJsonDichVu, defaultJsonPhatSinh) {
+  function _showPhuLucModal(contractRow, defaultJsonBanTiec, defaultJsonThucUong, defaultJsonDichVu, defaultJsonPhatSinh, onReload) {
     _injectStyles();
 
     defaultJsonBanTiec = _stringifyJson(defaultJsonBanTiec);
@@ -432,11 +432,11 @@ var PhuLucPlugin = (function () {
                 var overlay = document.querySelector('.modal-overlay');
                 if (overlay) overlay.remove();
               }
-              if (typeof UIToast !== 'undefined') {
-                UIToast.show('Đã xóa thành công phụ lục: ' + id, 'success');
+              if (typeof onReload === 'function') {
+                try { onReload(); } catch (err) { }
               }
               // Mở lại modal để refresh danh sách
-              _showPhuLucModal(contractRow);
+              _showPhuLucModal(contractRow, defaultJsonBanTiec, defaultJsonThucUong, defaultJsonDichVu, defaultJsonPhatSinh, onReload);
             } else {
               var errMsg = (res && (res.message || res.msg)) || 'Có lỗi khi xóa phụ lục.';
               if (typeof Alert !== 'undefined') {
@@ -678,6 +678,9 @@ var PhuLucPlugin = (function () {
             if (typeof UIToast !== 'undefined') {
               UIToast.show('Đã lưu phụ lục: ' + soPhuLuc, 'success');
             }
+            if (typeof onReload === 'function') {
+              try { onReload(); } catch (err) { }
+            }
             // Sinh tài liệu DOCX ngay lập tức
             try {
               _generateDocument(soPhuLuc);
@@ -700,7 +703,7 @@ var PhuLucPlugin = (function () {
     });
   }
 
-  function getExtraButtons(formName, getSelectedRows) {
+  function getExtraButtons(formName, getSelectedRows, moduleConfig, onReload) {
     if (formName !== 'frmHopDong') return [];
 
     return [{
@@ -747,13 +750,13 @@ var PhuLucPlugin = (function () {
 
             // Gộp dữ liệu chi tiết của hợp đồng gốc vào row để điền các trường cũ
             var mergedRow = Object.assign({}, row, details);
-            _showPhuLucModal(mergedRow, jsonBanTiec, jsonThucUong, jsonDichVu, jsonPhatSinh);
+            _showPhuLucModal(mergedRow, jsonBanTiec, jsonThucUong, jsonDichVu, jsonPhatSinh, onReload);
           }).catch(function (err) {
             console.error('[PhuLucPlugin] Lỗi tải thực đơn:', err);
-            _showPhuLucModal(row, '[]', '[]', '[]', '[]');
+            _showPhuLucModal(row, '[]', '[]', '[]', '[]', onReload);
           });
         } else {
-          _showPhuLucModal(row, '[]', '[]', '[]', '[]');
+          _showPhuLucModal(row, '[]', '[]', '[]', '[]', onReload);
         }
       }
     }];

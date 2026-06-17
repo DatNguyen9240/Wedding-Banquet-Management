@@ -85,6 +85,13 @@ var UIInput = (function () {
   }
 
   /**
+   * Ô chọn Giờ
+   */
+  function createTime(config) {
+    return _createBaseWrapper(config, 'time').wrapper;
+  }
+
+  /**
    * Ô chọn Ngày
    */
   function createDate(config) {
@@ -577,6 +584,7 @@ var UIInput = (function () {
     createNumber: createNumber,
     createMoney: createMoney,
     createDate: createDate,
+    createTime: createTime,
     createPassword: createPassword,
     createSwitch: createSwitch,
     createSelect: createSelect,

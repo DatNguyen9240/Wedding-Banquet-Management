@@ -10,22 +10,22 @@ CREATE PROCEDURE [dbo].[API_LuuQuyenToan]
     @DocumentDate DATETIME = NULL,
     @Sohopdong VARCHAR(50) = NULL,
     @Nguoinop NVARCHAR(100) = NULL,
-    @Tongtiencoc DECIMAL(18,2) = 0,
-    @TongtienHoaDon DECIMAL(18,2) = 0,
-    @Thanhtoan DECIMAL(18,2) = 0,
-    @Conlai DECIMAL(18,2) = 0,
-    @IsKetthuc BIT = 0,
+    @Tongtiencoc NVARCHAR(50) = '0',
+    @TongtienHoaDon NVARCHAR(50) = '0',
+    @Thanhtoan NVARCHAR(50) = '0',
+    @Conlai NVARCHAR(50) = '0',
+    @IsKetthuc NVARCHAR(50) = '0',
     @Ghichu NVARCHAR(500) = NULL,
     @User VARCHAR(50) = NULL,
-    @BanPhatSinh INT = 0,
-    @Sotienphatsinh DECIMAL(18,2) = 0,
-    @PhiBuSanh DECIMAL(18,2) = 0,
-    @PhiBuBantang DECIMAL(18,2) = 0,
-    @PhiBuTTS DECIMAL(18,2) = 0,
-    @PhiBuNTL DECIMAL(18,2) = 0,
-    @PhiPhucVu DECIMAL(18,2) = 0,
-    @PTThueVAT DECIMAL(18,2) = 0,
-    @TienThueVAT DECIMAL(18,2) = 0,
+    @BanPhatSinh NVARCHAR(50) = '0',
+    @Sotienphatsinh NVARCHAR(50) = '0',
+    @PhiBuSanh NVARCHAR(50) = '0',
+    @PhiBuBantang NVARCHAR(50) = '0',
+    @PhiBuTTS NVARCHAR(50) = '0',
+    @PhiBuNTL NVARCHAR(50) = '0',
+    @PhiPhucVu NVARCHAR(50) = '0',
+    @PTThueVAT NVARCHAR(50) = '0',
+    @TienThueVAT NVARCHAR(50) = '0',
 
     -- Các tham số JSON chi tiết gửi từ Frontend
     @JsonBanTiec NVARCHAR(MAX) = NULL,  -- Danh sách chi tiết món ăn/bàn tiệc
@@ -38,18 +38,77 @@ BEGIN
     DECLARE @SPthu VARCHAR(20);
     DECLARE @Now DATETIME = GETDATE();
 
+    -- Khai báo các biến kiểu số để tính toán/lưu trữ trong DB
+    DECLARE @TongtiencocDec DECIMAL(18,2) = 0;
+    DECLARE @TongtienHoaDonDec DECIMAL(18,2) = 0;
+    DECLARE @ThanhtoanDec DECIMAL(18,2) = 0;
+    DECLARE @ConlaiDec DECIMAL(18,2) = 0;
+    DECLARE @IsKetthucBit BIT = 0;
+    DECLARE @BanPhatSinhInt INT = 0;
+    DECLARE @SotienphatsinhDec DECIMAL(18,2) = 0;
+    DECLARE @PhiBuSanhDec DECIMAL(18,2) = 0;
+    DECLARE @PhiBuBantangDec DECIMAL(18,2) = 0;
+    DECLARE @PhiBuTTSDec DECIMAL(18,2) = 0;
+    DECLARE @PhiBuNTLDec DECIMAL(18,2) = 0;
+    DECLARE @PhiPhucVuDec DECIMAL(18,2) = 0;
+    DECLARE @PTThueVATDec DECIMAL(18,2) = 0;
+    DECLARE @TienThueVATDec DECIMAL(18,2) = 0;
+
+    -- Xử lý chuẩn hóa và parse số từ các tham số NVARCHAR (xóa bỏ dấu chấm phân tách phần nghìn, khoảng trắng, v.v.)
+    SET @Tongtiencoc = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@Tongtiencoc, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@Tongtiencoc AS DECIMAL(18,2)) IS NOT NULL SET @TongtiencocDec = CAST(@Tongtiencoc AS DECIMAL(18,2));
+
+    SET @TongtienHoaDon = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@TongtienHoaDon, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@TongtienHoaDon AS DECIMAL(18,2)) IS NOT NULL SET @TongtienHoaDonDec = CAST(@TongtienHoaDon AS DECIMAL(18,2));
+
+    SET @Thanhtoan = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@Thanhtoan, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@Thanhtoan AS DECIMAL(18,2)) IS NOT NULL SET @ThanhtoanDec = CAST(@Thanhtoan AS DECIMAL(18,2));
+
+    SET @Conlai = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@Conlai, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@Conlai AS DECIMAL(18,2)) IS NOT NULL SET @ConlaiDec = CAST(@Conlai AS DECIMAL(18,2));
+
+    SET @IsKetthuc = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@IsKetthuc, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF @IsKetthuc = '1' OR @IsKetthuc = 'true' SET @IsKetthucBit = 1;
+
+    SET @BanPhatSinh = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@BanPhatSinh, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@BanPhatSinh AS INT) IS NOT NULL SET @BanPhatSinhInt = CAST(@BanPhatSinh AS INT);
+
+    SET @Sotienphatsinh = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@Sotienphatsinh, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@Sotienphatsinh AS DECIMAL(18,2)) IS NOT NULL SET @SotienphatsinhDec = CAST(@Sotienphatsinh AS DECIMAL(18,2));
+
+    SET @PhiBuSanh = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@PhiBuSanh, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@PhiBuSanh AS DECIMAL(18,2)) IS NOT NULL SET @PhiBuSanhDec = CAST(@PhiBuSanh AS DECIMAL(18,2));
+
+    SET @PhiBuBantang = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@PhiBuBantang, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@PhiBuBantang AS DECIMAL(18,2)) IS NOT NULL SET @PhiBuBantangDec = CAST(@PhiBuBantang AS DECIMAL(18,2));
+
+    SET @PhiBuTTS = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@PhiBuTTS, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@PhiBuTTS AS DECIMAL(18,2)) IS NOT NULL SET @PhiBuTTSDec = CAST(@PhiBuTTS AS DECIMAL(18,2));
+
+    SET @PhiBuNTL = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@PhiBuNTL, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@PhiBuNTL AS DECIMAL(18,2)) IS NOT NULL SET @PhiBuNTLDec = CAST(@PhiBuNTL AS DECIMAL(18,2));
+
+    SET @PhiPhucVu = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@PhiPhucVu, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@PhiPhucVu AS DECIMAL(18,2)) IS NOT NULL SET @PhiPhucVuDec = CAST(@PhiPhucVu AS DECIMAL(18,2));
+
+    SET @PTThueVAT = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@PTThueVAT, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@PTThueVAT AS DECIMAL(18,2)) IS NOT NULL SET @PTThueVATDec = CAST(@PTThueVAT AS DECIMAL(18,2));
+
+    SET @TienThueVAT = REPLACE(REPLACE(REPLACE(ISNULL(NULLIF(@TienThueVAT, ''), '0'), '.', ''), ',', ''), ' ', '');
+    IF TRY_CAST(@TienThueVAT AS DECIMAL(18,2)) IS NOT NULL SET @TienThueVATDec = CAST(@TienThueVAT AS DECIMAL(18,2));
+
     -- Chuẩn hóa các tham số JSON chi tiết
-    IF @JsonBanTiec IS NOT NULL AND LTRIM(RTRIM(@JsonBanTiec)) = '' SET @JsonBanTiec = NULL;
-    IF @JsonBanTiec IS NOT NULL AND LEFT(LTRIM(@JsonBanTiec), 1) <> '[' SET @JsonBanTiec = '[' + @JsonBanTiec + ']';
+    IF (@JsonBanTiec = '.' OR @JsonBanTiec = '' OR @JsonBanTiec = '[]') SET @JsonBanTiec = NULL;
+    IF (@JsonBanTiec IS NOT NULL AND (LEFT(LTRIM(@JsonBanTiec), 1) <> '[' OR ISJSON(@JsonBanTiec) = 0)) SET @JsonBanTiec = '[' + @JsonBanTiec + ']';
 
-    IF @JsonThucUong IS NOT NULL AND LTRIM(RTRIM(@JsonThucUong)) = '' SET @JsonThucUong = NULL;
-    IF @JsonThucUong IS NOT NULL AND LEFT(LTRIM(@JsonThucUong), 1) <> '[' SET @JsonThucUong = '[' + @JsonThucUong + ']';
+    IF (@JsonThucUong = '.' OR @JsonThucUong = '' OR @JsonThucUong = '[]') SET @JsonThucUong = NULL;
+    IF (@JsonThucUong IS NOT NULL AND (LEFT(LTRIM(@JsonThucUong), 1) <> '[' OR ISJSON(@JsonThucUong) = 0)) SET @JsonThucUong = '[' + @JsonThucUong + ']';
 
-    IF @JsonDichVu IS NOT NULL AND LTRIM(RTRIM(@JsonDichVu)) = '' SET @JsonDichVu = NULL;
-    IF @JsonDichVu IS NOT NULL AND LEFT(LTRIM(@JsonDichVu), 1) <> '[' SET @JsonDichVu = '[' + @JsonDichVu + ']';
+    IF (@JsonDichVu = '.' OR @JsonDichVu = '' OR @JsonDichVu = '[]') SET @JsonDichVu = NULL;
+    IF (@JsonDichVu IS NOT NULL AND (LEFT(LTRIM(@JsonDichVu), 1) <> '[' OR ISJSON(@JsonDichVu) = 0)) SET @JsonDichVu = '[' + @JsonDichVu + ']';
 
-    IF @JsonPhatSinh IS NOT NULL AND LTRIM(RTRIM(@JsonPhatSinh)) = '' SET @JsonPhatSinh = NULL;
-    IF @JsonPhatSinh IS NOT NULL AND LEFT(LTRIM(@JsonPhatSinh), 1) <> '[' SET @JsonPhatSinh = '[' + @JsonPhatSinh + ']';
+    IF (@JsonPhatSinh = '.' OR @JsonPhatSinh = '' OR @JsonPhatSinh = '[]') SET @JsonPhatSinh = NULL;
+    IF (@JsonPhatSinh IS NOT NULL AND (LEFT(LTRIM(@JsonPhatSinh), 1) <> '[' OR ISJSON(@JsonPhatSinh) = 0)) SET @JsonPhatSinh = '[' + @JsonPhatSinh + ']';
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -68,8 +127,8 @@ BEGIN
             )
             VALUES (
                 @DocumentID, ISNULL(@DocumentDate, @Now), @SPthu, ISNULL(@DocumentDate, @Now), @Sohopdong, @Nguoinop, @User,
-                @Tongtiencoc, @TongtienHoaDon, @Thanhtoan, @Conlai, @IsKetthuc, @Ghichu,
-                @Sotienphatsinh, @PhiBuSanh, @PhiBuBantang, @PhiBuTTS, @PhiBuNTL, @PhiPhucVu, @PTThueVAT, @TienThueVAT,
+                @TongtiencocDec, @TongtienHoaDonDec, @ThanhtoanDec, @ConlaiDec, @IsKetthucBit, @Ghichu,
+                @SotienphatsinhDec, @PhiBuSanhDec, @PhiBuBantangDec, @PhiBuTTSDec, @PhiBuNTLDec, @PhiPhucVuDec, @PTThueVATDec, @TienThueVATDec,
                 @User, @Now
             );
         END
@@ -82,20 +141,20 @@ BEGIN
                 Ngaythu = ISNULL(@DocumentDate, Ngaythu),
                 Sohopdong = ISNULL(@Sohopdong, Sohopdong),
                 Nguoinop = ISNULL(@Nguoinop, Nguoinop),
-                Tongtiencoc = ISNULL(@Tongtiencoc, Tongtiencoc),
-                TongtienHoaDon = ISNULL(@TongtienHoaDon, TongtienHoaDon),
-                Thanhtoan = ISNULL(@Thanhtoan, Thanhtoan),
-                Conlai = ISNULL(@Conlai, Conlai),
-                IsKetthuc = ISNULL(@IsKetthuc, IsKetthuc),
+                Tongtiencoc = @TongtiencocDec,
+                TongtienHoaDon = @TongtienHoaDonDec,
+                Thanhtoan = @ThanhtoanDec,
+                Conlai = @ConlaiDec,
+                IsKetthuc = @IsKetthucBit,
                 Ghichu = ISNULL(@Ghichu, Ghichu),
-                Sotienphatsinh = ISNULL(@Sotienphatsinh, Sotienphatsinh),
-                PhiBuSanh = ISNULL(@PhiBuSanh, PhiBuSanh),
-                PhiBuBantang = ISNULL(@PhiBuBantang, PhiBuBantang),
-                PhiBuTTS = ISNULL(@PhiBuTTS, PhiBuTTS),
-                PhiBuNTL = ISNULL(@PhiBuNTL, PhiBuNTL),
-                PhiPhucVu = ISNULL(@PhiPhucVu, PhiPhucVu),
-                PTThueVAT = ISNULL(@PTThueVAT, PTThueVAT),
-                TienThueVAT = ISNULL(@TienThueVAT, TienThueVAT),
+                Sotienphatsinh = @SotienphatsinhDec,
+                PhiBuSanh = @PhiBuSanhDec,
+                PhiBuBantang = @PhiBuBantangDec,
+                PhiBuTTS = @PhiBuTTSDec,
+                PhiBuNTL = @PhiBuNTLDec,
+                PhiPhucVu = @PhiPhucVuDec,
+                PTThueVAT = @PTThueVATDec,
+                TienThueVAT = @TienThueVATDec,
                 UserUpdate = @User,
                 DateUpdate = @Now
             WHERE DocumentID = @DocumentID;
@@ -190,16 +249,16 @@ BEGIN
             );
         END
 
-        IF @IsKetthuc = 1 AND @Sohopdong IS NOT NULL
+        IF @IsKetthucBit = 1 AND @Sohopdong IS NOT NULL
         BEGIN
             UPDATE tbmk_Hopdong 
-            SET IsKetthuc = 1, Conlai = @Conlai, BanPhatSinh = @BanPhatSinh
+            SET IsKetthuc = 1, Conlai = @ConlaiDec, BanPhatSinh = @BanPhatSinhInt
             WHERE Sohopdong = @Sohopdong;
         END
         ELSE IF @Sohopdong IS NOT NULL
         BEGIN
             UPDATE tbmk_Hopdong 
-            SET BanPhatSinh = @BanPhatSinh
+            SET BanPhatSinh = @BanPhatSinhInt
             WHERE Sohopdong = @Sohopdong;
         END
 

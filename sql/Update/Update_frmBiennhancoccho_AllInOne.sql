@@ -107,6 +107,7 @@ SELECT
           SELECT ',' + Sanhtiecid 
           FROM tbmk_Biennhancocchosanhtiec 
           WHERE DocumentID = b.DocumentID 
+            AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
           ORDER BY IsSanhchinh DESC
           FOR XML PATH('')
       ), 1, 1, '') AS [JsonSanhTiec],
@@ -115,6 +116,7 @@ SELECT
         SELECT Sanhtiecid, IsSanhchinh 
         FROM tbmk_Biennhancocchosanhtiec 
         WHERE DocumentID = b.DocumentID 
+          AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
         FOR JSON PATH
     ) AS [_JsonSanhTiec],
     
@@ -238,12 +240,14 @@ BEGIN
             SELECT Sanhtiecid, IsSanhchinh 
             FROM tbmk_Biennhancocchosanhtiec 
             WHERE DocumentID = b.DocumentID 
+              AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
             FOR JSON PATH
         ) AS [_JsonSanhTiec],
         STUFF((
           SELECT ',' + Sanhtiecid 
           FROM tbmk_Biennhancocchosanhtiec 
           WHERE DocumentID = b.DocumentID 
+            AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
           ORDER BY IsSanhchinh DESC
           FOR XML PATH('')
       ), 1, 1, '') AS [JsonSanhTiec],
@@ -350,16 +354,38 @@ BEGIN
     
     BEGIN TRY
         -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân tách bằng dấu phẩy
+        IF (@JsonSanhTiec = '.' OR @JsonSanhTiec = '')
+        BEGIN
+            SET @JsonSanhTiec = NULL;
+        END
+
         IF (@JsonSanhTiec IS NOT NULL AND @JsonSanhTiec != '[]' AND @JsonSanhTiec != '')
         BEGIN
-            IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[')
+            IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[' OR ISJSON(@JsonSanhTiec) = 0)
             BEGIN
                 SET @JsonSanhTiec = (
                     SELECT Sanhtiecid, 1 AS IsSanhchinh
                     FROM (
                         SELECT LTRIM(RTRIM(value)) AS Sanhtiecid 
                         FROM STRING_SPLIT(@JsonSanhTiec, ',')
+                        WHERE value <> '.' AND value <> ''
                     ) s
+                    WHERE Sanhtiecid <> ''
+                    FOR JSON PATH
+                );
+            END
+            ELSE
+            BEGIN
+                -- Nếu đã là JSON array, chuẩn hóa để loại bỏ phần tử rác (nếu có)
+                SET @JsonSanhTiec = (
+                    SELECT Sanhtiecid, IsSanhchinh
+                    FROM (
+                        SELECT 
+                            JSON_VALUE(value, '$.Sanhtiecid') AS Sanhtiecid,
+                            ISNULL(CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0) AS IsSanhchinh
+                        FROM OPENJSON(@JsonSanhTiec)
+                    ) s
+                    WHERE Sanhtiecid IS NOT NULL AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
                     FOR JSON PATH
                 );
             END

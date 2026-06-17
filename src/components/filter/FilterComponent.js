@@ -37,6 +37,8 @@ var FilterComponent = (function () {
         controlWrapper = UIInput.createSelect(config, opts);
       } else if (f.type === 'date') {
         controlWrapper = UIInput.createDate(config);
+      } else if (f.type === 'time') {
+        controlWrapper = UIInput.createTime(config);
       } else if (f.type === 'number') {
         controlWrapper = UIInput.createNumber(config);
       } else {
