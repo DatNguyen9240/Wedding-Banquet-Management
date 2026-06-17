@@ -317,7 +317,7 @@ CREATE PROCEDURE [dbo].[API_LuuPhieuCoc]
     @Mail NVARCHAR(100) = NULL,
     
     @DocumentDate DATETIME = NULL,
-    @Ngaytochuc DATETIME = NULL,
+    @NgayToChuc DATETIME = NULL,
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(50) = NULL,
     @Thoigianid VARCHAR(50) = NULL,
@@ -335,7 +335,6 @@ CREATE PROCEDURE [dbo].[API_LuuPhieuCoc]
     @JsonSanhTiec NVARCHAR(MAX) = NULL,
     
     @MaChungTu VARCHAR(50) = NULL,
-    @_Ngaytochuc DATETIME = NULL,
     @TongtienRaw NVARCHAR(50) = NULL,
     
     @TaiKhoanNo VARCHAR(50) = NULL,
@@ -346,6 +345,8 @@ CREATE PROCEDURE [dbo].[API_LuuPhieuCoc]
 AS
 BEGIN
     SET NOCOUNT ON;
+    
+
     
     BEGIN TRY
         -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân tách bằng dấu phẩy
@@ -366,8 +367,6 @@ BEGIN
 
         IF @MaChungTu IS NOT NULL AND (@DocumentID IS NULL OR @DocumentID = '')
             SET @DocumentID = @MaChungTu;
-        IF @_Ngaytochuc IS NOT NULL
-            SET @Ngaytochuc = @_Ngaytochuc;
             
         DECLARE @TongTienDecimal DECIMAL(18,2) = 0;
 

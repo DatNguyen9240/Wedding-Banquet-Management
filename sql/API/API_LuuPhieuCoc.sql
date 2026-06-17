@@ -31,7 +31,7 @@ CREATE PROCEDURE [dbo].[API_LuuPhieuCoc]
     
     -- Thông tin Phiếu Cọc
     @DocumentDate NVARCHAR(100) = NULL,
-    @Ngaytochuc NVARCHAR(100) = NULL,
+    @NgayToChuc NVARCHAR(100) = NULL,
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(50) = NULL,
     @Thoigianid VARCHAR(50) = NULL, -- Ca tiệc
@@ -50,7 +50,6 @@ CREATE PROCEDURE [dbo].[API_LuuPhieuCoc]
     
     -- Mapped fields from DynamicFormEngine (client-side form values)
     @MaChungTu VARCHAR(50) = NULL,
-    @_Ngaytochuc NVARCHAR(100) = NULL,
     @TongtienRaw NVARCHAR(50) = NULL,
     
     -- Các trường bổ sung phiếu thu
@@ -65,7 +64,6 @@ BEGIN
     
     DECLARE @DocumentDateParsed DATETIME = NULL;
     DECLARE @NgayToChucParsed DATETIME = NULL;
-    DECLARE @_NgayToChucParsed DATETIME = NULL;
 
     -- Parse @DocumentDate từ các định dạng phổ biến
     IF (@DocumentDate IS NOT NULL AND LTRIM(RTRIM(@DocumentDate)) <> '')
@@ -78,16 +76,6 @@ BEGIN
         IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 101); -- mm/dd/yyyy
     END
 
-    -- Parse @_Ngaytochuc từ các định dạng phổ biến
-    IF (@_Ngaytochuc IS NOT NULL AND LTRIM(RTRIM(@_Ngaytochuc)) <> '')
-    BEGIN
-        SET @_NgayToChucParsed = TRY_CAST(@_Ngaytochuc AS DATETIME);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 103);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 105);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 120);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 111);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 101);
-    END
 
     -- Parse @Ngaytochuc từ các định dạng phổ biến
     IF (@Ngaytochuc IS NOT NULL AND LTRIM(RTRIM(@Ngaytochuc)) <> '')
@@ -120,8 +108,6 @@ BEGIN
         -- Map values từ client format fields sang standard parameters
         IF @MaChungTu IS NOT NULL AND (@DocumentID IS NULL OR @DocumentID = '')
             SET @DocumentID = @MaChungTu;
-        IF @_NgayToChucParsed IS NOT NULL
-            SET @NgayToChucParsed = @_NgayToChucParsed;
             
         DECLARE @TongTienDecimal DECIMAL(18,2) = 0;
 

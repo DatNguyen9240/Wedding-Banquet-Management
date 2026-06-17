@@ -1,0 +1,177 @@
+USE [QLTiec]
+GO
+/****** Object:  StoredProcedure [dbo].[API_PhuLucHopDong_Detail]    Script Date: 17/06/2026 9:15:02 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[API_PhuLucHopDong_Detail]
+    @Keyword NVARCHAR(250),
+    @Sothaydoi NVARCHAR(50) = ''
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @Sothaydoi = '' OR @Sothaydoi = 'NULL' SET @Sothaydoi = NULL;
+    DECLARE @SearchStr VARCHAR(50) = COALESCE(@Sothaydoi, @Keyword);
+
+    SELECT 
+        -- Mã chính
+        pl.Sothaydoi AS [SoPhuLuc],
+        pl.Sohopdong AS [Sohopdong],
+        pl.LanThayDoi AS [LanDieuChinh],
+        pl.Ghichu AS [NoiDungPhuLuc],
+        
+        -- Ngày lập Phụ lục
+        RIGHT('0' + CAST(DAY(pl.Ngaythaydoi) AS VARCHAR), 2) AS [NgayLapPL],
+        RIGHT('0' + CAST(MONTH(pl.Ngaythaydoi) AS VARCHAR), 2) AS [ThangLapPL],
+        CAST(YEAR(pl.Ngaythaydoi) AS VARCHAR) AS [NamLapPL],
+
+        -- Ngày lập Hợp đồng
+        RIGHT('0' + CAST(DAY(hd.Ngayhopdong) AS VARCHAR), 2) AS [NgayLapHD],
+        RIGHT('0' + CAST(MONTH(hd.Ngayhopdong) AS VARCHAR), 2) AS [ThangLapHD],
+        CAST(YEAR(hd.Ngayhopdong) AS VARCHAR) AS [NamLapHD],
+
+        -- Ngày tổ chức Dương lịch
+        CONVERT(VARCHAR(10), ISNULL(pl.NgayToChucTD, hd.Ngaytochuc), 103) AS [NgayToChuc],
+        RIGHT('0' + CAST(DAY(ISNULL(pl.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [NgayToChucDay],
+        RIGHT('0' + CAST(MONTH(ISNULL(pl.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [ThangToChuc],
+        CAST(YEAR(ISNULL(pl.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR) AS [NamToChuc],
+
+        -- Ngày tổ chức Âm lịch
+        CASE 
+            WHEN CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) > 0 
+                THEN SUBSTRING(ISNULL(pl.NhamNgayTD, hd.Nhamngay), 1, CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) - 1)
+            ELSE ISNULL(pl.NhamNgayTD, hd.Nhamngay)
+        END AS [NgayToChucAmLich],
+        CASE 
+            WHEN CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) > 0 
+                THEN CASE 
+                    WHEN CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) + 1) > 0 
+                        THEN SUBSTRING(ISNULL(pl.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) + 1, CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) + 1) - CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) - 1)
+                    ELSE SUBSTRING(ISNULL(pl.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) + 1, LEN(ISNULL(pl.NhamNgayTD, hd.Nhamngay)))
+                END
+            ELSE '...'
+        END AS [ThangToChucAmLich],
+        CASE 
+            WHEN CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) > 0 AND CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) + 1) > 0
+                THEN SUBSTRING(ISNULL(pl.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay), CHARINDEX('/', ISNULL(pl.NhamNgayTD, hd.Nhamngay)) + 1) + 1, LEN(ISNULL(pl.NhamNgayTD, hd.Nhamngay)))
+            ELSE '...'
+        END AS [NamToChucAmLich],
+
+        -- Thiết lập sảnh & Giờ
+        ISNULL((SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = pl.Sohopdong), N'Chưa xác định') AS [TenSanhTiec],
+        ISNULL(hd.GioDienRaSuKien, N'Chưa xác định') AS [TiecGioBatDau],
+        ISNULL((SELECT TOP 1 Tenloaitiec FROM dmLoaihinhtiec WHERE Loaitiecid = hd.Loaitiecid), N'TIỆC CƯỚI') AS [LoaiHinhSuKien],
+
+        -- Khách hàng (Bên B)
+        kh.Tenkh AS [BenBTenDaiDien],
+        kh.CMNDDaiDien AS [BenBCCCD],
+        kh.Diachi AS [BenBDiaChi],
+        kh.Dienthoai AS [BenBDienThoai],
+        ISNULL(kh.Tenchure, '') + N' & ' + ISNULL(kh.Tencodau, '') AS [BenBTenChuTiec],
+
+        -- Nhân viên Bên A
+        ISNULL(nv.Tennv, hd.Manv) AS [BenANhanVienPhuTrach],
+        nv.DIENTHOAI AS [BenASDTNhanVien],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
+
+        -- Quy mô bàn & Đơn giá
+        ISNULL(pl.QuyMoBanTuTD, pl.QuyMoBanTu) AS [QuyMoBanTu],
+        ISNULL(pl.QuyMoBanDenTD, pl.QuyMoBanDen) AS [QuyMoBanDen],
+        ISNULL(pl.SoKhachTrenBanTD, pl.SoKhachTrenBan) AS [SoKhachTrenBan],
+        FORMAT(ISNULL(pl.DonGiaBanTiecTD, pl.DonGiaBanTiec), 'N0', 'vi-VN') AS [DonGiaBanTiec],
+
+        -- Bàn tiệc
+        ISNULL(pl.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
+        ISNULL(pl.SobanManduphong, hd.SobanManduphong) AS [SoBanManDuPhong],
+        ISNULL(hd.SoBanTang, 0) AS [BanTang],
+
+        -- Đợt thanh toán 2
+        ISNULL(pl.TenDotThanhToanTD, pl.TenDotThanhToan) AS [TenDotThanhToan],
+        FORMAT(ISNULL(pl.ThanhToanDot2SoTienTD, pl.ThanhToanDot2SoTien), 'N0', 'vi-VN') AS [ThanhToanDot2SoTien],
+        ISNULL(pl.HinhThucThanhToanDot2TD, pl.HinhThucThanhToanDot2) AS [HinhThucThanhToanDot2],
+        CONVERT(VARCHAR(10), ISNULL(pl.HanThanhToanDot2TD, pl.HanThanhToanDot2), 103) AS [HanThanhToanDot2],
+
+        -- Dịch vụ dạng văn bản
+        ISNULL(pl.DichVuTinhPhiPhuLucTD, pl.DichVuTinhPhiPhuLuc) AS [DichVuTinhPhiPhuLuc],
+        ISNULL(pl.ThoaThuanPhuLucKhacTD, pl.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
+        ISNULL(pl.BenAChucVuDaiDienTD, pl.BenAChucVuDaiDien) AS [BenAChucVuDaiDien],
+
+        -- Chi phí tổng cộng
+        FORMAT(ISNULL(pl.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
+        FORMAT(ISNULL(pl.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [MenuTongCong],
+
+        -- VÒNG LẶP MENU TIỆC (Bơm array [{TenMonAn: ...}] từ JsonBanTiec)
+        COALESCE(
+            (
+                SELECT 
+                    JSON_VALUE(value, '$.TenHang') AS [TenMonAn]
+                FROM OPENJSON(pl.JsonBanTiec)
+                WHERE pl.JsonBanTiec IS NOT NULL
+                FOR JSON PATH
+            ),
+            (
+                SELECT 
+                    h.Tenhang AS [TenMonAn]
+                FROM dmHangHoa h
+                WHERE h.GoiThucDonID = hd.GoiThucDonID AND ISNULL(h.IsNgungSuDung, 0) = 0
+                FOR JSON PATH
+            )
+        ) AS [MenuTiec],
+
+        -- VÒNG LẶP CHI PHÍ
+        COALESCE(
+            (
+                SELECT 
+                    JSON_VALUE(value, '$.NoiDung') AS [NoiDung],
+                    JSON_VALUE(value, '$.DVT') AS [DVT],
+                    JSON_VALUE(value, '$.SoLuong') AS [SoLuong],
+                    JSON_VALUE(value, '$.DonGia') AS [DonGia],
+                    JSON_VALUE(value, '$.ThanhTien') AS [ThanhTien]
+                FROM OPENJSON(pl.DanhSachChiPhiTD)
+                WHERE pl.DanhSachChiPhiTD IS NOT NULL AND pl.DanhSachChiPhiTD <> '' AND pl.DanhSachChiPhiTD <> '[]'
+                FOR JSON PATH
+            ),
+            (
+                SELECT 
+                    items.NoiDung, items.DVT, items.SoLuong, items.DonGia, items.ThanhTien
+                FROM (
+                    SELECT 
+                        JSON_VALUE(value, '$.TenHang') AS [NoiDung],
+                        ISNULL(JSON_VALUE(value, '$.DvtID'), N'Lần') AS [DVT],
+                        ISNULL(JSON_VALUE(value, '$.Soluong'), N'0') AS [SoLuong],
+                        FORMAT(ISNULL(CAST(JSON_VALUE(value, '$.Dongia') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [DonGia],
+                        FORMAT(ISNULL(CAST(JSON_VALUE(value, '$.Soluong') AS DECIMAL(18,2)), 0) * ISNULL(CAST(JSON_VALUE(value, '$.Dongia') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [ThanhTien],
+                        1 AS SortOrder
+                    FROM OPENJSON(pl.JsonDichVu)
+                    WHERE pl.JsonDichVu IS NOT NULL AND pl.JsonDichVu <> '' AND pl.JsonDichVu <> '[]'
+                    UNION ALL
+                    SELECT 
+                        JSON_VALUE(value, '$.TenHang') AS [NoiDung],
+                        ISNULL(JSON_VALUE(value, '$.DvtID'), N'Két/Lon') AS [DVT],
+                        ISNULL(JSON_VALUE(value, '$.Soluong'), N'0') AS [SoLuong],
+                        FORMAT(ISNULL(CAST(JSON_VALUE(value, '$.Dongia') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [DonGia],
+                        FORMAT(ISNULL(CAST(JSON_VALUE(value, '$.Soluong') AS DECIMAL(18,2)), 0) * ISNULL(CAST(JSON_VALUE(value, '$.Dongia') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [ThanhTien],
+                        2 AS SortOrder
+                    FROM OPENJSON(pl.JsonThucUong)
+                    WHERE pl.JsonThucUong IS NOT NULL AND pl.JsonThucUong <> '' AND pl.JsonThucUong <> '[]'
+                ) items
+                FOR JSON PATH
+            ),
+            '[]'
+        ) AS [DanhSachChiPhi]
+
+    FROM tbmk_Thaydoi pl
+    INNER JOIN tbmk_Hopdong hd ON pl.Sohopdong = hd.Sohopdong
+    LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
+    LEFT JOIN dmNhanvienView nv ON hd.Manv = nv.Manv
+    WHERE (pl.Sohopdong = @SearchStr OR pl.Sothaydoi = @SearchStr)
+      AND ISNULL(pl.IsDeleted, 0) = 0;
+END;
+GO
+
+DELETE FROM WA_API WHERE List = 'frmPhuLucHopDong' AND Func = 'GetDetails';
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES ('frmPhuLucHopDong', 'GetDetails', 'API_PhuLucHopDong_Detail', '@Keyword=N''{Keyword}'', @Sothaydoi=N''{Sothaydoi}''');
+GO

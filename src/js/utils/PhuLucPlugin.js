@@ -555,30 +555,30 @@ var PhuLucPlugin = (function () {
       form.onsubmit = function (e) {
         e.preventDefault();
 
-        var soPhuLuc = document.getElementById('inpSothaydoi').value.trim();
-        var ngayLapPL = document.getElementById('inpNgayLapPL').value;
+        var soPhuLuc = modalContent.querySelector('#inpSothaydoi').value.trim();
+        var ngayLapPL = modalContent.querySelector('#inpNgayLapPL').value;
 
-        var qmTuVal = document.getElementById('inpQuyMoBanTu').value;
-        var qmDenVal = document.getElementById('inpQuyMoBanDen').value;
-        var donGiaVal = document.getElementById('inpDonGiaBanTiec').value;
-        var soKhachVal = document.getElementById('inpSoKhachTrenBan').value;
+        var qmTuVal = modalContent.querySelector('#inpQuyMoBanTu').value;
+        var qmDenVal = modalContent.querySelector('#inpQuyMoBanDen').value;
+        var donGiaVal = modalContent.querySelector('#inpDonGiaBanTiec').value;
+        var soKhachVal = modalContent.querySelector('#inpSoKhachTrenBan').value;
 
-        var tenDotVal = document.getElementById('inpTenDotThanhToan').value.trim();
-        var soTienDot2Val = document.getElementById('inpThanhToanDot2SoTien').value;
-        var hinhThucVal = document.getElementById('inpHinhThucThanhToanDot2').value;
-        var hanThanhToanVal = document.getElementById('inpHanThanhToanDot2').value;
+        var tenDotVal = modalContent.querySelector('#inpTenDotThanhToan').value.trim();
+        var soTienDot2Val = modalContent.querySelector('#inpThanhToanDot2SoTien').value;
+        var hinhThucVal = modalContent.querySelector('#inpHinhThucThanhToanDot2').value;
+        var hanThanhToanVal = modalContent.querySelector('#inpHanThanhToanDot2').value;
 
-        var chucVuVal = document.getElementById('inpBenAChucVuDaiDien').value.trim();
-        var ngayToChucTDVal = document.getElementById('inpNgayToChucTD').value;
+        var chucVuVal = modalContent.querySelector('#inpBenAChucVuDaiDien').value.trim();
+        var ngayToChucTDVal = modalContent.querySelector('#inpNgayToChucTD').value;
 
-        var dvTinhPhiVal = document.getElementById('inpDichVuTinhPhiPhuLuc').value;
-        var uuDaiVal = document.getElementById('inpThoaThuanPhuLucKhac').value;
-        var thoathuan = document.getElementById('inpThoathuan').value;
+        var dvTinhPhiVal = modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value;
+        var uuDaiVal = modalContent.querySelector('#inpThoaThuanPhuLucKhac').value;
+        var thoathuan = modalContent.querySelector('#inpThoathuan').value;
 
-        var jsonBanTiecVal = document.getElementById('inpJsonBanTiec').value;
-        var jsonThucUongVal = document.getElementById('inpJsonThucUong').value;
-        var jsonDichVuVal = document.getElementById('inpJsonDichVu').value;
-        var jsonPhatSinhVal = document.getElementById('inpJsonPhatSinh').value;
+        var jsonBanTiecVal = modalContent.querySelector('#inpJsonBanTiec').value;
+        var jsonThucUongVal = modalContent.querySelector('#inpJsonThucUong').value;
+        var jsonDichVuVal = modalContent.querySelector('#inpJsonDichVu').value;
+        var jsonPhatSinhVal = modalContent.querySelector('#inpJsonPhatSinh').value;
 
         // Sinh Sothaydoi kỹ thuật nếu chưa nhập (tối đa 20 ký tự theo DB)
         if (!soPhuLuc) {
@@ -654,10 +654,10 @@ var PhuLucPlugin = (function () {
 
             Ghichu: thoathuan,
 
-            JsonBanTiec: jsonBanTiecVal,
-            JsonThucUong: jsonThucUongVal,
-            JsonDichVu: jsonDichVuVal,
-            JsonPhatSinh: jsonPhatSinhVal
+            JsonBanTiec: JSON.parse(jsonBanTiecVal || '[]'),
+            JsonThucUong: JSON.parse(jsonThucUongVal || '[]'),
+            JsonDichVu: JSON.parse(jsonDichVuVal || '[]'),
+            JsonPhatSinh: JSON.parse(jsonPhatSinhVal || '[]')
           })
         };
 
@@ -731,7 +731,7 @@ var PhuLucPlugin = (function () {
           ApiClient.post(window.API_CONFIG.ENDPOINTS.ROUTER, {
             List: 'frmHopDong',
             Func: 'GetDetails',
-            Sohopdong: sohopdong
+            Keyword: sohopdong
           }).then(function (res) {
             var details = {};
             if (res) {

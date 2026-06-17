@@ -134,6 +134,7 @@ IF OBJECT_ID('[dbo].[tbmk_Thaydoithucuong]', 'U') IS NULL
         [UserAutoid] [varchar](50) NOT NULL PRIMARY KEY,
         [Sothaydoi] [varchar](50) NULL,
         [Mahang] [varchar](50) NULL,
+        [Dvt] [nvarchar](50) NULL,
         [Soluong] [decimal](18, 2) NULL,
         [Dongia] [decimal](18, 2) NULL,
         [Sotien] [decimal](18, 2) NULL,
@@ -144,6 +145,12 @@ IF OBJECT_ID('[dbo].[tbmk_Thaydoithucuong]', 'U') IS NULL
         [UserCreate] [varchar](50) NULL,
         [DateCreate] [datetime] NULL
     );
+
+IF COL_LENGTH('tbmk_Thaydoithucuong', 'Dvt') IS NULL
+BEGIN
+    ALTER TABLE tbmk_Thaydoithucuong ADD Dvt NVARCHAR(50) NULL;
+END
+GO
 
 IF OBJECT_ID('[dbo].[tbmk_Thaydoidichvu]', 'U') IS NULL
     CREATE TABLE [dbo].[tbmk_Thaydoidichvu](
@@ -331,7 +338,7 @@ SELECT
     ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [BanTang],
     ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
     -- {#MenuTiec}: Lấy từ bảng con (Thaydoithucdonman & Thaydoithucdonchay)
-    ISNULL(
+    COALESCE(
         (
             SELECT ISNULL(hh.Tenhang, t.Mahang) AS [TenMonAn],
                    FORMAT(ISNULL(t.Dongia, 0), 'N0', 'vi-VN') AS [DonGia]
@@ -343,7 +350,24 @@ SELECT
             LEFT JOIN dmHanghoa hh ON t.Mahang = hh.Mahang
             ORDER BY t.Loai, t.STTmon, t.Mahang
             FOR JSON PATH
-        ), '[]'
+        ),
+        (
+            SELECT 
+                JSON_VALUE(value, '$.TenHang') AS [TenMonAn],
+                FORMAT(ISNULL(CAST(JSON_VALUE(value, '$.Dongia') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [DonGia]
+            FROM OPENJSON(td.JsonBanTiec)
+            WHERE td.JsonBanTiec IS NOT NULL AND td.JsonBanTiec <> '' AND td.JsonBanTiec <> '[]'
+            FOR JSON PATH
+        ),
+        (
+            SELECT 
+                h.Tenhang AS [TenMonAn],
+                N'0' AS [DonGia]
+            FROM dmHangHoa h
+            WHERE h.GoiThucDonID = hd.GoiThucDonID AND ISNULL(h.IsNgungSuDung, 0) = 0
+            FOR JSON PATH
+        ),
+        '[]'
     ) AS [MenuTiec],
 
     FORMAT(
@@ -363,19 +387,70 @@ SELECT
              AND ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) <> ''
              AND ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) <> '[]'
             THEN ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi)
-        ELSE ISNULL((
-            SELECT 
-                ROW_NUMBER() OVER (ORDER BY t.STT, t.Mahang) AS [STT],
-                ISNULL(hh.Tenhang, t.Mahang) AS [NoiDung],
-                ISNULL(hh.DVTID, '') AS [DVT],
-                ISNULL(TRY_CAST(t.Soluong AS INT), 1) AS [SoLuong],
-                FORMAT(ISNULL(t.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
-                FORMAT(ISNULL(t.Dongia, 0) * ISNULL(t.Soluong, 1), 'N0', 'vi-VN') AS [ThanhTien]
-            FROM tbmk_Thaydoidichvu t
-            LEFT JOIN dmHanghoa hh ON t.Mahang = hh.Mahang
-            WHERE t.Sothaydoi = td.Sothaydoi
-            FOR JSON PATH
-        ), '[]')
+        WHEN EXISTS (SELECT 1 FROM tbmk_Thaydoidichvu WHERE Sothaydoi = td.Sothaydoi) 
+             OR EXISTS (SELECT 1 FROM tbmk_Thaydoithucuong WHERE Sothaydoi = td.Sothaydoi)
+            THEN ISNULL((
+                SELECT 
+                    ROW_NUMBER() OVER (ORDER BY t.SortOrder, t.STT, t.Mahang) AS [STT],
+                    t.[NoiDung], t.[DVT], t.[SoLuong], t.[DonGia], t.[ThanhTien]
+                FROM (
+                    SELECT 
+                        1 AS SortOrder, tm.STT, tm.Mahang,
+                        ISNULL(hh.Tenhang, tm.Mahang) AS [NoiDung],
+                        ISNULL(hh.DVTID, N'Lần') AS [DVT],
+                        ISNULL(TRY_CAST(tm.Soluong AS INT), 1) AS [SoLuong],
+                        FORMAT(ISNULL(tm.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
+                        FORMAT(ISNULL(tm.Dongia, 0) * ISNULL(tm.Soluong, 1), 'N0', 'vi-VN') AS [ThanhTien]
+                    FROM tbmk_Thaydoidichvu tm
+                    LEFT JOIN dmHanghoa hh ON tm.Mahang = hh.Mahang
+                    WHERE tm.Sothaydoi = td.Sothaydoi
+                    UNION ALL
+                    SELECT 
+                        2 AS SortOrder, tu.STT, tu.Mahang,
+                        ISNULL(hh.Tenhang, tu.Mahang) AS [NoiDung],
+                        ISNULL(tu.Dvt, hh.DVTID) AS [DVT],
+                        ISNULL(TRY_CAST(tu.Soluong AS INT), 0) AS [SoLuong],
+                        FORMAT(ISNULL(tu.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
+                        FORMAT(ISNULL(tu.Dongia, 0) * ISNULL(tu.Soluong, 0), 'N0', 'vi-VN') AS [ThanhTien]
+                    FROM tbmk_Thaydoithucuong tu
+                    LEFT JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang
+                    WHERE tu.Sothaydoi = td.Sothaydoi
+                ) t
+                FOR JSON PATH
+            ), '[]')
+        ELSE
+            COALESCE(
+                (
+                    SELECT 
+                        ROW_NUMBER() OVER (ORDER BY items.SortOrder, items.NoiDung) AS [STT],
+                        items.NoiDung, items.DVT, items.SoLuong, items.DonGia, items.ThanhTien
+                    FROM (
+                        -- Dịch vụ
+                        SELECT 
+                            JSON_VALUE(value, '$.TenHang') AS [NoiDung],
+                            ISNULL(JSON_VALUE(value, '$.DvtID'), N'Lần') AS [DVT],
+                            ISNULL(TRY_CAST(JSON_VALUE(value, '$.Soluong') AS INT), 0) AS [SoLuong],
+                            FORMAT(ISNULL(CAST(JSON_VALUE(value, '$.Dongia') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [DonGia],
+                            FORMAT(ISNULL(CAST(JSON_VALUE(value, '$.Soluong') AS DECIMAL(18,2)), 0) * ISNULL(CAST(JSON_VALUE(value, '$.Dongia') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [ThanhTien],
+                            1 AS SortOrder
+                        FROM OPENJSON(td.JsonDichVu)
+                        WHERE td.JsonDichVu IS NOT NULL AND td.JsonDichVu <> '' AND td.JsonDichVu <> '[]'
+                        UNION ALL
+                        -- Thức uống
+                        SELECT 
+                            JSON_VALUE(value, '$.TenHang') AS [NoiDung],
+                            ISNULL(JSON_VALUE(value, '$.DvtID'), N'Két/Lon') AS [DVT],
+                            ISNULL(TRY_CAST(JSON_VALUE(value, '$.Soluong') AS INT), 0) AS [SoLuong],
+                            FORMAT(ISNULL(CAST(JSON_VALUE(value, '$.Dongia') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [DonGia],
+                            FORMAT(ISNULL(CAST(JSON_VALUE(value, '$.Soluong') AS DECIMAL(18,2)), 0) * ISNULL(CAST(JSON_VALUE(value, '$.Dongia') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [ThanhTien],
+                            2 AS SortOrder
+                        FROM OPENJSON(td.JsonThucUong)
+                        WHERE td.JsonThucUong IS NOT NULL AND td.JsonThucUong <> '' AND td.JsonThucUong <> '[]'
+                    ) items
+                    FOR JSON PATH
+                ),
+                '[]'
+            )
     END AS [DanhSachChiPhi],
     -- ===== KẾT THÚC CỘT DOCX =====
     
@@ -408,7 +483,7 @@ SELECT
     END AS [TrangThai],
     
     td.IsKetthuc AS [IsKetthuc],
-    ISNULL((
+    COALESCE((
         SELECT items.Mahang, items.TenHang, items.DvtID, items.Soluong, items.Dongia,
                items.IsChay
         FROM (
@@ -428,10 +503,10 @@ SELECT
         ) items
         ORDER BY items.TableType, items.SortOrder, items.Mahang
         FOR JSON PATH
-    ), '[]') AS [JsonBanTiec],
+    ), td.JsonBanTiec, '[]') AS [JsonBanTiec],
 
-    ISNULL((
-        SELECT tu.Mahang, ISNULL(hh.Tenhang, tu.Mahang) AS TenHang, ISNULL(hh.DVTID, N'') AS DvtID,
+    COALESCE((
+        SELECT tu.Mahang, ISNULL(hh.Tenhang, tu.Mahang) AS TenHang, ISNULL(tu.Dvt, hh.DVTID) AS DvtID,
                ISNULL(tu.IsKhuyenmai, 0) AS IsKhuyenmai, ISNULL(tu.Soluong, 0) AS Soluong,
                ISNULL(tu.Dongia, 0) AS Dongia, CAST(0 AS DECIMAL(18,2)) AS Soluongle,
                CAST(0 AS DECIMAL(18,2)) AS Dongiale, ISNULL(tu.Ghichuthucuong, N'') AS Ghichuthucuong
@@ -440,9 +515,9 @@ SELECT
         WHERE tu.Sothaydoi = td.Sothaydoi
         ORDER BY tu.STT, tu.Mahang
         FOR JSON PATH
-    ), '[]') AS [JsonThucUong],
+    ), td.JsonThucUong, '[]') AS [JsonThucUong],
 
-    ISNULL((
+    COALESCE((
         SELECT dv.Mahang, ISNULL(hh.Tenhang, dv.Mahang) AS TenHang, ISNULL(hh.DVTID, N'') AS DvtID,
                ISNULL(dv.Soluong, 0) AS Soluong, ISNULL(dv.Dongia, 0) AS Dongia,
                ISNULL(dv.Ghichudichvu, N'') AS Ghichudichvu
@@ -451,9 +526,9 @@ SELECT
         WHERE dv.Sothaydoi = td.Sothaydoi
         ORDER BY dv.STT, dv.Mahang
         FOR JSON PATH
-    ), '[]') AS [JsonDichVu],
+    ), td.JsonDichVu, '[]') AS [JsonDichVu],
 
-    CAST('[]' AS NVARCHAR(MAX)) AS [JsonPhatSinh],
+    COALESCE(td.JsonPhatSinh, '[]') AS [JsonPhatSinh],
     td.BenAChucVuDaiDienTD AS [BenAChucVuDaiDien]
 FROM tbmk_Thaydoi td
 INNER JOIN tbmk_Hopdong hd ON td.Sohopdong = hd.Sohopdong
@@ -573,10 +648,10 @@ BEGIN
                 TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBan') AS INT),
                 TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBanTD') AS INT),
                 
-                JSON_VALUE(@JsonData, '$.JsonBanTiec'),
-                JSON_VALUE(@JsonData, '$.JsonThucUong'),
-                JSON_VALUE(@JsonData, '$.JsonDichVu'),
-                JSON_VALUE(@JsonData, '$.JsonPhatSinh')
+                JSON_QUERY(@JsonData, '$.JsonBanTiec'),
+                JSON_QUERY(@JsonData, '$.JsonThucUong'),
+                JSON_QUERY(@JsonData, '$.JsonDichVu'),
+                JSON_QUERY(@JsonData, '$.JsonPhatSinh')
             );
         END
         ELSE -- UPDATE
@@ -617,14 +692,17 @@ BEGIN
                 SoKhachTrenBan = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBan') AS INT), SoKhachTrenBan),
                 SoKhachTrenBanTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBanTD') AS INT), SoKhachTrenBanTD),
                 
-                JsonPhatSinh = COALESCE(JSON_VALUE(@JsonData, '$.JsonPhatSinh'), JsonPhatSinh)
+                JsonBanTiec = COALESCE(JSON_QUERY(@JsonData, '$.JsonBanTiec'), JsonBanTiec),
+                JsonThucUong = COALESCE(JSON_QUERY(@JsonData, '$.JsonThucUong'), JsonThucUong),
+                JsonDichVu = COALESCE(JSON_QUERY(@JsonData, '$.JsonDichVu'), JsonDichVu),
+                JsonPhatSinh = COALESCE(JSON_QUERY(@JsonData, '$.JsonPhatSinh'), JsonPhatSinh)
             WHERE Sothaydoi = @Sothaydoi;
         END
 
         -- Bóc tách dữ liệu JSON từ các trường ẩn (Frontend gửi lên dưới dạng chuỗi JSON escape)
-        DECLARE @JsonBanTiec NVARCHAR(MAX) = JSON_VALUE(@JsonData, '$.JsonBanTiec');
-        DECLARE @JsonThucUong NVARCHAR(MAX) = JSON_VALUE(@JsonData, '$.JsonThucUong');
-        DECLARE @JsonDichVu NVARCHAR(MAX) = JSON_VALUE(@JsonData, '$.JsonDichVu');
+        DECLARE @JsonBanTiec NVARCHAR(MAX) = JSON_QUERY(@JsonData, '$.JsonBanTiec');
+        DECLARE @JsonThucUong NVARCHAR(MAX) = JSON_QUERY(@JsonData, '$.JsonThucUong');
+        DECLARE @JsonDichVu NVARCHAR(MAX) = JSON_QUERY(@JsonData, '$.JsonDichVu');
 
         IF (@JsonBanTiec IS NOT NULL)
         BEGIN
@@ -660,16 +738,16 @@ BEGIN
         BEGIN
             DELETE FROM tbmk_Thaydoithucuong WHERE Sothaydoi = @Sothaydoi;
             INSERT INTO tbmk_Thaydoithucuong (
-                UserAutoid, Sothaydoi, Mahang, Soluong, Dongia, Sotien,
+                UserAutoid, Sothaydoi, Mahang, Dvt, Soluong, Dongia, Sotien,
                 IsKhuyenmai, Ghichuthucuong, Giamgia, UserCreate, DateCreate, STT
             )
             SELECT
-                NEWID(), @Sothaydoi, j.Mahang, j.Soluong, j.Dongia, (j.Soluong * j.Dongia),
+                NEWID(), @Sothaydoi, j.Mahang, COALESCE(j.Dvt, j.DvtID), j.Soluong, j.Dongia, (j.Soluong * j.Dongia),
                 ISNULL(j.IsKhuyenmai, 0), j.Ghichuthucuong, ISNULL(j.Giamgia, 0), @UserName, @Now,
                 ROW_NUMBER() OVER(ORDER BY (SELECT NULL))
             FROM OPENJSON(@JsonThucUong)
             WITH (
-                Mahang VARCHAR(50), Soluong DECIMAL(18,2), Dongia DECIMAL(18,2),
+                Mahang VARCHAR(50), Dvt NVARCHAR(50), DvtID NVARCHAR(50), Soluong DECIMAL(18,2), Dongia DECIMAL(18,2),
                 IsKhuyenmai BIT, Ghichuthucuong NVARCHAR(500), Giamgia DECIMAL(18,2)
             ) j
             LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang;
@@ -721,12 +799,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Chỉ chạy đồng bộ khi có thay đổi liên quan đến các bản ghi được ký duyệt hoặc kết thúc
+    -- Đồng bộ ngay lập tức khi có thay đổi Phụ lục (không cần đợi ký duyệt)
     IF EXISTS (
         SELECT 1 
         FROM inserted i
-        WHERE (i.Status IN ('SIGNED', 'APPROVED') OR i.IsKetthuc = 1)
-          AND ISNULL(i.IsDeleted, 0) = 0
+        WHERE ISNULL(i.IsDeleted, 0) = 0
     )
     BEGIN
         -- Đồng bộ thực đơn (bảng con) từ Phụ lục về Hợp đồng
@@ -736,20 +813,42 @@ BEGIN
         DELETE dv FROM tbmk_Hopdongdichvu dv INNER JOIN inserted i ON dv.Sohopdong = i.Sohopdong;
 
         INSERT INTO tbmk_Hopdongthucdonman (UserAutoid, Sohopdong, STTmon, Mahang, Dongia, Ghichuthucdonman, IsKhaividaugio, UserCreate, DateCreate)
-        SELECT NEWID(), i.Sohopdong, tm.STTmon, tm.Mahang, tm.Dongia, tm.Ghichuthucdonman, tm.IsKhaividaugio, tm.UserCreate, GETDATE()
-        FROM tbmk_Thaydoithucdonman tm INNER JOIN inserted i ON tm.Sothaydoi = i.Sothaydoi;
+        SELECT NEWID(), i.Sohopdong, ROW_NUMBER() OVER(PARTITION BY i.Sohopdong ORDER BY (SELECT NULL)), j.Mahang, j.Dongia, NULL, 0, i.UserCreate, GETDATE()
+        FROM inserted i
+        CROSS APPLY OPENJSON(i.JsonBanTiec)
+        WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+        LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
+        WHERE i.JsonBanTiec IS NOT NULL AND i.JsonBanTiec <> '[]'
+          AND ISNULL(hh.Tenhang, j.TenHang) NOT LIKE N'%chay%';
 
         INSERT INTO tbmk_Hopdongthucdonchay (UserAutoid, Sohopdong, STTmon, Mahang, Dongia, Ghichuthucdonchay, IsKhaividaugio, UserCreate, DateCreate)
-        SELECT NEWID(), i.Sohopdong, tc.STTmon, tc.Mahang, tc.Dongia, tc.Ghichuthucdonchay, tc.IsKhaividaugio, tc.UserCreate, GETDATE()
-        FROM tbmk_Thaydoithucdonchay tc INNER JOIN inserted i ON tc.Sothaydoi = i.Sothaydoi;
+        SELECT NEWID(), i.Sohopdong, ROW_NUMBER() OVER(PARTITION BY i.Sohopdong ORDER BY (SELECT NULL)), j.Mahang, j.Dongia, NULL, 0, i.UserCreate, GETDATE()
+        FROM inserted i
+        CROSS APPLY OPENJSON(i.JsonBanTiec)
+        WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+        LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
+        WHERE i.JsonBanTiec IS NOT NULL AND i.JsonBanTiec <> '[]'
+          AND ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%';
 
         INSERT INTO tbmk_Hopdongthucuong (UserAutoid, Sohopdong, Mahang, Soluong, Dongia, Sotien, IsKhuyenmai, Ghichuthucuong, Giamgia, STT, UserCreate, DateCreate)
-        SELECT NEWID(), i.Sohopdong, tu.Mahang, tu.Soluong, tu.Dongia, tu.Sotien, tu.IsKhuyenmai, tu.Ghichuthucuong, tu.Giamgia, tu.STT, tu.UserCreate, GETDATE()
-        FROM tbmk_Thaydoithucuong tu INNER JOIN inserted i ON tu.Sothaydoi = i.Sothaydoi;
+        SELECT NEWID(), i.Sohopdong, j.Mahang, j.Soluong, j.Dongia, (j.Soluong * j.Dongia), ISNULL(j.IsKhuyenmai, 0), j.Ghichuthucuong, ISNULL(j.Giamgia, 0), ROW_NUMBER() OVER(PARTITION BY i.Sohopdong ORDER BY (SELECT NULL)), i.UserCreate, GETDATE()
+        FROM inserted i
+        CROSS APPLY OPENJSON(i.JsonThucUong)
+        WITH (
+            Mahang VARCHAR(50), Dvt NVARCHAR(50), DvtID NVARCHAR(50), Soluong DECIMAL(18,2), Dongia DECIMAL(18,2),
+            IsKhuyenmai BIT, Ghichuthucuong NVARCHAR(500), Giamgia DECIMAL(18,2)
+        ) j
+        WHERE i.JsonThucUong IS NOT NULL AND i.JsonThucUong <> '[]';
 
         INSERT INTO tbmk_Hopdongdichvu (UserAutoid, Sohopdong, Mahang, Soluong, Dongia, Sotien, IsKhuyenmai, Ghichudichvu, STT, UserCreate, DateCreate)
-        SELECT NEWID(), i.Sohopdong, dv.Mahang, dv.Soluong, dv.Dongia, dv.Sotien, dv.IsKhuyenmai, dv.Ghichudichvu, dv.STT, dv.UserCreate, GETDATE()
-        FROM tbmk_Thaydoidichvu dv INNER JOIN inserted i ON dv.Sothaydoi = i.Sothaydoi;
+        SELECT NEWID(), i.Sohopdong, j.Mahang, j.Soluong, j.Dongia, (j.Soluong * j.Dongia), ISNULL(j.IsKhuyenmai, 0), j.Ghichudichvu, ROW_NUMBER() OVER(PARTITION BY i.Sohopdong ORDER BY (SELECT NULL)), i.UserCreate, GETDATE()
+        FROM inserted i
+        CROSS APPLY OPENJSON(i.JsonDichVu)
+        WITH (
+            Mahang VARCHAR(50), Soluong DECIMAL(18,2), Dongia DECIMAL(18,2),
+            IsKhuyenmai BIT, Ghichudichvu NVARCHAR(500)
+        ) j
+        WHERE i.JsonDichVu IS NOT NULL AND i.JsonDichVu <> '[]';
 
         -- Cập nhật thông tin mới nhất từ tbmk_Thaydoi sang tbmk_Hopdong
         ;WITH LatestChanges AS (
@@ -829,8 +928,7 @@ BEGIN
                 
                 ROW_NUMBER() OVER (PARTITION BY i.Sohopdong ORDER BY i.LanThayDoi DESC, i.Ngaythaydoi DESC, i.Sothaydoi DESC) as rn
             FROM tbmk_Thaydoi i
-            WHERE (i.Status IN ('SIGNED', 'APPROVED') OR i.IsKetthuc = 1)
-              AND ISNULL(i.IsDeleted, 0) = 0
+            WHERE ISNULL(i.IsDeleted, 0) = 0
               AND i.Sohopdong IN (SELECT Sohopdong FROM inserted)
         )
         UPDATE h

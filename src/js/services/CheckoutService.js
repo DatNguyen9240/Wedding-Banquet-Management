@@ -108,12 +108,16 @@ var CheckoutService = (function () {
         ? API_CONFIG.ENDPOINTS.ROUTER
         : '/api/API_Gateway_Router';
 
+      // Gateway đọc dữ liệu từ JsonData để thay thế placeholder {Sohopdong}, {DocumentID}...
+      // Phải wrap vào JsonData giống các POST call khác đến API_Gateway_Router
       var payload = {
         List: 'frmQuyetToan',
         Func: 'GetDetails',
-        Sohopdong: params.Sohopdong || '',
-        Sothaydoi: params.Sothaydoi || '',
-        DocumentID: params.DocumentID || ''
+        JsonData: JSON.stringify({
+          Sohopdong: params.Sohopdong || '',
+          Sothaydoi: params.Sothaydoi || '',
+          DocumentID: params.DocumentID || ''
+        })
       };
 
       ApiClient.post(endpoint, payload)

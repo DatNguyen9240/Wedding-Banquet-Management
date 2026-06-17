@@ -26,8 +26,7 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     
     -- Thông tin Hợp đồng Tiệc
     @Ngayhopdong NVARCHAR(100) = NULL,
-    @Ngaytochuc NVARCHAR(100) = NULL,
-    @_Ngaytochuc NVARCHAR(100) = NULL,
+    @NgayToChuc NVARCHAR(100) = NULL,
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(10) = NULL,
     @Thoigianid VARCHAR(20) = NULL,      -- Ca tiệc
@@ -58,9 +57,7 @@ BEGIN
     
     DECLARE @Now DATETIME = GETDATE();
 
-    DECLARE @NgayHopDongParsed DATETIME = NULL;
     DECLARE @NgayToChucParsed DATETIME = NULL;
-    DECLARE @_NgayToChucParsed DATETIME = NULL;
 
     DECLARE @SobanManchinhthucVal INT = 0;
     DECLARE @SobanManduphongVal INT = 0;
@@ -73,15 +70,13 @@ BEGIN
     DECLARE @SotiencochopdongVal DECIMAL(18,2) = 0;
     DECLARE @TongtiencocVal DECIMAL(18,2) = 0;
 
-    -- Đưa các chuỗi 'NULL'/'null' hoặc rỗng về NULL thực tế
+    -- Parse @Ngayhopdong từ các định dạng phổ biến
+    DECLARE @NgayHopDongParsed DATETIME = NULL;
     IF (UPPER(LTRIM(RTRIM(@Ngayhopdong))) = 'NULL' OR LTRIM(RTRIM(@Ngayhopdong)) = '')
         SET @Ngayhopdong = NULL;
         
-    IF (UPPER(LTRIM(RTRIM(@Ngaytochuc))) = 'NULL' OR LTRIM(RTRIM(@Ngaytochuc)) = '')
-        SET @Ngaytochuc = NULL;
-
-    IF (UPPER(LTRIM(RTRIM(@_Ngaytochuc))) = 'NULL' OR LTRIM(RTRIM(@_Ngaytochuc)) = '')
-        SET @_Ngaytochuc = NULL;
+    IF (UPPER(LTRIM(RTRIM(@NgayToChuc))) = 'NULL' OR LTRIM(RTRIM(@NgayToChuc)) = '')
+        SET @NgayToChuc = NULL;
 
     -- Parse @Ngayhopdong từ các định dạng phổ biến
     IF (@Ngayhopdong IS NOT NULL)
@@ -105,20 +100,7 @@ BEGIN
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 101);
     END
 
-    -- Parse @_Ngaytochuc từ các định dạng phổ biến
-    IF (@_Ngaytochuc IS NOT NULL)
-    BEGIN
-        SET @_NgayToChucParsed = TRY_CAST(@_Ngaytochuc AS DATETIME);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 103);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 105);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 120);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 111);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 101);
-    END
 
-    -- Gộp kết quả parse từ các biến ngày tổ chức khác nhau
-    IF (@NgayToChucParsed IS NULL)
-        SET @NgayToChucParsed = @_NgayToChucParsed;
 
     -- Chuẩn hóa và parse các tham số số học (bỏ dấu chấm/phẩy phân tách hàng ngàn)
     SET @SobanManchinhthucVal = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanManchinhthuc, '0'), '.', ''), ',', '') AS INT);
@@ -167,7 +149,7 @@ BEGIN
     -- Kiểm tra Ngày tổ chức bắt buộc phải hợp lệ
     IF (@NgayToChucParsed IS NULL)
     BEGIN
-        SELECT 0 AS [Success], N'Lỗi: Ngày tổ chức không được để trống hoặc định dạng ngày không hợp lệ (Nhập vào: ''' + COALESCE(@Ngaytochuc, @_Ngaytochuc, 'NULL') + ''')' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+        SELECT 0 AS [Success], N'Lỗi: Ngày tổ chức không được để trống hoặc định dạng ngày không hợp lệ (Nhập vào: ''' + COALESCE(@Ngaytochuc, 'NULL') + ''')' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
         RETURN;
     END
 

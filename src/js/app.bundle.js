@@ -1917,7 +1917,7 @@ var FoodSelectionPlugin = (function () {
       return [];
     }
 
-    // Phân loại các sản phẩm trong Catalog
+    // Phân loại các sản phẩm trong Catalog theo tab
     function filterCatalogByTab(tab, keyword) {
       var kw = (keyword || '').toLowerCase().trim();
       return catalog.filter(function (item) {
@@ -1925,16 +1925,14 @@ var FoodSelectionPlugin = (function () {
         var code = (item.Mahang || item.MaMon || '').toLowerCase();
         if (kw && !name.includes(kw) && !code.includes(kw)) return false;
 
-        // Phân loại
-        var isChay = item.IsChay === 1 || item.IsChay === true;
-        var pLoai = item.PhanLoai || item.Phanloai || item.Tennhomhang || 'Khác';
+        // Dùng == 1 (loose equality) vì API gateway trả flags về dạng string "0"/"1"
+        var isChay   = item.IsChay   == 1;
+        var isDrink  = item.IsDrink  == 1;
+        var isService= item.IsDichVu == 1;
 
-        var isDrink = pLoai.includes('Bia') || pLoai.includes('Nước') || pLoai.includes('Thức uống') || pLoai.includes('Uống');
-        var isService = pLoai.includes('Dịch vụ') || pLoai.includes('Nghi lễ');
-
-        if (tab === 'man') return !isChay && !isDrink && !isService;
-        if (tab === 'chay') return isChay && !isDrink && !isService;
-        if (tab === 'drink') return isDrink;
+        if (tab === 'man')     return !isChay && !isDrink && !isService;
+        if (tab === 'chay')    return  isChay && !isDrink && !isService;
+        if (tab === 'drink')   return isDrink;
         if (tab === 'service') return isService;
 
         return false;
@@ -3009,30 +3007,30 @@ var PhuLucPlugin = (function () {
       form.onsubmit = function (e) {
         e.preventDefault();
 
-        var soPhuLuc = document.getElementById('inpSothaydoi').value.trim();
-        var ngayLapPL = document.getElementById('inpNgayLapPL').value;
+        var soPhuLuc = modalContent.querySelector('#inpSothaydoi').value.trim();
+        var ngayLapPL = modalContent.querySelector('#inpNgayLapPL').value;
 
-        var qmTuVal = document.getElementById('inpQuyMoBanTu').value;
-        var qmDenVal = document.getElementById('inpQuyMoBanDen').value;
-        var donGiaVal = document.getElementById('inpDonGiaBanTiec').value;
-        var soKhachVal = document.getElementById('inpSoKhachTrenBan').value;
+        var qmTuVal = modalContent.querySelector('#inpQuyMoBanTu').value;
+        var qmDenVal = modalContent.querySelector('#inpQuyMoBanDen').value;
+        var donGiaVal = modalContent.querySelector('#inpDonGiaBanTiec').value;
+        var soKhachVal = modalContent.querySelector('#inpSoKhachTrenBan').value;
 
-        var tenDotVal = document.getElementById('inpTenDotThanhToan').value.trim();
-        var soTienDot2Val = document.getElementById('inpThanhToanDot2SoTien').value;
-        var hinhThucVal = document.getElementById('inpHinhThucThanhToanDot2').value;
-        var hanThanhToanVal = document.getElementById('inpHanThanhToanDot2').value;
+        var tenDotVal = modalContent.querySelector('#inpTenDotThanhToan').value.trim();
+        var soTienDot2Val = modalContent.querySelector('#inpThanhToanDot2SoTien').value;
+        var hinhThucVal = modalContent.querySelector('#inpHinhThucThanhToanDot2').value;
+        var hanThanhToanVal = modalContent.querySelector('#inpHanThanhToanDot2').value;
 
-        var chucVuVal = document.getElementById('inpBenAChucVuDaiDien').value.trim();
-        var ngayToChucTDVal = document.getElementById('inpNgayToChucTD').value;
+        var chucVuVal = modalContent.querySelector('#inpBenAChucVuDaiDien').value.trim();
+        var ngayToChucTDVal = modalContent.querySelector('#inpNgayToChucTD').value;
 
-        var dvTinhPhiVal = document.getElementById('inpDichVuTinhPhiPhuLuc').value;
-        var uuDaiVal = document.getElementById('inpThoaThuanPhuLucKhac').value;
-        var thoathuan = document.getElementById('inpThoathuan').value;
+        var dvTinhPhiVal = modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value;
+        var uuDaiVal = modalContent.querySelector('#inpThoaThuanPhuLucKhac').value;
+        var thoathuan = modalContent.querySelector('#inpThoathuan').value;
 
-        var jsonBanTiecVal = document.getElementById('inpJsonBanTiec').value;
-        var jsonThucUongVal = document.getElementById('inpJsonThucUong').value;
-        var jsonDichVuVal = document.getElementById('inpJsonDichVu').value;
-        var jsonPhatSinhVal = document.getElementById('inpJsonPhatSinh').value;
+        var jsonBanTiecVal = modalContent.querySelector('#inpJsonBanTiec').value;
+        var jsonThucUongVal = modalContent.querySelector('#inpJsonThucUong').value;
+        var jsonDichVuVal = modalContent.querySelector('#inpJsonDichVu').value;
+        var jsonPhatSinhVal = modalContent.querySelector('#inpJsonPhatSinh').value;
 
         // Sinh Sothaydoi kỹ thuật nếu chưa nhập (tối đa 20 ký tự theo DB)
         if (!soPhuLuc) {
@@ -3108,10 +3106,10 @@ var PhuLucPlugin = (function () {
 
             Ghichu: thoathuan,
 
-            JsonBanTiec: jsonBanTiecVal,
-            JsonThucUong: jsonThucUongVal,
-            JsonDichVu: jsonDichVuVal,
-            JsonPhatSinh: jsonPhatSinhVal
+            JsonBanTiec: JSON.parse(jsonBanTiecVal || '[]'),
+            JsonThucUong: JSON.parse(jsonThucUongVal || '[]'),
+            JsonDichVu: JSON.parse(jsonDichVuVal || '[]'),
+            JsonPhatSinh: JSON.parse(jsonPhatSinhVal || '[]')
           })
         };
 
@@ -3185,7 +3183,7 @@ var PhuLucPlugin = (function () {
           ApiClient.post(window.API_CONFIG.ENDPOINTS.ROUTER, {
             List: 'frmHopDong',
             Func: 'GetDetails',
-            Sohopdong: sohopdong
+            Keyword: sohopdong
           }).then(function (res) {
             var details = {};
             if (res) {
@@ -3320,8 +3318,8 @@ var QuyetToanPlugin = (function () {
   }
 
   function _generateDocument(sohopdong) {
-    var DOC_API_BASE = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER) 
-      ? window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API 
+    var DOC_API_BASE = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER)
+      ? window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API
       : 'http://localhost:3000/api/document';
 
     if (typeof UIToast !== 'undefined') {
@@ -3379,14 +3377,14 @@ var QuyetToanPlugin = (function () {
 
     var sohopdong = contractRow.Sohopdong || contractRow.sohopdong || contractRow.SoHopDong;
     var khachhang = contractRow.Khachhang || contractRow.Daidiendat || contractRow.TenKhachHang || '';
-    
+
     // Tiền cọc đã thu từ hợp đồng
-    var tongtiencoc = Number(contractRow.Tongtiencoc || contractRow.tongtiencoc || 
+    var tongtiencoc = Number(contractRow.Tongtiencoc || contractRow.tongtiencoc ||
       ((contractRow.Sotiencoccho || 0) + (contractRow.Sotiencochopdong || 0)) || 0);
 
     var modalContent = document.createElement('div');
     modalContent.className = 'quyettoan-plugin-wrapper';
-    
+
     // Gán dữ liệu form cho MutationObserver của FoodSelectionPlugin phát hiện
     modalContent.setAttribute('data-form-name', 'frmQuyetToan');
 
@@ -3517,7 +3515,7 @@ var QuyetToanPlugin = (function () {
           </div>
 
           <div class="d-flex justify-content-end gap-2 mt-4 pt-3" style="border-top:1px solid var(--color-border, #cbd5e1);">
-            <button type="button" class="btn btn-outline-secondary" onclick="document.querySelector('.ui-modal-overlay').remove()">Hủy</button>
+            <button type="button" class="btn btn-outline-secondary" id="btnCancelQuyetToan">Hủy</button>
             <button type="submit" class="btn btn-success d-flex align-items-center gap-1">
               <span class="material-symbols-outlined" style="font-size:18px;">save</span> 
               Lưu & Xuất Quyết Toán Word
@@ -3533,10 +3531,19 @@ var QuyetToanPlugin = (function () {
       content: modalContent
     });
 
+    var btnCancel = document.getElementById('btnCancelQuyetToan');
+    if (btnCancel) {
+      btnCancel.addEventListener('click', function() {
+        if (modalInstance && typeof modalInstance.closeNow === 'function') {
+          modalInstance.closeNow();
+        }
+      });
+    }
+
     // Tạo các trường ngày
     var today = new Date();
     var defaultToday = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-    
+
     var dateInput = UIInput.createDate({
       id: 'inpDocumentDate',
       label: 'Ngày Lập Quyết Toán',
@@ -3554,7 +3561,7 @@ var QuyetToanPlugin = (function () {
     if (existingSettlement) {
       modalContent.querySelector('#inpDocumentID').value = existingSettlement.DocumentID || '';
       modalContent.querySelector('#inpNguoinop').value = existingSettlement.Nguoinop || khachhang;
-      
+
       var docDate = existingSettlement.DocumentDate || '';
       if (docDate && docDate.indexOf('T') !== -1) docDate = docDate.split('T')[0];
       modalContent.querySelector('#inpDocumentDate').value = docDate;
@@ -3571,7 +3578,7 @@ var QuyetToanPlugin = (function () {
       modalContent.querySelector('#inpSotienphatsinh').value = existingSettlement.Sotienphatsinh || 0;
       modalContent.querySelector('#inpPTThueVAT').value = existingSettlement.PTThueVAT || 0;
       modalContent.querySelector('#inpBanPhatSinh').value = details.BanPhatSinh || existingSettlement.BanPhatSinh || contractRow.BanPhatSinh || 0;
-      
+
       modalContent.querySelector('#inpThanhtoan').value = existingSettlement.Thanhtoan || 0;
       modalContent.querySelector('#chkIsKetthuc').checked = existingSettlement.IsKetthuc ? true : false;
       modalContent.querySelector('#inpGhichu').value = existingSettlement.Ghichu || '';
@@ -3589,10 +3596,10 @@ var QuyetToanPlugin = (function () {
     function recalculateTotals() {
       // 1. Tổng tiền từ danh mục grids (được quản lý bởi FoodSelectionPlugin)
       var totalBanTiec = 0, totalThucUong = 0, totalDichVu = 0, totalPhatSinh = 0;
-      try { totalBanTiec = JSON.parse(modalContent.querySelector('#inpJsonBanTiec').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
-      try { totalThucUong = JSON.parse(modalContent.querySelector('#inpJsonThucUong').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
-      try { totalDichVu = JSON.parse(modalContent.querySelector('#inpJsonDichVu').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
-      try { totalPhatSinh = JSON.parse(modalContent.querySelector('#inpJsonPhatSinh').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
+      try { totalBanTiec = JSON.parse(modalContent.querySelector('#inpJsonBanTiec').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch (e) { }
+      try { totalThucUong = JSON.parse(modalContent.querySelector('#inpJsonThucUong').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch (e) { }
+      try { totalDichVu = JSON.parse(modalContent.querySelector('#inpJsonDichVu').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch (e) { }
+      try { totalPhatSinh = JSON.parse(modalContent.querySelector('#inpJsonPhatSinh').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch (e) { }
 
       var totalGrid = totalBanTiec + totalThucUong + totalDichVu + totalPhatSinh;
 
@@ -3605,7 +3612,7 @@ var QuyetToanPlugin = (function () {
       var phatSinhManual = Number(modalContent.querySelector('#inpSotienphatsinh').value || 0);
 
       var subtotal = totalGrid + phiSanh + phiBanTang + phiTTS + phiNTL + phiPhucVu + phatSinhManual;
-      
+
       // 3. Tính toán VAT
       var ptVAT = Number(modalContent.querySelector('#inpPTThueVAT').value || 0);
       var tienVAT = Math.round(subtotal * (ptVAT / 100));
@@ -3680,10 +3687,10 @@ var QuyetToanPlugin = (function () {
 
       // Recalculate variables for payload
       var totalBanTiec = 0, totalThucUong = 0, totalDichVu = 0, totalPhatSinh = 0;
-      try { totalBanTiec = JSON.parse(modalContent.querySelector('#inpJsonBanTiec').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
-      try { totalThucUong = JSON.parse(modalContent.querySelector('#inpJsonThucUong').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
-      try { totalDichVu = JSON.parse(modalContent.querySelector('#inpJsonDichVu').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
-      try { totalPhatSinh = JSON.parse(modalContent.querySelector('#inpJsonPhatSinh').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch(e){}
+      try { totalBanTiec = JSON.parse(modalContent.querySelector('#inpJsonBanTiec').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch (e) { }
+      try { totalThucUong = JSON.parse(modalContent.querySelector('#inpJsonThucUong').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch (e) { }
+      try { totalDichVu = JSON.parse(modalContent.querySelector('#inpJsonDichVu').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch (e) { }
+      try { totalPhatSinh = JSON.parse(modalContent.querySelector('#inpJsonPhatSinh').value || '[]').reduce(function (sum, item) { return sum + (item.Soluong * item.Dongia - (item.Sotiengiamgia || 0)); }, 0); } catch (e) { }
 
       var subtotal = totalBanTiec + totalThucUong + totalDichVu + totalPhatSinh + phiSanh + phiBanTang + phiTTS + phiBuNTL + phiPhucVu + phatSinh;
       var tienVAT = Math.round(subtotal * (ptVAT / 100));
@@ -3744,7 +3751,7 @@ var QuyetToanPlugin = (function () {
           // Sinh file quyết toán Word
           try {
             _generateDocument(sohopdong);
-          } catch(e) {
+          } catch (e) {
             console.error('[QuyetToanPlugin] Lỗi sinh file word:', e);
           }
         } else {
@@ -4673,7 +4680,7 @@ var ContractService = (function () {
       var endpoint = API_CONFIG.ENDPOINTS.FOODS.LIST;
 
       var payloadString = encodeURIComponent(JSON.stringify(params || { Keyword: '', PhanLoai: '', IsChay: -1 }));
-      ApiClient.get(endpoint + '?q=' + payloadString)
+      ApiClient.get(endpoint + '?q=' + payloadString + '&limit=9999')
         .then(function (res) {
           var data = [];
           if (res && res.records) data = res.records;
@@ -4912,12 +4919,16 @@ var CheckoutService = (function () {
         ? API_CONFIG.ENDPOINTS.ROUTER
         : '/api/API_Gateway_Router';
 
+      // Gateway đọc dữ liệu từ JsonData để thay thế placeholder {Sohopdong}, {DocumentID}...
+      // Phải wrap vào JsonData giống các POST call khác đến API_Gateway_Router
       var payload = {
         List: 'frmQuyetToan',
         Func: 'GetDetails',
-        Sohopdong: params.Sohopdong || '',
-        Sothaydoi: params.Sothaydoi || '',
-        DocumentID: params.DocumentID || ''
+        JsonData: JSON.stringify({
+          Sohopdong: params.Sohopdong || '',
+          Sothaydoi: params.Sothaydoi || '',
+          DocumentID: params.DocumentID || ''
+        })
       };
 
       ApiClient.post(endpoint, payload)

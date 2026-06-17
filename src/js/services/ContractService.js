@@ -68,7 +68,7 @@ var ContractService = (function () {
       var endpoint = API_CONFIG.ENDPOINTS.FOODS.LIST;
 
       var payloadString = encodeURIComponent(JSON.stringify(params || { Keyword: '', PhanLoai: '', IsChay: -1 }));
-      ApiClient.get(endpoint + '?q=' + payloadString)
+      ApiClient.get(endpoint + '?q=' + payloadString + '&limit=9999')
         .then(function (res) {
           var data = [];
           if (res && res.records) data = res.records;

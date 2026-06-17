@@ -138,11 +138,10 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     
     -- Thông tin Hợp đồng Tiệc
     @Ngayhopdong NVARCHAR(100) = NULL,
-    @Ngaytochuc NVARCHAR(100) = NULL,
     @TuNgaySetup NVARCHAR(100) = NULL,
     @NgayTraSanhDV NVARCHAR(100) = NULL,
     @TenCongTy NVARCHAR(255) = NULL,
-    @_Ngaytochuc NVARCHAR(100) = NULL,
+    @NgayToChuc NVARCHAR(100) = NULL,
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(10) = NULL,
     @Thoigianid VARCHAR(20) = NULL,      -- Ca tiệc
@@ -172,9 +171,7 @@ BEGIN
     SET NOCOUNT ON;
     
     DECLARE @Now DATETIME = GETDATE();
-    DECLARE @NgayHopDongParsed DATETIME = NULL;
     DECLARE @NgayToChucParsed DATETIME = NULL;
-    DECLARE @_NgayToChucParsed DATETIME = NULL;
     DECLARE @SobanManchinhthucVal INT = 0;
     DECLARE @SobanManduphongVal INT = 0;
     DECLARE @SobanChaychinhthucVal INT = 0;
@@ -185,11 +182,11 @@ BEGIN
     DECLARE @SotiencochopdongVal DECIMAL(18,2) = 0;
     DECLARE @TongtiencocVal DECIMAL(18,2) = 0;
 
+    DECLARE @NgayHopDongParsed DATETIME = NULL;
     IF (UPPER(LTRIM(RTRIM(@Ngayhopdong))) = 'NULL' OR LTRIM(RTRIM(@Ngayhopdong)) = '') SET @Ngayhopdong = NULL;
-    IF (UPPER(LTRIM(RTRIM(@Ngaytochuc))) = 'NULL' OR LTRIM(RTRIM(@Ngaytochuc)) = '') SET @Ngaytochuc = NULL;
     IF (UPPER(LTRIM(RTRIM(@TuNgaySetup))) = 'NULL' OR LTRIM(RTRIM(@TuNgaySetup)) = '') SET @TuNgaySetup = NULL;
     IF (UPPER(LTRIM(RTRIM(@NgayTraSanhDV))) = 'NULL' OR LTRIM(RTRIM(@NgayTraSanhDV)) = '') SET @NgayTraSanhDV = NULL;
-    IF (UPPER(LTRIM(RTRIM(@_Ngaytochuc))) = 'NULL' OR LTRIM(RTRIM(@_Ngaytochuc)) = '') SET @_Ngaytochuc = NULL;
+    IF (UPPER(LTRIM(RTRIM(@NgayToChuc))) = 'NULL' OR LTRIM(RTRIM(@NgayToChuc)) = '') SET @NgayToChuc = NULL;
 
     IF (@Ngayhopdong IS NOT NULL)
     BEGIN
@@ -223,16 +220,7 @@ BEGIN
         SET @NgayTraSanhDVParsed = TRY_CAST(@NgayTraSanhDV AS DATETIME);
         IF (@NgayTraSanhDVParsed IS NULL) SET @NgayTraSanhDVParsed = TRY_CONVERT(DATETIME, @NgayTraSanhDV, 103);
     END
-    IF (@_Ngaytochuc IS NOT NULL)
-    BEGIN
-        SET @_NgayToChucParsed = TRY_CAST(@_Ngaytochuc AS DATETIME);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 103);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 105);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 120);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 111);
-        IF (@_NgayToChucParsed IS NULL) SET @_NgayToChucParsed = TRY_CONVERT(DATETIME, @_Ngaytochuc, 101);
-    END
-    IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = @_NgayToChucParsed;
+
 
     SET @SobanManchinhthucVal  = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanManchinhthuc,  '0'), '.', ''), ',', '') AS INT);
     SET @SobanManduphongVal    = TRY_CAST(REPLACE(REPLACE(ISNULL(@SobanManduphong,    '0'), '.', ''), ',', '') AS INT);

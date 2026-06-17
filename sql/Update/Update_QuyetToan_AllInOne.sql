@@ -599,7 +599,7 @@ BEGIN
     BEGIN
         SELECT TOP 1 @SothaydoiToUse = Sothaydoi 
         FROM tbmk_Thaydoi 
-        WHERE Sohopdong = @Sohopdong AND ISNULL(IsDeleted, 0) = 0 AND Status = 'SIGNED'
+        WHERE Sohopdong = @Sohopdong AND ISNULL(IsDeleted, 0) = 0
         ORDER BY LanThayDoi DESC, DateCreate DESC;
     END
 
@@ -633,31 +633,100 @@ BEGIN
     END
 
     SELECT 
-        CAST('[]' AS NVARCHAR(MAX)) AS [JsonBanTiec],
-
-        (
-            SELECT 
-                h.Mahang,
-                h.Tenhang AS [TenHang],
-                h.DVTID AS [DvtID],
-                0 AS [IsKhuyenmai],
-                0 AS [Soluong],
-                ISNULL((SELECT TOP 1 dg.Dongia FROM dmHanghoadg dg WHERE dg.Mahang = h.Mahang ORDER BY dg.Ngay DESC), 0) AS [Dongia],
-                0 AS [Sotien],
-                0 AS [Giamgia],
-                0 AS [Sotiengiamgia],
-                0 AS [Soluongle],
-                0 AS [Dongiale],
-                N'' AS [Ghichuthucuong]
-            FROM dmHangHoa h
-            WHERE h.Nhomhangid = 'THUCUONG' 
-              AND ISNULL(h.IsNgungSuDung, 0) = 0
-            FOR JSON PATH
+        -- 2.1. Thực đơn (Món mặn + Món chay) lấy từ Phụ lục đã ký gần nhất, nếu không thì lấy từ Hợp đồng
+        COALESCE(
+            (
+                SELECT TOP 1 td.JsonBanTiec
+                FROM tbmk_Thaydoi td
+                WHERE td.Sothaydoi = @SothaydoiToUse
+                  AND NULLIF(LTRIM(RTRIM(td.JsonBanTiec)), '') IS NOT NULL
+                  AND td.JsonBanTiec <> '[]'
+                  AND LEFT(LTRIM(td.JsonBanTiec), 1) = '['
+            ),
+            (
+                SELECT items.Mahang, items.TenHang, items.DvtID, items.Soluong, items.Dongia, items.IsKhuyenmai, items.STTmon, items.TableType
+                FROM (
+                    SELECT td.Mahang, ISNULL(hh.Tenhang, td.Mahang) AS TenHang, ISNULL(hh.DVTID, N'Đĩa') AS DvtID,
+                           CAST(1 AS DECIMAL(18,2)) AS Soluong, ISNULL(td.Dongia, 0) AS Dongia,
+                           CAST(0 AS BIT) AS IsKhuyenmai, ISNULL(td.STTmon, 0) AS STTmon, 1 AS TableType,
+                           ISNULL(td.STTmon, 0) AS SortOrder
+                    FROM tbmk_Hopdongthucdonman td
+                    LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+                    WHERE td.Sohopdong = @Sohopdong
+                    UNION ALL
+                    SELECT td.Mahang, ISNULL(hh.Tenhang, td.Mahang), ISNULL(hh.DVTID, N'Đĩa'),
+                           CAST(1 AS DECIMAL(18,2)), ISNULL(td.Dongia, 0),
+                           CAST(1 AS BIT), ISNULL(td.STTmon, 0), 2,
+                           ISNULL(td.STTmon, 0)
+                    FROM tbmk_Hopdongthucdonchay td
+                    LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+                    WHERE td.Sohopdong = @Sohopdong
+                ) items
+                ORDER BY items.TableType, items.SortOrder, items.Mahang
+                FOR JSON PATH
+            ),
+            '[]'
+        ) AS [JsonBanTiec],
+ 
+        -- 2.2. Thức uống: Lấy từ Phụ lục đã ký gần nhất, nếu không thì lấy từ Hợp đồng
+        COALESCE(
+            (
+                SELECT TOP 1 td.JsonThucUong
+                FROM tbmk_Thaydoi td
+                WHERE td.Sothaydoi = @SothaydoiToUse
+                  AND NULLIF(LTRIM(RTRIM(td.JsonThucUong)), '') IS NOT NULL
+                  AND td.JsonThucUong <> '[]'
+                  AND LEFT(LTRIM(td.JsonThucUong), 1) = '['
+            ),
+            (
+                SELECT tu.Mahang, ISNULL(hh.Tenhang, tu.Mahang) AS TenHang, ISNULL(tu.Dvt, hh.DVTID) AS DvtID,
+                       ISNULL(tu.IsKhuyenmai, 0) AS IsKhuyenmai, ISNULL(tu.Soluong, 0) AS Soluong,
+                       ISNULL(tu.Dongia, 0) AS Dongia, CAST(0 AS DECIMAL(18,2)) AS Soluongle,
+                       CAST(0 AS DECIMAL(18,2)) AS Dongiale, ISNULL(tu.Ghichuthucuong, N'') AS Ghichuthucuong
+                FROM tbmk_Hopdongthucuong tu
+                LEFT JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang
+                WHERE tu.Sohopdong = @Sohopdong
+                ORDER BY tu.Mahang
+                FOR JSON PATH
+            ),
+            '[]'
         ) AS [JsonThucUong],
-
-        CAST('[]' AS NVARCHAR(MAX)) AS [JsonDichVu],
-
-        CAST('[]' AS NVARCHAR(MAX)) AS [JsonPhatSinh];
+ 
+        -- 2.3. Dịch vụ lấy từ Phụ lục đã ký gần nhất, nếu không thì lấy từ Hợp đồng
+        COALESCE(
+            (
+                SELECT TOP 1 td.JsonDichVu
+                FROM tbmk_Thaydoi td
+                WHERE td.Sothaydoi = @SothaydoiToUse
+                  AND NULLIF(LTRIM(RTRIM(td.JsonDichVu)), '') IS NOT NULL
+                  AND td.JsonDichVu <> '[]'
+                  AND LEFT(LTRIM(td.JsonDichVu), 1) = '['
+            ),
+            (
+                SELECT dv.Mahang, ISNULL(hh.Tenhang, dv.Mahang) AS TenHang, ISNULL(hh.DVTID, N'Lần') AS DvtID,
+                       CAST(0 AS BIT) AS IsKhuyenmai, ISNULL(dv.Soluong, 0) AS Soluong,
+                       ISNULL(dv.Dongia, 0) AS Dongia
+                FROM tbmk_Hopdongdichvu dv
+                LEFT JOIN dmHanghoa hh ON dv.Mahang = hh.Mahang
+                WHERE dv.Sohopdong = @Sohopdong
+                ORDER BY dv.Mahang
+                FOR JSON PATH
+            ),
+            '[]'
+        ) AS [JsonDichVu],
+ 
+        -- 2.4. Phát sinh lấy từ Phụ lục đã ký gần nhất (nếu có)
+        COALESCE(
+            (
+                SELECT TOP 1 td.JsonPhatSinh
+                FROM tbmk_Thaydoi td
+                WHERE td.Sothaydoi = @SothaydoiToUse
+                  AND NULLIF(LTRIM(RTRIM(td.JsonPhatSinh)), '') IS NOT NULL
+                  AND td.JsonPhatSinh <> '[]'
+                  AND LEFT(LTRIM(td.JsonPhatSinh), 1) = '['
+            ),
+            '[]'
+        ) AS [JsonPhatSinh];
 END;
 GO
 

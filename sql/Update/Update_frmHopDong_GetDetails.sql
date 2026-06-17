@@ -28,7 +28,7 @@ BEGIN
 
     SELECT 
         -- 1. Thực đơn (Mặn + Chay)
-        ISNULL((
+        COALESCE((
             SELECT items.Mahang, items.TenHang, items.DvtID, items.Soluong, items.Dongia, items.IsKhuyenmai, items.STTmon, items.TableType
             FROM (
                 SELECT td.Mahang, ISNULL(hh.Tenhang, td.Mahang) AS TenHang, ISNULL(hh.DVTID, N'Đĩa') AS DvtID,
@@ -49,10 +49,10 @@ BEGIN
             ) items
             ORDER BY items.TableType, items.SortOrder, items.Mahang
             FOR JSON PATH
-        ), '[]') AS [JsonBanTiec],
+        ), h.JsonBanTiec, '[]') AS [JsonBanTiec],
 
         -- 2. Thức uống
-        ISNULL((
+        COALESCE((
             SELECT tu.Mahang, ISNULL(hh.Tenhang, tu.Mahang) AS TenHang, ISNULL(tu.Dvt, hh.DVTID) AS DvtID,
                    ISNULL(tu.IsKhuyenmai, 0) AS IsKhuyenmai, ISNULL(tu.Soluong, 0) AS Soluong,
                    ISNULL(tu.Dongia, 0) AS Dongia, CAST(0 AS DECIMAL(18,2)) AS Soluongle,
@@ -62,10 +62,10 @@ BEGIN
             WHERE tu.Sohopdong = @Sohopdong
             ORDER BY tu.Mahang
             FOR JSON PATH
-        ), '[]') AS [JsonThucUong],
+        ), h.JsonThucUong, '[]') AS [JsonThucUong],
 
         -- 3. Dịch vụ
-        ISNULL((
+        COALESCE((
             SELECT dv.Mahang, ISNULL(hh.Tenhang, dv.Mahang) AS TenHang, ISNULL(hh.DVTID, N'Lần') AS DvtID,
                    CAST(0 AS BIT) AS IsKhuyenmai, ISNULL(dv.Soluong, 0) AS Soluong,
                    ISNULL(dv.Dongia, 0) AS Dongia
@@ -74,7 +74,7 @@ BEGIN
             WHERE dv.Sohopdong = @Sohopdong
             ORDER BY dv.Mahang
             FOR JSON PATH
-        ), '[]') AS [JsonDichVu],
+        ), h.JsonDichVu, '[]') AS [JsonDichVu],
 
         -- 4. Phát sinh (Trống cho Hợp đồng)
         '[]' AS [JsonPhatSinh],
@@ -99,5 +99,5 @@ GO
 
 DELETE FROM WA_API WHERE List = 'frmHopDong' AND Func = 'GetDetails';
 INSERT INTO WA_API (List, Func, [SQL], Para)
-VALUES ('frmHopDong', 'GetDetails', 'API_LayChiTietHopDong', '@Sohopdong=N''{Sohopdong}''');
+VALUES ('frmHopDong', 'GetDetails', 'API_LayChiTietHopDong', '@Sohopdong=N''{Keyword}''');
 GO

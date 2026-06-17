@@ -666,7 +666,7 @@ var FoodSelectionPlugin = (function () {
       return [];
     }
 
-    // Phân loại các sản phẩm trong Catalog
+    // Phân loại các sản phẩm trong Catalog theo tab
     function filterCatalogByTab(tab, keyword) {
       var kw = (keyword || '').toLowerCase().trim();
       return catalog.filter(function (item) {
@@ -674,16 +674,14 @@ var FoodSelectionPlugin = (function () {
         var code = (item.Mahang || item.MaMon || '').toLowerCase();
         if (kw && !name.includes(kw) && !code.includes(kw)) return false;
 
-        // Phân loại
-        var isChay = item.IsChay === 1 || item.IsChay === true;
-        var pLoai = item.PhanLoai || item.Phanloai || item.Tennhomhang || 'Khác';
+        // Dùng == 1 (loose equality) vì API gateway trả flags về dạng string "0"/"1"
+        var isChay   = item.IsChay   == 1;
+        var isDrink  = item.IsDrink  == 1;
+        var isService= item.IsDichVu == 1;
 
-        var isDrink = pLoai.includes('Bia') || pLoai.includes('Nước') || pLoai.includes('Thức uống') || pLoai.includes('Uống');
-        var isService = pLoai.includes('Dịch vụ') || pLoai.includes('Nghi lễ');
-
-        if (tab === 'man') return !isChay && !isDrink && !isService;
-        if (tab === 'chay') return isChay && !isDrink && !isService;
-        if (tab === 'drink') return isDrink;
+        if (tab === 'man')     return !isChay && !isDrink && !isService;
+        if (tab === 'chay')    return  isChay && !isDrink && !isService;
+        if (tab === 'drink')   return isDrink;
         if (tab === 'service') return isService;
 
         return false;
