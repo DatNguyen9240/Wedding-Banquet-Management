@@ -3,8 +3,10 @@ services:
   backend-app:
     build: ./backend-app
     container_name: backend_app
-    ports:
-      - "8081:8081"
+    # Port 8081 KHÔNG cần expose ra host nữa nếu dùng nginx container
+    # (chỉ giao tiếp nội bộ Docker network)
+    expose:
+      - "8081"
     volumes:
       - ./backend-app/uploads:/app/uploads
       - ./backend-app/samples:/app/samples
@@ -14,9 +16,25 @@ services:
   onlyoffice:
     image: onlyoffice/documentserver:latest
     container_name: onlyoffice_server
+    expose:
+      - "80"
     ports:
-      - "8082:80"
+      - "8082:80"   # Giữ port này để OnlyOffice callback hoạt động
     environment:
-      # Tắt JWT đi để anh dễ test trên Localhost không bị lỗi chặn Token
       - JWT_ENABLED=false
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Config nginx
+      - ./backend-app/nginx/conf.d:/etc/nginx/conf.d:ro
+      # SSL cert từ Let's Encrypt trên host (certbot chạy trên host, không trong Docker)
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - backend-app
     restart: always

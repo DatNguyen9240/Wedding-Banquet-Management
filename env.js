@@ -17,6 +17,19 @@ const ENV_VARS = {
 
     // Cấu hình máy chạy Docker OnlyOffice (Document Server - Port 8082)
     ONLYOFFICE_HOST: '103.190.38.46',
+
+    // Khi frontend chạy trên HTTPS (Vercel, production), dùng HTTPS proxy qua nginx
+    // Nginx cần có location /docserver/ { proxy_pass http://127.0.0.1:8081; }
+    // Xem file: backend-app/nginx-docserver.conf
+    get DOCSERVER_BASE() {
+        var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
+        if (isHttps) {
+            // Production: proxy qua nginx (/docserver/ → localhost:8081)
+            return 'https://qlt.bms79.com/docserver';
+        }
+        // Local dev: gọi thẳng HTTP
+        return 'http://' + this.BACKEND_HOST + ':8081';
+    }
 };
 
 // 2. Cấu hình API chi tiết
@@ -33,10 +46,10 @@ window.API_CONFIG = {
 
         DOCUMENT_MANAGER: {
             NODE_IP: ENV_VARS.BACKEND_HOST,
-            BASE_API: 'http://' + ENV_VARS.BACKEND_HOST + ':8081/api/documents',
+            BASE_API: ENV_VARS.DOCSERVER_BASE + '/api/documents',
             ONLYOFFICE_API: 'http://' + ENV_VARS.ONLYOFFICE_HOST + ':8082/web-apps/apps/api/documents/api.js',
-            UPLOADS_URL: 'http://' + ENV_VARS.BACKEND_HOST + ':8081/uploads/',
-            SAMPLES_URL: 'http://' + ENV_VARS.BACKEND_HOST + ':8081/samples/'
+            UPLOADS_URL: ENV_VARS.DOCSERVER_BASE + '/uploads/',
+            SAMPLES_URL: ENV_VARS.DOCSERVER_BASE + '/samples/'
         },
 
         PERMISSIONS: {
