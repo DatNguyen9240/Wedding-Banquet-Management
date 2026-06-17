@@ -20,7 +20,7 @@ IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' A
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'FormatID')
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo, DataSource)
-    VALUES ('frmFormBuilder', 'FormatID', N'Loại Input', 'Format ID', 'sl', 1, '6', 1, 1, 0, 0, 5, N'STATIC:t|Văn bản (Text),n|Số (Number),dt|Ngày (Date),sw|Bật/Tắt (Switch),sl|Danh sách chọn (Select)');
+    VALUES ('frmFormBuilder', 'FormatID', N'Loại Input', 'Format ID', 'sl', 1, '6', 1, 1, 0, 0, 5, N'STATIC:t|Văn bản (Text),n|Số (Number),dt|Ngày (Date),sw|Bật/Tắt (Switch),sl|Danh sách chọn (Select),sr|Chọn không nhập (Select Readonly),js|Lưới dữ liệu (JSON Grid)');
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'FormPosition')
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo, DataSource)
@@ -94,7 +94,7 @@ UPDATE SY_FormatFields SET FormatID = 'sw'
 WHERE FormName = 'frmFormBuilder' AND FieldName IN ('IsRequired', 'ShowInAdd', 'ShowInEdit', 'IsReadOnlyAdd', 'IsReadOnlyEdit', 'ShowInFilter');
 
 -- Khung chọn Loại Input (Select)
-UPDATE SY_FormatFields SET FormatID = 'sl', DataSource = N'STATIC:t|Văn bản (Text),n|Số (Number),dt|Ngày (Date),sw|Bật/Tắt (Switch),sl|Danh sách chọn (Select)' 
+UPDATE SY_FormatFields SET FormatID = 'sl', DataSource = N'STATIC:t|Văn bản (Text),n|Số (Number),dt|Ngày (Date),sw|Bật/Tắt (Switch),sl|Danh sách chọn (Select),sr|Chọn không nhập (Select Readonly),js|Lưới dữ liệu (JSON Grid)' 
 WHERE FormName = 'frmFormBuilder' AND FieldName = 'FormatID';
 
 -- Khung chọn Kích thước hiển thị (Select)

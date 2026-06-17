@@ -325,5 +325,30 @@ WHERE FormName = 'frmBaoGia'
   );
 GO
 
+-- =========================================================================
+-- 6. Đồng bộ Menu hệ thống
+-- =========================================================================
+PRINT N'6. Đang đồng bộ Menu hệ thống...';
+GO
+
+IF EXISTS (SELECT 1 FROM WA_Menu WHERE FormName = 'frmBaoGia' OR URLPara = '#/baogia' OR MenuID = 'frmBaoGia')
+BEGIN
+    UPDATE WA_Menu 
+    SET VN = N'Báo giá dịch vụ', 
+        FormName = 'frmBaoGia',
+        URLPara = '#/baogia',
+        IconClass = 'receipt_long'
+    WHERE FormName = 'frmBaoGia' OR URLPara = '#/baogia' OR MenuID = 'frmBaoGia';
+END
+ELSE
+BEGIN
+    INSERT INTO WA_Menu (MenuID, Parent, VN, FormName, URLPara, IconClass, isDisable) 
+    VALUES ('frmBaoGia', '', N'Báo giá dịch vụ', 'frmBaoGia', '#/baogia', 'receipt_long', 0);
+END
+GO
+
 PRINT N'=== HOÀN THÀNH MODULE BÁO GIÁ ===';
 GO
+
+
+
