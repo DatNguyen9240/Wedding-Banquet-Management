@@ -2009,6 +2009,8 @@ window.DynamicFormEngine = (function () {
               if (typeof currentModalFormState !== 'undefined') {
                 if (isGateway) {
                   dynamicFilters = Object.assign({}, currentModalFormState);
+                  // Cũng gán các thuộc tính lên payload để resolve placeholder trên Gateway router
+                  payload = Object.assign(payload, currentModalFormState);
                 } else {
                   payload = Object.assign(payload, currentModalFormState);
                 }
@@ -2057,7 +2059,7 @@ window.DynamicFormEngine = (function () {
               placeholder: '-- Vui lòng chọn --',
               headers: ['Mã', 'Tên'],
               disabled: ((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd)),
-              showAddNew: field.renderRule !== 'sr', // Bật nút Thêm mới nếu không phải readonly
+              showAddNew: field.renderRule !== 'sr',
               readonlyInput: field.renderRule === 'ml' || field.renderRule === 'sr',
               multiple: field.renderRule === 'ml',
               onF2: function () {
@@ -2065,28 +2067,21 @@ window.DynamicFormEngine = (function () {
               },
               getValue: function () { return hiddenInput.value; },
               onSearch: searchApiCall,
-              onChange: function (val) { if (field.renderRule !== 'sr') hiddenInput.value = val; }, // Hỗ trợ gõ tay nếu không phải readonly
+              onChange: function (val) { if (field.renderRule !== 'sr') hiddenInput.value = val; },
               onSelect: function (row) {
                 hiddenInput.value = row[0];
 
-                // === AUTO FILL LOGIC ===
-                // Lấy lại danh sách keys đã lưu
                 var savedKeysStr = comboLoading.dataset.lastKeys;
                 if (savedKeysStr) {
                   var keys = JSON.parse(savedKeysStr);
-                  // Duyệt qua các cột trả về từ API
                   keys.forEach(function (keyName, index) {
-                    // Tìm xem trong Form hiện tại có Input nào tên trùng với tên Cột không (case-insensitive)
                     var form = hiddenInput.closest('.ui-modal') || hiddenInput.closest('body');
                     if (form) {
                       var targetInput = form.querySelector('[name="' + keyName + '" i]');
                       if (targetInput && targetInput !== hiddenInput && targetInput.value !== (row[index] || '')) {
-                        // Điền giá trị
                         targetInput.value = row[index] || '';
-                        // Kích hoạt sự kiện để UI update (nếu là ô chọn ngày, số lượng...)
                         targetInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-                        // Nếu trường được Auto-Fill là một Combobox khác, ta cần gọi nó tải lại text hiển thị!
                         if (typeof targetInput.fetchDataForValue === 'function') {
                           targetInput.fetchDataForValue();
                         }
@@ -2094,27 +2089,34 @@ window.DynamicFormEngine = (function () {
                     }
                   });
                 }
-                // =======================
 
                 hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
               }
             });
 
             if (field.value) {
-              searchApiCall('', 1).then(function (res) {
-                var displayInput = lazyCombo.querySelector('input.ui-input');
-                if (field.renderRule === 'ml') {
-                   var vals = hiddenInput.value.split(',');
-                   var matches = res.data.filter(function(r) { return vals.includes(String(r[0])); });
-                   if (matches.length > 0 && displayInput) displayInput.value = matches.map(function(m) { return m[res.colFilterIndex || 1]; }).join(', ');
-                } else {
-                   var matched = res.data.find(function (r) { return String(r[0]) === String(field.value); });
-                   if (matched && displayInput) displayInput.value = matched[res.colFilterIndex || 1];
-                }
+              searchApiCall(field.value, 1).then(function (res) {
+                 var displayInput = lazyCombo.querySelector('input.ui-input');
+                 if (field.renderRule === 'ml') {
+                    var vals = hiddenInput.value.split(',');
+                    var matches = res.data.filter(function(r) { return vals.includes(String(r[0])); });
+                    if (matches.length > 0 && displayInput) {
+                      displayInput.value = matches.map(function(m) { return m[res.colFilterIndex || 1]; }).join(', ');
+                    } else if (displayInput) {
+                      displayInput.value = hiddenInput.value;
+                    }
+                 } else {
+                    var matched = res.data.find(function (r) { return String(r[0]) === String(field.value); });
+                    if (matched && displayInput) {
+                      displayInput.value = matched[res.colFilterIndex || 1];
+                    } else if (displayInput) {
+                      displayInput.value = field.value; // Fallback
+                    }
+                 }
               }).catch(function (err) {
-                console.error('[DynamicFormEngine] DataComboBox initial fetch error:', err);
-                var displayInput = lazyCombo.querySelector('input.ui-input');
-                if (displayInput) displayInput.placeholder = 'Lỗi tải dữ liệu';
+                 console.error('[DynamicFormEngine] DataComboBox initial fetch error:', err);
+                 var displayInput = lazyCombo.querySelector('input.ui-input');
+                 if (displayInput) displayInput.placeholder = 'Lỗi tải dữ liệu';
               });
             }
 
@@ -2123,7 +2125,7 @@ window.DynamicFormEngine = (function () {
               if (hiddenInput.value) {
                 var displayInput = lazyCombo.querySelector('input.ui-input');
                 if (displayInput) displayInput.value = 'Đang tải...';
-                searchApiCall('', 1).then(function (res) {
+                searchApiCall(hiddenInput.value, 1).then(function (res) {
                   var displayInp = lazyCombo.querySelector('input.ui-input');
                   if (field.renderRule === 'ml') {
                      var vals = hiddenInput.value.split(',');

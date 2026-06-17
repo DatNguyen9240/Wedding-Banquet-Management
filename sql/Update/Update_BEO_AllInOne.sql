@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -235,6 +235,12 @@ BEGIN
         -- HDTenCty: tên công ty xuất hóa đơn (khớp placeholder {HDTenCty})
         ISNULL(NULLIF(h.TenCtyHoaDon, ''), ISNULL(k.Tenkh, N'')) AS [HDTenCty],
 
+        -- Các trường bổ sung đồng bộ với mẫu BEO
+        ISNULL(k.TinhTrangKhachHang, N'Fanpage') AS [DoiTuongKhach],
+        ISNULL(h.MauNo, N'Ghế trắng - Nơ hồng')   AS [SetupNoGhe],
+        CAST(N'' AS NVARCHAR(100))               AS [AnNheTruocTiec],
+        CAST(N'' AS NVARCHAR(100))               AS [BanhManDauGio],
+
         -- ── Tài chính cơ bản ─────────────────────────────────────────────
 
         FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
@@ -365,7 +371,7 @@ DECLARE @BEO_Fields TABLE (
 );
 
 INSERT INTO @BEO_Fields VALUES
-('Sohopdong',       N'Số Hợp Đồng',          't',  NULL,  '6',  1,  1,1,1,1),
+('Sohopdong',       N'Số Hợp Đồng',          'sr',  '/api/API_Gateway_Router?List=API_DanhSachHopDong&Func=View',  '6',  1,  1,1,0,1),
 ('KhachHang',       N'Khách Hàng',            't',  NULL,  '6',  2,  1,1,1,1),
 ('NgayRaBEO',       N'Ngày Ra BEO',           'dt', NULL,  '6',  3,  1,1,0,0),
 ('NgayToChuc',      N'Ngày Tổ Chức',          'dt', NULL,  '6',  4,  1,1,1,1),

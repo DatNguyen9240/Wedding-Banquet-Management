@@ -1,4 +1,4 @@
-﻿-- Script Update Hợp Đồng All-in-One
+-- Script Update Hợp Đồng All-in-One
 
 SET ANSI_NULLS ON
 GO
@@ -498,7 +498,7 @@ BEGIN
         END
 
         COMMIT TRANSACTION;
-        SELECT 1 AS [Success], N'Luu Hop dong Tiec Cuoi thanh cong' AS [Message], @Sohopdong AS [Sohopdong], @Makh AS [Makh];
+        SELECT 1 AS [Success], N'Lưu Hợp đồng Tiệc Cưới thành công' AS [Message], @Sohopdong AS [Sohopdong], @Makh AS [Makh];
         
     END TRY
     BEGIN CATCH

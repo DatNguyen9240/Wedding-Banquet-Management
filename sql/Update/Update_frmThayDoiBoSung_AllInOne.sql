@@ -1185,7 +1185,7 @@ SET CaptionVN = N'Số Thay Đổi', FormatID = 't', ShowInAdd = 1, ShowInEdit =
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Sothaydoi';
 
 UPDATE ff
-SET CaptionVN = N'Số Hợp Đồng', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 1, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1, FormPosition = '6', OrderNo = 2
+SET CaptionVN = N'Số Hợp Đồng', FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachHopDong&Func=View', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 1, FormPosition = '6', OrderNo = 2
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Sohopdong';
 
 UPDATE ff

@@ -300,6 +300,25 @@ app.post('/api/documents/generate', async (req, res) => {
         // Tự động parse JSON từ CSDL (kể cả JSON lồng nhau — menu/dịch vụ docx)
         dataMap = deepParseJsonStrings(dataMap);
 
+        // Format array of services to text string for fields that are converted to XML
+        const arrayToStringFields = ['DichVuTinhPhi', 'DichVuTinhPhiPhuLuc', 'DichVuPhatSinh', 'DanhSachDichVu'];
+        arrayToStringFields.forEach(key => {
+            const foundKey = Object.keys(dataMap).find(k => k.toLowerCase() === key.toLowerCase());
+            if (foundKey && Array.isArray(dataMap[foundKey])) {
+                dataMap[foundKey] = dataMap[foundKey].map(item => {
+                    if (!item || typeof item !== 'object') return String(item);
+                    const name = item.TenDichVu || item.tendichvu || item.Tenhang || item.DienGiai || item.diengiai || '';
+                    if (!name) return '';
+                    let price = item.ThanhTien || item.thanhtien || item.Sotien || item.sotien || item.DonGia || item.dongia || '';
+                    if (price && !String(price).toUpperCase().endsWith('VNĐ') && !String(price).toUpperCase().endsWith('VND')) {
+                        price = price + ' VNĐ';
+                    }
+                    const note = item.GhiChuChiTiet || item.ghichuchitiet || item.Ghichudichvu || item.GhiChu || item.ghichu || '';
+                    return `- ${name}${price ? ': ' + price : ''}${note ? ' (' + note + ')' : ''}`;
+                }).filter(Boolean).join('\n');
+            }
+        });
+
         // Xác định danh sách các trường cần chuyển đổi thành XML Word
         let fieldsToConvert = Array.isArray(convertFields) ? convertFields : [];
         
@@ -377,16 +396,27 @@ app.post('/api/documents/generate', async (req, res) => {
                 return {
                     get: function(scope) {
                         if (tag === '.') return scope;
+                        let val = "";
                         if (scope && typeof scope === 'object') {
-                            if (scope[tag] !== undefined) return scope[tag];
-                            const cleanTag = tag.toLowerCase().replace(/_/g, '');
-                            const foundKey = Object.keys(scope).find(k => {
-                                const cleanKey = k.toLowerCase().replace(/_/g, '');
-                                return cleanKey === cleanTag;
-                            });
-                            if (foundKey) return scope[foundKey];
+                            if (scope[tag] !== undefined && scope[tag] !== null) {
+                                val = scope[tag];
+                            } else {
+                                const cleanTag = tag.toLowerCase().replace(/_/g, '');
+                                const foundKey = Object.keys(scope).find(k => {
+                                    const cleanKey = k.toLowerCase().replace(/_/g, '');
+                                    return cleanKey === cleanTag;
+                                });
+                                if (foundKey && scope[foundKey] !== undefined && scope[foundKey] !== null) {
+                                    val = scope[foundKey];
+                                }
+                            }
                         }
-                        return "";
+                        // Trả về đối tượng/mảng nguyên bản cho các tag loop
+                        if (val && typeof val === 'object') {
+                            return val;
+                        }
+                        // Tránh trả về null/undefined cho raw XML hoặc text tag
+                        return val === null || val === undefined ? "" : String(val);
                     }
                 };
             },

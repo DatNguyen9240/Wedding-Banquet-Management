@@ -1086,6 +1086,25 @@ BEGIN
         INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, ShowInFilter, DataSource)
         VALUES ('frmQuyetToan', 'IsKetthuc', N'Đã kết thúc', 'sl', '6', 0, 50, 1, 1, 0, 0, 1, N'STATIC:0|Chưa kết thúc,1|Đã kết thúc');
     END
+
+    -- Đảm bảo cấu hình trường Sohopdong của frmQuyetToan luôn có và hiển thị tiếng Việt chuẩn dạng search-readonly combobox
+    IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmQuyetToan' AND FieldName = 'Sohopdong')
+    BEGIN
+        UPDATE SY_FormatFields 
+        SET FormatID = 'sr', 
+            DataSource = '/api/API_Gateway_Router?List=API_DanhSachHopDong&Func=View', 
+            CaptionVN = N'Số Hợp Đồng',
+            ShowInAdd = 1,
+            ShowInEdit = 1,
+            IsReadOnlyAdd = 0,
+            IsReadOnlyEdit = 1
+        WHERE FormName = 'frmQuyetToan' AND FieldName = 'Sohopdong';
+    END
+    ELSE
+    BEGIN
+        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, ShowInFilter, DataSource)
+        VALUES ('frmQuyetToan', 'Sohopdong', N'Số Hợp Đồng', 'sr', '6', 0, 10, 1, 1, 0, 1, 1, '/api/API_Gateway_Router?List=API_DanhSachHopDong&Func=View');
+    END
 END
 GO
 
