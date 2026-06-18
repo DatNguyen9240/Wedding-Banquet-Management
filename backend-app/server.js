@@ -27,17 +27,8 @@ const SAMPLES_DIR = path.join(__dirname, 'samples');
 // ==========================================
 // MIDDLEWARE
 // ==========================================
-// Tự động phát hiện nếu request đi qua proxy Nginx (đã có Nginx thêm CORS header)
-app.use((req, res, next) => {
-    const isProxied = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.headers['x-forwarded-proto'];
-    if (isProxied) {
-        // Đi qua proxy Nginx: không dùng cors middleware của Express để tránh bị trùng lặp header CORS (*, *)
-        next();
-    } else {
-        // Chạy thẳng ở Local không qua proxy: dùng cors middleware của Express
-        cors({ origin: '*' })(req, res, next);
-    }
-});
+// Sử dụng cors middleware của Express để luôn tự động thêm headers CORS đầy đủ
+app.use(cors({ origin: '*' }));
 
 app.use('/uploads', function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
