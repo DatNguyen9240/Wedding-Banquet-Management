@@ -273,12 +273,15 @@ app.post('/api/documents/generate', async (req, res) => {
         // Lọc bỏ tất cả ký tự đặc biệt, dấu ngoặc, dấu cộng để ONLYOFFICE không bị lỗi 400 Bad Request
         outputFileName = outputFileName.replace(/[\/\\:*?"<>|()+]/g, '_').replace(/\s+/g, '_');
         
+        // ── 0. Tải cấu hình tài liệu động ───────────────────────────
+        const docConfig = getDocumentConfig();
+        
         // ── 1. Lấy thông tin nhà hàng từ Setup API ──────────────────────────
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
-
+ 
         // ── 2. Map data từ rowData (frontend) hoặc SQL API ─────────
         let dataMap = { ...setup };
-
+ 
         let dbRow = null;
         if (customerId) {
             try {
@@ -288,7 +291,7 @@ app.post('/api/documents/generate', async (req, res) => {
                 console.error('[GENERATE] Lỗi SQL API:', e.message);
             }
         }
-
+ 
         // Merge dữ liệu: setup -> rowData từ frontend -> dbRow từ SQL API (ưu tiên cao nhất)
         if (rowData && typeof rowData === 'object') {
             dataMap = { ...dataMap, ...rowData };
@@ -296,39 +299,22 @@ app.post('/api/documents/generate', async (req, res) => {
         if (dbRow) {
             dataMap = { ...dataMap, ...dbRow };
         }
-
+ 
         // Tự động parse JSON từ CSDL (kể cả JSON lồng nhau — menu/dịch vụ docx)
         dataMap = deepParseJsonStrings(dataMap);
-
+ 
         // Format array of services to text string for fields that are converted to XML
-        const arrayToStringFields = ['DichVuTinhPhi', 'DichVuTinhPhiPhuLuc', 'DichVuPhatSinh', 'DanhSachDichVu'];
+        const arrayToStringFields = docConfig.arrayToStringFields || [];
         arrayToStringFields.forEach(key => {
             const foundKey = Object.keys(dataMap).find(k => k.toLowerCase() === key.toLowerCase());
             if (foundKey && Array.isArray(dataMap[foundKey])) {
-                dataMap[foundKey] = dataMap[foundKey].map(item => {
-                    if (!item || typeof item !== 'object') return String(item);
-                    const name = item.TenDichVu || item.tendichvu || item.Tenhang || item.DienGiai || item.diengiai || '';
-                    if (!name) return '';
-                    let price = item.ThanhTien || item.thanhtien || item.Sotien || item.sotien || item.DonGia || item.dongia || '';
-                    if (price && !String(price).toUpperCase().endsWith('VNĐ') && !String(price).toUpperCase().endsWith('VND')) {
-                        price = price + ' VNĐ';
-                    }
-                    const note = item.GhiChuChiTiet || item.ghichuchitiet || item.Ghichudichvu || item.GhiChu || item.ghichu || '';
-                    return `- ${name}${price ? ': ' + price : ''}${note ? ' (' + note + ')' : ''}`;
-                }).filter(Boolean).join('\n');
+                dataMap[foundKey] = dataMap[foundKey].map(item => formatArrayItem(item, docConfig)).filter(Boolean).join('\n');
             }
         });
-
-        // Xác định danh sách các trường cần chuyển đổi thành XML Word
-        let fieldsToConvert = Array.isArray(convertFields) ? convertFields : [];
-        
-        fieldsToConvert.forEach(key => {
-            const foundKey = Object.keys(dataMap).find(k => k.toLowerCase() === key.toLowerCase());
-            if (foundKey && dataMap[foundKey] && typeof dataMap[foundKey] === 'string') {
-                dataMap[foundKey] = convertTextToWordXML(dataMap[foundKey]);
-            }
-        });
-
+ 
+        // Xác định danh sách các trường cần chuyển đổi thành XML Word (sẽ được tự động bổ sung khi quét template)
+        let fieldsToConvert = Array.isArray(convertFields) ? [...convertFields] : [];
+ 
         console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
 
         // ── 3. Đọc template DOCX (Tìm kiếm đệ quy) ───────────────────────────
@@ -388,6 +374,61 @@ app.post('/api/documents/generate', async (req, res) => {
         } catch (cleanErr) {
             console.warn('[GENERATE] ⚠️ Không thể làm sạch XML tags:', cleanErr.message);
         }
+
+        // --- TỰ ĐỘNG PHÁT HIỆN VÀ CHUẨN HÓA CÁC TAG RAW XML TRONG TẤT CẢ FILE XML ---
+        try {
+            const fileNames = Object.keys(zip.files);
+            const rawTagsFound = new Set();
+            const rawTagRegex = /\{@\s*([a-zA-Z0-9_#]+)\s*\}/g;
+            
+            for (const name of fileNames) {
+                if (name.endsWith('.xml')) {
+                    const xmlFile = zip.file(name);
+                    if (xmlFile) {
+                        const xmlContent = xmlFile.asText();
+                        let match;
+                        while ((match = rawTagRegex.exec(xmlContent)) !== null) {
+                            rawTagsFound.add(match[1]);
+                        }
+                    }
+                }
+            }
+            
+            if (rawTagsFound.size > 0) {
+                console.log('[GENERATE] Phát hiện các tag raw XML trong template:', Array.from(rawTagsFound));
+                rawTagsFound.forEach(tag => {
+                    if (!fieldsToConvert.some(f => f.toLowerCase() === tag.toLowerCase())) {
+                        fieldsToConvert.push(tag);
+                    }
+                });
+            }
+        } catch (scanErr) {
+            console.warn('[GENERATE] ⚠️ Lỗi quét raw XML tags từ template:', scanErr.message);
+        }
+
+        // --- CHUYỂN ĐỔI CÁC TRƯỜNG CẦN THIẾT SANG WORD XML ---
+        fieldsToConvert.forEach(key => {
+            const foundKey = Object.keys(dataMap).find(k => k.toLowerCase() === key.toLowerCase());
+            if (foundKey) {
+                let value = dataMap[foundKey];
+                // Nếu giá trị là Array (chưa được format thành string ở trên), hãy format nó
+                if (Array.isArray(value)) {
+                    value = value.map(item => formatArrayItem(item, docConfig)).filter(Boolean).join('\n');
+                } else if (value && typeof value === 'object') {
+                    value = JSON.stringify(value);
+                }
+                
+                // Đảm bảo kết quả là string và chuyển đổi sang Word XML
+                if (value !== undefined && value !== null) {
+                    dataMap[foundKey] = convertTextToWordXML(String(value), foundKey, docConfig);
+                } else {
+                    dataMap[foundKey] = "";
+                }
+            } else {
+                // Nếu không có trong dataMap, set giá trị mặc định là chuỗi rỗng để tránh lỗi undefined cho raw XML
+                dataMap[key] = "";
+            }
+        });
 
         const doc = new Docxtemplater(zip, {
             paragraphLoop: true,
@@ -784,21 +825,105 @@ function mergeTableColumn(xml, headerName) {
     return resultXml;
 }
 
-function convertTextToWordXML(text, fieldName = '') {
+const CONFIG_FILE_PATH = path.join(__dirname, 'document-config.json');
+
+function getDocumentConfig() {
+    try {
+        if (fs.existsSync(CONFIG_FILE_PATH)) {
+            const fileContent = fs.readFileSync(CONFIG_FILE_PATH, 'utf8');
+            return JSON.parse(fileContent);
+        }
+    } catch (err) {
+        console.warn('[CONFIG] ⚠️ Lỗi đọc file document-config.json:', err.message);
+    }
+    return {};
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function formatArrayItem(item, docConfig) {
+    if (!item) return '';
+    if (typeof item !== 'object') return String(item);
+    
+    const itemFieldNames = docConfig.itemFieldNames || [];
+    const itemPriceNames = docConfig.itemPriceNames || [];
+    const itemNoteNames = docConfig.itemNoteNames || [];
+    const currencySuffix = docConfig.currencySuffix || '';
+    
+    let name = '';
+    for (const fName of itemFieldNames) {
+        const foundNameKey = Object.keys(item).find(k => k.toLowerCase() === fName.toLowerCase());
+        if (foundNameKey && item[foundNameKey]) {
+            name = item[foundNameKey];
+            break;
+        }
+    }
+    if (!name) {
+        // Fallback: nếu không cấu hình trường tên, dùng trường đầu tiên có giá trị chuỗi
+        const firstStringKey = Object.keys(item).find(k => typeof item[k] === 'string' && item[k]);
+        if (firstStringKey) name = item[firstStringKey];
+        else return String(item);
+    }
+    
+    let price = '';
+    for (const pName of itemPriceNames) {
+        const foundPriceKey = Object.keys(item).find(k => k.toLowerCase() === pName.toLowerCase());
+        if (foundPriceKey && item[foundPriceKey]) {
+            price = item[foundPriceKey];
+            break;
+        }
+    }
+    
+    if (price && currencySuffix) {
+        const cleanSuffix = currencySuffix.trim().toUpperCase();
+        if (!String(price).toUpperCase().endsWith(cleanSuffix) && !String(price).toUpperCase().endsWith('VND') && !String(price).toUpperCase().endsWith('VNĐ')) {
+            price = price + currencySuffix;
+        }
+    }
+    
+    let note = '';
+    for (const nName of itemNoteNames) {
+        const foundNoteKey = Object.keys(item).find(k => k.toLowerCase() === nName.toLowerCase());
+        if (foundNoteKey && item[foundNoteKey]) {
+            note = item[foundNoteKey];
+            break;
+        }
+    }
+    
+    return `- ${name}${price ? ': ' + price : ''}${note ? ' (' + note + ')' : ''}`;
+}
+
+function convertTextToWordXML(text, fieldName = '', docConfig = getDocumentConfig()) {
     if (!text) return "";
     const lines = text.split(/\r?\n/);
     let xml = "";
-    const isSetupField = fieldName === 'ThongTinSetup';
+    
+    const setupFieldName = docConfig.setupFieldName || '';
+    const isSetupField = fieldName && setupFieldName && fieldName === setupFieldName;
+    
+    const headerKeywords = docConfig.headerKeywords || [];
+    const warningKeywords = docConfig.warningKeywords || [];
+    
+    const xmlStyles = docConfig.xmlStyles || {};
+    const fontName = xmlStyles.fontFamily || 'Times New Roman';
+    const fontSize = xmlStyles.fontSize || 20;
+    const warningColor = xmlStyles.warningColor || 'FF0000';
+    const headerColor = xmlStyles.headerColor || 'FF0000';
+    
+    const hasHeaderKeywords = headerKeywords.length > 0;
+    const headerRegex = hasHeaderKeywords ? new RegExp(headerKeywords.map(escapeRegExp).join('|'), 'i') : null;
+    
+    const hasWarningKeywords = warningKeywords.length > 0;
+    const warningRegex = hasWarningKeywords ? new RegExp(warningKeywords.map(escapeRegExp).join('|'), 'i') : null;
     
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         
-        // A line is considered a header if it doesn't start with a bullet character
-        // and either ends with ":" or contains section keywords like Queen, Sảnh, Phía, Cổng, Lobby, v.v.
-        const isHeader = !/^[-\*\+\•\d]/.test(line) && (line.endsWith(':') || /Queen|Sảnh|Sanh|Phía|Phia|Cổng|Cong|Lobby|Bảo vệ|Bao ve|Kỹ thuật|Ky thuat|Biểu ngữ|Bieu ngu|Setup|Sân khấu|San khau/i.test(line));
+        const isHeader = !/^[-\*\+\•\d]/.test(line) && (line.endsWith(':') || (headerRegex && headerRegex.test(line)));
         
-        // Escape XML entities
         const escapedLine = line
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -806,24 +931,18 @@ function convertTextToWordXML(text, fieldName = '') {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&apos;");
             
-        // Check if the line contains warning keywords for red styling
-        // Keywords: 'out', 'out hàng', 'out khach', 'gấp', 'gap', 'đặc biệt', 'dac biet', 'phạt', 'phat'
-        const isWarningLine = /out|gấp|gap|đặc biệt|dac biet|phạt|phat/i.test(line);
+        const isWarningLine = warningRegex && warningRegex.test(line);
         
         if (isHeader) {
             if (isSetupField) {
-                // SẮP XẾP headers are Black, Bold, Underlined
-                xml += `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:u w:val="single"/><w:sz w:val="20"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
+                xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:b/><w:u w:val="single"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
             } else {
-                // LƯU Ý / other headers are Red, Bold, Underlined
-                xml += `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:u w:val="single"/><w:color w:val="FF0000"/><w:sz w:val="20"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
+                xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:b/><w:u w:val="single"/><w:color w:val="${headerColor}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
             }
         } else if (isWarningLine) {
-            // Warning lines are Red, Underlined, and size 10pt (20 dxa)
-            xml += `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:u w:val="single"/><w:color w:val="FF0000"/><w:sz w:val="20"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
+            xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:u w:val="single"/><w:color w:val="${warningColor}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
         } else {
-            // Normal lines are Black
-            xml += `<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="20"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
+            xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
         }
         
         if (i < lines.length - 1) {

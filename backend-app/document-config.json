@@ -1,0 +1,68 @@
+{
+  "arrayToStringFields": [
+    "DichVuTinhPhi",
+    "DichVuTinhPhiPhuLuc",
+    "DichVuPhatSinh",
+    "DanhSachDichVu"
+  ],
+  "itemFieldNames": [
+    "TenDichVu",
+    "tendichvu",
+    "Tenhang",
+    "DienGiai",
+    "diengiai",
+    "TenMon",
+    "tenmon"
+  ],
+  "itemPriceNames": [
+    "ThanhTien",
+    "thanhtien",
+    "Sotien",
+    "sotien",
+    "DonGia",
+    "dongia"
+  ],
+  "itemNoteNames": [
+    "GhiChuChiTiet",
+    "ghichuchitiet",
+    "Ghichudichvu",
+    "GhiChu",
+    "ghichu"
+  ],
+  "currencySuffix": " VNĐ",
+  "headerKeywords": [
+    "Queen",
+    "Sảnh",
+    "Sanh",
+    "Phía",
+    "Phia",
+    "Cổng",
+    "Cong",
+    "Lobby",
+    "Bảo vệ",
+    "Bao ve",
+    "Kỹ thuật",
+    "Ky thuat",
+    "Biểu ngữ",
+    "Bieu ngu",
+    "Setup",
+    "Sân khấu",
+    "San khau"
+  ],
+  "warningKeywords": [
+    "out",
+    "gấp",
+    "gap",
+    "đặc biệt",
+    "dac biet",
+    "phạt",
+    "phat"
+  ],
+  "setupFieldName": "ThongTinSetup",
+  "xmlStyles": {
+    "fontFamily": "Times New Roman",
+    "fontSize": 20,
+    "warningColor": "FF0000",
+    "headerColor": "FF0000"
+  }
+}
