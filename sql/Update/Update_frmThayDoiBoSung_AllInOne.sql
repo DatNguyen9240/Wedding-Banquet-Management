@@ -1217,7 +1217,7 @@ SET CaptionVN = N'Quy Mô Bàn (Đến)', FormatID = 'n', ShowInAdd = 1, ShowInE
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'QuyMoBanDen';
 
 UPDATE ff
-SET CaptionVN = N'Đơn Giá Bàn Tiệc', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 10
+SET CaptionVN = N'Đơn Giá Bàn Tiệc', FormatID = 'mn', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 10
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'DonGiaBanTiec';
 
 UPDATE ff
@@ -1241,7 +1241,7 @@ SET CaptionVN = N'Bàn Chay (Dự Phòng)', FormatID = 'n', ShowInAdd = 1, ShowI
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'SobanChayduphong';
 
 UPDATE ff
-SET CaptionVN = N'Số Tiền Đợt 2', FormatID = 'n', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 17
+SET CaptionVN = N'Số Tiền Đợt 2', FormatID = 'mn', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 17
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'ThanhToanDot2SoTien';
 
 UPDATE ff

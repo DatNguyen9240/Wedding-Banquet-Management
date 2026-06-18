@@ -10768,6 +10768,10 @@ var UIInput = (function () {
       if (textEl) textEl.innerText = raw === 0 ? '' : docSoTienVN(raw);
     });
 
+    inputEl.addEventListener('change', function () {
+      refresh();
+    });
+
     inputEl.addEventListener('blur', function () {
       refresh();
     });

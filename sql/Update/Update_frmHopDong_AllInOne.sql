@@ -398,10 +398,10 @@ BEGIN
         END
         ELSE
         BEGIN
-            IF EXISTS (SELECT 1 FROM tbmk_Hopdong WHERE Sohopdong=@Sohopdong AND (Status IN ('SIGNED','COMPLETED') OR IsKetthuc=1 OR IsHuy=1))
+            IF EXISTS (SELECT 1 FROM tbmk_Hopdong WHERE Sohopdong=@Sohopdong AND (Status = 'COMPLETED' OR IsKetthuc=1 OR IsHuy=1))
             BEGIN
                 ROLLBACK TRANSACTION;
-                SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã chốt. Vui lòng dùng chức năng Phụ lục!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+                SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã quyết toán hoặc đã kết thúc/hủy!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
                 RETURN;
             END
             UPDATE tbmk_Hopdong SET
@@ -1131,7 +1131,8 @@ UPDATE SY_FormatFields SET FormatID = 'dt' WHERE FormName = 'frmHopDong' AND Fie
 UPDATE SY_FormatFields SET FormatID = 't', IsReadOnlyAdd = 1, IsReadOnlyEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'Nhamngay';
 UPDATE SY_FormatFields SET FormatID = 'sl' WHERE FormName = 'frmHopDong' AND FieldName IN ('Loaitiecid', 'Thoigianid');
 UPDATE SY_FormatFields SET FormatID = 'ml' WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
-UPDATE SY_FormatFields SET FormatID = 'n' WHERE FormName = 'frmHopDong' AND FieldName IN ('SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong', 'DaCocVND', 'Sotiencochopdong', 'Tongtiencoc');
+UPDATE SY_FormatFields SET FormatID = 'n' WHERE FormName = 'frmHopDong' AND FieldName IN ('SobanManchinhthuc', 'SobanManduphong', 'SobanChaychinhthuc', 'SobanChayduphong');
+UPDATE SY_FormatFields SET FormatID = 'mn' WHERE FormName = 'frmHopDong' AND FieldName IN ('DaCocVND', 'Sotiencochopdong', 'Tongtiencoc', 'TongTien', 'CocLan1SoTien', 'CocLan2SoTien', 'Dot1SoTien', 'Dot2SoTien', 'TongTienDichVu', 'TongGiaTriQuyetToan', 'SoTienConLai');
 GO
 
 -- 4.6. Cấu hình DataSource cho các trường dropdown
@@ -1173,8 +1174,8 @@ UPDATE SY_FormatFields SET CaptionVN = N'Ngày bắt đầu Setup' WHERE FormNam
 UPDATE SY_FormatFields SET CaptionVN = N'Ngày trả sảnh' WHERE FormName = 'frmHopDong' AND FieldName = 'NgayTraSanhDV';
 UPDATE SY_FormatFields SET CaptionVN = N'Sảnh phụ (nếu có)' WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat2';
 
-UPDATE SY_FormatFields SET CaptionVN = N'Giờ bắt đầu Setup', FormPosition = '6', OrderNo = 80, ShowInAdd = 1, ShowInEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupBatDau';
-UPDATE SY_FormatFields SET CaptionVN = N'Giờ kết thúc Setup', FormPosition = '6', OrderNo = 81, ShowInAdd = 1, ShowInEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupKetThuc';
+UPDATE SY_FormatFields SET CaptionVN = N'Giờ bắt đầu Setup', FormPosition = '3', OrderNo = 80, ShowInAdd = 1, ShowInEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupBatDau';
+UPDATE SY_FormatFields SET CaptionVN = N'Giờ kết thúc Setup', FormPosition = '3', OrderNo = 81, ShowInAdd = 1, ShowInEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupKetThuc';
 UPDATE SY_FormatFields SET CaptionVN = N'Nội dung Setup 1', FormPosition = '12', OrderNo = 82 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupNoiDung1';
 UPDATE SY_FormatFields SET CaptionVN = N'Nội dung Setup 2', FormPosition = '12', OrderNo = 83 WHERE FormName = 'frmHopDong' AND FieldName = 'SetupNoiDung2';
 UPDATE SY_FormatFields SET CaptionVN = N'Nội dung Tổ chức', FormPosition = '12', OrderNo = 84 WHERE FormName = 'frmHopDong' AND FieldName = 'ToChucNoiDung';
@@ -1253,9 +1254,15 @@ GO
 -- 4.8. Khởi tạo/Cập nhật các cột động đặc thù (LoaiHinhSuKien, Lịch trình, Note)
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LoaiHinhSuKien')
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
-    VALUES ('frmHopDong', 'LoaiHinhSuKien', N'Loại hình sự kiện', 0, 0, 0, 95, '6');
+    VALUES ('frmHopDong', 'LoaiHinhSuKien', N'Loại hình sự kiện', 0, 0, 0, 95, 'hidden');
 ELSE
-    UPDATE SY_FormatFields SET CaptionVN = N'Loại hình sự kiện' WHERE FormName = 'frmHopDong' AND FieldName = 'LoaiHinhSuKien';
+    UPDATE SY_FormatFields 
+    SET CaptionVN = N'Loại hình sự kiện',
+        ShowInAdd = 0,
+        ShowInEdit = 0,
+        ShowInFilter = 0,
+        FormPosition = 'hidden'
+    WHERE FormName = 'frmHopDong' AND FieldName = 'LoaiHinhSuKien';
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhThanhToan')
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, DataSource, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)

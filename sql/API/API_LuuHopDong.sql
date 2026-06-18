@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -286,10 +286,10 @@ BEGIN
         END
         ELSE
         BEGIN
-            IF EXISTS (SELECT 1 FROM tbmk_Hopdong WHERE Sohopdong=@Sohopdong AND (Status IN ('SIGNED','COMPLETED') OR IsKetthuc=1 OR IsHuy=1))
+            IF EXISTS (SELECT 1 FROM tbmk_Hopdong WHERE Sohopdong=@Sohopdong AND (Status = 'COMPLETED' OR IsKetthuc=1 OR IsHuy=1))
             BEGIN
                 ROLLBACK TRANSACTION;
-                SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã chốt. Vui lòng dùng chức năng Phụ lục!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+                SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã quyết toán hoặc đã kết thúc/hủy!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
                 RETURN;
             END
             UPDATE tbmk_Hopdong SET

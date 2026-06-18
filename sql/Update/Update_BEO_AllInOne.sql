@@ -156,6 +156,8 @@ BEGIN
         RIGHT('0' + CAST(DAY  (h.Ngaytochuc) AS VARCHAR), 2)   AS [NgayToChucDay],
         RIGHT('0' + CAST(MONTH(h.Ngaytochuc) AS VARCHAR), 2)   AS [ThangToChuc],
         CAST(YEAR(h.Ngaytochuc) AS VARCHAR)                     AS [NamToChuc],
+        h.GioDienRaSuKien                                       AS [GioDienRaSuKien],
+        h.GioKetThucSuKien                                      AS [GioKetThucSuKien],
         ISNULL(h.GioDienRaSuKien, N'...')                       AS [GioBatDau],
         ISNULL(h.GioKetThucSuKien, N'...')                      AS [GioKetThuc],
         -- TenCa: lấy từ dmThoigian qua Thoigianid
@@ -169,6 +171,8 @@ BEGIN
 
 
         -- ── Số bàn ──────────────────────────────────────────────────────
+        ISNULL(h.SobanManchinhthuc, 0) AS [SobanManchinhthuc],
+        ISNULL(h.SobanManduphong, 0)   AS [SobanManduphong],
         ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanChaychinhthuc, 0) AS [SoBanChinhThuc],
         ISNULL(h.SoBanTang, 0)         AS [BanTang],
         ISNULL(h.SobanChaychinhthuc, 0) AS [BanChay],
@@ -361,6 +365,10 @@ GO
 PRINT N'4. Đang đồng bộ SY_FormatFields cho frmBEO...';
 GO
 
+-- Xóa các cột cũ không đồng bộ với DB vật lý
+DELETE FROM SY_FormatFields WHERE FormName = 'frmBEO' AND FieldName IN ('GioBatDau', 'GioKetThuc', 'SoBanChinhThuc', 'SoBanDuPhong');
+GO
+
 -- Dùng MERGE để UPSERT (insert nếu chưa có, update nếu đã có)
 DECLARE @BEO_Fields TABLE (
     FieldName     VARCHAR(100), CaptionVN NVARCHAR(200),
@@ -376,14 +384,14 @@ INSERT INTO @BEO_Fields VALUES
 ('NgayRaBEO',       N'Ngày Ra BEO',           'dt', NULL,  '6',  3,  1,1,0,0),
 ('NgayToChuc',      N'Ngày Tổ Chức',          'dt', NULL,  '6',  4,  1,1,1,1),
 ('TenCa',           N'Ca / Thời Gian',        't',  NULL,  '6',  5,  1,1,1,1),
-('GioBatDau',       N'Giờ Bắt Đầu',          't',  NULL,  '6',  6,  1,1,0,0),
-('GioKetThuc',      N'Giờ Kết Thúc',         't',  NULL,  '6',  7,  1,1,0,0),
+('GioDienRaSuKien',   N'Giờ Bắt Đầu',          'tm',  NULL,  '6',  6,  1,1,0,0),
+('GioKetThucSuKien',  N'Giờ Kết Thúc',         'tm',  NULL,  '6',  7,  1,1,0,0),
 ('TenSanhTiec',     N'Tên Sảnh',              't',  NULL,  '6',  8,  1,1,1,1),
 ('LoaiHinhSuKien',  N'Loại Hình Sự Kiện',    't',  NULL,  '6',  9,  1,1,1,1),
 ('SoKhachChinhThuc',N'Số Khách Chính Thức',  'n',  NULL,  '6',  10, 1,1,0,0),
 ('KieuSetup',       N'Kiểu Setup',            'sl', N'STATIC:Rạp hát|Rạp hát,Lớp học|Lớp học,Chữ U|Chữ U,Hội đồng|Hội đồng,Tiệc ngồi|Tiệc ngồi,Tiệc đứng|Tiệc đứng', '6', 11, 1,1,0,0),
-('SoBanChinhThuc',  N'Bàn Chính Thức',       'n',  NULL,  '6',  12, 1,1,1,1),
-('SoBanDuPhong',    N'Bàn Dự Phòng',         'n',  NULL,  '6',  13, 1,1,1,1),
+('SobanManchinhthuc',  N'Bàn Chính Thức',       'n',  NULL,  '6',  12, 1,1,0,0),
+('SobanManduphong',    N'Bàn Dự Phòng',         'n',  NULL,  '6',  13, 1,1,0,0),
 ('ThongTinSetup',   N'Thông Tin Setup',       'ta', NULL,  '12', 20, 1,1,0,0),
 ('NoteBaoVe',       N'Ghi Chú Bảo Vệ',       'ta', NULL,  '12', 21, 1,1,0,0),
 ('NoteBieuNgu',     N'Ghi Chú Biểu Ngữ',     'ta', NULL,  '12', 22, 1,1,0,0),

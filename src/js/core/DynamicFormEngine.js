@@ -2270,7 +2270,11 @@ window.DynamicFormEngine = (function () {
       grid.appendChild(wrapper);
 
       // Gán giá trị mặc định vào currentModalFormState
-      currentModalFormState[field.name] = field.value || '';
+      var val = field.value || '';
+      if (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn') {
+        val = String(val).replace(/\D/g, '');
+      }
+      currentModalFormState[field.name] = val;
     });
 
     // Áp VisibleRule: show/hide fields theo cấu hình trong SY_FormatFields.VisibleRule
@@ -2301,7 +2305,12 @@ window.DynamicFormEngine = (function () {
     body.addEventListener('change', function (e) {
       var changedName = e.target.name;
       if (changedName) {
-        currentModalFormState[changedName] = e.target.value;
+        var val = e.target.value;
+        var field = globalFormSchema.find(function (f) { return f.name === changedName; });
+        if (field && (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn')) {
+          val = val.replace(/\D/g, '');
+        }
+        currentModalFormState[changedName] = val;
 
         // 1. Tính toán giá trị tự động (FormulaRule)
         globalFormSchema.forEach(function (f) {
@@ -2466,6 +2475,10 @@ window.DynamicFormEngine = (function () {
         var fieldName = el.getAttribute('data-field-name');
         var val = el.value.trim();
         if (fieldName) {
+          var field = globalFormSchema.find(function (f) { return f.name === fieldName; });
+          if (field && (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn')) {
+            val = val.replace(/\D/g, '');
+          }
           payload[fieldName] = val;
           if (val && fieldName !== MODULE_CONFIG.PrimaryKey && fieldName !== 'OrderNo') {
             hasData = true;
@@ -2533,7 +2546,12 @@ window.DynamicFormEngine = (function () {
     var inputs = body.querySelectorAll('input, select, textarea');
     inputs.forEach(function (el) {
       if (el.name) {
-        formInputData[el.name] = el.value.trim();
+        var val = el.value.trim();
+        var field = globalFormSchema.find(function (f) { return f.name === el.name; });
+        if (field && (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn')) {
+          val = val.replace(/\D/g, '');
+        }
+        formInputData[el.name] = val;
       }
     });
 
