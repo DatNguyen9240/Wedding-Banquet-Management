@@ -4721,6 +4721,132 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   display: none !important;
 }
 
+/* ════ CUSTOM TIMEPICKER POPUP ════ */
+.custom-timepicker-popup {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-strong, #cbd5e1);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 240px;
+  user-select: none;
+  font-family: inherit;
+}
+
+.custom-timepicker-popup .timepicker-columns {
+  display: flex;
+  height: 180px;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  background: var(--color-background, #f8fafc);
+}
+
+.custom-timepicker-popup .timepicker-column {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE/Edge */
+  position: relative;
+  padding: 70px 0; /* Padding to center active item nicely */
+}
+
+.custom-timepicker-popup .timepicker-column::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.custom-timepicker-popup .timepicker-column:not(:last-child) {
+  border-right: 1px solid var(--color-border, #e2e8f0);
+}
+
+.custom-timepicker-popup .timepicker-item {
+  padding: 8px 0;
+  text-align: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #64748b);
+  transition: all 0.15s ease;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-timepicker-popup .timepicker-item:hover {
+  background: rgba(79, 70, 229, 0.05);
+  color: var(--color-primary, #4f46e5);
+}
+
+.custom-timepicker-popup .timepicker-item.active {
+  background: var(--color-primary-light, #eef2ff);
+  color: var(--color-primary, #4f46e5);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.custom-timepicker-popup .timepicker-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.custom-timepicker-popup .btn-timepicker-clear {
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-border-strong, #cbd5e1);
+  color: var(--color-text-secondary, #64748b);
+  border-radius: var(--radius-sm, 6px);
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.custom-timepicker-popup .btn-timepicker-clear:hover {
+  background: var(--color-background, #f8fafc);
+  color: var(--color-text, #1e293b);
+}
+
+.custom-timepicker-popup .btn-timepicker-done {
+  background: var(--color-primary, #4f46e5);
+  border: 1px solid var(--color-primary, #4f46e5);
+  color: #ffffff;
+  border-radius: var(--radius-sm, 6px);
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex: 1;
+}
+
+.custom-timepicker-popup .btn-timepicker-done:hover {
+  opacity: 0.9;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+}
+
+/* Mobile responsive popup adjustments */
+@media (max-width: 576px) {
+  .custom-timepicker-popup {
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    border-bottom: none !important;
+    padding: 20px 16px !important;
+    box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+
 
 /* --- grid-dropdown.css --- */
 /* Grid Cell Input wrapper */

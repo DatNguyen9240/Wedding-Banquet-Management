@@ -88,7 +88,370 @@ var UIInput = (function () {
    * Ô chọn Giờ
    */
   function createTime(config) {
-    return _createBaseWrapper(config, 'time').wrapper;
+    var initialVal = config.value || ''; // Expected standard format: HH:mm (e.g. 15:32)
+    
+    // Parse the initial HH:mm value for display hh:mm A
+    var displayVal = '';
+    if (initialVal) {
+      var parts = initialVal.split(':');
+      if (parts.length >= 2) {
+        var h = parseInt(parts[0], 10);
+        var m = parts[1].substring(0, 2);
+        var period = h >= 12 ? 'PM' : 'AM';
+        var displayH = h % 12;
+        if (displayH === 0) displayH = 12;
+        var displayHStr = String(displayH).padStart(2, '0');
+        displayVal = displayHStr + ':' + m + ' ' + period;
+      }
+    }
+
+    var obj = _createBaseWrapper(config, 'text');
+    var visibleInput = obj.input;
+    
+    // Remove name from visible text input to avoid duplicate submission
+    visibleInput.removeAttribute('name');
+    var elementId = config.id || config.name;
+    if (elementId) visibleInput.id = elementId + '_visible';
+    visibleInput.readOnly = true;
+    visibleInput.style.cursor = 'pointer';
+    visibleInput.placeholder = config.placeholder || 'Chọn giờ...';
+    visibleInput.value = displayVal;
+
+    // Create the hidden input for form data collection in HH:mm format
+    var hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    if (config.name) hiddenInput.name = config.name;
+    if (elementId) hiddenInput.id = elementId;
+    hiddenInput.value = initialVal;
+    obj.wrapper.appendChild(hiddenInput);
+
+    // Sync from hidden input value back to visible input value
+    hiddenInput.addEventListener('change', function () {
+      var val = hiddenInput.value;
+      if (val) {
+        var parts = val.split(':');
+        if (parts.length >= 2) {
+          var h = parseInt(parts[0], 10);
+          var m = parts[1].substring(0, 2);
+          var period = h >= 12 ? 'PM' : 'AM';
+          var displayH = h % 12;
+          if (displayH === 0) displayH = 12;
+          var displayHStr = String(displayH).padStart(2, '0');
+          visibleInput.value = displayHStr + ':' + m + ' ' + period;
+        } else {
+          visibleInput.value = val;
+        }
+      } else {
+        visibleInput.value = '';
+      }
+    });
+
+    // Remove the native input direct placement to wrap it nicely
+    if (visibleInput.parentNode) {
+      visibleInput.parentNode.removeChild(visibleInput);
+    }
+
+    // Input Group wrapper
+    var inputContainer = document.createElement('div');
+    inputContainer.style.position = 'relative';
+    inputContainer.style.display = 'flex';
+    inputContainer.style.alignItems = 'center';
+    inputContainer.appendChild(visibleInput);
+
+    // Icon (schedule = clock icon in Material Symbols)
+    var icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined';
+    icon.innerText = 'schedule';
+    icon.style.position = 'absolute';
+    icon.style.right = '12px';
+    icon.style.color = 'var(--color-text-secondary)';
+    icon.style.pointerEvents = 'none';
+    icon.style.fontSize = '20px';
+    inputContainer.appendChild(icon);
+
+    obj.wrapper.appendChild(inputContainer);
+
+    var popup = null;
+    var _scrollTargets = [];
+    var _scrollHandler = null;
+
+    function isElementClipped(el) {
+      var rect = el.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        return true;
+      }
+      var node = el.parentElement;
+      while (node && node !== document.documentElement) {
+        var style = window.getComputedStyle(node);
+        var ov = style.overflow + style.overflowY + style.overflowX;
+        if (/auto|scroll/.test(ov)) {
+          var parentRect = node.getBoundingClientRect();
+          if (rect.bottom < parentRect.top || rect.top > parentRect.bottom) {
+            return true;
+          }
+        }
+        node = node.parentElement;
+      }
+      return false;
+    }
+
+    function updatePosition() {
+      if (!popup) return;
+      var rect = visibleInput.getBoundingClientRect();
+      var windowWidth = window.innerWidth;
+      var windowHeight = window.innerHeight;
+      var popupWidth = 240;
+      var popupHeight = 270;
+
+      if (isElementClipped(visibleInput)) {
+        closePopup();
+        return;
+      }
+
+      var topPos = rect.bottom + 4;
+      if (rect.bottom + popupHeight > windowHeight && rect.top - popupHeight > 0) {
+        topPos = rect.top - popupHeight - 4;
+      }
+
+      var leftPos = rect.left;
+      if (rect.left + popupWidth > windowWidth) {
+        leftPos = rect.right - popupWidth;
+      }
+      leftPos = Math.max(10, leftPos);
+
+      popup.style.top = topPos + 'px';
+      popup.style.left = leftPos + 'px';
+    }
+
+    function attachScrollListeners() {
+      if (_scrollHandler) return;
+      _scrollHandler = function () {
+        updatePosition();
+      };
+      _scrollTargets = (UIControls.utils && typeof UIControls.utils.getScrollableAncestors === 'function')
+        ? UIControls.utils.getScrollableAncestors(inputContainer)
+        : [window];
+      _scrollTargets.forEach(function (target) {
+        target.addEventListener('scroll', _scrollHandler, { passive: true, capture: false });
+      });
+      window.addEventListener('resize', _scrollHandler, { passive: true });
+    }
+
+    function detachScrollListeners() {
+      if (!_scrollHandler) return;
+      _scrollTargets.forEach(function (target) {
+        target.removeEventListener('scroll', _scrollHandler, { capture: false });
+      });
+      window.removeEventListener('resize', _scrollHandler);
+      _scrollHandler = null;
+      _scrollTargets = [];
+    }
+
+    function openPopup() {
+      if (popup) return;
+      popup = document.createElement('div');
+      popup.className = 'custom-timepicker-popup';
+
+      var isMobile = (window.innerWidth <= 576);
+
+      if (isMobile) {
+        var backdrop = document.createElement('div');
+        backdrop.id = 'timepicker-mobile-backdrop';
+        backdrop.style.position = 'fixed';
+        backdrop.style.inset = '0';
+        backdrop.style.background = 'rgba(0, 0, 0, 0.4)';
+        backdrop.style.zIndex = '99999998';
+        backdrop.addEventListener('click', closePopup);
+        document.body.appendChild(backdrop);
+        
+        popup.style.position = 'fixed';
+        popup.style.zIndex = '99999999';
+      } else {
+        popup.style.position = 'fixed';
+        popup.style.zIndex = '99999999';
+      }
+
+      // Populate columns: Hour (01-12), Minute (00-59), Period (AM/PM)
+      var val = hiddenInput.value || '';
+      var activeH = '08', activeM = '00', activeP = 'AM';
+      if (val) {
+        var parts = val.split(':');
+        if (parts.length >= 2) {
+          var h = parseInt(parts[0], 10);
+          activeM = parts[1].substring(0, 2);
+          activeP = h >= 12 ? 'PM' : 'AM';
+          var displayH = h % 12;
+          if (displayH === 0) displayH = 12;
+          activeH = String(displayH).padStart(2, '0');
+        }
+      }
+
+      var columnsWrap = document.createElement('div');
+      columnsWrap.className = 'timepicker-columns';
+
+      // 1. Hour Column (01-12)
+      var hrCol = document.createElement('div');
+      hrCol.className = 'timepicker-column hours-col';
+      for (var i = 1; i <= 12; i++) {
+        var itemVal = String(i).padStart(2, '0');
+        var item = document.createElement('div');
+        item.className = 'timepicker-item' + (itemVal === activeH ? ' active' : '');
+        item.innerText = itemVal;
+        item.setAttribute('data-value', itemVal);
+        item.onclick = function () {
+          hrCol.querySelectorAll('.timepicker-item').forEach(function (el) { el.classList.remove('active'); });
+          this.classList.add('active');
+          scrollToActive(hrCol);
+          updateTimeValue();
+        };
+        hrCol.appendChild(item);
+      }
+
+      // 2. Minute Column (00-59)
+      var minCol = document.createElement('div');
+      minCol.className = 'timepicker-column minutes-col';
+      for (var i = 0; i <= 59; i++) {
+        var itemVal = String(i).padStart(2, '0');
+        var item = document.createElement('div');
+        item.className = 'timepicker-item' + (itemVal === activeM ? ' active' : '');
+        item.innerText = itemVal;
+        item.setAttribute('data-value', itemVal);
+        item.onclick = function () {
+          minCol.querySelectorAll('.timepicker-item').forEach(function (el) { el.classList.remove('active'); });
+          this.classList.add('active');
+          scrollToActive(minCol);
+          updateTimeValue();
+        };
+        minCol.appendChild(item);
+      }
+
+      // 3. Period Column (AM/PM)
+      var pCol = document.createElement('div');
+      pCol.className = 'timepicker-column period-col';
+      ['AM', 'PM'].forEach(function (itemVal) {
+        var item = document.createElement('div');
+        item.className = 'timepicker-item' + (itemVal === activeP ? ' active' : '');
+        item.innerText = itemVal;
+        item.setAttribute('data-value', itemVal);
+        item.onclick = function () {
+          pCol.querySelectorAll('.timepicker-item').forEach(function (el) { el.classList.remove('active'); });
+          this.classList.add('active');
+          scrollToActive(pCol);
+          updateTimeValue();
+        };
+        pCol.appendChild(item);
+      });
+
+      columnsWrap.appendChild(hrCol);
+      columnsWrap.appendChild(minCol);
+      columnsWrap.appendChild(pCol);
+      popup.appendChild(columnsWrap);
+
+      // Scroll to active items in columns
+      setTimeout(function () {
+        scrollToActive(hrCol);
+        scrollToActive(minCol);
+        scrollToActive(pCol);
+      }, 0);
+
+      function scrollToActive(columnEl) {
+        var activeItem = columnEl.querySelector('.timepicker-item.active');
+        if (activeItem) {
+          columnEl.scrollTop = activeItem.offsetTop - (columnEl.clientHeight / 2) + (activeItem.clientHeight / 2);
+        }
+      }
+
+      function updateTimeValue() {
+        var hEl = hrCol.querySelector('.timepicker-item.active');
+        var mEl = minCol.querySelector('.timepicker-item.active');
+        var pEl = pCol.querySelector('.timepicker-item.active');
+        if (!hEl || !mEl || !pEl) return;
+
+        var hStr = hEl.getAttribute('data-value');
+        var mStr = mEl.getAttribute('data-value');
+        var pStr = pEl.getAttribute('data-value');
+
+        var hVal = parseInt(hStr, 10);
+        if (pStr === 'PM' && hVal < 12) hVal += 12;
+        if (pStr === 'AM' && hVal === 12) hVal = 0;
+        
+        var standardVal = String(hVal).padStart(2, '0') + ':' + mStr;
+        hiddenInput.value = standardVal;
+        visibleInput.value = hStr + ':' + mStr + ' ' + pStr;
+        hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+        hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      // Footer
+      var footer = document.createElement('div');
+      footer.className = 'timepicker-footer';
+
+      var btnClear = document.createElement('button');
+      btnClear.className = 'btn-timepicker-clear';
+      btnClear.innerText = 'Xóa';
+      btnClear.onclick = function () {
+        hiddenInput.value = '';
+        visibleInput.value = '';
+        hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+        hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+        closePopup();
+      };
+
+      var btnDone = document.createElement('button');
+      btnDone.className = 'btn-timepicker-done';
+      btnDone.innerText = 'Xong';
+      btnDone.onclick = function () {
+        updateTimeValue();
+        closePopup();
+      };
+
+      footer.appendChild(btnClear);
+      footer.appendChild(btnDone);
+      popup.appendChild(footer);
+
+      document.body.appendChild(popup);
+
+      if (!isMobile) {
+        updatePosition();
+        attachScrollListeners();
+      }
+
+      setTimeout(function () {
+        document.addEventListener('click', outsideClickListener);
+      }, 0);
+    }
+
+    function closePopup() {
+      if (!popup) return;
+      document.removeEventListener('click', outsideClickListener);
+      detachScrollListeners();
+      var backdrop = document.getElementById('timepicker-mobile-backdrop');
+      if (backdrop && backdrop.parentNode) {
+        backdrop.parentNode.removeChild(backdrop);
+      }
+      if (popup.parentNode) {
+        popup.parentNode.removeChild(popup);
+      }
+      popup = null;
+    }
+
+    function outsideClickListener(e) {
+      if (!document.body.contains(e.target)) return;
+      if (popup && !popup.contains(e.target) && e.target !== visibleInput) {
+        closePopup();
+      }
+    }
+
+    visibleInput.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (popup) {
+        closePopup();
+      } else {
+        openPopup();
+      }
+    });
+
+    return obj.wrapper;
   }
 
   /**
