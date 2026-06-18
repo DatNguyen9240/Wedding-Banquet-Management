@@ -33,12 +33,11 @@ window.API_CONFIG = {
 
         DOCUMENT_MANAGER: {
             NODE_IP: ENV_VARS.BACKEND_HOST,
-            // Đã đổi sang HTTPS qua proxy Nginx để tránh lỗi Mixed Content
-            BASE_API: ENV_VARS.API_BASE + '/docserver/api/documents',
-            // Đã đổi sang HTTPS qua proxy Nginx để tránh lỗi Mixed Content
-            ONLYOFFICE_API: ENV_VARS.API_BASE + '/onlyoffice/web-apps/apps/api/documents/api.js',
-            UPLOADS_URL: ENV_VARS.API_BASE + '/docserver/uploads/',
-            SAMPLES_URL: ENV_VARS.API_BASE + '/docserver/samples/'
+            // Reverted back to direct HTTP for local testing
+            BASE_API: 'http://' + ENV_VARS.BACKEND_HOST + ':8081/api/documents',
+            ONLYOFFICE_API: 'http://' + ENV_VARS.ONLYOFFICE_HOST + ':8082/web-apps/apps/api/documents/api.js',
+            UPLOADS_URL: 'http://' + ENV_VARS.BACKEND_HOST + ':8081/uploads/',
+            SAMPLES_URL: 'http://' + ENV_VARS.BACKEND_HOST + ':8081/samples/'
         },
 
         PERMISSIONS: {
