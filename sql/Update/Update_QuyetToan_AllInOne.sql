@@ -267,79 +267,73 @@ BEGIN
         -- DỮ LIỆU MẢNG JSON CHO BÀN TIỆC & DỊCH VỤ CHI TIẾT
         (
             SELECT 
-                COALESCE(t.RowNum, n.n) AS [STT],
-                ISNULL(t.[DienGiai], N'') AS [DienGiai],
-                ISNULL(t.[DVT], N'') AS [DVT],
-                ISNULL(CAST(t.[SoLuong] AS NVARCHAR(50)), N'') AS [SoLuong],
-                ISNULL(t.[DonGia], N'') AS [DonGia],
-                ISNULL(t.[ThanhTien], N'-') AS [ThanhTien]
-            FROM (SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3) n
-            FULL OUTER JOIN (
+                ROW_NUMBER() OVER (ORDER BY sort_order, [DienGiai]) AS [STT],
+                ISNULL([DienGiai], N'') AS [DienGiai],
+                ISNULL([DVT], N'') AS [DVT],
+                ISNULL(CAST([SoLuong] AS NVARCHAR(50)), N'') AS [SoLuong],
+                ISNULL([DonGia], N'') AS [DonGia],
+                ISNULL([ThanhTien], N'-') AS [ThanhTien]
+            FROM (
+                -- A. NẾU ĐÃ CÓ CHI TIẾT LƯU TRONG BẢNG CON
                 SELECT 
-                    ROW_NUMBER() OVER (ORDER BY sort_order, [DienGiai]) AS RowNum,
-                    [DienGiai], [DVT], [SoLuong], [DonGia], [ThanhTien]
-                FROM (
-                    -- A. NẾU ĐÃ CÓ CHI TIẾT LƯU TRONG BẢNG CON
-                    SELECT 
-                        TenHang AS [DienGiai], 
-                        DvtID AS [DVT], 
-                        ISNULL(Soluong, 0) AS [SoLuong], 
-                        FORMAT(ISNULL(Dongia, 0), 'N0', 'vi-VN') AS [DonGia], 
-                        FORMAT(ISNULL(ThanhTien, 0), 'N0', 'vi-VN') AS [ThanhTien], 
-                        ISNULL(ThanhTien, 0) AS val, 
-                        1 AS sort_order
-                    FROM tbmk_Phieuthubantiec
-                    WHERE SPthu = pt.SPthu
-                    
-                    UNION ALL
-                    
-                    SELECT 
-                        (SELECT TOP 1 Tenhang FROM dmHanghoa WHERE Mahang = tu.Mahang) AS [DienGiai], 
-                        N'Két/Lon' AS [DVT], 
-                        ISNULL(Soluong, 0) AS [SoLuong], 
-                        FORMAT(ISNULL(Dongia, 0), 'N0', 'vi-VN') AS [DonGia], 
-                        FORMAT(ISNULL(Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien], 
-                        ISNULL(Sotien, 0) AS val, 
-                        2 AS sort_order
-                    FROM tbmk_Phieuthuthucuong tu
-                    WHERE SPthu = pt.SPthu
-                    
-                    UNION ALL
-                    
-                    SELECT 
-                        (SELECT TOP 1 Tenhang FROM dmHanghoa WHERE Mahang = dv.Mahang) AS [DienGiai], 
-                        N'Lần' AS [DVT], 
-                        ISNULL(Soluong, 0) AS [SoLuong], 
-                        FORMAT(ISNULL(Dongia, 0), 'N0', 'vi-VN') AS [DonGia], 
-                        FORMAT(ISNULL(Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien], 
-                        ISNULL(Sotien, 0) AS val, 
-                        3 AS sort_order
-                    FROM tbmk_PhieuthuDichvu dv
-                    WHERE SPthu = pt.SPthu
+                    TenHang AS [DienGiai], 
+                    DvtID AS [DVT], 
+                    ISNULL(Soluong, 0) AS [SoLuong], 
+                    FORMAT(ISNULL(Dongia, 0), 'N0', 'vi-VN') AS [DonGia], 
+                    FORMAT(ISNULL(ThanhTien, 0), 'N0', 'vi-VN') AS [ThanhTien], 
+                    ISNULL(ThanhTien, 0) AS val, 
+                    1 AS sort_order
+                FROM tbmk_Phieuthubantiec
+                WHERE SPthu = pt.SPthu
+                
+                UNION ALL
+                
+                SELECT 
+                    (SELECT TOP 1 Tenhang FROM dmHanghoa WHERE Mahang = tu.Mahang) AS [DienGiai], 
+                    N'Két/Lon' AS [DVT], 
+                    ISNULL(Soluong, 0) AS [SoLuong], 
+                    FORMAT(ISNULL(Dongia, 0), 'N0', 'vi-VN') AS [DonGia], 
+                    FORMAT(ISNULL(Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien], 
+                    ISNULL(Sotien, 0) AS val, 
+                    2 AS sort_order
+                FROM tbmk_Phieuthuthucuong tu
+                WHERE SPthu = pt.SPthu
+                
+                UNION ALL
+                
+                SELECT 
+                    (SELECT TOP 1 Tenhang FROM dmHanghoa WHERE Mahang = dv.Mahang) AS [DienGiai], 
+                    N'Lần' AS [DVT], 
+                    ISNULL(Soluong, 0) AS [SoLuong], 
+                    FORMAT(ISNULL(Dongia, 0), 'N0', 'vi-VN') AS [DonGia], 
+                    FORMAT(ISNULL(Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien], 
+                    ISNULL(Sotien, 0) AS val, 
+                    3 AS sort_order
+                FROM tbmk_PhieuthuDichvu dv
+                WHERE SPthu = pt.SPthu
 
-                    UNION ALL
+                UNION ALL
 
-                    -- B. NẾU CHƯA CÓ CHI TIẾT TRONG BẢNG CON (DỰ PHÒNG TỪ HỢP ĐỒNG GỐC)
-                    SELECT N'Bàn tiệc mặn' AS [DienGiai], N'Bàn' AS [DVT], ISNULL(hd.SobanManchinhthuc, 0) AS [SoLuong], FORMAT(ISNULL(hd.Giabanman, 0), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL(hd.Tongtienbanman, 0), 'N0', 'vi-VN') AS [ThanhTien], ISNULL(hd.Tongtienbanman, 0) AS val, 1 AS sort_order
-                    WHERE ISNULL(hd.Tongtienbanman, 0) > 0 AND NOT EXISTS (SELECT 1 FROM tbmk_Phieuthubantiec WHERE SPthu = pt.SPthu)
-                    
-                    UNION ALL
-                    
-                    SELECT N'Bàn tiệc chay' AS [DienGiai], N'Bàn' AS [DVT], ISNULL(hd.SobanChaychinhthuc, 0) AS [SoLuong], FORMAT(ISNULL(hd.Giabanchay, 0), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL(hd.Tongtienbanchay, 0), 'N0', 'vi-VN') AS [ThanhTien], ISNULL(hd.Tongtienbanchay, 0) AS val, 2 AS sort_order
-                    WHERE ISNULL(hd.SobanChaychinhthuc, 0) > 0 AND NOT EXISTS (SELECT 1 FROM tbmk_Phieuthubantiec WHERE SPthu = pt.SPthu)
-                    
-                    UNION ALL
-                    
-                    SELECT N'Thức uống' AS [DienGiai], N'Gói' AS [DVT], 1 AS [SoLuong], FORMAT(ISNULL(hd.Tongtienthucuong, 0), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL(hd.Tongtienthucuong, 0), 'N0', 'vi-VN') AS [ThanhTien], ISNULL(hd.Tongtienthucuong, 0) AS val, 3 AS sort_order
-                    WHERE ISNULL(hd.Tongtienthucuong, 0) > 0 AND NOT EXISTS (SELECT 1 FROM tbmk_Phieuthuthucuong WHERE SPthu = pt.SPthu)
-                    
-                    UNION ALL
-                    
-                    SELECT N'Dịch vụ cưới & Trang trí' AS [DienGiai], N'Gói' AS [DVT], 1 AS [SoLuong], FORMAT(ISNULL(hd.Tongtiendichvu, 0), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL(hd.Tongtiendichvu, 0), 'N0', 'vi-VN') AS [ThanhTien], ISNULL(hd.Tongtiendichvu, 0) AS val, 4 AS sort_order
-                    WHERE ISNULL(hd.Tongtiendichvu, 0) > 0 AND NOT EXISTS (SELECT 1 FROM tbmk_PhieuthuDichvu WHERE SPthu = pt.SPthu)
-                ) sub
-            ) t ON n.n = t.RowNum
-            ORDER BY [STT]
+                -- B. NẾU CHƯA CÓ CHI TIẾT TRONG BẢNG CON (DỰ PHÒNG TỪ HỢP ĐỒNG GỐC)
+                SELECT N'Bàn tiệc mặn' AS [DienGiai], N'Bàn' AS [DVT], ISNULL(hd.SobanManchinhthuc, 0) AS [SoLuong], FORMAT(ISNULL(hd.Giabanman, 0), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL(hd.Tongtienbanman, 0), 'N0', 'vi-VN') AS [ThanhTien], ISNULL(hd.Tongtienbanman, 0) AS val, 1 AS sort_order
+                WHERE NOT EXISTS (SELECT 1 FROM tbmk_Phieuthubantiec WHERE SPthu = pt.SPthu)
+                
+                UNION ALL
+                
+                SELECT N'Bàn tiệc chay' AS [DienGiai], N'Bàn' AS [DVT], ISNULL(hd.SobanChaychinhthuc, 0) AS [SoLuong], FORMAT(ISNULL(hd.Giabanchay, 0), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL(hd.Tongtienbanchay, 0), 'N0', 'vi-VN') AS [ThanhTien], ISNULL(hd.Tongtienbanchay, 0) AS val, 2 AS sort_order
+                WHERE ISNULL(hd.SobanChaychinhthuc, 0) > 0 AND NOT EXISTS (SELECT 1 FROM tbmk_Phieuthubantiec WHERE SPthu = pt.SPthu)
+                
+                UNION ALL
+                
+                SELECT N'Thức uống' AS [DienGiai], N'Gói' AS [DVT], 1 AS [SoLuong], FORMAT(ISNULL(hd.Tongtienthucuong, 0), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL(hd.Tongtienthucuong, 0), 'N0', 'vi-VN') AS [ThanhTien], ISNULL(hd.Tongtienthucuong, 0) AS val, 3 AS sort_order
+                WHERE NOT EXISTS (SELECT 1 FROM tbmk_Phieuthuthucuong WHERE SPthu = pt.SPthu)
+                
+                UNION ALL
+                
+                SELECT N'Dịch vụ cưới & Trang trí' AS [DienGiai], N'Gói' AS [DVT], 1 AS [SoLuong], FORMAT(ISNULL(hd.Tongtiendichvu, 0), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL(hd.Tongtiendichvu, 0), 'N0', 'vi-VN') AS [ThanhTien], ISNULL(hd.Tongtiendichvu, 0) AS val, 4 AS sort_order
+                WHERE NOT EXISTS (SELECT 1 FROM tbmk_PhieuthuDichvu WHERE SPthu = pt.SPthu)
+            ) sub
+            ORDER BY sort_order, [DienGiai]
             FOR JSON PATH
         ) AS [DanhSachDichVu],
 
