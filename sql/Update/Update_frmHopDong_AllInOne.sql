@@ -1057,8 +1057,7 @@ WHERE FormName = 'frmHopDong'
     'TiecSoBanChinhThuc', 'TiecSoBanTang', 'TiecSoBanDuPhong', 'TiecSoKhach1Ban',
     'CocLan1SoTien', 'CocLan1BangChu', 'CocNgay', 'CocThang', 'CocNam',
     'CocLan2SoTien', 'CocLan2BangChu',
-    'DieuKhoanBoSung', 'DSKhuyenMai',
-    'DS_KhuyenMai',
+    'DieuKhoanBoSung', 'DSKhuyenMai', 'DS_KhuyenMai',
     'HDTenCty', 'HDDiaChi', 'HDMaSoThue', 'HDEmail',
     'TongGiaTriTamTinh', 'TongGiaTriTamTinhBangChu', 'SoKhachDiemDanh', 'LichTrinh',
     'LichTrinhSetup', 'LichTrinhToChuc', 'LichTrinhOut', 'LichTrinhThanhToan',
@@ -1262,6 +1261,7 @@ UPDATE SY_FormatFields SET CaptionVN = N'Năm cọc' WHERE FormName = 'frmHopDon
 
 UPDATE SY_FormatFields SET CaptionVN = N'Điều khoản bổ sung' WHERE FormName = 'frmHopDong' AND FieldName = 'DieuKhoanBoSung';
 UPDATE SY_FormatFields SET CaptionVN = N'Khuyến mãi' WHERE FormName = 'frmHopDong' AND FieldName = 'DSKhuyenMai';
+UPDATE SY_FormatFields SET CaptionVN = N'Khuyến mãi' WHERE FormName = 'frmHopDong' AND FieldName = 'DS_KhuyenMai';
 
 UPDATE SY_FormatFields SET CaptionVN = N'Tên chú rể' WHERE FormName = 'frmHopDong' AND FieldName = 'Tenchure';
 UPDATE SY_FormatFields SET CaptionVN = N'Tên cô dâu' WHERE FormName = 'frmHopDong' AND FieldName = 'Tencodau';

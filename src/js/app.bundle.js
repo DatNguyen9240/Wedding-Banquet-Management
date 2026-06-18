@@ -3009,7 +3009,7 @@ var PromotionAutoFillPlugin = (function () {
       if (formName === 'frmBiennhancoccho') {
         targetEl = modalContent.querySelector('[name="Ghichu"]');
       } else if (formName === 'frmHopDong') {
-        targetEl = modalContent.querySelector('[name="DSKhuyenMai"]');
+        targetEl = modalContent.querySelector('[name="DS_KhuyenMai"]') || modalContent.querySelector('[name="DSKhuyenMai"]');
       }
     }
 
@@ -3549,7 +3549,7 @@ var PhuLucPlugin = (function () {
 
     var nhamNgay = contractRow.Nhamngay || contractRow.NhamNgay || '';
     var dvTinhPhi = contractRow.DichVuTinhPhiPhuLuc || '';
-    var uuDai = contractRow.DSKhuyenMai || contractRow.Noidunguudai || contractRow.ThoaThuanPhuLucKhac || '';
+    var uuDai = contractRow.DS_KhuyenMai || contractRow.DSKhuyenMai || contractRow.Noidunguudai || contractRow.ThoaThuanPhuLucKhac || '';
     var lyDo = contractRow.Ghichu || contractRow.LyDoDieuChinh || '';
 
     // Lấy lịch sử phụ lục

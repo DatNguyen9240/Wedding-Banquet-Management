@@ -215,7 +215,7 @@ SELECT
     -- 5. Thực đơn & Dịch vụ (cho in ấn docx)
     [dbo].[fn_DOCX_DanhSachMenu](h.Sohopdong) AS [DanhSachThucDon],
     NULL AS [DichVuTinhPhi],
-    NULL AS [DSKhuyenMai],
+    ISNULL(h.Noidunguudai, '') AS [DSKhuyenMai],
 
     -- 6. Thanh toán & Đặt cọc
     FORMAT(h.Sotiencoccho, 'N0', 'vi-VN') AS [CocLan1SoTien],
