@@ -51,7 +51,7 @@ VALUES (
     'frmKhachHang',
     'Save',
     'API_LuuKhachHang',
-    '@Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Dienthoai=N''{Dienthoai}'', @Mail=N''{Mail}'', @Diachi=N''{Diachi}'', @Ghichu=N''{Ghichu}'', @CCCD=N''{CCCD}'', @UserCreate=N''{User}'', @IsEdit={IsEdit}'
+    '@Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @DTchure=N''{DTchure}'', @DTcodau=N''{DTcodau}'', @Dienthoai=N''{Dienthoai}'', @Mail=N''{Mail}'', @Diachi=N''{Diachi}'', @Ghichu=N''{Ghichu}'', @CCCD=N''{CCCD}'', @Nguoigd=N''{Nguoigd}'', @UserCreate=N''{User}'', @IsEdit={IsEdit}'
 );
 
 INSERT INTO WA_API (List, Func, [SQL], Para)

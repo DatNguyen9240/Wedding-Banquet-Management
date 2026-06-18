@@ -12,6 +12,22 @@ BEGIN
 END
 GO
 
+-- Ensure LoaiHinhSuKien column exists in tbmk_Hopdong
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'LoaiHinhSuKien')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD LoaiHinhSuKien NVARCHAR(250) NULL;
+END
+GO
+
+-- Ensure IsDeleted column exists in tbmk_Hopdong to prevent view compilation failure
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'IsDeleted')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD IsDeleted BIT NULL;
+END
+GO
+UPDATE tbmk_Hopdong SET IsDeleted = 0 WHERE IsDeleted IS NULL;
+GO
+
 -- Thực đơn HĐ: nguồn chuẩn = bảng chi tiết (tbmk_Hopdongthucdon* / thucuong / dichvu).
 -- View ghép JSON khi đọc; API không lưu cột Json* trên tbmk_Hopdong nữa.
 GO
@@ -135,6 +151,8 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @Diachi NVARCHAR(500) = NULL,
     @Mail NVARCHAR(100) = NULL,
     @BenBCCCD NVARCHAR(50) = NULL,
+    @BenBTenDaiDien NVARCHAR(255) = NULL,
+    @LoaiHinhSuKien NVARCHAR(250) = NULL,
     
     -- Thông tin Hợp đồng Tiệc
     @Ngayhopdong NVARCHAR(100) = NULL,
@@ -334,9 +352,9 @@ BEGIN
             IF (@Makh IS NULL OR @Makh = '')
             BEGIN
                 SET @Makh = 'KH' + FORMAT(@Now, 'yyMMddHHmmss');
-                INSERT INTO dmkhachhang (Makh, Tenkh, Tenchure, Tencodau, Dienthoai, Diachi, Mail, CMNDDaiDien, CMNDchure, CMNDcodau, IsKhachhang, DateCreate, UserCreate)
-                VALUES (@Makh, CASE WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure,'') ELSE ISNULL(@Tenchure,'') + ' & ' + ISNULL(@Tencodau,'') END,
-                    @Tenchure, @Tencodau, @Dienthoai, @Diachi, @Mail, @BenBCCCD, @BenBCCCD, @BenBCCCD, 1, @Now, @UserCreate);
+                INSERT INTO dmkhachhang (Makh, Tenkh, Tenchure, Tencodau, Dienthoai, Diachi, Mail, CMNDDaiDien, CMNDchure, CMNDcodau, Nguoigd, IsKhachhang, DateCreate, UserCreate)
+                VALUES (@Makh, CASE WHEN @Tencodau IS NULL OR @Tencodau = '' THEN ISNULL(@Tenchure,'') ELSE ISNULL(@Tenchure,'') + ' & ' + @Tencodau END,
+                    @Tenchure, @Tencodau, @Dienthoai, @Diachi, @Mail, @BenBCCCD, @BenBCCCD, @BenBCCCD, @BenBTenDaiDien, 1, @Now, @UserCreate);
             END
             ELSE
             BEGIN
@@ -349,6 +367,7 @@ BEGIN
                     CMNDDaiDien = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDDaiDien),
                     CMNDchure   = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDchure),
                     CMNDcodau   = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDcodau),
+                    Nguoigd     = ISNULL(NULLIF(@BenBTenDaiDien, ''), Nguoigd),
                     DateUpdate  = @Now, UserUpdate = @UserCreate
                 WHERE Makh = @Makh;
             END
@@ -371,6 +390,7 @@ BEGIN
                 CMNDDaiDien = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDDaiDien),
                 CMNDchure   = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDchure),
                 CMNDcodau   = ISNULL(NULLIF(@BenBCCCD,  ''), CMNDcodau),
+                Nguoigd     = ISNULL(NULLIF(@BenBTenDaiDien, ''), Nguoigd),
                 DateUpdate  = @Now, UserUpdate = @UserCreate
             WHERE Makh = @Makh;
         END
@@ -384,14 +404,14 @@ BEGIN
                 TuNgaySetup, NgayTraSanhDV, TuGioDenGioSetup, DenGioSetup,
                 SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong, TongSoBan,
                 Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongtiencoc,
-                Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID
+                Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID, LoaiHinhSuKien
             )
             VALUES (
                 @Sohopdong, @Sobiennhan, ISNULL(@NgayHopDongParsed,@Now), @NgayToChucParsed, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
                 @TuNgaySetupParsed, @NgayTraSanhDVParsed, @SetupBatDau, @SetupKetThuc,
                 @SobanManchinhthucVal, @SobanManduphongVal, @SobanChaychinhthucVal, @SobanChayduphongVal, @TongSoBanVal,
                 @TongtienhopdongVal, @SotiencocchoVal, @SotiencochopdongVal, @TongtiencocVal,
-                @Manv, @Ghichu, 0, 0, @Now, @UserCreate, ''
+                @Manv, @Ghichu, 0, 0, @Now, @UserCreate, '', @LoaiHinhSuKien
             );
             IF (@Sobiennhan IS NOT NULL AND @Sobiennhan != '')
                 UPDATE tbmk_Biennhancoccho SET IsKetthuc=1, DateUpdate=@Now, UserUpdate=@UserCreate WHERE DocumentID=@Sobiennhan;
@@ -415,7 +435,8 @@ BEGIN
                 SobanChaychinhthuc=@SobanChaychinhthucVal, SobanChayduphong=@SobanChayduphongVal,
                 TongSoBan=@TongSoBanVal, Tongtienhopdong=@TongtienhopdongVal,
                 Sotiencoccho=@SotiencocchoVal, Sotiencochopdong=@SotiencochopdongVal,
-                Tongtiencoc=@TongtiencocVal, Ghichu=@Ghichu, DateUpdate=@Now, UserUpdate=@UserCreate
+                Tongtiencoc=@TongtiencocVal, Ghichu=@Ghichu, DateUpdate=@Now, UserUpdate=@UserCreate,
+                LoaiHinhSuKien=@LoaiHinhSuKien
             WHERE Sohopdong=@Sohopdong;
         END
 
@@ -677,11 +698,11 @@ SELECT
 
 
     -- Thông tin Bên B
-    CASE 
+    ISNULL(NULLIF(k.Nguoigd, ''), CASE 
         WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL AND k.Tenchure <> '' AND k.Tencodau <> ''
             THEN k.Tenchure + ' & ' + k.Tencodau
         ELSE ISNULL(k.Tenkh, N'Khách vãng lai')
-    END AS [BenBTenDaiDien],
+    END) AS [BenBTenDaiDien],
     ISNULL(h.NguoinhanTT, CASE WHEN k.Tenchure <> '' AND k.Tencodau <> '' THEN k.Tenchure + ' & ' + k.Tencodau ELSE ISNULL(k.Tenkh, N'Khách vãng lai') END) AS [BenBTenChuTiec],
     ISNULL(NULLIF(k.CMNDDaiDien, ''), ISNULL(NULLIF(k.CMNDnguoidd, ''), ISNULL(NULLIF(k.CMNDchure, ''), '...'))) AS [BenBCCCD],
     ISNULL(k.Diachi, '...') AS [BenBDiaChi],
@@ -805,10 +826,10 @@ SELECT
     
     -- Tên loại hình tiệc (computed từ dmLoaihinhtiec, dùng cho in ấn Word)
     ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid), '') AS [TiecLoaiTiec],
-    ISNULL((
+    ISNULL(h.LoaiHinhSuKien, ISNULL((
         SELECT 
             CASE 
-                -- Nếu có sáº£nh 2 và loại hình tiệc có 2 phần (dấu +)
+                -- Nếu có sảnh 2 và loại hình tiệc có 2 phần (dấu +)
                 WHEN ISNULL((SELECT s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), '') <> '' 
                      AND CHARINDEX('+', lt.Tenloaitiec) > 0
                     THEN 
@@ -819,7 +840,7 @@ SELECT
                         + RTRIM(LTRIM(SUBSTRING(lt.Tenloaitiec, CHARINDEX('+', lt.Tenloaitiec) + 1, LEN(lt.Tenloaitiec)))) 
                         + ' ' 
                         + (SELECT s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY)
-                -- Nếu chỉ có 1 sáº£nh
+                -- Nếu chỉ có 1 sảnh
                 ELSE 
                     lt.Tenloaitiec 
                     + ' ' 
@@ -827,7 +848,7 @@ SELECT
             END
         FROM dmLoaihinhtiec lt 
         WHERE lt.Loaitiecid = h.Loaitiecid
-    ), '') AS [LoaiHinhSuKien],
+    ), '')) AS [LoaiHinhSuKien],
     
     ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanChaychinhthuc, 0) AS [TiecSoBanChinhThuc],
     ISNULL(h.SoBanTang, 0) AS [TiecSoBanTang],
@@ -966,7 +987,7 @@ VALUES (
     'frmHopDong',
     'Save',
     'API_LuuHopDong',
-    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenBCCCD=N''{BenBCCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @TuNgaySetup=N''{TuNgaySetup}'', @NgayTraSanhDV=N''{NgayTraSanhDV}'', @TenCongTy=N''{TenCongTy}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SetupBatDau=N''{SetupBatDau}'', @SetupKetThuc=N''{SetupKetThuc}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @JsonBanTiec=N''{JsonBanTiec}'', @JsonThucUong=N''{JsonThucUong}'', @JsonDichVu=N''{JsonDichVu}'', @JsonPhatSinh=N''{JsonPhatSinh}'''
+    '@Sohopdong=N''{Sohopdong}'', @Sobiennhan=N''{Sobiennhan}'', @Makh=N''{Makh}'', @Tenchure=N''{Tenchure}'', @Tencodau=N''{Tencodau}'', @Dienthoai=N''{DienThoai}'', @Diachi=N''{Diachi}'', @Mail=N''{Mail}'', @BenBCCCD=N''{BenBCCCD}'', @Ngayhopdong=N''{Ngayhopdong}'', @Ngaytochuc=N''{NgayToChuc}'', @TuNgaySetup=N''{TuNgaySetup}'', @NgayTraSanhDV=N''{NgayTraSanhDV}'', @TenCongTy=N''{TenCongTy}'', @Nhamngay=N''{Nhamngay}'', @Loaitiecid=N''{Loaitiecid}'', @Thoigianid=N''{Thoigianid}'', @SetupBatDau=N''{SetupBatDau}'', @SetupKetThuc=N''{SetupKetThuc}'', @SobanManchinhthuc=N''{SobanManchinhthuc}'', @SobanManduphong=N''{SobanManduphong}'', @SobanChaychinhthuc=N''{SobanChaychinhthuc}'', @SobanChayduphong=N''{SobanChayduphong}'', @TongSoBan=N''{SoBan}'', @Tongtienhopdong=N''{TongTien}'', @Sotiencoccho=N''{DaCocVND}'', @Sotiencochopdong=N''{Sotiencochopdong}'', @Tongtiencoc=N''{Tongtiencoc}'', @Ghichu=N''{Ghichu}'', @JsonSanhTiec=N''{JsonSanhTiec}'', @JsonBanTiec=N''{JsonBanTiec}'', @JsonThucUong=N''{JsonThucUong}'', @JsonDichVu=N''{JsonDichVu}'', @JsonPhatSinh=N''{JsonPhatSinh}'', @BenBTenDaiDien=N''{BenBTenDaiDien}'', @LoaiHinhSuKien=N''{LoaiHinhSuKien}'''
 );
 
 DELETE FROM WA_API WHERE List = 'frmHopDong' AND Func = 'Delete';
@@ -1027,7 +1048,7 @@ WHERE FormName = 'frmHopDong'
     'NgayLapHD', 'ThangLapHD', 'NamLapHD',
     'BenANhanVienPhuTrach', 'BenASDTNhanVien', 'BenAChucVu', 'BenANguoiDaiDien', 'BenADaiDien', 'BenATenCongTy', 'BenADiaChi', 'BenASDT', 'BenAEmail', 'BenAMST',
     'BenA_NhanVienPhuTrach', 'BenA_SDT_NhanVien',
-    'BenBTenDaiDien', 'BenBTenChuTiec', 'BenBCCCD', 'BenBDiaChi', 'BenBDienThoai', 'BenBChucVu', 'BenBEmail',
+    'BenBTenChuTiec', 'BenBCCCD', 'BenBDiaChi', 'BenBDienThoai', 'BenBChucVu', 'BenBEmail',
     'BenB_ChucVu', 'BenB_DienThoai',
     'TiecGioBatDau', 'TiecGioKetThuc', 'TiecNgayDL', 'TiecThangDL', 'TiecNamDL',
     'Tiec_NamDL',
@@ -1147,7 +1168,7 @@ WHERE FormName = 'frmHopDong' AND FieldName = 'Makh';
 GO
 
 -- 4.5. Định dạng dữ liệu (FormatID) cho các trường
-UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail', 'BenBCCCD', 'Ghichu', 'TenCongTy', 'TieuDePhieu', 'SanhDat2');
+UPDATE SY_FormatFields SET FormatID = 't' WHERE FormName = 'frmHopDong' AND FieldName IN ('Tenchure', 'Tencodau', 'Diachi', 'Mail', 'BenBCCCD', 'Ghichu', 'TenCongTy', 'TieuDePhieu', 'SanhDat2', 'BenBTenDaiDien', 'LoaiHinhSuKien');
 UPDATE SY_FormatFields SET FormatID = 'dt' WHERE FormName = 'frmHopDong' AND FieldName IN ('Ngayhopdong', 'NgayToChuc', 'TuNgaySetup', 'NgayTraSanhDV');
 UPDATE SY_FormatFields SET FormatID = 't', IsReadOnlyAdd = 1, IsReadOnlyEdit = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'Nhamngay';
 UPDATE SY_FormatFields SET FormatID = 'sl' WHERE FormName = 'frmHopDong' AND FieldName IN ('Loaitiecid', 'Thoigianid');
@@ -1207,7 +1228,7 @@ UPDATE SY_FormatFields SET CaptionVN = N'SĐT nhân viên' WHERE FormName = 'frm
 UPDATE SY_FormatFields SET CaptionVN = N'Đại diện Bên A' WHERE FormName = 'frmHopDong' AND FieldName = 'BenANguoiDaiDien';
 UPDATE SY_FormatFields SET CaptionVN = N'Chức vụ Bên A' WHERE FormName = 'frmHopDong' AND FieldName = 'BenAChucVu';
 
-UPDATE SY_FormatFields SET CaptionVN = N'Đại diện Bên B' WHERE FormName = 'frmHopDong' AND FieldName = 'BenBTenDaiDien';
+UPDATE SY_FormatFields SET CaptionVN = N'Đại diện Bên B', ShowInAdd = 1, ShowInEdit = 1, FormPosition = '6', OrderNo = 41 WHERE FormName = 'frmHopDong' AND FieldName = 'BenBTenDaiDien';
 UPDATE SY_FormatFields SET CaptionVN = N'Tên Chủ Tiệc' WHERE FormName = 'frmHopDong' AND FieldName = 'BenBTenChuTiec';
 UPDATE SY_FormatFields SET CaptionVN = N'Địa chỉ Bên B' WHERE FormName = 'frmHopDong' AND FieldName = 'BenBDiaChi';
 UPDATE SY_FormatFields SET CaptionVN = N'SĐT Bên B' WHERE FormName = 'frmHopDong' AND FieldName = 'BenBDienThoai';
@@ -1274,15 +1295,17 @@ GO
 
 -- 4.8. Khởi tạo/Cập nhật các cột động đặc thù (LoaiHinhSuKien, Lịch trình, Note)
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LoaiHinhSuKien')
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
-    VALUES ('frmHopDong', 'LoaiHinhSuKien', N'Loại hình sự kiện', 0, 0, 0, 95, 'hidden');
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition, FormatID)
+    VALUES ('frmHopDong', 'LoaiHinhSuKien', N'Loại hình sự kiện', 1, 1, 0, 95, '6', 't');
 ELSE
     UPDATE SY_FormatFields 
     SET CaptionVN = N'Loại hình sự kiện',
-        ShowInAdd = 0,
-        ShowInEdit = 0,
+        ShowInAdd = 1,
+        ShowInEdit = 1,
         ShowInFilter = 0,
-        FormPosition = 'hidden'
+        FormPosition = '6',
+        OrderNo = 95,
+        FormatID = 't'
     WHERE FormName = 'frmHopDong' AND FieldName = 'LoaiHinhSuKien';
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LichTrinhThanhToan')
