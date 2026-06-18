@@ -558,6 +558,7 @@ BEGIN
                 DichVuTinhPhiPhuLuc, DichVuTinhPhiPhuLucTD, ThoaThuanPhuLucKhac, ThoaThuanPhuLucKhacTD,
                 DanhSachChiPhi, DanhSachChiPhiTD, BenAChucVuDaiDien, BenAChucVuDaiDienTD,
                 DonGiaBanTiec, DonGiaBanTiecTD, SoKhachTrenBan, SoKhachTrenBanTD,
+                SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong, SoBanTang,
                 JsonBanTiec, JsonThucUong, JsonDichVu, JsonPhatSinh
             )
             VALUES (
@@ -595,6 +596,12 @@ BEGIN
                 TRY_CAST(JSON_VALUE(@JsonData, '$.DonGiaBanTiecTD') AS DECIMAL(18,2)),
                 TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBan') AS INT),
                 TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBanTD') AS INT),
+                
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SobanManchinhthuc') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SobanManduphong') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SobanChaychinhthuc') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SobanChayduphong') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SoBanTang') AS INT),
                 
                 JSON_QUERY(@JsonData, '$.JsonBanTiec'),
                 JSON_QUERY(@JsonData, '$.JsonThucUong'),
@@ -639,6 +646,12 @@ BEGIN
                 DonGiaBanTiecTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DonGiaBanTiecTD') AS DECIMAL(18,2)), DonGiaBanTiecTD),
                 SoKhachTrenBan = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBan') AS INT), SoKhachTrenBan),
                 SoKhachTrenBanTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBanTD') AS INT), SoKhachTrenBanTD),
+                
+                SobanManchinhthuc = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SobanManchinhthuc') AS INT), SobanManchinhthuc),
+                SobanManduphong = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SobanManduphong') AS INT), SobanManduphong),
+                SobanChaychinhthuc = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SobanChaychinhthuc') AS INT), SobanChaychinhthuc),
+                SobanChayduphong = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SobanChayduphong') AS INT), SobanChayduphong),
+                SoBanTang = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoBanTang') AS INT), SoBanTang),
                 
                 JsonBanTiec = COALESCE(JSON_QUERY(@JsonData, '$.JsonBanTiec'), JsonBanTiec),
                 JsonThucUong = COALESCE(JSON_QUERY(@JsonData, '$.JsonThucUong'), JsonThucUong),

@@ -1,4 +1,4 @@
-﻿CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachKhachHang]
+CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachKhachHang]
     @Keyword NVARCHAR(100) = NULL,
     
     -- Khai báo hứng các biến từ giao diện gửi xuống (Tên biến phải khớp với FieldName trong DB)
@@ -28,7 +28,7 @@ BEGIN
         (SELECT COUNT(1) FROM tbmk_Khachthamquan WHERE Makh = dmkhachhang.Makh) AS SoLanThamQuan,
         (SELECT COUNT(1) FROM tbmk_Hopdong WHERE Makh = dmkhachhang.Makh) AS SoHopDong
     FROM dmkhachhang
-    WHERE 
+    WHERE ISNULL(IsDeleted, 0) = 0
         -- 1. Lọc theo các trường Dynamic Filter (nếu Frontend có truyền xuống)
         (@Makh IS NULL OR @Makh = '' OR Makh = @Makh)
         AND (@Tenkh IS NULL OR @Tenkh = '' OR Tenkh LIKE N'%' + @Tenkh + '%')

@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -7,6 +7,18 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 PRINT N'=== TRIỂN KHAI MODULE KHÁCH HÀNG (frmKhachHang) ===';
+GO
+
+-- Thêm cột IsDeleted vào bảng dmkhachhang nếu chưa có để kích hoạt Soft Delete
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns 
+    WHERE object_id = OBJECT_ID('dmkhachhang') AND name = 'IsDeleted'
+)
+BEGIN
+    ALTER TABLE dmkhachhang ADD IsDeleted BIT NULL;
+END
+GO
+UPDATE dmkhachhang SET IsDeleted = 0 WHERE IsDeleted IS NULL;
 GO
 
 -- =========================================================================

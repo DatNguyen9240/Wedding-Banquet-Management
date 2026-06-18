@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -175,7 +175,10 @@ BEGIN
         0 AS [PhiPhucVu],
         0 AS [VAT8],
         0 AS [VAT10],
-        ISNULL(h.Tongtienhopdong, 0) AS [TongCongChuaVAT]
+        ISNULL(h.Tongtienhopdong, 0) AS [TongCongChuaVAT],
+
+        CAST(NULL AS VARCHAR(100)) AS [BoTri]
+        -- , CAST(NULL AS INT) AS [IsHeader]
 
     FROM tbmk_Hopdong h
     LEFT JOIN dmkhachhang k ON h.Makh = k.Makh
@@ -340,7 +343,8 @@ WHERE FormName = 'frmBaoGia'
     'Id', 'Makh', 'Sobiennhan', 'TenKhachHang', 'NgayToChucFormat',
     'NgayBaoGiaDay', 'ThangBaoGia', 'NamBaoGia', 'TongCongTamTinhBangChu',
     'BenATenCongTy', 'BenADiaChi', 'BenASDT', 'BenAEmail', 'BenAEmailNhanVien',
-    'BenANhanVienPhuTrach', 'BenASDTNhanVien', 'BenBDienThoai', 'BenBDiaChi', 'HDTenCty'
+    'BenANhanVienPhuTrach', 'BenASDTNhanVien', 'BenBDienThoai', 'BenBDiaChi', 'HDTenCty',
+    'BoTri'
   );
 GO
 

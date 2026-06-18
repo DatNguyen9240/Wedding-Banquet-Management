@@ -7,7 +7,7 @@
  * Đồng thời chặn lưu form và tô đỏ ô nhập liệu nếu số bàn không hợp lệ so với sảnh.
  */
 var PromotionAutoFillPlugin = (function () {
-  var SUPPORTED_FORMS = ['frmBiennhancoccho', 'frmHopDong'];
+  var SUPPORTED_FORMS = ['frmBiennhancoccho', 'frmHopDong', 'frmKhachThamQuan'];
   var debounceTimeout = null;
   var hallCache = {};
 
@@ -41,14 +41,22 @@ var PromotionAutoFillPlugin = (function () {
 
   function _getFormFields(modalContent, formName) {
     var loaiTiecEl = modalContent.querySelector('[name="Loaitiecid"]');
-    var banManEl = modalContent.querySelector('[name="SobanManchinhthuc"]');
-    var banChayEl = modalContent.querySelector('[name="SobanChaychinhthuc"]');
+    var banManEl = null;
+    var banChayEl = null;
     var targetEl = null;
 
-    if (formName === 'frmBiennhancoccho') {
+    if (formName === 'frmKhachThamQuan') {
+      banManEl = modalContent.querySelector('[name="SobanMan"]');
+      banChayEl = modalContent.querySelector('[name="SobanChay"]');
       targetEl = modalContent.querySelector('[name="Ghichu"]');
-    } else if (formName === 'frmHopDong') {
-      targetEl = modalContent.querySelector('[name="DSKhuyenMai"]');
+    } else {
+      banManEl = modalContent.querySelector('[name="SobanManchinhthuc"]');
+      banChayEl = modalContent.querySelector('[name="SobanChaychinhthuc"]');
+      if (formName === 'frmBiennhancoccho') {
+        targetEl = modalContent.querySelector('[name="Ghichu"]');
+      } else if (formName === 'frmHopDong') {
+        targetEl = modalContent.querySelector('[name="DSKhuyenMai"]');
+      }
     }
 
     return {
@@ -93,7 +101,7 @@ var PromotionAutoFillPlugin = (function () {
   // Thực thi kiểm tra lỗi trực quan (tô đỏ ô nhập liệu) ngay lập tức
   function _validateLive(modalContent, formName) {
     var fields = _getFormFields(modalContent, formName);
-    var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]');
+    var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]') || modalContent.querySelector('[name="SanhTiecID"]');
     if (!fields.banManEl) return;
 
     var clearError = function () {
@@ -318,7 +326,7 @@ var PromotionAutoFillPlugin = (function () {
     }
 
     // Lắng nghe thêm cả sự thay đổi của Sảnh để kích hoạt nạp lại khuyến mãi khi Auto-fill điền bàn
-    var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]');
+    var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]') || modalContent.querySelector('[name="SanhTiecID"]');
     if (sanhInput) {
       sanhInput.addEventListener('change', handler);
     }
@@ -338,7 +346,7 @@ var PromotionAutoFillPlugin = (function () {
 
     saveBtn.addEventListener('click', function (e) {
       var fields = _getFormFields(modalContent, formName);
-      var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]');
+      var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]') || modalContent.querySelector('[name="SanhTiecID"]');
       if (!sanhInput || !sanhInput.value) return; // Không chọn sảnh => không chặn
 
       var banMan = fields.banManEl ? Number(fields.banManEl.value || 0) : 0;

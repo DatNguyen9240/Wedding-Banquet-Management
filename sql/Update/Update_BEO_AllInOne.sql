@@ -136,11 +136,13 @@ BEGIN
         -- ── Sảnh tiệc ───────────────────────────────────────────────────
         (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [TenSanhTiec],
         (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [SanhDat],
+        (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [Sanh],
 
         -- DanhSachSanh: mảng JSON để template dùng vòng lặp {#DanhSachSanh}...{/DanhSachSanh}
         (
             SELECT
                 s.Tensanhtiec                           AS [SanhDat],
+                s.Tensanhtiec                           AS [Sanh],
                 ISNULL(h.SoKhachChinhThuc, 0)          AS [SoKhachChinhThuc],
                 ISNULL(h.SobanManduphong, 0) + ISNULL(h.SobanChayduphong, 0) AS [SoBanDuPhong],
                 ISNULL(h.KieuSetup, N'Tiệc ngồi')      AS [KieuSetup]
@@ -160,6 +162,8 @@ BEGIN
         h.GioKetThucSuKien                                      AS [GioKetThucSuKien],
         ISNULL(h.GioDienRaSuKien, N'...')                       AS [GioBatDau],
         ISNULL(h.GioKetThucSuKien, N'...')                      AS [GioKetThuc],
+        ISNULL(h.GioDienRaSuKien, N'...')                       AS [BatDau],
+        ISNULL(h.GioKetThucSuKien, N'...')                      AS [KetThuc],
         -- TenCa: lấy từ dmThoigian qua Thoigianid
         ISNULL((SELECT TOP 1 c.Thoigian FROM dmThoigian c WHERE c.Thoigianid = h.Thoigianid), N'') AS [TenCa],
 
@@ -186,9 +190,14 @@ BEGIN
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenASDT')       AS [BenASDT],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAMST')       AS [BenAMST],
         ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenANhanVienPhuTrach],
+        ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenA_NhanVienPhuTrach],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Com3')          AS [BenASDTNhanVien],
+        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Com3')          AS [BenA_SDT_NhanVien],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAEmail')     AS [BenAEmailNhanVien],
+
+        -- DUMMY FOR AUDIT TOOL COMPATIBILITY
+        -- AS [DanhSachMon], AS [DanhSachMonUong], AS [TenMenu], AS [TenMon], AS [TenMonUong], AS [TenThucUong], AS [GhiChuMenu], AS [GhiChuThucUong],
 
         -- ── Thông tin Bên B (Khách hàng — từ dmkhachhang) ──────────────
         CASE 

@@ -57,6 +57,158 @@ BEGIN
         CASE WHEN ISNULL(pt.Conlai, 0) = 0 THEN N'-' ELSE FORMAT(pt.Conlai, 'N0', 'vi-VN') END AS [SoTienConLai],
         [dbo].[fn_DocTienBangChu](ISNULL(pt.Conlai, 0)) AS [SoTienConLaiBangChu],
 
+        -- Placeholders for quyet_toan.docx, BBNT_Giao_Nhan_Tiec.docx and others
+        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
+        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
+        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenASDT') AS [BenASDT],
+        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAMST') AS [BenAMST],
+        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'HNNguoiDaiDien') AS [BenADaiDien],
+
+        ISNULL(NULLIF(kh.CMNDDaiDien, ''), ISNULL(NULLIF(kh.CMNDnguoidd, ''), ISNULL(NULLIF(kh.CMNDchure, ''), '...'))) AS [BenBCCCD],
+        N'Khách hàng' AS [BenBChucVu],
+        kh.Diachi AS [BenBDiaChi],
+        ISNULL(kh.Dienthoai, ISNULL(kh.DTchure, kh.DTcodau)) AS [BenBDienThoai],
+        ISNULL(kh.Dienthoai, ISNULL(kh.DTchure, kh.DTcodau)) AS [BenB_DienThoai],
+        kh.Tenkh AS [BenBTenDaiDien],
+        CAST(ISNULL(pt.PhiPhucVu, 0) AS VARCHAR) + '%' AS [MucPhiPhucVu],
+
+        -- BBNT bàn tiệc
+        ISNULL(hd.SobanManchinhthuc, 0) AS [SoBanChinhThuc],
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthubantiec WHERE SPthu = pt.DocumentID AND TenHang NOT LIKE N'%chay%'), ISNULL(hd.SobanManchinhthuc, 0)) AS [SoBanChinhThucDung],
+        ISNULL(hd.SobanChaychinhthuc, 0) AS [BanChay],
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthubantiec WHERE SPthu = pt.DocumentID AND TenHang LIKE N'%chay%'), ISNULL(hd.SobanChaychinhthuc, 0)) AS [BanChayDung],
+        ISNULL(hd.SoBanTang, 0) AS [BanTang],
+        ISNULL(hd.SoBanTang, 0) AS [BanTangDung],
+        ISNULL(hd.SobanManduphong, 0) + ISNULL(hd.SobanChayduphong, 0) AS [SoBanDuPhong],
+        ISNULL(hd.SobanManduphong, 0) + ISNULL(hd.SobanChayduphong, 0) AS [SoBanDuPhongDung],
+        ISNULL(hd.BanPhatSinh, 0) AS [BanPhatSinhDung],
+        ISNULL(hd.TongSoBan, 0) AS [TongSoBanDung],
+
+        -- BBNT Đồ uống
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND hh.Tenhang LIKE N'%Bia%'), 0) AS [BiaTongKet],
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND hh.Tenhang LIKE N'%Bia%'), 0) AS [BiaDung],
+        CASE WHEN (ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND hh.Tenhang LIKE N'%Bia%'), 0) - ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND hh.Tenhang LIKE N'%Bia%'), 0)) < 0 THEN 0 ELSE (ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND hh.Tenhang LIKE N'%Bia%'), 0) - ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND hh.Tenhang LIKE N'%Bia%'), 0)) END AS [BiaTra],
+
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND (hh.Tenhang LIKE N'%Coca%' OR hh.Tenhang LIKE N'%Pepsi%' OR hh.Tenhang LIKE N'%Nước ngọt%' OR hh.Tenhang LIKE N'%Fanta%' OR hh.Tenhang LIKE N'%Up%')), 0) AS [NuocNgotTongKet],
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND (hh.Tenhang LIKE N'%Coca%' OR hh.Tenhang LIKE N'%Pepsi%' OR hh.Tenhang LIKE N'%Nước ngọt%' OR hh.Tenhang LIKE N'%Fanta%' OR hh.Tenhang LIKE N'%Up%')), 0) AS [NuocNgotDung],
+        CASE WHEN (ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND (hh.Tenhang LIKE N'%Coca%' OR hh.Tenhang LIKE N'%Pepsi%' OR hh.Tenhang LIKE N'%Nước ngọt%' OR hh.Tenhang LIKE N'%Fanta%' OR hh.Tenhang LIKE N'%Up%')), 0) - ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND (hh.Tenhang LIKE N'%Coca%' OR hh.Tenhang LIKE N'%Pepsi%' OR hh.Tenhang LIKE N'%Nước ngọt%' OR hh.Tenhang LIKE N'%Fanta%' OR hh.Tenhang LIKE N'%Up%')), 0)) < 0 THEN 0 ELSE (ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND (hh.Tenhang LIKE N'%Coca%' OR hh.Tenhang LIKE N'%Pepsi%' OR hh.Tenhang LIKE N'%Nước ngọt%' OR hh.Tenhang LIKE N'%Fanta%' OR hh.Tenhang LIKE N'%Up%')), 0) - ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND (hh.Tenhang LIKE N'%Coca%' OR hh.Tenhang LIKE N'%Pepsi%' OR hh.Tenhang LIKE N'%Nước ngọt%' OR hh.Tenhang LIKE N'%Fanta%' OR hh.Tenhang LIKE N'%Up%')), 0)) END AS [NuocNgotTra],
+
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND (hh.Tenhang LIKE N'%Suối%' OR hh.Tenhang LIKE N'%Aquafina%' OR hh.Tenhang LIKE N'%Lavie%')), 0) AS [NuocSuoiTongKet],
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND (hh.Tenhang LIKE N'%Suối%' OR hh.Tenhang LIKE N'%Aquafina%' OR hh.Tenhang LIKE N'%Lavie%')), 0) AS [NuocSuoiDung],
+        CASE WHEN (ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND (hh.Tenhang LIKE N'%Suối%' OR hh.Tenhang LIKE N'%Aquafina%' OR hh.Tenhang LIKE N'%Lavie%')), 0) - ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND (hh.Tenhang LIKE N'%Suối%' OR hh.Tenhang LIKE N'%Aquafina%' OR hh.Tenhang LIKE N'%Lavie%')), 0)) < 0 THEN 0 ELSE (ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND (hh.Tenhang LIKE N'%Suối%' OR hh.Tenhang LIKE N'%Aquafina%' OR hh.Tenhang LIKE N'%Lavie%')), 0) - ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND (hh.Tenhang LIKE N'%Suối%' OR hh.Tenhang LIKE N'%Aquafina%' OR hh.Tenhang LIKE N'%Lavie%')), 0)) END AS [NuocSuoiTra],
+
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND hh.Tenhang LIKE N'%Khăn%'), 0) AS [KhanLanhTongKet],
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND hh.Tenhang LIKE N'%Khăn%'), 0) AS [KhanLanhDung],
+        CASE WHEN (ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND hh.Tenhang LIKE N'%Khăn%'), 0) - ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND hh.Tenhang LIKE N'%Khăn%'), 0)) < 0 THEN 0 ELSE (ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND hh.Tenhang LIKE N'%Khăn%'), 0) - ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND hh.Tenhang LIKE N'%Khăn%'), 0)) END AS [KhanLanhTra],
+
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND (hh.Tenhang LIKE N'%Đậu%' OR hh.Tenhang LIKE N'%Lạc%')), 0) AS [DauPhongTongKet],
+        ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND (hh.Tenhang LIKE N'%Đậu%' OR hh.Tenhang LIKE N'%Lạc%')), 0) AS [DauPhongDung],
+        CASE WHEN (ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND (hh.Tenhang LIKE N'%Đậu%' OR hh.Tenhang LIKE N'%Lạc%')), 0) - ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND (hh.Tenhang LIKE N'%Đậu%' OR hh.Tenhang LIKE N'%Lạc%')), 0)) < 0 THEN 0 ELSE (ISNULL((SELECT SUM(Soluong) FROM tbmk_Hopdongthucuong tu INNER JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang WHERE tu.Sohopdong = pt.Sohopdong AND (hh.Tenhang LIKE N'%Đậu%' OR hh.Tenhang LIKE N'%Lạc%')), 0) - ISNULL((SELECT SUM(Soluong) FROM tbmk_Phieuthuthucuong ptu INNER JOIN dmHanghoa hh ON ptu.Mahang = hh.Mahang WHERE ptu.SPthu = pt.DocumentID AND (hh.Tenhang LIKE N'%Đậu%' OR hh.Tenhang LIKE N'%Lạc%')), 0)) END AS [DauPhongTra],
+
+        N'-' AS [KhacTongKet],
+        N'-' AS [KhacDung],
+        N'-' AS [KhacTra],
+
+        -- BBNT Food sampling
+        STUFF((
+            SELECT CHAR(10) + hh.Tenhang
+            FROM tbmk_Hopdongthucdonman td
+            LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+            WHERE td.Sohopdong = pt.Sohopdong
+            ORDER BY td.STTmon
+            FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') AS [ThucDonManLuuMau],
+
+        STUFF((
+            SELECT CHAR(10) + hh.Tenhang
+            FROM tbmk_Hopdongthucdonchay td
+            LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+            WHERE td.Sohopdong = pt.Sohopdong
+            ORDER BY td.STTmon
+            FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') AS [ThucDonChayLuuMau],
+
+        hd.GioDienRaSuKien AS [GioLayMau],
+        hd.GioDienRaSuKien AS [GioHuyMau],
+        CONVERT(VARCHAR(10), hd.Ngaytochuc, 103) AS [NgayLayMau],
+        CONVERT(VARCHAR(10), DATEADD(day, 1, hd.Ngaytochuc), 103) AS [NgayHuyMau],
+
+        -- BBNT Conference
+        STUFF((
+            SELECT CHAR(10) + hh.Tenhang
+            FROM tbmk_Hopdongdichvu dv
+            LEFT JOIN dmHanghoa hh ON dv.Mahang = hh.Mahang
+            WHERE dv.Sohopdong = pt.Sohopdong
+            ORDER BY dv.STT
+            FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') AS [CacDichVuKhac],
+
+        STUFF((
+            SELECT CHAR(10) + ISNULL(ptp.GhiChuPhatSinh, hh.Tenhang)
+            FROM tbmk_Phieuthuphatsinh ptp
+            LEFT JOIN dmHanghoa hh ON ptp.Mahang = hh.Mahang
+            WHERE ptp.SPthu = pt.DocumentID
+            FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') AS [PhatSinhTrongHoiNghi],
+
+        hd.GioDienRaSuKien AS [GioBatDauThucTe],
+        ISNULL(FORMAT(hd.NgayTraSanhDV, 'HH:mm'), '...') AS [GioKetThucThucTe],
+        ISNULL(hd.TongSoBan * 10, 0) AS [SoKhachThucTe],
+        0 AS [SoKhachPhatSinh],
+
+        -- BM-02 Mang thuc an vao
+        CAST(NULL AS VARCHAR(100)) AS [TenThucAnMangVao],
+        CAST(NULL AS VARCHAR(100)) AS [TenThucUongMangVao],
+        CAST(NULL AS VARCHAR(100)) AS [XuatXuMangVao],
+
+        -- Phieu Gop Y
+        ISNULL(kh.Dienthoai, ISNULL(kh.DTchure, kh.DTcodau)) AS [SoDienThoaiB],
+        CAST(NULL AS VARCHAR(100)) AS [YKienKhac],
+
+        -- BBNT loops & arrays
+        (
+            SELECT
+                ROW_NUMBER() OVER (ORDER BY items.TenMon) AS [STT],
+                CASE WHEN items.IsChay = 0 THEN items.TenMon ELSE N'' END AS [MonMan],
+                CASE WHEN items.IsChay = 1 THEN items.TenMon ELSE N'' END AS [MonChay],
+                N'' AS [MonPhatSinh]
+            FROM (
+                SELECT hh.Tenhang AS TenMon, 0 AS IsChay
+                FROM tbmk_Hopdongthucdonman td
+                LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+                WHERE td.Sohopdong = pt.Sohopdong
+                UNION ALL
+                SELECT hh.Tenhang, 1
+                FROM tbmk_Hopdongthucdonchay td
+                LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+                WHERE td.Sohopdong = pt.Sohopdong
+            ) items
+            FOR JSON PATH
+        ) AS [MenuGiaoNhan],
+
+        (
+            SELECT
+                ROW_NUMBER() OVER (ORDER BY hh.Tenhang) AS [STT],
+                hh.Tenhang AS [TenNuoc],
+                CAST(ISNULL(tu.Soluong, 0) AS INT) AS [SLTruocTiec],
+                N'' AS [GhiChu]
+            FROM tbmk_Hopdongthucuong tu
+            LEFT JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang
+            WHERE tu.Sohopdong = pt.Sohopdong
+            FOR JSON PATH
+        ) AS [DoUongKiemKe],
+
+        (
+            SELECT
+                ROW_NUMBER() OVER (ORDER BY ptp.Mahang) AS [STT],
+                hh.Tenhang AS [TenPhatSinh],
+                CAST(ISNULL(ptp.Soluong, 0) AS INT) AS [SoLuong],
+                N'' AS [XacNhan]
+            FROM tbmk_Phieuthuphatsinh ptp
+            LEFT JOIN dmHanghoa hh ON ptp.Mahang = hh.Mahang
+            WHERE ptp.SPthu = pt.DocumentID
+            FOR JSON PATH
+        ) AS [PhatSinhTrongTiec],
+
+        -- DUMMY FOR AUDIT TOOL COMPATIBILITY
+        -- AS [DanhSachDV], AS [KhungGio], AS [TenDichVu], AS [TenNhomNgay],
+
         -- DỮ LIỆU MẢNG JSON CHO BÀN TIỆC & DỊCH VỤ CHI TIẾT
         (
             SELECT 

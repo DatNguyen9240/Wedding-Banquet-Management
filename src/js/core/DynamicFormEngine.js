@@ -2317,17 +2317,31 @@ window.DynamicFormEngine = (function () {
           if (f.formulaRule) {
             var formula = f.formulaRule;
             for (var key in currentModalFormState) {
-              var v = parseFloat(currentModalFormState[key]) || 0;
+              var valStr = String(currentModalFormState[key] || '');
+              var isMoneyKey = globalFormSchema.some(function (schemaField) {
+                return schemaField.name === key && (schemaField.renderRule === 'money' || schemaField.renderRule === 'm' || schemaField.renderRule === 'mn');
+              });
+              var v = 0;
+              if (isMoneyKey) {
+                v = parseFloat(valStr.replace(/\D/g, '')) || 0;
+              } else {
+                v = parseFloat(valStr) || 0;
+              }
               formula = formula.split('{' + key + '}').join(v);
             }
             try {
               var result = new Function('return ' + formula)();
               if (!isNaN(result) && isFinite(result)) {
                 var targetInput = body.querySelector('input[name="' + f.name + '"]');
-                if (targetInput && targetInput.value != result) {
-                  targetInput.value = result;
-                  currentModalFormState[f.name] = result;
-                  targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+                if (targetInput) {
+                  var isMoneyTarget = (f.renderRule === 'money' || f.renderRule === 'm' || f.renderRule === 'mn');
+                  var currentRaw = isMoneyTarget ? targetInput.value.replace(/\D/g, '') : targetInput.value;
+                  var targetRaw = isMoneyTarget ? String(result).replace(/\D/g, '') : String(result);
+                  if (currentRaw !== targetRaw) {
+                    targetInput.value = result;
+                    currentModalFormState[f.name] = result;
+                    targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+                  }
                 }
               }
             } catch (e) { }

@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -147,7 +147,10 @@ BEGIN
                 WHERE dv.Sohopdong = h.Sohopdong
             ) src
             FOR JSON PATH
-        ) AS [DanhSachThamKhao]
+        ) AS [DanhSachThamKhao],
+
+        CAST(NULL AS VARCHAR(100)) AS [BoTri]
+        -- , CAST(NULL AS INT) AS [IsHeader]
 
     FROM tbmk_Hopdong h
     LEFT JOIN dmkhachhang k ON h.Makh = k.Makh

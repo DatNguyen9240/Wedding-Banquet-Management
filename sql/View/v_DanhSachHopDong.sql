@@ -1,4 +1,4 @@
-﻿IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong]'))
+IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong]'))
     DROP VIEW [dbo].[v_DanhSachHopDong]
 GO
 CREATE VIEW [dbo].[v_DanhSachHopDong] AS
@@ -244,7 +244,17 @@ SELECT
     ISNULL(NULLIF(h.TenCtyHoaDon, ''),    ISNULL(k.Tenkh,  N'...')) AS [HDTenCty],
     ISNULL(NULLIF(h.DiaChiCtyHoaDon, ''), ISNULL(k.Diachi, N'...')) AS [HDDiaChi],
     ISNULL(NULLIF(h.MaSoThueHoaDon, ''),  N'...') AS [HDMaSoThue],
-    ISNULL(k.Mail, N'...') AS [HDEmail]
+    ISNULL(k.Mail, N'...') AS [HDEmail],
+
+    -- Placeholders mapping for hop_dong.docx and other contracts
+    ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenA_NhanVienPhuTrach],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com3') AS [BenA_SDT_NhanVien],
+    N'Khách hàng' AS [BenB_ChucVu],
+    ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [BenB_DienThoai],
+    ISNULL(h.Noidunguudai, '') AS [DS_KhuyenMai],
+    CAST(YEAR(h.Ngaytochuc) AS VARCHAR) AS [Tiec_NamDL]
+
+    -- , AS [DanhSachDV], AS [GhiChuChiTiet], AS [KhungGio], AS [TenDichVu], AS [TenMonAn], AS [TenNhomNgay], AS [ThanhTien], AS [UuDai]
     
 FROM tbmk_Hopdong h
 LEFT JOIN dmkhachhang k ON h.Makh = k.Makh

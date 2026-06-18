@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -25,7 +25,8 @@ SELECT
     Diachi,
     (SELECT COUNT(1) FROM tbmk_Khachthamquan WHERE Makh = dmkhachhang.Makh) AS SoLanThamQuan,
     (SELECT COUNT(1) FROM tbmk_Hopdong WHERE Makh = dmkhachhang.Makh) AS SoHopDong
-FROM dmkhachhang;
+FROM dmkhachhang
+WHERE ISNULL(IsDeleted, 0) = 0;
 GO
 
 -- 1. Cập nhật Form Khách Hàng chọc vào View này thay vì bảng gốc dmkhachhang

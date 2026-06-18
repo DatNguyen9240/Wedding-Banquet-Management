@@ -333,8 +333,8 @@ SELECT
     ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) AS [SobanManduphong],
     ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
     ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
-    ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc) + ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SoBanChinhThuc],
-    ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) + ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SoBanDuPhong],
+    ISNULL(ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc), 0) + ISNULL(ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc), 0) AS [SoBanChinhThuc],
+    ISNULL(ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong), 0) + ISNULL(ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong), 0) AS [SoBanDuPhong],
     ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [BanTang],
     ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
     -- {#MenuTiec}: Lấy từ bảng con (Thaydoithucdonman & Thaydoithucdonchay)
@@ -610,6 +610,7 @@ BEGIN
                 DichVuTinhPhiPhuLuc, DichVuTinhPhiPhuLucTD, ThoaThuanPhuLucKhac, ThoaThuanPhuLucKhacTD,
                 DanhSachChiPhi, DanhSachChiPhiTD, BenAChucVuDaiDien, BenAChucVuDaiDienTD,
                 DonGiaBanTiec, DonGiaBanTiecTD, SoKhachTrenBan, SoKhachTrenBanTD,
+                SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong, SoBanTang,
                 JsonBanTiec, JsonThucUong, JsonDichVu, JsonPhatSinh
             )
             VALUES (
@@ -647,6 +648,12 @@ BEGIN
                 TRY_CAST(JSON_VALUE(@JsonData, '$.DonGiaBanTiecTD') AS DECIMAL(18,2)),
                 TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBan') AS INT),
                 TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBanTD') AS INT),
+                
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SobanManchinhthuc') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SobanManduphong') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SobanChaychinhthuc') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SobanChayduphong') AS INT),
+                TRY_CAST(JSON_VALUE(@JsonData, '$.SoBanTang') AS INT),
                 
                 JSON_QUERY(@JsonData, '$.JsonBanTiec'),
                 JSON_QUERY(@JsonData, '$.JsonThucUong'),
@@ -691,6 +698,12 @@ BEGIN
                 DonGiaBanTiecTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DonGiaBanTiecTD') AS DECIMAL(18,2)), DonGiaBanTiecTD),
                 SoKhachTrenBan = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBan') AS INT), SoKhachTrenBan),
                 SoKhachTrenBanTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoKhachTrenBanTD') AS INT), SoKhachTrenBanTD),
+                
+                SobanManchinhthuc = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SobanManchinhthuc') AS INT), SobanManchinhthuc),
+                SobanManduphong = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SobanManduphong') AS INT), SobanManduphong),
+                SobanChaychinhthuc = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SobanChaychinhthuc') AS INT), SobanChaychinhthuc),
+                SobanChayduphong = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SobanChayduphong') AS INT), SobanChayduphong),
+                SoBanTang = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoBanTang') AS INT), SoBanTang),
                 
                 JsonBanTiec = COALESCE(JSON_QUERY(@JsonData, '$.JsonBanTiec'), JsonBanTiec),
                 JsonThucUong = COALESCE(JSON_QUERY(@JsonData, '$.JsonThucUong'), JsonThucUong),

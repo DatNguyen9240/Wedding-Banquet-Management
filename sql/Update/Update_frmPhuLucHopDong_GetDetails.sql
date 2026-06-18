@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 /****** Object:  StoredProcedure [dbo].[API_PhuLucHopDong_Detail]    Script Date: 17/06/2026 9:15:02 AM ******/
 SET ANSI_NULLS ON
@@ -83,9 +83,16 @@ BEGIN
         FORMAT(ISNULL(pl.DonGiaBanTiecTD, pl.DonGiaBanTiec), 'N0', 'vi-VN') AS [DonGiaBanTiec],
 
         -- Bàn tiệc
-        ISNULL(pl.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
-        ISNULL(pl.SobanManduphong, hd.SobanManduphong) AS [SoBanManDuPhong],
-        ISNULL(hd.SoBanTang, 0) AS [BanTang],
+        ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SobanManchinhthuc],
+        ISNULL(NULLIF(pl.SobanManduphong, 0), hd.SobanManduphong) AS [SobanManduphong],
+        ISNULL(NULLIF(pl.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
+        ISNULL(NULLIF(pl.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
+        ISNULL(ISNULL(pl.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
+
+        -- Aliases for backward compatibility
+        ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
+        ISNULL(NULLIF(pl.SobanManduphong, 0), hd.SobanManduphong) AS [SoBanManDuPhong],
+        ISNULL(ISNULL(pl.SoBanTang, hd.SoBanTang), 0) AS [BanTang],
 
         -- Đợt thanh toán 2
         ISNULL(pl.TenDotThanhToanTD, pl.TenDotThanhToan) AS [TenDotThanhToan],

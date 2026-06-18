@@ -218,14 +218,22 @@ BEGIN
         
         ISNULL(
             CASE 
-                WHEN ISNULL(b.Solan, 1) = 2 THEN (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentID = b.DocumentIDcu)
+                WHEN ISNULL(b.Solan, 1) = 2 THEN 
+                    ISNULL(
+                        (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentID = b.DocumentIDcu),
+                        (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE Makh = b.Makh AND Solan = 1 AND ISNULL(IsHuy, 0) = 0)
+                    )
                 ELSE b.Tongtien 
             END, 0
         ) AS [DaCocVND],
         ISNULL(
             CASE 
                 WHEN ISNULL(b.Solan, 1) = 2 THEN b.Tongtien
-                ELSE (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentIDcu = b.DocumentID AND Solan = 2)
+                ELSE 
+                    ISNULL(
+                        (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE DocumentIDcu = b.DocumentID AND Solan = 2),
+                        (SELECT TOP 1 Tongtien FROM tbmk_Biennhancoccho WHERE Makh = b.Makh AND Solan = 2 AND ISNULL(IsHuy, 0) = 0)
+                    )
             END, 0
         ) AS [Sotiencochopdong],
         

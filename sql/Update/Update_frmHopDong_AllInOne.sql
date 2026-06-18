@@ -933,7 +933,17 @@ SELECT
     [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0) - ISNULL(h.Sotiencoccho, 0) - ISNULL(h.Sotiencochopdong, 0)) AS [SoTienConLaiBangChu],
     FORMAT(ISNULL(h.Sotiencoccho, 0) + ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') AS [SoTienDaDatCoc],
     FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriQuyetToan],
-    [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0)) AS [TongGiaTriQuyetToanBangChu]
+    [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0)) AS [TongGiaTriQuyetToanBangChu],
+
+    -- Placeholders mapping for hop_dong.docx and other contracts
+    ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenA_NhanVienPhuTrach],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com3') AS [BenA_SDT_NhanVien],
+    N'Khách hàng' AS [BenB_ChucVu],
+    ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [BenB_DienThoai],
+    ISNULL(h.Noidunguudai, '') AS [DS_KhuyenMai],
+    CAST(YEAR(h.Ngaytochuc) AS VARCHAR) AS [Tiec_NamDL]
+
+    -- , AS [DanhSachDV], AS [GhiChuChiTiet], AS [KhungGio], AS [TenDichVu], AS [TenMonAn], AS [TenNhomNgay], AS [ThanhTien], AS [UuDai]
 
 FROM tbmk_Hopdong h
 LEFT JOIN dmkhachhang k ON h.Makh = k.Makh
@@ -1016,14 +1026,18 @@ WHERE FormName = 'frmHopDong'
   AND FieldName IN (
     'NgayLapHD', 'ThangLapHD', 'NamLapHD',
     'BenANhanVienPhuTrach', 'BenASDTNhanVien', 'BenAChucVu', 'BenANguoiDaiDien', 'BenADaiDien', 'BenATenCongTy', 'BenADiaChi', 'BenASDT', 'BenAEmail', 'BenAMST',
+    'BenA_NhanVienPhuTrach', 'BenA_SDT_NhanVien',
     'BenBTenDaiDien', 'BenBTenChuTiec', 'BenBCCCD', 'BenBDiaChi', 'BenBDienThoai', 'BenBChucVu', 'BenBEmail',
+    'BenB_ChucVu', 'BenB_DienThoai',
     'TiecGioBatDau', 'TiecGioKetThuc', 'TiecNgayDL', 'TiecThangDL', 'TiecNamDL',
+    'Tiec_NamDL',
     'TiecNgayAL', 'TiecThangAL', 'TiecNamAL',
     'TenSanhTiec', 'SanhQuyMoMin', 'SanhQuyMoMax',
     'TiecSoBanChinhThuc', 'TiecSoBanTang', 'TiecSoBanDuPhong', 'TiecSoKhach1Ban',
     'CocLan1SoTien', 'CocLan1BangChu', 'CocNgay', 'CocThang', 'CocNam',
     'CocLan2SoTien', 'CocLan2BangChu',
     'DieuKhoanBoSung', 'DSKhuyenMai',
+    'DS_KhuyenMai',
     'HDTenCty', 'HDDiaChi', 'HDMaSoThue', 'HDEmail',
     'TongGiaTriTamTinh', 'TongGiaTriTamTinhBangChu', 'SoKhachDiemDanh', 'LichTrinh',
     'LichTrinhSetup', 'LichTrinhToChuc', 'LichTrinhOut', 'LichTrinhThanhToan',
@@ -1116,8 +1130,15 @@ UPDATE SY_FormatFields
 SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmHopDong' AND FieldName = 'Sohopdong';
 
+DELETE FROM WA_API WHERE List = 'API_DanhSachPhieuCoc_Dropdown';
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES ('API_DanhSachPhieuCoc_Dropdown', 'View', 'API_DanhSachPhieuCoc', '@Keyword=N''{Keyword}''');
+
 UPDATE SY_FormatFields 
-SET IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
+SET FormatID = 'sl',
+    DataSource = '/api/API_Gateway_Router?List=API_DanhSachPhieuCoc_Dropdown&Func=View',
+    IsReadOnlyAdd = 0,
+    IsReadOnlyEdit = 1
 WHERE FormName = 'frmHopDong' AND FieldName = 'Sobiennhan';
 
 UPDATE SY_FormatFields 
