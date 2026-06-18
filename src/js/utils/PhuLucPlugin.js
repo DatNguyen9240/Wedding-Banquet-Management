@@ -156,7 +156,7 @@ var PhuLucPlugin = (function () {
 
     var nhamNgay = contractRow.Nhamngay || contractRow.NhamNgay || '';
     var dvTinhPhi = contractRow.DichVuTinhPhiPhuLuc || '';
-    var uuDai = contractRow.DS_KhuyenMai || contractRow.DSKhuyenMai || contractRow.Noidunguudai || contractRow.ThoaThuanPhuLucKhac || '';
+    var uuDai = contractRow.DSKhuyenMai || contractRow.Noidunguudai || contractRow.ThoaThuanPhuLucKhac || '';
     var lyDo = contractRow.Ghichu || contractRow.LyDoDieuChinh || '';
 
     // Lấy lịch sử phụ lục

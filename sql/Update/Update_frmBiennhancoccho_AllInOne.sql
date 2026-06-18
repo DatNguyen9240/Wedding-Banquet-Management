@@ -161,6 +161,9 @@ BEGIN
     SELECT 
         b.DocumentID AS [DocumentID],
         b.DocumentID AS [MaChungTu],
+        ISNULL(b.SoBN, b.DocumentID) AS [TenBienNhan], -- Chữ 'ten' kích hoạt hiển thị Số biên nhận ở ô Input
+        c.FullName AS [TenKhachHang], -- Hiển thị tên khách hàng trên lưới Dropdown
+        b.DocumentID AS [Sobiennhan], -- Hỗ trợ Workflow mapping tự động sang Hợp đồng
         b.SoBN AS [SoPhieu],
         
         k.Tenchure AS [Tenchure],
@@ -169,6 +172,7 @@ BEGIN
         k.DTcodau AS [DTcodau],
         k.Diachi AS [Diachi],
         k.Nguoigd AS [Nguoigd],
+        k.Nguoigd AS [BenBTenDaiDien],
         k.DienThoaiDaiDien AS [DienThoaiDaiDien],
         k.Mail AS [Mail],
         
@@ -198,7 +202,6 @@ BEGIN
         ISNULL(b.Kemtheo, '') AS [Kemtheo],
         ISNULL(NULLIF(b.HinhThuc, ''), N'Tiền mặt / Chuyển khoản') AS [HinhThuc],
         
-        c.FullName AS [TenKhachHang],
         ISNULL(NULLIF(k.Nguoigd, ''), c.FullName) AS [Nguoinop],
         
         ISNULL(NULLIF(k.Dienthoai, ''), ISNULL(NULLIF(k.DTchure, ''), ISNULL(NULLIF(k.DTcodau, ''), k.DienThoaiDaiDien))) AS [DienThoai],
@@ -347,6 +350,9 @@ BEGIN
 
     
     BEGIN TRY
+        -- Sử dụng lần cọc được truyền vào (1 hoặc 2)
+        -- SET @Solan = 1;
+
         -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân tách bằng dấu phẩy
         IF (@JsonSanhTiec = '.' OR @JsonSanhTiec = '')
         BEGIN
@@ -867,8 +873,8 @@ UPDATE SY_FormatFields SET CaptionVN = N'Lý do nộp tiền', FormPosition = '6
 UPDATE SY_FormatFields SET CaptionVN = N'Kèm theo chứng từ', FormPosition = '6', OrderNo = 23, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Kemtheo';
 UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú', FormPosition = '12', OrderNo = 24, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Ghichu';
 
--- Cập nhật lần cọc thành dạng dropdown cho phép chọn (hiển thị ở cả Thêm mới và Sửa)
-UPDATE SY_FormatFields SET CaptionVN = N'Lần cọc', FormPosition = '6', OrderNo = 25, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = N'STATIC:1|Cọc lần 1,2|Cọc lần 2' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Solan';
+-- Cập nhật lần cọc (cọc lần 1 / lần 2) hiển thị trên Form
+UPDATE SY_FormatFields SET CaptionVN = N'Lần cọc', FormPosition = '6', OrderNo = 15, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = N'STATIC:1|Cọc lần 1,2|Cọc lần 2' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Solan';
 
 -- Cấu hình hiển thị động (VisibleRule) cho các trường Chú rể / Cô dâu
 -- Chỉ hiển thị khi chọn loại tiệc là Tiệc cưới (blt000001 hoặc t01)

@@ -194,7 +194,7 @@ SELECT
     ISNULL(k.Tenchure, '') + ' & ' + ISNULL(k.Tencodau, '') AS [BenBTenChuTiec],
     ISNULL(NULLIF(k.CMNDDaiDien, ''), ISNULL(NULLIF(k.CMNDnguoidd, ''), ISNULL(NULLIF(k.CMNDchure, ''), '...'))) AS [BenBCCCD],
     k.Diachi AS [BenBDiaChi],
-    k.Dienthoai AS [BenBDienThoai],
+    ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [BenBDienThoai],
     N'Khách hàng' AS [BenBChucVu],
     k.Mail AS [BenBEmail],
 
@@ -215,7 +215,26 @@ SELECT
     -- 5. Thực đơn & Dịch vụ (cho in ấn docx)
     [dbo].[fn_DOCX_DanhSachMenu](h.Sohopdong) AS [DanhSachThucDon],
     NULL AS [DichVuTinhPhi],
-    ISNULL(h.Noidunguudai, '') AS [DSKhuyenMai],
+    ISNULL(NULLIF(h.Noidunguudai, ''), 
+        ISNULL((
+            SELECT STUFF((
+                SELECT CHAR(10) + CAST(ROW_NUMBER() OVER(ORDER BY ct.STT) AS VARCHAR(10)) + '. ' + ISNULL(hh.Tenhang, ct.Mahang) + 
+                       CASE WHEN ISNULL(ct.Soluong, 1) > 1 THEN ' (SL: ' + CAST(CAST(ct.Soluong AS INT) AS VARCHAR(10)) + ')' ELSE '' END
+                FROM tbmk_Banuudaict ct
+                LEFT JOIN dmHanghoa hh ON ct.Mahang = hh.Mahang
+                WHERE ct.DocumentID = (
+                    SELECT TOP 1 ud.DocumentID
+                    FROM tbmk_Banuudai ud
+                    WHERE ud.Loaitiecid = h.Loaitiecid
+                      AND ISNULL(h.TongSoBan, 0) >= ud.Tusoluongban 
+                      AND ISNULL(h.TongSoBan, 0) <= ud.Densoluongban
+                      AND (ud.IsKetthuc IS NULL OR ud.IsKetthuc = 0)
+                    ORDER BY ud.Tusoluongban DESC
+                )
+                ORDER BY ct.STT ASC
+                FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '')
+        ), '')
+    ) AS [DSKhuyenMai],
 
     -- 6. Thanh toán & Đặt cọc
     FORMAT(h.Sotiencoccho, 'N0', 'vi-VN') AS [CocLan1SoTien],
@@ -247,12 +266,8 @@ SELECT
     ISNULL(k.Mail, N'...') AS [HDEmail],
 
     -- Placeholders mapping for hop_dong.docx and other contracts
-    ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenA_NhanVienPhuTrach],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com3') AS [BenA_SDT_NhanVien],
-    N'Khách hàng' AS [BenB_ChucVu],
-    ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [BenB_DienThoai],
-    ISNULL(h.Noidunguudai, '') AS [DS_KhuyenMai],
-    CAST(YEAR(h.Ngaytochuc) AS VARCHAR) AS [Tiec_NamDL]
+    ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenANhanVienPhuTrach],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com3') AS [BenASDTNhanVien]
 
     -- , AS [DanhSachDV], AS [GhiChuChiTiet], AS [KhungGio], AS [TenDichVu], AS [TenMonAn], AS [TenNhomNgay], AS [ThanhTien], AS [UuDai]
     

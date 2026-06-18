@@ -124,7 +124,6 @@ BEGIN
         N'Khách hàng' AS [BenBChucVu],
         kh.Diachi AS [BenBDiaChi],
         ISNULL(kh.Dienthoai, ISNULL(kh.DTchure, kh.DTcodau)) AS [BenBDienThoai],
-        ISNULL(kh.Dienthoai, ISNULL(kh.DTchure, kh.DTcodau)) AS [BenB_DienThoai],
         kh.Tenkh AS [BenBTenDaiDien],
         CAST(ISNULL(pt.PhiPhucVu, 0) AS VARCHAR) + '%' AS [MucPhiPhucVu],
 

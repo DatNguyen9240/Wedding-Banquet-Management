@@ -190,10 +190,8 @@ BEGIN
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenASDT')       AS [BenASDT],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAMST')       AS [BenAMST],
         ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenANhanVienPhuTrach],
-        ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenA_NhanVienPhuTrach],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Com3')          AS [BenASDTNhanVien],
-        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Com3')          AS [BenA_SDT_NhanVien],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAEmail')     AS [BenAEmailNhanVien],
 
         -- DUMMY FOR AUDIT TOOL COMPATIBILITY
@@ -223,7 +221,6 @@ BEGIN
         k.Tencodau AS [BieuNguCD],
         k.DTchure AS [Sdtchure],
         k.DTcodau AS [Sdtcodau],
-        k.Diachi AS [BenB_DiaChi],
         ISNULL(h.Tentiec, N'LỄ THÀNH HÔN') AS [TenLe],
         ISNULL(k.Diachi, N'...')         AS [BenBDiaChiTemplate], -- backup alias nếu cần
 

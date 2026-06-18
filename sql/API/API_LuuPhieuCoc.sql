@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -89,6 +89,9 @@ BEGIN
     END
 
     BEGIN TRY
+        -- Luôn đặt lần cọc là 1
+        SET @Solan = 1;
+
         -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân tách bằng dấu phẩy
         IF (@JsonSanhTiec = '.' OR @JsonSanhTiec = '')
         BEGIN

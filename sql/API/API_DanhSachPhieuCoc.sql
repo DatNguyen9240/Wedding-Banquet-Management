@@ -25,6 +25,8 @@ BEGIN
     SELECT 
         b.DocumentID AS [DocumentID],
         b.DocumentID AS [MaChungTu],
+        ISNULL(b.SoBN, b.DocumentID) AS [TenBienNhan], -- Chữ 'ten' kích hoạt hiển thị Số biên nhận ở ô Input
+        c.FullName AS [TenKhachHang], -- Hiển thị tên khách hàng trên lưới Dropdown
         b.DocumentID AS [Sobiennhan], -- Hỗ trợ Workflow mapping tự động sang Hợp đồng
         b.SoBN AS [SoPhieu],
         
@@ -35,6 +37,7 @@ BEGIN
         k.DTcodau AS [DTcodau],
         k.Diachi AS [Diachi],
         k.Nguoigd AS [Nguoigd],
+        k.Nguoigd AS [BenBTenDaiDien],
         k.DienThoaiDaiDien AS [DienThoaiDaiDien],
         k.Mail AS [Mail],
         

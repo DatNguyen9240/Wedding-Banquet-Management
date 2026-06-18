@@ -3009,7 +3009,7 @@ var PromotionAutoFillPlugin = (function () {
       if (formName === 'frmBiennhancoccho') {
         targetEl = modalContent.querySelector('[name="Ghichu"]');
       } else if (formName === 'frmHopDong') {
-        targetEl = modalContent.querySelector('[name="DS_KhuyenMai"]') || modalContent.querySelector('[name="DSKhuyenMai"]');
+        targetEl = modalContent.querySelector('[name="DSKhuyenMai"]');
       }
     }
 
@@ -3033,7 +3033,7 @@ var PromotionAutoFillPlugin = (function () {
       errLabel.style.cssText = 'color: #ef4444; font-size: 11px; margin-top: 4px; font-weight: 600; display: flex; align-items: center; gap: 4px; line-height: 1.2;';
     }
     errLabel.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px; color:#ef4444; font-variation-settings:\'FILL\' 1;">error</span>' + msg;
-    
+
     // Chèn ngay dưới inputEl
     if (inputEl.nextSibling) {
       container.insertBefore(errLabel, inputEl.nextSibling);
@@ -3166,10 +3166,10 @@ var PromotionAutoFillPlugin = (function () {
         var formatted = records.map(function (item, idx) {
           var qty = Number(item.Soluong || item.soluong || 1);
           var qtyStr = qty > 1 ? ' (SL: ' + qty + ')' : '';
-          
+
           // 1. Thử lấy từ các cột tên quen thuộc
           var name = item.Tenhang || item.TenHang || item.tenhang || item.tenHang || item.TenMon || item.tenMon || item.Tenmon || item.tenmon || '';
-          
+
           // 2. Nếu trống, tìm cột nào có chứa chữ 'ten', 'name', 'diengiai', 'desc'
           if (!name) {
             var keys = Object.keys(item);
@@ -3182,12 +3182,12 @@ var PromotionAutoFillPlugin = (function () {
               }
             }
           }
-          
+
           // 3. Nếu vẫn trống, thử lấy từ cột mã hàng quen thuộc
           if (!name) {
             name = item.Mahang || item.mahang || item.MaHang || item.maHang || '';
           }
-          
+
           // 4. Nếu vẫn trống, tìm cột nào có chứa chữ 'ma', 'code', 'id' (trừ cột ID hệ thống)
           if (!name) {
             var keys = Object.keys(item);
@@ -3226,7 +3226,7 @@ var PromotionAutoFillPlugin = (function () {
           fields.targetEl.value = formatted;
           fields.targetEl.dispatchEvent(new Event('change', { bubbles: true }));
           fields.targetEl.dispatchEvent(new Event('input', { bubbles: true }));
-          
+
           // Thêm style đổi màu nhẹ để báo hiệu vừa được điền tự động
           fields.targetEl.style.setProperty('background-color', 'rgba(16, 185, 129, 0.1)', 'important');
           fields.targetEl.style.setProperty('border-color', '#10b981', 'important');
@@ -3361,7 +3361,7 @@ var PromotionAutoFillPlugin = (function () {
           if (formBody) {
             var modalContentEl = formBody.closest('.modal-content') || formBody;
             var formName = formBody.getAttribute('data-form-name');
-            
+
             // Đảm bảo cache sảnh đã được tải trước khi người dùng kịp tương tác
             _ensureHallCache();
 
@@ -3549,7 +3549,7 @@ var PhuLucPlugin = (function () {
 
     var nhamNgay = contractRow.Nhamngay || contractRow.NhamNgay || '';
     var dvTinhPhi = contractRow.DichVuTinhPhiPhuLuc || '';
-    var uuDai = contractRow.DS_KhuyenMai || contractRow.DSKhuyenMai || contractRow.Noidunguudai || contractRow.ThoaThuanPhuLucKhac || '';
+    var uuDai = contractRow.DSKhuyenMai || contractRow.Noidunguudai || contractRow.ThoaThuanPhuLucKhac || '';
     var lyDo = contractRow.Ghichu || contractRow.LyDoDieuChinh || '';
 
     // Lấy lịch sử phụ lục
