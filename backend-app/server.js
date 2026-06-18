@@ -511,7 +511,7 @@ app.post('/api/documents/generate', async (req, res) => {
             const docData = {
                 TiecID: tiecId,
                 DocType: templateType,
-                VersionNo: 1,
+                VersionNo: null,
                 FilePath: finalFileName,
                 FileHash: fileHash,
                 Status: 'ACTIVE',

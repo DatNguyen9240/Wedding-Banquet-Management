@@ -350,6 +350,18 @@ BEGIN
 
     
     BEGIN TRY
+        -- Defaulting accounts based on HinhThuc if empty
+        IF @TaiKhoanCo IS NULL OR @TaiKhoanCo = ''
+            SET @TaiKhoanCo = '131';
+
+        IF @TaiKhoanNo IS NULL OR @TaiKhoanNo = ''
+        BEGIN
+            IF @HinhThuc = N'Chuyển khoản'
+                SET @TaiKhoanNo = '112';
+            ELSE IF @HinhThuc = N'Tiền mặt'
+                SET @TaiKhoanNo = '111';
+        END
+
         -- Sử dụng lần cọc được truyền vào (1 hoặc 2)
         -- SET @Solan = 1;
 
@@ -935,3 +947,42 @@ ELSE
 BEGIN
     UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đãi tiệc', ShowInAdd = 0, ShowInEdit = 0, FormPosition = 'hidden' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SanhDat';
 END
+GO
+
+-- =====================================================================
+-- 7. TẠO STORED PROCEDURE MỚI: API_BienNhanCoc_MacDinhTaiKhoan (TRIGGER API)
+-- =====================================================================
+PRINT N'Đang tạo Stored Procedure API_BienNhanCoc_MacDinhTaiKhoan...';
+GO
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[API_BienNhanCoc_MacDinhTaiKhoan]') AND type in (N'P', N'PC'))
+BEGIN
+    DROP PROCEDURE [dbo].[API_BienNhanCoc_MacDinhTaiKhoan];
+END
+GO
+CREATE PROCEDURE [dbo].[API_BienNhanCoc_MacDinhTaiKhoan]
+    @HinhThuc NVARCHAR(100) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT 
+        CASE 
+            WHEN @HinhThuc = N'Chuyển khoản' THEN '112'
+            WHEN @HinhThuc = N'Tiền mặt' THEN '111'
+            ELSE ''
+        END AS [TaiKhoanNo],
+        '131' AS [TaiKhoanCo]
+END
+GO
+
+-- Đăng ký định tuyến trigger trong WA_API
+DELETE FROM WA_API WHERE List = 'API_BienNhanCoc_MacDinhTaiKhoan' AND Func = 'View';
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES ('API_BienNhanCoc_MacDinhTaiKhoan', 'View', 'API_BienNhanCoc_MacDinhTaiKhoan', '@HinhThuc=N''{HinhThuc}''');
+GO
+
+-- Cấu hình Trigger tự động trên trường HinhThuc của Form
+UPDATE SY_FormatFields
+SET ValidateRule = 'trigger:/api/API_Gateway_Router?List=API_BienNhanCoc_MacDinhTaiKhoan&Func=View'
+WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'HinhThuc';
+GO
+

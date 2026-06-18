@@ -89,8 +89,20 @@ BEGIN
     END
 
     BEGIN TRY
-        -- Luôn đặt lần cọc là 1
-        SET @Solan = 1;
+        -- Defaulting accounts based on HinhThuc if empty
+        IF @TaiKhoanCo IS NULL OR @TaiKhoanCo = ''
+            SET @TaiKhoanCo = '131';
+
+        IF @TaiKhoanNo IS NULL OR @TaiKhoanNo = ''
+        BEGIN
+            IF @HinhThuc = N'Chuyển khoản'
+                SET @TaiKhoanNo = '112';
+            ELSE IF @HinhThuc = N'Tiền mặt'
+                SET @TaiKhoanNo = '111';
+        END
+
+        -- Sử dụng lần cọc được truyền vào (1 hoặc 2)
+        -- SET @Solan = 1;
 
         -- Chuẩn hóa JSON sảnh tiệc nếu là mã đơn lẻ hoặc danh sách phân tách bằng dấu phẩy
         IF (@JsonSanhTiec = '.' OR @JsonSanhTiec = '')
