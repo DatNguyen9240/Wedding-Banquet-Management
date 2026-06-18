@@ -3106,15 +3106,12 @@ var PromotionAutoFillPlugin = (function () {
       return;
     }
 
-    var isInvalid = (totalMin > 0 && totalTables < totalMin) || (totalMax > 0 && totalTables > totalMax);
+    var isInvalid = (totalMax > 0 && totalTables > totalMax);
 
     if (isInvalid) {
       var msg = '';
       var shortMsg = '';
-      if (totalMin > 0 && totalTables < totalMin) {
-        msg = 'Tổng số bàn chính thức (' + totalTables + ' bàn) nhỏ hơn số bàn tối thiểu của sảnh ' + names.join(', ') + ' là ' + totalMin + ' bàn.';
-        shortMsg = 'Tổng ' + totalTables + ' bàn (Tối thiểu: ' + totalMin + ')';
-      } else if (totalMax > 0 && totalTables > totalMax) {
+      if (totalMax > 0 && totalTables > totalMax) {
         msg = 'Tổng số bàn chính thức (' + totalTables + ' bàn) vượt quá số bàn tối đa của sảnh ' + names.join(', ') + ' là ' + totalMax + ' bàn.';
         shortMsg = 'Tổng ' + totalTables + ' bàn (Tối đa: ' + totalMax + ')';
       }
@@ -3327,17 +3324,7 @@ var PromotionAutoFillPlugin = (function () {
 
       if (!hasValidCache) return; // Nếu chưa kịp load cache sảnh => bỏ qua chặn để an toàn
 
-      if (totalMin > 0 && totalTables < totalMin) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        var errMsg = 'Tổng số bàn chính thức (' + totalTables + ' bàn) nhỏ hơn số bàn tối thiểu của sảnh ' + names.join(', ') + ' là ' + totalMin + ' bàn.';
-        if (typeof Alert !== 'undefined') {
-          Alert.error('Lỗi số lượng bàn', errMsg);
-        } else {
-          alert(errMsg);
-        }
-        return false;
-      }
+      // Đã bỏ chặn số bàn tối thiểu theo yêu cầu (do có phụ thu)
 
       if (totalMax > 0 && totalTables > totalMax) {
         e.preventDefault();

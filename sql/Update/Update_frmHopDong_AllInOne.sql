@@ -1032,7 +1032,7 @@ WHERE FormName = 'frmHopDong'
   );
 
 UPDATE SY_FormatFields
-SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = 'hidden'
+SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '6'
 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
 
 -- Ghi chú bổ sung hiển thị ở Form dưới dạng textarea/textbox lớn
@@ -1228,7 +1228,7 @@ UPDATE SY_FormatFields SET CaptionVN = N'SĐT nhân viên' WHERE FormName = 'frm
 UPDATE SY_FormatFields SET CaptionVN = N'Đại diện Bên A' WHERE FormName = 'frmHopDong' AND FieldName = 'BenANguoiDaiDien';
 UPDATE SY_FormatFields SET CaptionVN = N'Chức vụ Bên A' WHERE FormName = 'frmHopDong' AND FieldName = 'BenAChucVu';
 
-UPDATE SY_FormatFields SET CaptionVN = N'Đại diện Bên B', ShowInAdd = 1, ShowInEdit = 1, FormPosition = '6', OrderNo = 41 WHERE FormName = 'frmHopDong' AND FieldName = 'BenBTenDaiDien';
+UPDATE SY_FormatFields SET CaptionVN = N'Đại diện Bên B', ShowInAdd = 1, ShowInEdit = 1, FormPosition = '6', OrderNo = 10 WHERE FormName = 'frmHopDong' AND FieldName = 'BenBTenDaiDien';
 UPDATE SY_FormatFields SET CaptionVN = N'Tên Chủ Tiệc' WHERE FormName = 'frmHopDong' AND FieldName = 'BenBTenChuTiec';
 UPDATE SY_FormatFields SET CaptionVN = N'Địa chỉ Bên B' WHERE FormName = 'frmHopDong' AND FieldName = 'BenBDiaChi';
 UPDATE SY_FormatFields SET CaptionVN = N'SĐT Bên B' WHERE FormName = 'frmHopDong' AND FieldName = 'BenBDienThoai';
@@ -1296,14 +1296,14 @@ GO
 -- 4.8. Khởi tạo/Cập nhật các cột động đặc thù (LoaiHinhSuKien, Lịch trình, Note)
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'LoaiHinhSuKien')
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition, FormatID)
-    VALUES ('frmHopDong', 'LoaiHinhSuKien', N'Loại hình sự kiện', 1, 1, 0, 95, '6', 't');
+    VALUES ('frmHopDong', 'LoaiHinhSuKien', N'Loại hình sự kiện', 0, 0, 0, 95, 'hidden', 't');
 ELSE
     UPDATE SY_FormatFields 
     SET CaptionVN = N'Loại hình sự kiện',
-        ShowInAdd = 1,
-        ShowInEdit = 1,
+        ShowInAdd = 0,
+        ShowInEdit = 0,
         ShowInFilter = 0,
-        FormPosition = '6',
+        FormPosition = 'hidden',
         OrderNo = 95,
         FormatID = 't'
     WHERE FormName = 'frmHopDong' AND FieldName = 'LoaiHinhSuKien';
@@ -1387,27 +1387,28 @@ UPDATE SY_FormatFields SET OrderNo = 4 WHERE FormName = 'frmHopDong' AND FieldNa
 UPDATE SY_FormatFields SET OrderNo = 5 WHERE FormName = 'frmHopDong' AND FieldName = 'Tenchure';
 UPDATE SY_FormatFields SET OrderNo = 6 WHERE FormName = 'frmHopDong' AND FieldName = 'Tencodau';
 UPDATE SY_FormatFields SET OrderNo = 7 WHERE FormName = 'frmHopDong' AND FieldName = 'DienThoai';
-UPDATE SY_FormatFields SET OrderNo = 8 WHERE FormName = 'frmHopDong' AND FieldName = 'Mail';
-UPDATE SY_FormatFields SET OrderNo = 9 WHERE FormName = 'frmHopDong' AND FieldName = 'Diachi';
-UPDATE SY_FormatFields SET OrderNo = 10 WHERE FormName = 'frmHopDong' AND FieldName = 'Ngayhopdong';
-UPDATE SY_FormatFields SET OrderNo = 11 WHERE FormName = 'frmHopDong' AND FieldName = 'NgayToChuc';
-UPDATE SY_FormatFields SET OrderNo = 12 WHERE FormName = 'frmHopDong' AND FieldName = 'Nhamngay';
-UPDATE SY_FormatFields SET OrderNo = 13 WHERE FormName = 'frmHopDong' AND FieldName = 'Loaitiecid';
-UPDATE SY_FormatFields SET OrderNo = 14 WHERE FormName = 'frmHopDong' AND FieldName = 'Thoigianid';
-UPDATE SY_FormatFields SET OrderNo = 15 WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
-UPDATE SY_FormatFields SET OrderNo = 151 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
-UPDATE SY_FormatFields SET OrderNo = 16 WHERE FormName = 'frmHopDong' AND FieldName = 'SoBan';
-UPDATE SY_FormatFields SET OrderNo = 17 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanManchinhthuc';
-UPDATE SY_FormatFields SET OrderNo = 18 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanManduphong';
-UPDATE SY_FormatFields SET OrderNo = 19 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanChaychinhthuc';
-UPDATE SY_FormatFields SET OrderNo = 20 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanChayduphong';
-UPDATE SY_FormatFields SET OrderNo = 21 WHERE FormName = 'frmHopDong' AND FieldName = 'DaCocVND';
-UPDATE SY_FormatFields SET OrderNo = 22 WHERE FormName = 'frmHopDong' AND FieldName = 'Sotiencochopdong';
-UPDATE SY_FormatFields SET OrderNo = 23 WHERE FormName = 'frmHopDong' AND FieldName = 'Tongtiencoc';
-UPDATE SY_FormatFields SET OrderNo = 24 WHERE FormName = 'frmHopDong' AND FieldName = 'TongTien';
-UPDATE SY_FormatFields SET OrderNo = 25 WHERE FormName = 'frmHopDong' AND FieldName = 'TrangThai';
-UPDATE SY_FormatFields SET OrderNo = 26 WHERE FormName = 'frmHopDong' AND FieldName = 'Ghichu';
-UPDATE SY_FormatFields SET OrderNo = 27 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonLichTrinh';
+UPDATE SY_FormatFields SET OrderNo = 8 WHERE FormName = 'frmHopDong' AND FieldName = 'Diachi';
+UPDATE SY_FormatFields SET OrderNo = 9 WHERE FormName = 'frmHopDong' AND FieldName = 'Mail';
+UPDATE SY_FormatFields SET OrderNo = 10 WHERE FormName = 'frmHopDong' AND FieldName = 'BenBTenDaiDien';
+UPDATE SY_FormatFields SET OrderNo = 11 WHERE FormName = 'frmHopDong' AND FieldName = 'Ngayhopdong';
+UPDATE SY_FormatFields SET OrderNo = 12 WHERE FormName = 'frmHopDong' AND FieldName = 'NgayToChuc';
+UPDATE SY_FormatFields SET OrderNo = 13 WHERE FormName = 'frmHopDong' AND FieldName = 'Nhamngay';
+UPDATE SY_FormatFields SET OrderNo = 14 WHERE FormName = 'frmHopDong' AND FieldName = 'Loaitiecid';
+UPDATE SY_FormatFields SET OrderNo = 15 WHERE FormName = 'frmHopDong' AND FieldName = 'Thoigianid';
+UPDATE SY_FormatFields SET OrderNo = 16 WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
+UPDATE SY_FormatFields SET OrderNo = 161 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
+UPDATE SY_FormatFields SET OrderNo = 17 WHERE FormName = 'frmHopDong' AND FieldName = 'SoBan';
+UPDATE SY_FormatFields SET OrderNo = 18 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanManchinhthuc';
+UPDATE SY_FormatFields SET OrderNo = 19 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanManduphong';
+UPDATE SY_FormatFields SET OrderNo = 20 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanChaychinhthuc';
+UPDATE SY_FormatFields SET OrderNo = 21 WHERE FormName = 'frmHopDong' AND FieldName = 'SobanChayduphong';
+UPDATE SY_FormatFields SET OrderNo = 22 WHERE FormName = 'frmHopDong' AND FieldName = 'DaCocVND';
+UPDATE SY_FormatFields SET OrderNo = 23 WHERE FormName = 'frmHopDong' AND FieldName = 'Sotiencochopdong';
+UPDATE SY_FormatFields SET OrderNo = 24 WHERE FormName = 'frmHopDong' AND FieldName = 'Tongtiencoc';
+UPDATE SY_FormatFields SET OrderNo = 25 WHERE FormName = 'frmHopDong' AND FieldName = 'TongTien';
+UPDATE SY_FormatFields SET OrderNo = 26 WHERE FormName = 'frmHopDong' AND FieldName = 'TrangThai';
+UPDATE SY_FormatFields SET OrderNo = 27 WHERE FormName = 'frmHopDong' AND FieldName = 'Ghichu';
+UPDATE SY_FormatFields SET OrderNo = 28 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonLichTrinh';
 GO
 
 -- 4.10. Cấu hình hiển thị động (VisibleRule) cho các trường Chú rể / Cô dâu
