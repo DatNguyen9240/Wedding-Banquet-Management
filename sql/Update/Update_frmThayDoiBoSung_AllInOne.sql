@@ -542,6 +542,43 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
+        -- ===================================================================
+        -- BE TỰ TÍNH TỔNG TIỀN từ JSON arrays (không phụ thuộc FE)
+        -- ===================================================================
+        DECLARE @CalcDonGia       DECIMAL(18,2) = ISNULL(TRY_CAST(JSON_VALUE(@JsonData, '$.DonGiaBanTiecTD') AS DECIMAL(18,2)),
+                                                   ISNULL(TRY_CAST(JSON_VALUE(@JsonData, '$.DonGiaBanTiec') AS DECIMAL(18,2)), 0));
+        DECLARE @CalcSoBan        DECIMAL(18,2) = ISNULL(TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanTuTD') AS DECIMAL(18,2)),
+                                                   ISNULL(TRY_CAST(JSON_VALUE(@JsonData, '$.QuyMoBanTu') AS DECIMAL(18,2)), 0));
+
+        -- Tổng bàn tiệc = đơn giá × số bàn (mặn)
+        DECLARE @CalcTongtienBanman DECIMAL(18,2) = @CalcDonGia * @CalcSoBan;
+
+        -- Tổng thức uống = SUM(Dongia * Soluong) từ JsonThucUong
+        DECLARE @CalcTongtienThucUong DECIMAL(18,2) = 0;
+        IF JSON_QUERY(@JsonData, '$.JsonThucUong') IS NOT NULL
+        BEGIN
+            SELECT @CalcTongtienThucUong = ISNULL(SUM(
+                ISNULL(TRY_CAST(JSON_VALUE(j.value, '$.Dongia') AS DECIMAL(18,2)), 0)
+                * ISNULL(TRY_CAST(JSON_VALUE(j.value, '$.Soluong') AS DECIMAL(18,2)), 0)
+            ), 0)
+            FROM OPENJSON(@JsonData, '$.JsonThucUong') j;
+        END
+
+        -- Tổng dịch vụ = SUM(Dongia * Soluong) từ JsonDichVu
+        DECLARE @CalcTongtienDichVu DECIMAL(18,2) = 0;
+        IF JSON_QUERY(@JsonData, '$.JsonDichVu') IS NOT NULL
+        BEGIN
+            SELECT @CalcTongtienDichVu = ISNULL(SUM(
+                ISNULL(TRY_CAST(JSON_VALUE(j.value, '$.Dongia') AS DECIMAL(18,2)), 0)
+                * ISNULL(TRY_CAST(JSON_VALUE(j.value, '$.Soluong') AS DECIMAL(18,2)), 0)
+            ), 0)
+            FROM OPENJSON(@JsonData, '$.JsonDichVu') j;
+        END
+
+        -- Tổng hợp đồng = bàn + thức uống + dịch vụ
+        DECLARE @CalcTongtienHopDong DECIMAL(18,2) = @CalcTongtienBanman + @CalcTongtienThucUong + @CalcTongtienDichVu;
+        -- ===================================================================
+
         IF @IsEdit = 0 -- INSERT
         BEGIN
             DECLARE @NextLan INT = 1;
@@ -625,11 +662,11 @@ BEGIN
                 COALESCE(JSON_VALUE(@JsonData, '$.LoaiTiecIDTD'), JSON_VALUE(@JsonData, '$.LoaiTiecID')),
                 COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.GiabanManTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.GiabanMan') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Giabanman') AS DECIMAL(18,2))),
                 COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.GiabanChayTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.GiabanChay') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Giabanchay') AS DECIMAL(18,2))),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanmanTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanman') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Tongtienbanman') AS DECIMAL(18,2))),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanchayTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanchay') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Tongtienbanchay') AS DECIMAL(18,2))),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.Tongtienthucuong') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienthucuongTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongTienThucUong') AS DECIMAL(18,2))),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienDichvuTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienDichvu') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Tongtiendichvu') AS DECIMAL(18,2))),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienHopdongTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienHopdong') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Tongtienhopdong') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongTienHopDong') AS DECIMAL(18,2))),
+                @CalcTongtienBanman,
+                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanchayTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanchay') AS DECIMAL(18,2)), 0),
+                @CalcTongtienThucUong,
+                @CalcTongtienDichVu,
+                @CalcTongtienHopDong,
                 COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.ConLaiTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.ConLai') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Conlai') AS DECIMAL(18,2))),
                 COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoluongKhachTD') AS INT), TRY_CAST(JSON_VALUE(@JsonData, '$.SoluongKhach') AS INT), TRY_CAST(JSON_VALUE(@JsonData, '$.Soluongkhach') AS INT)),
                 COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongTienPhanChayTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongTienPhanChay') AS DECIMAL(18,2))),
@@ -729,11 +766,11 @@ BEGIN
                 LoaiTiecIDTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.LoaiTiecIDTD'), JSON_VALUE(@JsonData, '$.LoaiTiecID')), LoaiTiecIDTD),
                 GiabanManTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.GiabanManTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.GiabanMan') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Giabanman') AS DECIMAL(18,2))), GiabanManTD),
                 GiabanChayTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.GiabanChayTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.GiabanChay') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Giabanchay') AS DECIMAL(18,2))), GiabanChayTD),
-                TongtienBanmanTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanmanTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanman') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Tongtienbanman') AS DECIMAL(18,2))), TongtienBanmanTD),
-                TongtienBanchayTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanchayTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanchay') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Tongtienbanchay') AS DECIMAL(18,2))), TongtienBanchayTD),
-                Tongtienthucuong = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.Tongtienthucuong') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienthucuongTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongTienThucUong') AS DECIMAL(18,2))), Tongtienthucuong),
-                TongtienDichvuTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienDichvuTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienDichvu') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Tongtiendichvu') AS DECIMAL(18,2))), TongtienDichvuTD),
-                TongtienHopdongTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienHopdongTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienHopdong') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Tongtienhopdong') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongTienHopDong') AS DECIMAL(18,2))), TongtienHopdongTD),
+                TongtienBanmanTD = @CalcTongtienBanman,
+                TongtienBanchayTD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanchayTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongtienBanchay') AS DECIMAL(18,2)), 0),
+                Tongtienthucuong = @CalcTongtienThucUong,
+                TongtienDichvuTD = @CalcTongtienDichVu,
+                TongtienHopdongTD = @CalcTongtienHopDong,
                 ConLaiTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.ConLaiTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.ConLai') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.Conlai') AS DECIMAL(18,2))), ConLaiTD),
                 SoluongKhachTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoluongKhachTD') AS INT), TRY_CAST(JSON_VALUE(@JsonData, '$.SoluongKhach') AS INT), TRY_CAST(JSON_VALUE(@JsonData, '$.Soluongkhach') AS INT)), SoluongKhachTD),
                 TongTienPhanChayTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TongTienPhanChayTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.TongTienPhanChay') AS DECIMAL(18,2))), TongTienPhanChayTD),
