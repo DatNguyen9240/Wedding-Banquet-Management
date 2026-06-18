@@ -14,8 +14,28 @@ const ENV_VARS = {
         if (typeof window !== 'undefined' && window.location) {
             // Nếu chạy trên HTTPS (production), dùng IP máy chủ
             if (window.location.protocol === 'https:') return '103.190.38.46';
-            // Nếu chạy local (HTTP), lấy IP/hostname thực tế của trình duyệt đang mở
-            return window.location.hostname;
+            
+            var hostname = window.location.hostname;
+            // Kiểm tra xem có phải chạy local hay không (localhost, 127.0.0.1, 192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+            var isLocal = hostname === 'localhost' || 
+                          hostname === '127.0.0.1' || 
+                          hostname === '::1' || 
+                          hostname.startsWith('192.168.') || 
+                          hostname.startsWith('10.');
+            if (hostname.startsWith('172.')) {
+                var parts = hostname.split('.');
+                if (parts.length >= 2) {
+                    var sec = parseInt(parts[1], 10);
+                    if (sec >= 16 && sec <= 31) {
+                        isLocal = true;
+                    }
+                }
+            }
+            // Nếu không phải chạy local (ví dụ chạy qua domain kyhoa.bms7.net), dùng IP máy chủ thực tế
+            if (!isLocal) {
+                return '103.190.38.46';
+            }
+            return hostname;
         }
         return '103.190.38.46';
     },
@@ -62,6 +82,12 @@ window.API_CONFIG = {
                 return isHttps
                     ? ENV_VARS.API_BASE + '/docserver/samples/'
                     : 'http://' + ENV_VARS.BACKEND_HOST + ':8081/samples/';
+            },
+            get UPLOAD_LOGO_API() {
+                var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
+                return isHttps
+                    ? ENV_VARS.API_BASE + '/docserver/api/upload-logo'
+                    : 'http://' + ENV_VARS.BACKEND_HOST + ':8081/api/upload-logo';
             }
         },
 
