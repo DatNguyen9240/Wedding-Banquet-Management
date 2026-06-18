@@ -361,7 +361,7 @@ var DocumentExportPlugin = (function () {
       icon: 'receipt',
       altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
       sqlListName: 'frmQuyetToan',
-      convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi']
+      convertFields: []
     },
     'tbmk_Thaydoi': {
       docType: 'de_nghi_thay_doi',
@@ -585,7 +585,7 @@ var DocumentExportPlugin = (function () {
             altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
             sqlListName: 'frmQuyetToan',
             ignoreTemplateFile: true,
-            convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi']
+            convertFields: []
           });
         }
       });
