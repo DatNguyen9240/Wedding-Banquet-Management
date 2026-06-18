@@ -9,14 +9,20 @@
 const ENV_VARS = {
     API_BASE: 'https://qlt.bms79.com', // Domain backend thực tế (SQL Server API Gateway)
 
-    // Cấu hình máy chạy Node.js Backend (server.js - Port 8081)
-    // LƯU Ý: Nếu chạy Node.js Backend trên máy cá nhân (Local) và Docker OnlyOffice trên máy khác,
-    // bạn PHẢI đổi BACKEND_HOST thành IP LAN hoặc IP Public của máy bạn (không dùng localhost/127.0.0.1)
-    // để Docker OnlyOffice có thể kết nối ngược lại tải file và lưu callback.
-    BACKEND_HOST: '103.190.38.46',
+    // Tự động phát hiện HOST chạy (Local dev vs Production)
+    get BACKEND_HOST() {
+        if (typeof window !== 'undefined' && window.location) {
+            // Nếu chạy trên HTTPS (production), dùng IP máy chủ
+            if (window.location.protocol === 'https:') return '103.190.38.46';
+            // Nếu chạy local (HTTP), lấy IP/hostname thực tế của trình duyệt đang mở
+            return window.location.hostname;
+        }
+        return '103.190.38.46';
+    },
 
-    // Cấu hình máy chạy Docker OnlyOffice (Document Server - Port 8082)
-    ONLYOFFICE_HOST: '103.190.38.46',
+    get ONLYOFFICE_HOST() {
+        return this.BACKEND_HOST;
+    }
 };
 
 // 2. Cấu hình API chi tiết
