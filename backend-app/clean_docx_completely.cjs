@@ -191,11 +191,11 @@ function cleanHoiNghi(xml) {
     });
 
     const reps = [
-        { search: 'Nhựt Thủy', replace: '{BenA_NhanVienPhuTrach}' },
+        { search: 'Nhựt Thủy', replace: '{BenANhanVienPhuTrach}' },
         { search: '44/CTY-HHKH/2026', replace: '{Sohopdong}' },
         { search: '08/05/2026', replace: '{NgayHopDong}' },
         { search: 'Ngày ra BEO: 13/05/2026', replace: 'Ngày ra BEO: {NgayRaBEO}' },
-        { search: 'Ngày 13/05/2026', replace: 'Ngày {Dot1_Ngay}' },
+        { search: 'Ngày 13/05/2026', replace: 'Ngày {Dot1Ngay}' },
         { search: 'CÔNG TY TNHH MAKITA VIỆT NAM', replace: '{TenCongTy}' },
         { search: 'ĐƠN VỊ', replace: 'TÊN CÔNG TY' },
         { search: '18/05/2026', replace: '{NgayToChuc}' },
@@ -204,9 +204,9 @@ function cleanHoiNghi(xml) {
         { search: 'Khách hàng thường niên', replace: '{TieuSuKhachHang}' },
         { search: '17/05/2026', replace: '{NgaySetup}' },
         { search: '19/05/2026', replace: '{NgayOut}' },
-        { search: '19/05', replace: '{NgayOut_Short}' },
-        { search: '89.675.555 VNĐ', replace: '{Dot1_SoTien}' },
-        { search: 'Thanh toán sau tiệc 07 ngày', replace: '{DotCuoi_GhiChu}' },
+        { search: '19/05', replace: '{NgayOutShort}' },
+        { search: '89.675.555 VNĐ', replace: '{Dot1SoTien}' },
+        { search: 'Thanh toán sau tiệc 07 ngày', replace: '{DotCuoiGhiChu}' },
         { search: 'bàn số 13', replace: 'bàn số {SobanTang}' },
         { search: 'PHIẾU ĐẶT TIỆC', replace: '{TieuDePhieu}' },
     ];
@@ -218,8 +218,8 @@ function cleanHoiNghi(xml) {
 
 
 
-    if (!xml.includes('{BenA_SDT_NhanVien}')) {
-        res = replaceRegex(xml, new RegExp(makeXmlRegex('Tel:'), 'g'), 'Tel: {BenA_SDT_NhanVien}');
+    if (!xml.includes('{BenASDTNhanVien}')) {
+        res = replaceRegex(xml, new RegExp(makeXmlRegex('Tel:'), 'g'), 'Tel: {BenASDTNhanVien}');
         xml = res.xml; mods += res.count;
     }
 
@@ -340,24 +340,24 @@ function cleanTiecCuoi(xml) {
     let res;
 
     const reps = [
-        { search: 'Mộng Tuyền', replace: '{BenA_NhanVienPhuTrach}' },
-        { search: 'Tel: : 0392 001 803', replace: 'Tel: {BenA_SDT_NhanVien}' },
+        { search: 'Mộng Tuyền', replace: '{BenANhanVienPhuTrach}' },
+        { search: 'Tel: : 0392 001 803', replace: 'Tel: {BenASDTNhanVien}' },
         { search: '01/11-HHKH2025', replace: '{Sohopdong}' },
         { search: '01/11/2025', replace: '{NgayHopDong}' },
         { search: '12/04/2026', replace: '{NgayRaBEO}' },
         { search: 'NGUYỄN PHƯƠNG DUY', replace: '{Tenchure}' },
         { search: 'NGUYỄN HỒ THU PHƯỢNG', replace: '{Tencodau}' },
         { search: '06.06.2026', replace: '{NgayToChuc}' },
-        { search: '21/08/11 Lê Công Phép, P. An Lạc, TPHCM', replace: '{BenB_DiaChi}' },
+        { search: '21/08/11 Lê Công Phép, P. An Lạc, TPHCM', replace: '{BenBDiaChi}' },
         { search: '0937 260 013', replace: '{Sdtchure}' },
         { search: '0398 401 671', replace: '{Sdtcodau}' },
         { search: 'Fanpage', replace: '{DoiTuongKhach}' },
         { search: '36 bàn mặn / 10 khách', replace: '{SobanManchinhthuc} bàn mặn / 10 khách' },
         { search: '02 bàn/ 10 khách', replace: '{SobanManduphong} bàn/ 10 khách' },
         { search: 'Ghế trắng - Nơ hồng', replace: '{SetupNoGhe}' },
-        { search: 'Lần 1: 10.000.000 VNĐ - CK', replace: 'Lần 1: {Dot1_SoTien} VNĐ - {Dot1_HinhThuc}' },
-        { search: 'Lần 2: 100.000.000 VNĐ - CK', replace: 'Lần 2: {Dot2_SoTien} VNĐ - {Dot2_HinhThuc}' },
-        { search: 'Thanh toán cuối tiệc.', replace: '{DotCuoi_GhiChu}' },
+        { search: 'Lần 1: 10.000.000 VNĐ - CK', replace: 'Lần 1: {Dot1SoTien} VNĐ - {Dot1HinhThuc}' },
+        { search: 'Lần 2: 100.000.000 VNĐ - CK', replace: 'Lần 2: {Dot2SoTien} VNĐ - {Dot2HinhThuc}' },
+        { search: 'Thanh toán cuối tiệc.', replace: '{DotCuoiGhiChu}' },
         { search: 'LỄ THÀNH HÔN', replace: '{TenLe}' },
         { search: 'PHƯƠNG DUY - THU PHƯỢNG', replace: '{BieuNguCR} - {BieuNguCD}' },
         { search: '17h00', replace: '{GioBatDau}' },
@@ -453,6 +453,20 @@ function process(file, cleanFn) {
     try {
         const content = fs.readFileSync(file, 'binary');
         const zip = new PizZip(content);
+        
+        // Normalize zip entries for Windows backslashes
+        const fileNames = Object.keys(zip.files);
+        for (const name of fileNames) {
+            if (name.includes('\\')) {
+                const normalizedName = name.replace(/\\/g, '/');
+                zip.files[normalizedName] = zip.files[name];
+                if (zip.files[normalizedName]) {
+                    zip.files[normalizedName].name = normalizedName;
+                }
+                delete zip.files[name];
+            }
+        }
+
         let xml = zip.file('word/document.xml').asText();
         
         xml = cleanFn(xml);
@@ -478,6 +492,20 @@ function insertLabelsFirst() {
     try {
         const content = fs.readFileSync(file, 'binary');
         const zip = new PizZip(content);
+        
+        // Normalize zip entries for Windows backslashes
+        const fileNames = Object.keys(zip.files);
+        for (const name of fileNames) {
+            if (name.includes('\\')) {
+                const normalizedName = name.replace(/\\/g, '/');
+                zip.files[normalizedName] = zip.files[name];
+                if (zip.files[normalizedName]) {
+                    zip.files[normalizedName].name = normalizedName;
+                }
+                delete zip.files[name];
+            }
+        }
+
         let xml = zip.file('word/document.xml').asText();
 
         function insertAfterLabel(xml, labelStr, insertText) {
@@ -498,8 +526,8 @@ function insertLabelsFirst() {
 
         xml = insertAfterLabel(xml, 'ĐƠN VỊ THI CÔNG', '{DonViThiCong}');
         xml = insertAfterLabel(xml, 'NGƯỜI GIAO DỊCH', '{NguoiGiaoDich}');
-        xml = insertAfterLabel(xml, 'ĐỊA CHỈ', '{BenB_DiaChi}');
-        xml = insertAfterLabel(xml, 'ĐIỆN THOẠI', '{BenB_DienThoai}');
+        xml = insertAfterLabel(xml, 'ĐỊA CHỈ', '{BenBDiaChi}');
+        xml = insertAfterLabel(xml, 'ĐIỆN THOẠI', '{BenBDienThoai}');
 
         zip.file('word/document.xml', xml);
         const buf = zip.generate({type: 'nodebuffer', compression: 'DEFLATE'});
