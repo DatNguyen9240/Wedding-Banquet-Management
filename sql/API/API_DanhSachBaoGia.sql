@@ -128,8 +128,14 @@ BEGIN
         (
             SELECT
                 ROW_NUMBER() OVER (ORDER BY src.sort_order, src.TenHang) AS [STT],
-                src.TenHang AS [NoiDung],
-                FORMAT(ISNULL(src.Dongia, 0), 'N0', 'vi-VN') AS [DonGia]
+                src.TenHang AS [DienGiai],
+                N'' AS [ChiTiet],
+                N'' AS [DVT],
+                N'' AS [SoLuong],
+                FORMAT(ISNULL(src.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
+                N'' AS [UuDai],
+                FORMAT(ISNULL(src.Dongia, 0), 'N0', 'vi-VN') AS [ThanhTien],
+                1 AS [IsData]
             FROM (
                 SELECT ISNULL(hh.Tenhang, td.Mahang) AS TenHang, td.Dongia, 1 AS sort_order
                 FROM tbmk_Hopdongthucdonman td

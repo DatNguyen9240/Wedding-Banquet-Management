@@ -315,6 +315,7 @@ UPDATE SY_FormatFields SET CaptionVN = N'Thuế VAT 10%'        WHERE FormName =
 UPDATE SY_FormatFields SET CaptionVN = N'Tổng cộng chưa VAT'  WHERE FormName = 'frmBaoGia' AND FieldName = 'TongCongChuaVAT';
 UPDATE SY_FormatFields SET CaptionVN = N'Cách bố trí'         WHERE FormName = 'frmBaoGia' AND FieldName = 'BoTri';
 UPDATE SY_FormatFields SET CaptionVN = N'Hotline website'     WHERE FormName = 'frmBaoGia' AND FieldName = 'HotlineWebsiteNhaHang';
+UPDATE SY_FormatFields SET CaptionVN = N'Thời gian'            WHERE FormName = 'frmBaoGia' AND FieldName = 'ThoiGian';
 GO
 
 -- =========================================================================
@@ -325,7 +326,7 @@ GO
 
 DECLARE @DS_DichVu NVARCHAR(MAX) = N'[{"key":"STT","label":"STT","type":"number","width":"50px"},{"key":"DienGiai","label":"Diễn giải","type":"text","width":"auto"},{"key":"DVT","label":"ĐVT","type":"text","width":"70px"},{"key":"SoLuong","label":"Số lượng","type":"text","width":"90px"},{"key":"DonGia","label":"Đơn giá","type":"text","width":"110px"},{"key":"ThanhTien","label":"Thành tiền","type":"text","width":"110px"}]';
 DECLARE @DS_KhuVuc NVARCHAR(MAX) = N'[{"key":"STT","label":"STT","type":"number","width":"50px"},{"key":"TenKhuVuc","label":"Khu vực / Sảnh","type":"text","width":"auto"},{"key":"SoBanMin","label":"Bàn tối thiểu","type":"text","width":"90px"},{"key":"SoBanMax","label":"Bàn tối đa","type":"text","width":"90px"},{"key":"SucchuaMin","label":"Sức chứa min","type":"text","width":"100px"},{"key":"SucchuaMax","label":"Sức chứa max","type":"text","width":"100px"},{"key":"GhiChu","label":"Ghi chú","type":"text","width":"150px"}]';
-DECLARE @DS_ThamKhao NVARCHAR(MAX) = N'[{"key":"STT","label":"STT","type":"number","width":"50px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"},{"key":"DonGia","label":"Đơn giá","type":"text","width":"120px"}]';
+DECLARE @DS_ThamKhao NVARCHAR(MAX) = N'[{"key":"STT","label":"STT","type":"number","width":"50px"},{"key":"DienGiai","label":"Nội dung","type":"text","width":"auto"},{"key":"DonGia","label":"Đơn giá","type":"text","width":"120px"}]';
 
 UPDATE SY_FormatFields SET
     CaptionVN = N'Danh sách dịch vụ', FormatID = 'js', DataSource = @DS_DichVu,
@@ -336,14 +337,14 @@ WHERE FormName = 'frmBaoGia' AND FieldName = 'DanhSachDichVu';
 
 UPDATE SY_FormatFields SET
     CaptionVN = N'Danh sách khu vực', FormatID = 'js', DataSource = @DS_KhuVuc,
-    FormPosition = '12', OrderNo = 31,
+    FormPosition = '12', OrderNo = 32,
     ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0,
     IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmBaoGia' AND FieldName = 'DanhSachKhuVuc';
 
 UPDATE SY_FormatFields SET
     CaptionVN = N'Thực đơn & DV tham khảo', FormatID = 'js', DataSource = @DS_ThamKhao,
-    FormPosition = '12', OrderNo = 32,
+    FormPosition = '12', OrderNo = 34,
     ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0,
     IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmBaoGia' AND FieldName = 'DanhSachThamKhao';
@@ -351,23 +352,36 @@ GO
 
 -- Ghi chú sảnh: textarea chỉ đọc
 UPDATE SY_FormatFields SET
-    FormatID = 'ta', FormPosition = '12',
+    FormatID = 'ta', FormPosition = '12', OrderNo = 31,
     ShowInAdd = 0, ShowInEdit = 1,
     IsReadOnlyAdd = 1, IsReadOnlyEdit = 1, ShowInFilter = 0
-WHERE FormName = 'frmBaoGia' AND FieldName IN ('GhiChuSanh1', 'GhiChuSanh2', 'GhiChuSanh3');
+WHERE FormName = 'frmBaoGia' AND FieldName = 'GhiChuSanh1';
+
+UPDATE SY_FormatFields SET
+    FormatID = 'ta', FormPosition = '12', OrderNo = 33,
+    ShowInAdd = 0, ShowInEdit = 1,
+    IsReadOnlyAdd = 1, IsReadOnlyEdit = 1, ShowInFilter = 0
+WHERE FormName = 'frmBaoGia' AND FieldName = 'GhiChuSanh2';
+
+UPDATE SY_FormatFields SET
+    FormatID = 'ta', FormPosition = '12', OrderNo = 35,
+    ShowInAdd = 0, ShowInEdit = 1,
+    IsReadOnlyAdd = 1, IsReadOnlyEdit = 1, ShowInFilter = 0
+WHERE FormName = 'frmBaoGia' AND FieldName = 'GhiChuSanh3';
 GO
 
 -- Lưới chính + form cơ bản
-UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1, OrderNo = 1  WHERE FormName = 'frmBaoGia' AND FieldName = 'Sohopdong';
-UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1, OrderNo = 2  WHERE FormName = 'frmBaoGia' AND FieldName = 'KhachHang';
-UPDATE SY_FormatFields SET FormatID = 'dt', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 3  WHERE FormName = 'frmBaoGia' AND FieldName = 'NgayToChuc';
-UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 4  WHERE FormName = 'frmBaoGia' AND FieldName = 'SanhDat';
-UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 5  WHERE FormName = 'frmBaoGia' AND FieldName = 'LoaiHinhSuKien';
+UPDATE SY_FormatFields SET FormatID = 'sr', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1, OrderNo = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 1, DataSource = '/api/API_Gateway_Router?List=API_DanhSachHopDong&Func=View', ValidateRule = 'trigger:/api/API_Gateway_Router?List=API_DanhSachBaoGia&Func=View' WHERE FormName = 'frmBaoGia' AND FieldName = 'Sohopdong';
+UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1, OrderNo = 2, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'KhachHang';
+UPDATE SY_FormatFields SET FormatID = 'dt', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 3, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'NgayToChuc';
+UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 4, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'SanhDat';
+UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 5, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'LoaiHinhSuKien';
 UPDATE SY_FormatFields SET FormatID = 'n',  FormPosition = '6', ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 6, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'TongTien';
 UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 0, ShowInEdit = 0, ShowInFilter = 1, OrderNo = 7  WHERE FormName = 'frmBaoGia' AND FieldName = 'TrangThai';
 UPDATE SY_FormatFields SET FormatID = 'dt', FormPosition = '6', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 8  WHERE FormName = 'frmBaoGia' AND FieldName = 'NgayBaoGia';
 UPDATE SY_FormatFields SET FormatID = 'ta', FormPosition = '12', ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 20 WHERE FormName = 'frmBaoGia' AND FieldName = 'LuuYChung';
 UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 9, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'TongCongTamTinh';
+UPDATE SY_FormatFields SET FormatID = 't',  FormPosition = '6', ShowInAdd = 0, ShowInEdit = 1, ShowInFilter = 0, OrderNo = 10, IsReadOnlyEdit = 1 WHERE FormName = 'frmBaoGia' AND FieldName = 'ThoiGian';
 GO
 
 -- Ẩn cột trùng / chỉ dùng in Word

@@ -847,7 +847,7 @@ BEGIN
     UPDATE SY_FormatFields SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
 END
 
-UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', ShowInGrid = 0, DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
 
 -- Đảm bảo trường DaCocVND (Số tiền cọc) được hiển thị và cho phép nhập dạng số
 IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DaCocVND')
@@ -940,12 +940,12 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SanhDat')
 BEGIN
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit)
-    VALUES ('frmBiennhancoccho', 'SanhDat', N'Sảnh đãi tiệc', 't', 'hidden', 15, 0, 0);
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit, ShowInGrid)
+    VALUES ('frmBiennhancoccho', 'SanhDat', N'Sảnh đãi tiệc', 't', 'grid', 15, 0, 0, 1);
 END
 ELSE
 BEGIN
-    UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đãi tiệc', ShowInAdd = 0, ShowInEdit = 0, FormPosition = 'hidden' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SanhDat';
+    UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đãi tiệc', ShowInAdd = 0, ShowInEdit = 0, FormPosition = 'grid', ShowInGrid = 1 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SanhDat';
 END
 GO
 

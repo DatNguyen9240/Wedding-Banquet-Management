@@ -286,12 +286,14 @@ BEGIN
         END
         ELSE
         BEGIN
+            /*
             IF EXISTS (SELECT 1 FROM tbmk_Hopdong WHERE Sohopdong=@Sohopdong AND (Status = 'COMPLETED' OR IsKetthuc=1 OR IsHuy=1))
             BEGIN
                 ROLLBACK TRANSACTION;
                 SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã quyết toán hoặc đã kết thúc/hủy!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
                 RETURN;
             END
+            */
             UPDATE tbmk_Hopdong SET
                 Sobiennhan=@Sobiennhan, Makh=@Makh, Ngayhopdong=@NgayHopDongParsed, Ngaytochuc=@NgayToChucParsed,
                 TuNgaySetup = ISNULL(@TuNgaySetupParsed, TuNgaySetup),

@@ -428,12 +428,15 @@ BEGIN
         END
         ELSE
         BEGIN
+            /*
+
             IF EXISTS (SELECT 1 FROM tbmk_Hopdong WHERE Sohopdong=@Sohopdong AND (Status = 'COMPLETED' OR IsKetthuc=1 OR IsHuy=1))
             BEGIN
                 ROLLBACK TRANSACTION;
-                SELECT 0 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã quyết toán hoặc đã kết thúc/hủy!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+                SELECT -1 AS [Success], N'Lỗi: Không thể chỉnh sửa hợp đồng đã quyết toán hoặc đã kết thúc/hủy!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
                 RETURN;
             END
+            */
             UPDATE tbmk_Hopdong SET
                 Sobiennhan=@Sobiennhan, Makh=@Makh, Ngayhopdong=@NgayHopDongParsed, Ngaytochuc=@NgayToChucParsed,
                 TuNgaySetup = ISNULL(@TuNgaySetupParsed, TuNgaySetup),
@@ -1055,7 +1058,7 @@ WHERE FormName = 'frmHopDong'
   );
 
 UPDATE SY_FormatFields
-SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '6'
+SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = '6', ShowInGrid = 0
 WHERE FormName = 'frmHopDong' AND FieldName = 'JsonSanhTiec';
 
 -- Ghi chú bổ sung hiển thị ở Form dưới dạng textarea/textbox lớn
@@ -1230,12 +1233,12 @@ WHERE FormName = 'frmHopDong' AND FieldName IN ('SetupBatDau', 'SetupKetThuc');
 -- Đảm bảo SanhDat hiển thị đẹp trên Grid
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat')
 BEGIN
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit, ShowInFilter, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmHopDong', 'SanhDat', N'Sảnh đãi tiệc', 't', 'hidden', 15, 0, 0, 1, 1, 1);
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit, ShowInFilter, IsReadOnlyAdd, IsReadOnlyEdit, ShowInGrid)
+    VALUES ('frmHopDong', 'SanhDat', N'Sảnh đãi tiệc', 't', 'grid', 15, 0, 0, 1, 1, 1, 1);
 END
 ELSE
 BEGIN
-    UPDATE SY_FormatFields SET ShowInAdd = 0, ShowInEdit = 0, CaptionVN = N'Sảnh đãi tiệc', FormPosition = 'hidden', OrderNo = 15 WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
+    UPDATE SY_FormatFields SET ShowInAdd = 0, ShowInEdit = 0, CaptionVN = N'Sảnh đãi tiệc', FormPosition = 'grid', OrderNo = 15, ShowInGrid = 1 WHERE FormName = 'frmHopDong' AND FieldName = 'SanhDat';
 END
 GO
 
