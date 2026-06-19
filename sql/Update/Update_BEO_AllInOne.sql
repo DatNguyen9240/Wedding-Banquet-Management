@@ -189,9 +189,27 @@ BEGIN
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenADiaChi')    AS [BenADiaChi],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenASDT')       AS [BenASDT],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAMST')       AS [BenAMST],
-        ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenANhanVienPhuTrach],
-        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
-        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Com3')          AS [BenASDTNhanVien],
+        ISNULL(
+            (SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv OR nv.USERNAME = h.Manv),
+            ISNULL(
+                (SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.USERNAME = h.UserCreate),
+                ISNULL(h.UserCreate, h.Manv)
+            )
+        ) AS [BenANhanVienPhuTrach],
+        ISNULL(NULLIF((SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'HNChucVuNguoiDaiDien'), ''), N'Giám đốc') AS [BenAChucVu],
+        ISNULL(
+            (SELECT TOP 1 nv.DIENTHOAI FROM dmNhanvienView nv WHERE nv.Manv = h.Manv OR nv.USERNAME = h.Manv),
+            ISNULL(
+                (SELECT TOP 1 nv.DIENTHOAI FROM dmNhanvienView nv WHERE nv.USERNAME = h.UserCreate),
+                ISNULL(
+                    (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Com3'),
+                    ISNULL(
+                        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenASDT'),
+                        ''
+                    )
+                )
+            )
+        ) AS [BenASDTNhanVien],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAEmail')     AS [BenAEmailNhanVien],
 
         -- DUMMY FOR AUDIT TOOL COMPATIBILITY

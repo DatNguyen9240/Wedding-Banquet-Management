@@ -698,11 +698,29 @@ SELECT
     CAST(YEAR(h.Ngayhopdong) AS VARCHAR) AS [NamLapHD],
 
     -- Thông tin Bên A (có _ cho hop_dong.docx cũ)
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenADaiDien],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
-    ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenANhanVienPhuTrach],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com3') AS [BenASDTNhanVien],
+    ISNULL(NULLIF((SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien'), ''), N'Nguyễn Văn A') AS [BenANguoiDaiDien],
+    ISNULL(NULLIF((SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien'), ''), N'Nguyễn Văn A') AS [BenADaiDien],
+    ISNULL(NULLIF((SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien'), ''), N'Giám đốc') AS [BenAChucVu],
+    ISNULL(
+        (SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv OR nv.USERNAME = h.Manv),
+        ISNULL(
+            (SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.USERNAME = h.UserCreate),
+            ISNULL(h.UserCreate, h.Manv)
+        )
+    ) AS [BenANhanVienPhuTrach],
+    ISNULL(
+        (SELECT TOP 1 nv.DIENTHOAI FROM dmNhanvienView nv WHERE nv.Manv = h.Manv OR nv.USERNAME = h.Manv),
+        ISNULL(
+            (SELECT TOP 1 nv.DIENTHOAI FROM dmNhanvienView nv WHERE nv.USERNAME = h.UserCreate),
+            ISNULL(
+                (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com3'),
+                ISNULL(
+                    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT'),
+                    ''
+                )
+            )
+        )
+    ) AS [BenASDTNhanVien],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenAEmail')  AS [BenAEmail],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
