@@ -18,9 +18,8 @@ var SettingsPage = (function () {
     if (!tabsContainer) return;
 
     var tabs = UITabs.create([
-      { title: 'Thông tin Công ty', icon: 'business', content: _buildCompanyInfoTab() },
       { title: 'Kỳ Kế Toán', icon: 'calendar_month', content: _buildPeriodTab() },
-      { title: 'Bảo mật & Dữ liệu', icon: 'security', content: _buildSecurityTab() }
+      { title: 'Định biên CL', icon: 'groups', content: _buildCLRatioTab() }
     ]);
 
     tabsContainer.appendChild(tabs);
@@ -152,6 +151,133 @@ var SettingsPage = (function () {
 
     container.appendChild(row);
     wrapper.appendChild(container);
+    return wrapper;
+  }
+
+  function _buildCLRatioTab() {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'p-4';
+    wrapper.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div style="font-size:var(--font-size-lg); font-weight:600;">Cấu hình Định biên Nhân sự (Casual Labor - CL)</div>
+      </div>
+      <p style="font-size:14px; color:var(--color-text-secondary); margin-bottom:20px; line-height:1.5;">
+        Thiết lập định số lượng nhân sự Casual Labor (CL) đề xuất trên mỗi bàn tiệc theo từng loại hình sự kiện.
+        Công thức tính CL đề xuất: <code style="background: rgba(148, 163, 184, 0.1); padding:2px 6px; border-radius:4px;">Định biên × Số bàn chính thức - Số NV phân công</code>.
+      </p>
+      <div class="table-wrapper mb-4">
+        <table class="data-table" id="cl-ratio-table">
+          <thead>
+            <tr>
+              <th style="width: 60px; text-align: center;">STT</th>
+              <th style="width: 150px;">Mã Loại Hình</th>
+              <th>Loại Hình Sự Kiện / Tiệc</th>
+              <th style="width: 200px; text-align: right;">Định Biên (Nhân viên / Bàn)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="4" class="text-center py-4">Đang tải cấu hình...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex gap-2 pt-3" style="border-top:1px solid var(--color-border);">
+        ${UIButton.createHTML({ text: 'Lưu Cấu Hình Định Biên', type: 'primary', id: 'btn-save-cl-ratios' })}
+      </div>
+    `;
+
+    // Load data
+    if (typeof SystemDataService !== 'undefined') {
+      SystemDataService.getBanquetTypes(true).then(function (types) {
+        var tbody = wrapper.querySelector('#cl-ratio-table tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (types.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Không tìm thấy loại hình tiệc nào.</td></tr>';
+          return;
+        }
+
+        types.forEach(function (type, idx) {
+          var id = type['Mã loại'] || type.Loaitiecid;
+          var name = type['Loại hình tiệc'] || type.Tenloaitiec;
+          var ratio = type['Định biên'] !== undefined ? type['Định biên'] : (type.DinhBienCL !== undefined ? type.DinhBienCL : 0.0);
+          
+          var tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="text-align: center;">${idx + 1}</td>
+            <td class="fw-semibold text-secondary">${id}</td>
+            <td>${name}</td>
+            <td style="text-align: right;">
+              <input type="number" class="ui-input text-end cl-ratio-input" 
+                     data-id="${id}" 
+                     data-name="${name}"
+                     value="${ratio}" 
+                     step="0.01" min="0" max="10" 
+                     style="width: 120px; display: inline-block;">
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }).catch(function (err) {
+        console.error(err);
+        var tbody = wrapper.querySelector('#cl-ratio-table tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Lỗi tải dữ liệu. Vui lòng F5 thử lại!</td></tr>';
+      });
+    }
+
+    // Save action
+    var saveBtn = wrapper.querySelector('#btn-save-cl-ratios');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        var inputs = wrapper.querySelectorAll('.cl-ratio-input');
+        var promises = [];
+        var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
+        var username = u.Username || u.UserName || 'admin';
+
+        inputs.forEach(function (input) {
+          var id = input.getAttribute('data-id');
+          var name = input.getAttribute('data-name');
+          var val = parseFloat(input.value || 0);
+
+          var payload = {
+            List: 'dmLoaihinhtiec',
+            Func: 'Save',
+            UserName: username,
+            JsonData: JSON.stringify({
+              Loaitiecid: id,
+              Tenloaitiec: name,
+              DinhBienCL: val,
+              IsEdit: 1
+            })
+          };
+
+          promises.push(ApiClient.post('/api/API_Gateway_Router', payload));
+        });
+
+        saveBtn.disabled = true;
+        var originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang lưu...';
+
+        Promise.all(promises).then(function (results) {
+          var allSuccess = results.every(function (res) { return res && res.code === 0; });
+          if (allSuccess) {
+            UIToast.show('Đã cập nhật cấu hình định biên CL thành công!', 'success');
+            if (typeof SystemDataService !== 'undefined') SystemDataService.invalidateCache();
+          } else {
+            var failed = results.find(function (res) { return res && res.code !== 0; });
+            var msg = failed ? (failed.msg || failed.Message) : 'Lưu dữ liệu thất bại';
+            UIToast.show('Lỗi: ' + msg, 'danger');
+          }
+        }).catch(function (err) {
+          console.error(err);
+          UIToast.show('Lỗi kết nối máy chủ API Gateway!', 'danger');
+        }).finally(function () {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalText;
+        });
+      });
+    }
+
     return wrapper;
   }
 

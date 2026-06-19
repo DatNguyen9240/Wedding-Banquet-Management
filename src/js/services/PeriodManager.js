@@ -31,11 +31,11 @@
         var periodId = String(y) + (m < 10 ? '0' + m : m); // YYYYMM format, vd: 201801
         ApiClient.post(API_CONFIG.ENDPOINTS.ROUTER, {
           List: 'SY_Period',
-          Func: 'Edit', // hoặc Update tùy cấu hình router DB
-          Data: {
+          Func: 'Edit',
+          JsonData: JSON.stringify({
             PeriodID: periodId,
             isLock: isLocked ? 1 : 0
-          }
+          })
         }).catch(function(e) { console.error('Lỗi update Khóa Kỳ:', e); });
       }
     },
