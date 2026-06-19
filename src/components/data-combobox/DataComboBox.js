@@ -14,9 +14,22 @@ UIControls.createDataComboBox = function (options) {
   input.placeholder = options.placeholder || '';
   if (options.id) input.id = options.id;
 
-  // Actions block – chỉ giữ nút mũi tên
+  // Actions block – chỉ giữ nút mũi tên và nút thêm mới nếu cấu hình
   var actions = document.createElement('div');
   actions.className = 'combo-box-actions';
+
+  if (options.showAddNew && !options.disabled) {
+    var btnAdd = document.createElement('button');
+    btnAdd.className = 'combo-action-btn';
+    btnAdd.innerHTML = '<span class="material-symbols-outlined">add</span>';
+    btnAdd.title = 'Thêm mới (F2)';
+    btnAdd.type = 'button';
+    btnAdd.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (typeof options.onF2 === 'function') options.onF2();
+    });
+    actions.appendChild(btnAdd);
+  }
 
   var btnArrow = document.createElement('button');
   btnArrow.className = 'combo-action-btn';
