@@ -88,7 +88,7 @@ BEGIN
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAEmail') AS [BenAEmail],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAEmail') AS [BenAEmailNhanVien],
         ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenANhanVienPhuTrach],
-        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Com3') AS [BenASDTNhanVien],
+        ISNULL((SELECT TOP 1 nv.DIENTHOAI FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL((SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Com3'), (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenASDT'))) AS [BenASDTNhanVien],
 
         ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [BenBDienThoai],
         ISNULL(k.Diachi, N'...') AS [BenBDiaChi],
@@ -127,6 +127,7 @@ BEGIN
                 ISNULL(CAST(s.SLBanMin * 10 AS NVARCHAR), N'0') AS [SucchuaMin],
                 ISNULL(CAST(s.SLBanMax * 10 AS NVARCHAR), N'0') AS [SucchuaMax],
                 ISNULL(hs.Ghichuct, N'') AS [GhiChu],
+                ISNULL(h.HinhThucSapSepID, N'') AS [BoTri],
                 CASE ROW_NUMBER() OVER (ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid) WHEN 1 THEN 1 ELSE 0 END AS [IsFirst]
             FROM tbmk_Hopdongsanhtiec hs
             INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid
@@ -166,7 +167,7 @@ BEGIN
         ) AS [DanhSachThamKhao],
 
         -- Thêm fields scalar bổ sung cho DOCX
-        (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Hotline') AS [HotlineWebsiteNhaHang],
+        ISNULL((SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Hotline'), (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenASDT')) AS [HotlineWebsiteNhaHang],
         ISNULL((
             SELECT TOP 1 tg.Thoigian
             FROM dmThoigian tg
@@ -177,7 +178,7 @@ BEGIN
         CASE WHEN h.PTThueVAT = 10 THEN FORMAT(ISNULL(h.TienThueVAT, 0), 'N0', 'vi-VN') ELSE '0' END AS [VAT10],
         FORMAT(ISNULL(h.TongTienHopDongChuaVAT, 0), 'N0', 'vi-VN') AS [TongCongChuaVAT],
 
-        CAST(NULL AS VARCHAR(100)) AS [BoTri]
+        ISNULL(h.HinhThucSapSepID, N'') AS [BoTri]
         -- , CAST(NULL AS INT) AS [IsHeader]
 
     FROM tbmk_Hopdong h
