@@ -1461,7 +1461,50 @@ window.DynamicFormEngine = (function () {
                   placeholder: '-- Chọn --', headers: headers, data: comboData, colFilterIndex: colFilterIndex,
                   showAddNew: true, // Bật nút Thêm mới
                   onF2: function () {
-                    newCombo.querySelector('.ui-input').focus();
+                    var targetFormName = field.dataSource;
+                    if (targetFormName.includes('|')) targetFormName = targetFormName.split('|')[0];
+                    if (targetFormName.includes('?')) {
+                      var searchParams = new URLSearchParams(targetFormName.split('?')[1]);
+                      var listParam = searchParams.get('List') || searchParams.get('list');
+                      if (listParam) targetFormName = listParam;
+                    }
+                    
+                    if (typeof window.openQuickAddModal === 'function') {
+                      window.openQuickAddModal(targetFormName, function (newRecord) {
+                        if (newRecord) {
+                          ApiClient.post(MODULE_CONFIG.ApiSearch, { FormName: field.dataSource, Limit: 1000 }).then(function (res) {
+                            var updatedComboData = [];
+                            var dataList = res.list || res.records || [];
+                            if (dataList && dataList.length > 0) {
+                              var keys = Object.keys(dataList[0]);
+                              var labelRegex = /name|tên|ten|label|desc|title/i;
+                              var displayKey = keys.find(function (k) { return labelRegex.test(k); });
+                              var localFilterIdx = displayKey ? keys.indexOf(displayKey) : (keys.length > 1 ? 1 : 0);
+                              
+                              dataList.forEach(function (d) {
+                                var rd = [];
+                                keys.forEach(function (k) { rd.push(d[k] !== null && d[k] !== undefined ? d[k] : ''); });
+                                updatedComboData.push(rd);
+                              });
+                              
+                              comboData.length = 0;
+                              Array.prototype.push.apply(comboData, updatedComboData);
+                              
+                              var newlyAddedKey = Object.keys(newRecord)[0];
+                              var matched = comboData.find(function (r) { return String(r[0]) === String(newRecord[newlyAddedKey]); });
+                              if (matched) {
+                                hiddenInput.value = matched[0];
+                                var displayInp = newCombo.querySelector('input.ui-input');
+                                if (displayInp) displayInp.value = matched[localFilterIdx];
+                                hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+                              }
+                            }
+                          });
+                        }
+                      });
+                    } else {
+                      newCombo.querySelector('.ui-input').focus();
+                    }
                   },
                   getValue: function () { return hiddenInput.value; },
                   onSelect: function (r) { hiddenInput.value = r[0]; },
@@ -2063,7 +2106,27 @@ window.DynamicFormEngine = (function () {
               readonlyInput: field.renderRule === 'ml' || field.renderRule === 'sr',
               multiple: field.renderRule === 'ml',
               onF2: function () {
-                lazyCombo.querySelector('.ui-input').focus();
+                var targetFormName = field.dataSource;
+                if (targetFormName.includes('|')) targetFormName = targetFormName.split('|')[0];
+                if (targetFormName.includes('?')) {
+                  var searchParams = new URLSearchParams(targetFormName.split('?')[1]);
+                  var listParam = searchParams.get('List') || searchParams.get('list');
+                  if (listParam) targetFormName = listParam;
+                }
+                
+                if (typeof window.openQuickAddModal === 'function') {
+                  window.openQuickAddModal(targetFormName, function (newRecord) {
+                    if (newRecord) {
+                      var keys = Object.keys(newRecord);
+                      hiddenInput.value = newRecord[keys[0]];
+                      if (typeof hiddenInput.fetchDataForValue === 'function') {
+                        hiddenInput.fetchDataForValue();
+                      }
+                    }
+                  });
+                } else {
+                  lazyCombo.querySelector('.ui-input').focus();
+                }
               },
               getValue: function () { return hiddenInput.value; },
               onSearch: searchApiCall,
@@ -2728,6 +2791,205 @@ window.DynamicFormEngine = (function () {
         _restoreSaveBtn();
       });
   }
+
+  window.openQuickAddModal = function (formName, onSaved) {
+    var dictionaryUrl = '/api/API_Gateway_Router';
+    var detailUrl = '/api/API_Gateway_Router';
+    
+    var dictPayload = { List: 'SY_Dictionary', Func: 'View', UserName: 'Admin', Page: 1, Limit: 1000 };
+    var schemaPayload = { List: 'SY_FormatFields', Func: 'View', UserName: 'Admin', Page: 1, Limit: 1000, Keyword: formName };
+    
+    Promise.all([
+      ApiClient.post(dictionaryUrl, dictPayload).catch(function () { return { records: [] }; }),
+      ApiClient.post(detailUrl, schemaPayload).catch(function () { return { records: [] }; })
+    ]).then(function (results) {
+      var dictRes = results[0];
+      var schemaRes = results[1];
+      
+      var dictionary = {};
+      (dictRes.records || []).forEach(function (d) {
+        dictionary[d.FieldName] = d;
+      });
+      
+      var rawSchema = (schemaRes.records || []).filter(function (f) {
+        return f.FormName === formName;
+      });
+      
+      if (rawSchema.length === 0) {
+        Alert.error('Lỗi', 'Không tìm thấy cấu hình trường cho form: ' + formName);
+        return;
+      }
+      
+      var formSchema = rawSchema.map(function (f) {
+        return {
+          name: f.FieldName,
+          label: f.CaptionVN || f.FieldName,
+          required: _bool(f.IsRequired, f.isRequired),
+          renderRule: (f.FormatID || '').toLowerCase(),
+          dataSource: f.DataSource,
+          position: f.FormPosition || '6',
+          showInAdd: _bool(f.ShowInAdd, f.showInAdd),
+          showInEdit: _bool(f.ShowInEdit, f.showInEdit),
+          orderNo: f.OrderNo || 0,
+          value: ''
+        };
+      });
+      
+      formSchema.sort(function (a, b) { return (a.orderNo || 0) - (b.orderNo || 0); });
+      
+      var body = document.createElement('div');
+      body.style.display = 'flex';
+      body.style.flexDirection = 'column';
+      body.style.gap = '14px';
+      
+      var grid = document.createElement('div');
+      grid.style.display = 'flex';
+      grid.style.flexWrap = 'wrap';
+      grid.style.gap = '12px 10px';
+      body.appendChild(grid);
+      
+      var currentModalFormState = {};
+      
+      formSchema.forEach(function (field) {
+        if (!field.showInAdd) {
+          var hiddenEl = document.createElement('input');
+          hiddenEl.type = 'hidden';
+          hiddenEl.name = field.name;
+          hiddenEl.value = '';
+          body.appendChild(hiddenEl);
+          return;
+        }
+        
+        var inputEl;
+        if (field.renderRule === 'sw' || field.renderRule === 'boolean') {
+          inputEl = UIInput.createSwitch(field);
+        } else if (field.renderRule === 'dt' || field.renderRule === 'date') {
+          inputEl = UIInput.createDate(field);
+        } else if (field.renderRule === 'tm' || field.renderRule === 'time') {
+          inputEl = UIInput.createTime(field);
+        } else if ((field.renderRule === 'sl' || field.renderRule === 'sr' || field.renderRule === 'select' || field.renderRule === 'ml') && field.dataSource) {
+          var formGroupWrapper = document.createElement('div');
+          formGroupWrapper.className = 'form-group';
+          if (field.label) {
+            var lbl = document.createElement('label');
+            lbl.innerText = field.label;
+            formGroupWrapper.appendChild(lbl);
+          }
+          var hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
+          hiddenInput.name = field.name;
+          formGroupWrapper.appendChild(hiddenInput);
+          
+          var staticCombo = UIControls.createDataComboBox({
+            placeholder: '-- Chọn --',
+            headers: ['Mã', 'Tên'],
+            data: [],
+            getValue: function () { return hiddenInput.value; },
+            onSelect: function (r) { hiddenInput.value = r[0]; }
+          });
+          formGroupWrapper.appendChild(staticCombo);
+          inputEl = formGroupWrapper;
+        } else if (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn') {
+          inputEl = UIInput.createMoney(field);
+        } else if (field.renderRule === 'nm' || field.renderRule === 'number') {
+          inputEl = UIInput.createNumber(field);
+        } else {
+          inputEl = UIInput.createText(field);
+        }
+        
+        var span = String(field.position || '6');
+        if (!['12', '8', '6', '4', '3', '2'].includes(span)) span = '6';
+        
+        var wrapper = document.createElement('div');
+        wrapper.className = 'df-col-' + span;
+        wrapper.appendChild(inputEl);
+        grid.appendChild(wrapper);
+        
+        currentModalFormState[field.name] = '';
+      });
+      
+      var footer = document.createElement('div');
+      footer.style.display = 'flex';
+      footer.style.gap = '10px';
+      
+      var btnCancel = document.createElement('button');
+      btnCancel.className = 'btn btn-outline';
+      btnCancel.textContent = 'Hủy Bỏ';
+      
+      var btnSave = document.createElement('button');
+      btnSave.className = 'btn btn-primary';
+      btnSave.textContent = 'Lưu Lại';
+      
+      footer.appendChild(btnCancel);
+      footer.appendChild(btnSave);
+      
+      var titleCaption = (dictRes.records && dictRes.records.find(function(d) { return d.FieldName === formName; }))?.CaptionVN || formName;
+      var modal = UIModal.show({
+        title: 'Thêm nhanh: ' + titleCaption,
+        width: '800px',
+        content: body,
+        footer: footer
+      });
+      
+      btnCancel.onclick = function () { modal.close(); };
+      btnSave.onclick = function () {
+        btnSave.disabled = true;
+        btnSave.textContent = 'Đang lưu...';
+        
+        var payload = {};
+        var inputs = body.querySelectorAll('input, select, textarea');
+        inputs.forEach(function (el) {
+          if (el.name) {
+            var val = el.value.trim();
+            var field = formSchema.find(function (f) { return f.name === el.name; });
+            if (field && (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn')) {
+              val = val.replace(/\D/g, '');
+            }
+            payload[el.name] = val;
+          }
+        });
+        
+        var savePayload = {
+          List: formName,
+          Func: 'Save',
+          JsonData: JSON.stringify(payload)
+        };
+        
+        ApiClient.post('/api/API_Gateway_Router', savePayload).then(function (saveRes) {
+          if (saveRes && saveRes.code === 0) {
+            var firstRec = saveRes.records && saveRes.records[0];
+            if (firstRec && (firstRec.Success === false || String(firstRec.Success) === '0')) {
+              Alert.error('Lỗi', firstRec.Message || 'Lưu dữ liệu thất bại');
+              btnSave.disabled = false;
+              btnSave.textContent = 'Lưu Lại';
+            } else {
+              modal.closeNow();
+              UIToast.show('Thêm mới thành công!', 'success');
+              if (typeof onSaved === 'function') {
+                var keys = Object.keys(payload);
+                if (firstRec && firstRec.DocumentID) {
+                  payload[keys[0]] = firstRec.DocumentID;
+                }
+                onSaved(payload);
+              }
+            }
+          } else {
+            Alert.error('Lỗi', (saveRes && saveRes.msg) || 'Lưu thất bại');
+            btnSave.disabled = false;
+            btnSave.textContent = 'Lưu Lại';
+          }
+        }).catch(function (err) {
+          console.error(err);
+          Alert.error('Lỗi', 'Không thể kết nối đến máy chủ');
+          btnSave.disabled = false;
+          btnSave.textContent = 'Lưu Lại';
+        });
+      };
+    }).catch(function (err) {
+      console.error(err);
+      Alert.error('Lỗi', 'Không thể tải cấu hình thêm nhanh');
+    });
+  };
 
   return { render: render };
 })();
