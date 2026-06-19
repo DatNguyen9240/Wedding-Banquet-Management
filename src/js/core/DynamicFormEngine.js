@@ -1403,12 +1403,12 @@ window.DynamicFormEngine = (function () {
           hiddenInput.name = field.name;
           var initialValue = field.value || '';
           if (field.renderRule === 'ml' && initialValue.startsWith('[')) {
-             try {
-                var arr = JSON.parse(initialValue);
-                if (Array.isArray(arr)) {
-                   initialValue = arr.map(function(x) { return String(x.Sanhtiecid || x.id || x.value || x); }).join(',');
-                }
-             } catch(e) {}
+            try {
+              var arr = JSON.parse(initialValue);
+              if (Array.isArray(arr)) {
+                initialValue = arr.map(function (x) { return String(x.Sanhtiecid || x.id || x.value || x); }).join(',');
+              }
+            } catch (e) { }
           }
           hiddenInput.value = initialValue;
           hiddenInput.setAttribute('data-row-index', rowIdx);
@@ -1603,7 +1603,7 @@ window.DynamicFormEngine = (function () {
     wrapper.className = 'form-group json-grid-editor-wrapper';
     wrapper.style.width = '100%';
     wrapper.style.marginBottom = '16px';
-    
+
     if (field.label) {
       var lbl = document.createElement('label');
       lbl.innerText = field.label;
@@ -1672,41 +1672,41 @@ window.DynamicFormEngine = (function () {
 
     var tableContainer = document.createElement('div');
     tableContainer.style.cssText = 'border: 1px solid var(--color-border, #e2e8f0); border-radius: 6px; overflow: hidden; background: var(--color-surface, #fff); margin-top: 6px;';
-    
+
     var table = document.createElement('table');
     table.className = 'table table-hover mb-0';
     table.style.cssText = 'width: 100%; border-collapse: collapse; margin-bottom: 0;';
-    
+
     var thead = document.createElement('thead');
     thead.style.cssText = 'background: var(--color-bg-secondary, #f8fafc); border-bottom: 1px solid var(--color-border, #e2e8f0);';
     var trHead = document.createElement('tr');
-    
-    cols.forEach(function(col) {
+
+    cols.forEach(function (col) {
       var th = document.createElement('th');
       th.innerText = col.label;
       th.style.cssText = 'padding: 8px 12px; font-size: 12px; font-weight: 600; text-align: left; color: var(--color-text-secondary, #64748b);' + (col.width !== 'auto' ? ' width: ' + col.width + ';' : '');
       trHead.appendChild(th);
     });
-    
+
     // Action column header
     var thAction = document.createElement('th');
     thAction.style.cssText = 'padding: 8px 12px; width: 50px; text-align: center;';
     trHead.appendChild(thAction);
-    
+
     thead.appendChild(trHead);
     table.appendChild(thead);
-    
+
     var tbody = document.createElement('tbody');
     table.appendChild(tbody);
     tableContainer.appendChild(table);
     wrapper.appendChild(tableContainer);
-    
+
     function updateHiddenValue() {
       var rows = tbody.querySelectorAll('tr');
       var list = [];
-      rows.forEach(function(tr) {
+      rows.forEach(function (tr) {
         var obj = {};
-        cols.forEach(function(col) {
+        cols.forEach(function (col) {
           var input = tr.querySelector('[data-key="' + col.key + '"]');
           if (input) {
             var val = input.value.trim();
@@ -1718,7 +1718,7 @@ window.DynamicFormEngine = (function () {
           }
         });
         // Check if row has any non-empty data
-        var hasData = Object.keys(obj).some(function(k) {
+        var hasData = Object.keys(obj).some(function (k) {
           return obj[k] !== '' && obj[k] !== 0;
         });
         if (hasData) {
@@ -1728,22 +1728,22 @@ window.DynamicFormEngine = (function () {
       hiddenInput.value = JSON.stringify(list);
       hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
-    
+
     function addRow(itemData) {
       var tr = document.createElement('tr');
       tr.style.cssText = 'border-bottom: 1px solid var(--color-border, #e2e8f0);';
-      
-      cols.forEach(function(col) {
+
+      cols.forEach(function (col) {
         var td = document.createElement('td');
         td.style.cssText = 'padding: 4px 8px; vertical-align: middle;';
-        
+
         var input;
         if (col.type === 'select') {
           input = document.createElement('select');
           input.className = 'ui-input';
           input.dataset.key = col.key;
           input.style.cssText = 'width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--color-border, #cbd5e1); border-radius: 4px; font-size: 12px; background: var(--color-surface, #fff); color: var(--color-text, #1e293b);';
-          
+
           var optionsList = [];
           if (col.options) {
             if (typeof col.options === 'string') {
@@ -1771,7 +1771,7 @@ window.DynamicFormEngine = (function () {
           input.value = itemData ? (itemData[col.key] !== undefined ? itemData[col.key] : '') : '';
           input.style.cssText = 'width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--color-border, #cbd5e1); border-radius: 4px; font-size: 12px; background: var(--color-surface, #fff); color: var(--color-text, #1e293b);';
         }
-        
+
         if (isReadOnly) {
           input.disabled = true;
         } else {
@@ -1783,11 +1783,11 @@ window.DynamicFormEngine = (function () {
         td.appendChild(input);
         tr.appendChild(td);
       });
-      
+
       // Action button column
       var tdAction = document.createElement('td');
       tdAction.style.cssText = 'padding: 4px 8px; text-align: center; vertical-align: middle;';
-      
+
       var btnDel = document.createElement('button');
       btnDel.type = 'button';
       btnDel.className = 'btn btn-sm btn-tool text-danger';
@@ -1798,27 +1798,27 @@ window.DynamicFormEngine = (function () {
         btnDel.style.opacity = '0.5';
         btnDel.style.cursor = 'not-allowed';
       } else {
-        btnDel.onclick = function() {
+        btnDel.onclick = function () {
           tr.remove();
           updateHiddenValue();
         };
       }
-      
+
       tdAction.appendChild(btnDel);
       tr.appendChild(tdAction);
       tbody.appendChild(tr);
     }
-    
+
     // Add existing rows
-    dataList.forEach(function(item) {
+    dataList.forEach(function (item) {
       addRow(item);
     });
-    
+
     // If empty, add a default empty row
     if (dataList.length === 0 && !isReadOnly) {
       addRow(null);
     }
-    
+
     if (!isReadOnly) {
       // Add "Add row" button
       var btnAdd = document.createElement('button');
@@ -1826,13 +1826,13 @@ window.DynamicFormEngine = (function () {
       btnAdd.className = 'btn btn-outline-primary btn-sm';
       btnAdd.style.cssText = 'margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 4px 10px; height: 28px;';
       btnAdd.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">add</span> Thêm dòng mới';
-      btnAdd.onclick = function() {
+      btnAdd.onclick = function () {
         addRow(null);
         updateHiddenValue();
       };
       wrapper.appendChild(btnAdd);
     }
-    
+
     return wrapper;
   }
 
@@ -1910,12 +1910,12 @@ window.DynamicFormEngine = (function () {
         hiddenInput.name = field.name;
         var initialValue = field.value || '';
         if (field.renderRule === 'ml' && initialValue.startsWith('[')) {
-           try {
-              var arr = JSON.parse(initialValue);
-              if (Array.isArray(arr)) {
-                 initialValue = arr.map(function(x) { return String(x.Sanhtiecid || x.id || x.value || x); }).join(',');
-              }
-           } catch(e) {}
+          try {
+            var arr = JSON.parse(initialValue);
+            if (Array.isArray(arr)) {
+              initialValue = arr.map(function (x) { return String(x.Sanhtiecid || x.id || x.value || x); }).join(',');
+            }
+          } catch (e) { }
         }
         hiddenInput.value = initialValue;
         formGroupWrapper.appendChild(hiddenInput);
@@ -2096,27 +2096,27 @@ window.DynamicFormEngine = (function () {
 
             if (field.value) {
               searchApiCall(field.value, 1).then(function (res) {
-                 var displayInput = lazyCombo.querySelector('input.ui-input');
-                 if (field.renderRule === 'ml') {
-                    var vals = hiddenInput.value.split(',');
-                    var matches = res.data.filter(function(r) { return vals.includes(String(r[0])); });
-                    if (matches.length > 0 && displayInput) {
-                      displayInput.value = matches.map(function(m) { return m[res.colFilterIndex || 1]; }).join(', ');
-                    } else if (displayInput) {
-                      displayInput.value = hiddenInput.value;
-                    }
-                 } else {
-                    var matched = res.data.find(function (r) { return String(r[0]) === String(field.value); });
-                    if (matched && displayInput) {
-                      displayInput.value = matched[res.colFilterIndex || 1];
-                    } else if (displayInput) {
-                      displayInput.value = field.value; // Fallback
-                    }
-                 }
+                var displayInput = lazyCombo.querySelector('input.ui-input');
+                if (field.renderRule === 'ml') {
+                  var vals = hiddenInput.value.split(',');
+                  var matches = res.data.filter(function (r) { return vals.includes(String(r[0])); });
+                  if (matches.length > 0 && displayInput) {
+                    displayInput.value = matches.map(function (m) { return m[res.colFilterIndex || 1]; }).join(', ');
+                  } else if (displayInput) {
+                    displayInput.value = hiddenInput.value;
+                  }
+                } else {
+                  var matched = res.data.find(function (r) { return String(r[0]) === String(field.value); });
+                  if (matched && displayInput) {
+                    displayInput.value = matched[res.colFilterIndex || 1];
+                  } else if (displayInput) {
+                    displayInput.value = field.value; // Fallback
+                  }
+                }
               }).catch(function (err) {
-                 console.error('[DynamicFormEngine] DataComboBox initial fetch error:', err);
-                 var displayInput = lazyCombo.querySelector('input.ui-input');
-                 if (displayInput) displayInput.placeholder = 'Lỗi tải dữ liệu';
+                console.error('[DynamicFormEngine] DataComboBox initial fetch error:', err);
+                var displayInput = lazyCombo.querySelector('input.ui-input');
+                if (displayInput) displayInput.placeholder = 'Lỗi tải dữ liệu';
               });
             }
 
@@ -2128,14 +2128,14 @@ window.DynamicFormEngine = (function () {
                 searchApiCall(hiddenInput.value, 1).then(function (res) {
                   var displayInp = lazyCombo.querySelector('input.ui-input');
                   if (field.renderRule === 'ml') {
-                     var vals = hiddenInput.value.split(',');
-                     var matches = res.data.filter(function(r) { return vals.includes(String(r[0])); });
-                     if (matches.length > 0 && displayInp) displayInp.value = matches.map(function(m) { return m[res.colFilterIndex || 1]; }).join(', ');
-                     else if (displayInp) displayInp.value = hiddenInput.value;
+                    var vals = hiddenInput.value.split(',');
+                    var matches = res.data.filter(function (r) { return vals.includes(String(r[0])); });
+                    if (matches.length > 0 && displayInp) displayInp.value = matches.map(function (m) { return m[res.colFilterIndex || 1]; }).join(', ');
+                    else if (displayInp) displayInp.value = hiddenInput.value;
                   } else {
-                     var matched = res.data.find(function (r) { return String(r[0]) === String(hiddenInput.value); });
-                     if (matched && displayInp) displayInp.value = matched[res.colFilterIndex || 1];
-                     else if (displayInp) displayInp.value = hiddenInput.value; // Fallback
+                    var matched = res.data.find(function (r) { return String(r[0]) === String(hiddenInput.value); });
+                    if (matched && displayInp) displayInp.value = matched[res.colFilterIndex || 1];
+                    else if (displayInp) displayInp.value = hiddenInput.value; // Fallback
                   }
                 });
               } else {
@@ -2433,7 +2433,7 @@ window.DynamicFormEngine = (function () {
       var isVisible = isEdit ? f.showInEdit : f.showInAdd;
       return (String(isVisible) === '1' || isVisible === true) && (f.renderRule === 'json' || f.renderRule === 'js');
     });
-    
+
     if (hasJsonField) {
       modalWidth = '1300px';
     }
@@ -2461,6 +2461,15 @@ window.DynamicFormEngine = (function () {
         }
       }
     });
+
+    // Kích hoạt các FormPlugins toàn cục (nếu có)
+    if (window.FormPlugins) {
+      window.FormPlugins.forEach(function (plugin) {
+        if (typeof plugin.onInitModal === 'function') {
+          plugin.onInitModal(MODULE_CONFIG.FormName, isEdit, modal.node, row, MODULE_CONFIG);
+        }
+      });
+    }
 
     // Focus ô nhập liệu đầu tiên (không bị ẩn)
     setTimeout(function () {
