@@ -265,8 +265,26 @@ SELECT
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenADaiDien],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
-    ISNULL(nv.Tennv, ISNULL(td.Manv, hd.Manv)) AS [BenANhanVienPhuTrach],
-    ISNULL(nv.Dienthoai, '') AS [BenASDTNhanVien],
+    ISNULL(
+        nv.Tennv, 
+        ISNULL(
+            (SELECT TOP 1 Name.Tennv FROM dmNhanvienView Name WHERE Name.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)), 
+            ISNULL(td.Manv, ISNULL(hd.Manv, ISNULL(td.UserCreate, hd.UserCreate)))
+        )
+    ) AS [BenANhanVienPhuTrach],
+    ISNULL(
+        nv.Dienthoai, 
+        ISNULL(
+            (SELECT TOP 1 Phone.DIENTHOAI FROM dmNhanvienView Phone WHERE Phone.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)),
+            ISNULL(
+                (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com3'),
+                ISNULL(
+                    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT'),
+                    ''
+                )
+            )
+        )
+    ) AS [BenASDTNhanVien],
 
     -- Bên B (Thông tin khách hàng)
     kh.Tenkh AS [BenBTenDaiDien],
