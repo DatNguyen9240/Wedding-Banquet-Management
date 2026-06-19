@@ -9,10 +9,38 @@ GO
 PRINT N'=== TRIỂN KHAI MODULE BÁO GIÁ (frmBaoGia) ===';
 GO
 
--- Yêu cầu: đã chạy sql/Functions/fn_DOCX_MenuDichVu.sql
-IF OBJECT_ID(N'dbo.fn_DOCX_DanhSachDichVu', N'FN') IS NULL
+-- =========================================================================
+-- 0. TẠO HÀM DỊCH VỤ fn_DOCX_DanhSachDichVu
+-- =========================================================================
+IF OBJECT_ID(N'dbo.fn_DOCX_DanhSachDichVu', N'FN') IS NOT NULL
+    DROP FUNCTION dbo.fn_DOCX_DanhSachDichVu;
+GO
+
+CREATE FUNCTION dbo.fn_DOCX_DanhSachDichVu(@Sohopdong VARCHAR(50))
+RETURNS NVARCHAR(MAX)
+AS
 BEGIN
-    RAISERROR(N'Chưa có fn_DOCX_DanhSachDichVu. Hãy chạy sql/Functions/fn_DOCX_MenuDichVu.sql trước.', 16, 1);
+    DECLARE @result NVARCHAR(MAX);
+
+    SET @result = (
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY hd.STT, hd.Mahang) AS [STT],
+            ISNULL(hh.Tenhang, hd.Mahang) AS [DienGiai],
+            N'' AS [ChiTiet],
+            ISNULL(hh.DVTID, N'') AS [DVT],
+            FORMAT(ISNULL(hd.Soluong, 0), 'G29') AS [SoLuong],
+            FORMAT(ISNULL(hd.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
+            N'' AS [UuDai],
+            FORMAT(ISNULL(hd.Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien],
+            1 AS [IsData]
+        FROM tbmk_Hopdongdichvu hd
+        LEFT JOIN dmHanghoa hh ON hd.Mahang = hh.Mahang
+        WHERE hd.Sohopdong = @Sohopdong
+        ORDER BY hd.STT, hd.Mahang
+        FOR JSON PATH
+    );
+
+    RETURN ISNULL(@result, '[]');
 END
 GO
 
@@ -281,6 +309,12 @@ UPDATE SY_FormatFields SET CaptionVN = N'Tên công ty HĐ'   WHERE FormName = '
 UPDATE SY_FormatFields SET CaptionVN = N'Danh sách dịch vụ' WHERE FormName = 'frmBaoGia' AND FieldName = 'DanhSachDichVu';
 UPDATE SY_FormatFields SET CaptionVN = N'Danh sách khu vực' WHERE FormName = 'frmBaoGia' AND FieldName = 'DanhSachKhuVuc';
 UPDATE SY_FormatFields SET CaptionVN = N'Thực đơn & DV tham khảo' WHERE FormName = 'frmBaoGia' AND FieldName = 'DanhSachThamKhao';
+UPDATE SY_FormatFields SET CaptionVN = N'Phí phục vụ'        WHERE FormName = 'frmBaoGia' AND FieldName = 'PhiPhucVu';
+UPDATE SY_FormatFields SET CaptionVN = N'Thuế VAT 8%'         WHERE FormName = 'frmBaoGia' AND FieldName = 'VAT8';
+UPDATE SY_FormatFields SET CaptionVN = N'Thuế VAT 10%'        WHERE FormName = 'frmBaoGia' AND FieldName = 'VAT10';
+UPDATE SY_FormatFields SET CaptionVN = N'Tổng cộng chưa VAT'  WHERE FormName = 'frmBaoGia' AND FieldName = 'TongCongChuaVAT';
+UPDATE SY_FormatFields SET CaptionVN = N'Cách bố trí'         WHERE FormName = 'frmBaoGia' AND FieldName = 'BoTri';
+UPDATE SY_FormatFields SET CaptionVN = N'Hotline website'     WHERE FormName = 'frmBaoGia' AND FieldName = 'HotlineWebsiteNhaHang';
 GO
 
 -- =========================================================================
@@ -345,7 +379,7 @@ WHERE FormName = 'frmBaoGia'
     'NgayBaoGiaDay', 'ThangBaoGia', 'NamBaoGia', 'TongCongTamTinhBangChu',
     'BenATenCongTy', 'BenADiaChi', 'BenASDT', 'BenAEmail', 'BenAEmailNhanVien',
     'BenANhanVienPhuTrach', 'BenASDTNhanVien', 'BenBDienThoai', 'BenBDiaChi', 'HDTenCty',
-    'BoTri'
+    'BoTri', 'VAT8', 'VAT10', 'PhiPhucVu', 'TongCongChuaVAT', 'HotlineWebsiteNhaHang'
   );
 GO
 

@@ -2,8 +2,7 @@
   "arrayToStringFields": [
     "DichVuTinhPhi",
     "DichVuTinhPhiPhuLuc",
-    "DichVuPhatSinh",
-    "DanhSachDichVu"
+    "DichVuPhatSinh"
   ],
   "itemFieldNames": [
     "TenDichVu",
