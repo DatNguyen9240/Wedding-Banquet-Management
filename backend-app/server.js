@@ -923,18 +923,27 @@ function convertTextToWordXML(text, fieldName = '', docConfig = getDocumentConfi
         const line = lines[i].trim();
         if (!line) continue;
         
-        const isHeader = !/^[-\*\+\•\d]/.test(line) && (line.endsWith(':') || (headerRegex && headerRegex.test(line)));
+        let currentLine = line;
+        let isChanged = false;
+        if (currentLine.startsWith('__CHANGED__')) {
+            isChanged = true;
+            currentLine = currentLine.substring(11).trim(); // Remove '__CHANGED__' prefix
+        }
         
-        const escapedLine = line
+        const isHeader = !/^[-\*\+\•\d]/.test(currentLine) && (currentLine.endsWith(':') || (headerRegex && headerRegex.test(currentLine)));
+        
+        const escapedLine = currentLine
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&apos;");
             
-        const isWarningLine = warningRegex && warningRegex.test(line);
+        const isWarningLine = warningRegex && warningRegex.test(currentLine);
         
-        if (isHeader) {
+        if (isChanged) {
+            xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:u w:val="single"/><w:highlight w:val="yellow"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
+        } else if (isHeader) {
             if (isSetupField) {
                 xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:b/><w:u w:val="single"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
             } else {

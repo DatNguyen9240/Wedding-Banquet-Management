@@ -1175,6 +1175,15 @@ UPDATE SY_FormatFields
 SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmHopDong' AND FieldName = 'Sohopdong';
 
+-- Khóa/Ẩn các trường đặt cọc theo đúng quy trình nghiệp vụ (Cọc lần 2 chỉ cập nhật qua Phụ lục)
+UPDATE SY_FormatFields
+SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
+WHERE FormName = 'frmHopDong' AND FieldName = 'Sotiencochopdong';
+
+UPDATE SY_FormatFields
+SET ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1
+WHERE FormName = 'frmHopDong' AND FieldName = 'Tongtiencoc';
+
 DELETE FROM WA_API WHERE List = 'API_DanhSachPhieuCoc_Dropdown';
 INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES ('API_DanhSachPhieuCoc_Dropdown', 'View', 'API_DanhSachPhieuCoc', '@Keyword=N''{Keyword}''');
