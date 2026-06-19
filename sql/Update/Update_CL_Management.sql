@@ -99,11 +99,11 @@ GO
 
 INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, IsRequired)
 VALUES
-('frmBEO', 'DinhBienCL',     N'Định Biên CL',       'n',  '6',  14,  1, 1, 1, 1, 0),
-('frmBEO', 'SoNVPhanCong',   N'Số NV Phân Công',    'n',  '6',  15,  1, 1, 0, 0, 0),
-('frmBEO', 'CLDeXuat',       N'CL Đề Xuất',         'n',  '6',  16,  1, 1, 1, 1, 0),
-('frmBEO', 'CLThucTe',       N'CL Thực Tế',         'n',  '6',  17,  1, 1, 0, 0, 0);
-PRINT N'  + Đã đăng ký các cột CL vào SY_FormatFields của frmBEO';
+('frmBEO', 'DinhBienCL',     N'Định Biên CL',       'n',  '3',  14,  1, 1, 1, 1, 0),
+('frmBEO', 'SoNVPhanCong',   N'Số NV Phân Công',    'n',  '3',  15,  1, 1, 0, 0, 0),
+('frmBEO', 'CLDeXuat',       N'CL Đề Xuất',         'n',  '3',  16,  1, 1, 1, 1, 0),
+('frmBEO', 'CLThucTe',       N'CL Thực Tế',         'n',  '3',  17,  1, 1, 0, 0, 0);
+PRINT N'  + Đã đăng ký các cột CL vào SY_FormatFields của frmBEO (kích thước 3/12)';
 GO
 
 -- =========================================================================

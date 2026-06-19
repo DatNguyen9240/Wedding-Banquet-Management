@@ -61,19 +61,56 @@ END
 GO
 PRINT N'  + Đã tạo/cập nhật Stored Procedure: API_SY_Period_Edit';
 GO
+-- =========================================================================
+-- 3. CẬP NHẬT HOẶC TẠO MỚI STORED PROCEDURE API_SY_Period_View
+-- =========================================================================
+PRINT N'3. Cập nhật hoặc tạo mới Stored Procedure API_SY_Period_View...';
+GO
+
+IF OBJECT_ID('API_SY_Period_View', 'P') IS NOT NULL
+    DROP PROCEDURE API_SY_Period_View;
+GO
+
+CREATE PROCEDURE [dbo].[API_SY_Period_View]
+    @Keyword NVARCHAR(200) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        PeriodID,
+        PeriodName,
+        YearID,
+        PeriodNo,
+        isLock,
+        IsLockData
+    FROM SY_Period
+    WHERE @Keyword IS NULL OR PeriodID LIKE '%' + @Keyword + '%' OR PeriodName LIKE '%' + @Keyword + '%'
+    ORDER BY YearID DESC, PeriodNo ASC;
+END
+GO
+PRINT N'  + Đã tạo/cập nhật Stored Procedure: API_SY_Period_View';
+GO
 
 -- =========================================================================
--- 3. ĐĂNG KÝ API EDIT CHO SY_Period VÀO BẢNG ĐỊNH TUYẾN WA_API
+-- 4. ĐĂNG KÝ CÁC API (EDIT & VIEW) CHO SY_Period VÀO BẢNG ĐỊNH TUYẾN WA_API
 -- =========================================================================
-PRINT N'3. Đăng ký API Edit cho SY_Period vào bảng định tuyến WA_API...';
+PRINT N'4. Đăng ký các API cho SY_Period vào bảng định tuyến WA_API...';
 GO
 
 IF EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'WA_API') AND type in (N'U'))
 BEGIN
+    -- 4.1 Đăng ký API Edit
     DELETE FROM WA_API WHERE List = 'SY_Period' AND Func = 'Edit';
     INSERT INTO WA_API (List, Func, [SQL], Para)
     VALUES ('SY_Period', 'Edit', 'API_SY_Period_Edit', '@PeriodID=N''{PeriodID}'', @isLock={isLock}');
     PRINT N'  + Đã đăng ký API Edit cho SY_Period vào WA_API';
+
+    -- 4.2 Đăng ký API View
+    DELETE FROM WA_API WHERE List = 'SY_Period' AND Func = 'View';
+    INSERT INTO WA_API (List, Func, [SQL], Para)
+    VALUES ('SY_Period', 'View', 'API_SY_Period_View', '@Keyword=N''{Keyword}''');
+    PRINT N'  + Đã đăng ký API View cho SY_Period vào WA_API';
 END
 ELSE
 BEGIN
