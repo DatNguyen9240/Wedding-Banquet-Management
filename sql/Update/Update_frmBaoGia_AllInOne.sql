@@ -172,10 +172,10 @@ BEGIN
             FROM dmThoigian tg
             WHERE tg.Thoigianid = h.Thoigianid
         ), ISNULL(h.Thoigianid, N'')) AS [ThoiGian],
-        0 AS [PhiPhucVu],
-        0 AS [VAT8],
-        0 AS [VAT10],
-        ISNULL(h.Tongtienhopdong, 0) AS [TongCongChuaVAT],
+        FORMAT(ISNULL(h.TongTienPhiPhucVu, 0), 'N0', 'vi-VN') AS [PhiPhucVu],
+        CASE WHEN h.PTThueVAT = 8 THEN FORMAT(ISNULL(h.TienThueVAT, 0), 'N0', 'vi-VN') ELSE '0' END AS [VAT8],
+        CASE WHEN h.PTThueVAT = 10 THEN FORMAT(ISNULL(h.TienThueVAT, 0), 'N0', 'vi-VN') ELSE '0' END AS [VAT10],
+        FORMAT(ISNULL(h.TongTienHopDongChuaVAT, 0), 'N0', 'vi-VN') AS [TongCongChuaVAT],
 
         CAST(NULL AS VARCHAR(100)) AS [BoTri]
         -- , CAST(NULL AS INT) AS [IsHeader]
