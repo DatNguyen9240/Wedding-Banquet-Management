@@ -398,10 +398,16 @@ var DashboardPage = (function () {
       text.textContent = 'so với kỳ trước';
       el.appendChild(text);
     }
-    var cPct = (d.SoHopDong-d.SoHopDongKyTruoc)/d.SoHopDongKyTruoc*100;
-    var costPct = (d.ChiPhi-d.ChiPhiKyTruoc)/d.ChiPhiKyTruoc*100;
-    var gPct = (d.SoKhach-d.SoKhachKyTruoc)/d.SoKhachKyTruoc*100;
-    var prPct = (d.LoiNhuan-d.LoiNhuanKyTruoc)/d.LoiNhuanKyTruoc*100;
+    function calcPct(curr, prev) {
+      var c = Number(curr) || 0;
+      var p = Number(prev) || 0;
+      if (p === 0) return c > 0 ? 100 : 0;
+      return ((c - p) / p) * 100;
+    }
+    var cPct = calcPct(d.SoHopDong, d.SoHopDongKyTruoc);
+    var costPct = calcPct(d.ChiPhi, d.ChiPhiKyTruoc);
+    var gPct = calcPct(d.SoKhach, d.SoKhachKyTruoc);
+    var prPct = calcPct(d.LoiNhuan, d.LoiNhuanKyTruoc);
     set('[data-rv-cmp="contracts"]', cPct, {size:'sm'});
     set('[data-rv-cmp="cost"]', costPct, {size:'sm', reverse:true});
     set('[data-rv-cmp="guests"]', gPct, {size:'sm'});
