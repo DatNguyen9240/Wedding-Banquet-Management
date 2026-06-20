@@ -1,0 +1,45 @@
+/* ═══════════════════════════════════════════
+   PAGE TRANSITION LOADING BAR
+   ═══════════════════════════════════════════ */
+
+.page-loading-bar-container {
+  position: fixed;
+  top: var(--header-height, 62px);
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 99999;
+  pointer-events: none;
+  background: transparent;
+  overflow: hidden;
+}
+
+.page-loading-bar {
+  height: 100%;
+  width: 0%;
+  /* Vibrant premium gradient using modern colors matching the system styling */
+  background: linear-gradient(90deg, #4f46e5 0%, #8b5cf6 50%, #ec4899 100%);
+  background-size: 200% 100%;
+  box-shadow: 0 0 8px rgba(79, 70, 229, 0.6), 0 0 4px rgba(236, 72, 153, 0.4);
+  opacity: 0;
+  transition: width 0.3s cubic-bezier(0.1, 0.8, 0.1, 1), opacity 0.3s ease;
+  animation: loading-bar-gradient 2s linear infinite;
+}
+
+.page-loading-bar.error {
+  background: linear-gradient(90deg, #ef4444 0%, #f97316 100%);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  animation: none;
+}
+
+@keyframes loading-bar-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}

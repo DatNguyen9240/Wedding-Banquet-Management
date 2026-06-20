@@ -245,6 +245,10 @@ var Router = (function () {
     var pathOnly = hashParts[0];
     var route = _findRoute(pathOnly);
 
+    if (typeof LoadingBar !== 'undefined') {
+      LoadingBar.start();
+    }
+
     // Kéo quyền động nếu máy khác vừa cập nhật (Đảm bảo Realtime)
     _syncPermissionsIfNeeded().then(function () {
       if (currentNav !== _navId) return;
@@ -263,6 +267,9 @@ var Router = (function () {
         if ($pageTitle) $pageTitle.innerText = '404 — Không tìm thấy';
         document.title = '404 | Quản lý Tiệc Cưới';
         _render404($content, rawHash);
+        if (typeof LoadingBar !== 'undefined') {
+          LoadingBar.fail();
+        }
         return;
       }
 
@@ -271,6 +278,9 @@ var Router = (function () {
       if (targetPerm && !Permission.canView(targetPerm)) {
         if ($pageTitle) $pageTitle.innerText = 'Từ chối truy cập';
         _renderAccessDenied($content);
+        if (typeof LoadingBar !== 'undefined') {
+          LoadingBar.fail();
+        }
         return;
       }
 
@@ -322,8 +332,14 @@ var Router = (function () {
 
               // 3. Render trang vào wrapper
               mod.render(wrapper, route.config || null);
+              if (typeof LoadingBar !== 'undefined') {
+                LoadingBar.done();
+              }
             } else {
               _renderError($content, 'Không tìm thấy module: ' + route.pageFn);
+              if (typeof LoadingBar !== 'undefined') {
+                LoadingBar.fail();
+              }
             }
             _fadeIn($content);
             _currentRoute = route;
@@ -333,6 +349,9 @@ var Router = (function () {
             console.error('[Router]', err);
             _renderError($content, 'Lỗi tải module: ' + err.message);
             _fadeIn($content);
+            if (typeof LoadingBar !== 'undefined') {
+              LoadingBar.fail();
+            }
           });
         return;
       }
@@ -349,18 +368,27 @@ var Router = (function () {
             $content.innerHTML = html;
             _fadeIn($content);
             _currentRoute = route;
+            if (typeof LoadingBar !== 'undefined') {
+              LoadingBar.done();
+            }
           })
           .catch(function (err) {
             if (err.message === 'ABORTED') return;
             console.error('[Router]', err);
             _renderError($content, 'Lỗi tải template: ' + err.message);
             _fadeIn($content);
+            if (typeof LoadingBar !== 'undefined') {
+              LoadingBar.fail();
+            }
           });
         return;
       }
 
       // ── Trường hợp 3: Trang chưa code ──
       _renderPlaceholder($content, route.title);
+      if (typeof LoadingBar !== 'undefined') {
+        LoadingBar.done();
+      }
     }); // End of _syncPermissionsIfNeeded
   }
 
