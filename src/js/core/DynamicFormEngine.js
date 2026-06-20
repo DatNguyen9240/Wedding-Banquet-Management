@@ -970,9 +970,15 @@ window.DynamicFormEngine = (function () {
           #dynamic-btn-container .button-bar,
           .page-title-actions .button-bar {
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             align-items: center;
             gap: 10px;
+          }
+          @media (max-width: 768px) {
+            #dynamic-btn-container .button-bar,
+            .page-title-actions .button-bar {
+              flex-wrap: wrap;
+            }
           }
           /* Wrapper chứa nút bấm: Cuộn ngang, không rớt dòng */
           .btn-scroll-wrapper {

@@ -59,7 +59,6 @@ $cssFiles = @(
 
 # ====== DANH SACH JS ======
 $jsFiles = @(
-  "js\data\mockData.js",
   "js\utils\apiClient.js",
   "js\utils\permission.js",
   "js\utils\DocumentExportPlugin.js",
