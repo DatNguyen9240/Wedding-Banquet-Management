@@ -48,6 +48,7 @@
   letter-spacing: 0.5px;
   font-size: 12px;
   border-bottom: 2px solid var(--color-border);
+  white-space: nowrap;
 }
 
 .dropdown-table td {
@@ -79,8 +80,12 @@
 }
 
 .dropdown-table tbody tr.active td {
-  color: var(--color-primary, #6366f1) !important;
+  color: var(--color-text) !important;
   font-weight: 600;
+}
+
+body.dark-theme .dropdown-table tbody tr.active td {
+  color: #ffffff !important;
 }
 
 /* Mobile: Reduce font size and tighten spacing */

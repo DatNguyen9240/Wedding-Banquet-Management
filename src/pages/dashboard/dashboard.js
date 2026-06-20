@@ -17,8 +17,8 @@ var DashboardPage = (function () {
   }
   function _now() {
     var d = new Date();
-    return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()+
-           ' - '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+    return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear() +
+      ' - ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
   }
 
   // ── API integration ───────────────────────────────────────────
@@ -61,59 +61,69 @@ var DashboardPage = (function () {
         type: 'bar',
         data: {
           labels: labels,
-          datasets: [{ data: values, backgroundColor: color+'CC', borderRadius: 4,
-                       borderSkipped: false }]
+          datasets: [{
+            data: values, backgroundColor: color + 'CC', borderRadius: 4,
+            borderSkipped: false
+          }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: {
-            callbacks: { label: function(c){ return _fmtShort(c.raw); } }
-          }},
+          plugins: {
+            legend: { display: false }, tooltip: {
+              callbacks: { label: function (c) { return _fmtShort(c.raw); } }
+            }
+          },
           scales: {
-            x: { grid: { display: false },
-                 ticks: { color: isDark?'#94A3B8':'#64748B', font: { size: 11 } } },
-            y: { grid: { color: isDark?'rgba(51,65,85,0.5)':'rgba(226,232,240,0.8)' },
-                 ticks: { color: isDark?'#94A3B8':'#64748B', font: { size: 11 },
-                          callback: function(v){ return _fmtShort(v); } } }
+            x: {
+              grid: { display: false },
+              ticks: { color: isDark ? '#94A3B8' : '#64748B', font: { size: 11 } }
+            },
+            y: {
+              grid: { color: isDark ? 'rgba(51,65,85,0.5)' : 'rgba(226,232,240,0.8)' },
+              ticks: {
+                color: isDark ? '#94A3B8' : '#64748B', font: { size: 11 },
+                callback: function (v) { return _fmtShort(v); }
+              }
+            }
           }
         }
       });
       return;
     }
     // Fallback canvas thủ công (giống SparklineChart nhưng bar)
-    var dpr = window.devicePixelRatio||1;
-    var W = canvas.parentElement.offsetWidth||300, H = 180;
-    canvas.width=W*dpr; canvas.height=H*dpr;
-    canvas.style.width=W+'px'; canvas.style.height=H+'px';
-    var ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
-    ctx.clearRect(0,0,W,H);
-    var isDark=document.body.classList.contains('dark-theme');
-    var tc=isDark?'rgba(148,163,184,0.8)':'rgba(100,116,139,0.9)';
-    var gc=isDark?'rgba(51,65,85,0.5)':'rgba(226,232,240,0.8)';
-    var pL=40,pR=12,pT=12,pB=28, cW=W-pL-pR, cH=H-pT-pB;
-    var max=Math.max.apply(null,values)*1.15||1;
-    var bW=(cW/labels.length)*0.55, gap=(cW/labels.length)*0.45;
-    var pc=getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim()||'#4F46E5';
-    ctx.font='10px sans-serif'; ctx.textAlign='right'; ctx.fillStyle=tc;
-    for(var g=1;g<=4;g++){
-      var yp=pT+cH-(g/4)*cH;
-      ctx.strokeStyle=gc; ctx.lineWidth=0.8;
-      ctx.beginPath(); ctx.moveTo(pL,yp); ctx.lineTo(W-pR,yp); ctx.stroke();
-      ctx.fillText(_fmtShort(max*g/4),pL-4,yp+3);
+    var dpr = window.devicePixelRatio || 1;
+    var W = canvas.parentElement.offsetWidth || 300, H = 180;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+    var isDark = document.body.classList.contains('dark-theme');
+    var tc = isDark ? 'rgba(148,163,184,0.8)' : 'rgba(100,116,139,0.9)';
+    var gc = isDark ? 'rgba(51,65,85,0.5)' : 'rgba(226,232,240,0.8)';
+    var pL = 40, pR = 12, pT = 12, pB = 28, cW = W - pL - pR, cH = H - pT - pB;
+    var max = Math.max.apply(null, values) * 1.15 || 1;
+    var bW = (cW / labels.length) * 0.55, gap = (cW / labels.length) * 0.45;
+    var pc = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#4F46E5';
+    ctx.font = '10px sans-serif'; ctx.textAlign = 'right'; ctx.fillStyle = tc;
+    for (var g = 1; g <= 4; g++) {
+      var yp = pT + cH - (g / 4) * cH;
+      ctx.strokeStyle = gc; ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(pL, yp); ctx.lineTo(W - pR, yp); ctx.stroke();
+      ctx.fillText(_fmtShort(max * g / 4), pL - 4, yp + 3);
     }
-    labels.forEach(function(lb,i){
-      var x=pL+i*(cW/labels.length)+gap/2, bH=(values[i]/max)*cH, y=pT+cH-bH;
-      var gr=ctx.createLinearGradient(x,y,x,pT+cH);
-      gr.addColorStop(0,pc); gr.addColorStop(1,pc+'66');
+    labels.forEach(function (lb, i) {
+      var x = pL + i * (cW / labels.length) + gap / 2, bH = (values[i] / max) * cH, y = pT + cH - bH;
+      var gr = ctx.createLinearGradient(x, y, x, pT + cH);
+      gr.addColorStop(0, pc); gr.addColorStop(1, pc + '66');
       ctx.beginPath();
-      var r=Math.min(4,bW/2);
-      ctx.moveTo(x+r,y); ctx.lineTo(x+bW-r,y);
-      ctx.quadraticCurveTo(x+bW,y,x+bW,y+r);
-      ctx.lineTo(x+bW,pT+cH); ctx.lineTo(x,pT+cH);
-      ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
-      ctx.closePath(); ctx.fillStyle=gr; ctx.fill();
-      ctx.fillStyle=tc; ctx.textAlign='center';
-      ctx.fillText(lb,x+bW/2,H-pB+14);
+      var r = Math.min(4, bW / 2);
+      ctx.moveTo(x + r, y); ctx.lineTo(x + bW - r, y);
+      ctx.quadraticCurveTo(x + bW, y, x + bW, y + r);
+      ctx.lineTo(x + bW, pT + cH); ctx.lineTo(x, pT + cH);
+      ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath(); ctx.fillStyle = gr; ctx.fill();
+      ctx.fillStyle = tc; ctx.textAlign = 'center';
+      ctx.fillText(lb, x + bW / 2, H - pB + 14);
     });
   }
 
@@ -133,9 +143,9 @@ var DashboardPage = (function () {
         options: {
           responsive: true, maintainAspectRatio: false,
           cutout: '65%',
-          plugins: { 
-            legend: { display: false }, 
-            tooltip: { callbacks: { label: function(c){ return ' ' + c.label + ': ' + c.raw + '%'; } } }
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: function (c) { return ' ' + c.label + ': ' + c.raw + '%'; } } }
           }
         }
       });
@@ -148,13 +158,13 @@ var DashboardPage = (function () {
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     var ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
-    var total = values.reduce(function(a,b){return a+b}, 0);
+    var total = values.reduce(function (a, b) { return a + b }, 0);
     var colors = ['#4F46E5', '#10B981', '#F59E0B', '#0EA5E9'];
-    var cx = W/2, cy = H/2, r = Math.min(cx, cy) - 4;
-    var startAngle = -Math.PI/2;
+    var cx = W / 2, cy = H / 2, r = Math.min(cx, cy) - 4;
+    var startAngle = -Math.PI / 2;
     var isDark = document.body.classList.contains('dark-theme');
-    
-    values.forEach(function(val, i) {
+
+    values.forEach(function (val, i) {
       var sliceAngle = (val / total) * 2 * Math.PI;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
@@ -183,7 +193,7 @@ var DashboardPage = (function () {
 
     var banner = document.createElement('div');
     banner.className = 'db-warning-banner';
-    
+
     var icon = document.createElement('span');
     icon.className = 'material-symbols-outlined db-warning-icon';
     icon.textContent = 'notification_important';
@@ -195,8 +205,8 @@ var DashboardPage = (function () {
     var btn = document.createElement('button');
     btn.className = 'btn btn-outline db-warning-btn';
     btn.innerHTML = 'Xem chi tiết <span class="material-symbols-outlined" style="font-size:16px;">arrow_forward</span>';
-    btn.onclick = function() {
-      window.location.hash = '#/hop-dong';
+    btn.onclick = function () {
+      window.location.hash = '#/contract';
     };
 
     banner.appendChild(icon);
@@ -208,12 +218,12 @@ var DashboardPage = (function () {
 
   // ── Section builders ───────────────────────────────────────────
   function _buildToday(container) {
-    var d = { revenueForecast:0, collected:0, hallTotal:0, hallDone:0, hallOngoing:0, contractsPaid:0, contractsPaidAmt:0, ongoing:0, ongoingGuests:0, upcoming:0, upcomingTime:'', cancelled:0 };
+    var d = { revenueForecast: 0, collected: 0, hallTotal: 0, hallDone: 0, hallOngoing: 0, contractsPaid: 0, contractsPaidAmt: 0, ongoing: 0, ongoingGuests: 0, upcoming: 0, upcomingTime: '', cancelled: 0 };
     var sp = SectionPanel.create({
       icon: 'calendar_today',
       title: 'HOẠT ĐỘNG TRONG NGÀY',
-      trailing: '('+_now()+')',
-      actions: [{ type:'refresh', onClick: function(){ _refreshToday(); } }]
+      trailing: '(' + _now() + ')',
+      actions: [{ type: 'refresh', onClick: function () { _refreshToday(); } }]
     });
     _refs.todayPanel = sp.panel;
 
@@ -222,36 +232,36 @@ var DashboardPage = (function () {
 
     // MetricCards
     _refs.mcRevenue = MetricCard.create({
-      icon:'payments', iconColor:'#4F46E5', iconBg:'rgba(79,70,229,0.08)',
-      label:'Doanh thu ước tính', value:_fmtShort(d.revenueForecast), size:'large'
+      icon: 'payments', iconColor: '#4F46E5', iconBg: 'rgba(79,70,229,0.08)',
+      label: 'Doanh thu ước tính', value: _fmtShort(d.revenueForecast), size: 'large'
     });
     _refs.mcCollected = MetricCard.create({
-      icon:'account_balance_wallet', iconColor:'#10B981', iconBg:'rgba(16,185,129,0.08)',
-      label:'Tiền thu trong ngày', value:_fmtShort(d.collected), size:'large'
+      icon: 'account_balance_wallet', iconColor: '#10B981', iconBg: 'rgba(16,185,129,0.08)',
+      label: 'Tiền thu trong ngày', value: _fmtShort(d.collected), size: 'large'
     });
     _refs.hallGauge = HallGauge.create({
-      total:d.hallTotal, done:d.hallDone, ongoing:d.hallOngoing,
-      label:'sảnh hoạt động'
+      total: d.hallTotal, done: d.hallDone, ongoing: d.hallOngoing,
+      label: 'sảnh hoạt động'
     });
     _refs.mcContractsPaid = MetricCard.create({
-      icon:'contract', iconColor:'#10B981', iconBg:'rgba(16,185,129,0.08)',
-      label:'HĐ đã thanh toán',
-      value:d.contractsPaid, subValue:_fmtShort(d.contractsPaidAmt)
+      icon: 'contract', iconColor: '#10B981', iconBg: 'rgba(16,185,129,0.08)',
+      label: 'HĐ đã thanh toán',
+      value: d.contractsPaid, subValue: _fmtShort(d.contractsPaidAmt)
     });
     _refs.mcOngoing = MetricCard.create({
-      icon:'restaurant', iconColor:'#F59E0B', iconBg:'rgba(245,158,11,0.08)',
-      label:'Tiệc đang diễn ra',
-      value:d.ongoing, subValue:d.ongoingGuests+' khách'
+      icon: 'restaurant', iconColor: '#F59E0B', iconBg: 'rgba(245,158,11,0.08)',
+      label: 'Tiệc đang diễn ra',
+      value: d.ongoing, subValue: d.ongoingGuests + ' khách'
     });
     _refs.mcUpcoming = MetricCard.create({
-      icon:'event', iconColor:'#0EA5E9', iconBg:'rgba(14,165,233,0.08)',
-      label:'Tiệc sắp diễn ra',
-      value:d.upcoming, subValue:d.upcomingTime
+      icon: 'event', iconColor: '#0EA5E9', iconBg: 'rgba(14,165,233,0.08)',
+      label: 'Tiệc sắp diễn ra',
+      value: d.upcoming, subValue: d.upcomingTime
     });
     _refs.mcCancelled = MetricCard.create({
-      icon:'cancel', iconColor:'#F43F5E', iconBg:'rgba(244,63,94,0.08)',
-      label:'Hợp đồng hủy',
-      value:d.cancelled===0?'0':d.cancelled, subValue:d.cancelled===0?'Không có':''
+      icon: 'cancel', iconColor: '#F43F5E', iconBg: 'rgba(244,63,94,0.08)',
+      label: 'Hợp đồng hủy',
+      value: d.cancelled === 0 ? '0' : d.cancelled, subValue: d.cancelled === 0 ? 'Không có' : ''
     });
 
     // Wrap hall-gauge trong div có border-right
@@ -260,24 +270,25 @@ var DashboardPage = (function () {
     hallWrap.appendChild(_refs.hallGauge);
 
     [_refs.mcRevenue, _refs.mcCollected, hallWrap,
-     _refs.mcContractsPaid, _refs.mcOngoing, _refs.mcUpcoming, _refs.mcCancelled
-    ].forEach(function(el){ grid.appendChild(el); });
+    _refs.mcContractsPaid, _refs.mcOngoing, _refs.mcUpcoming, _refs.mcCancelled
+    ].forEach(function (el) { grid.appendChild(el); });
 
     sp.body.appendChild(grid);
     container.appendChild(sp.panel);
   }
 
   function _buildRevenue(container) {
-    var d = { revenue:0, prevRevenue:0, revPct:0, contracts:0, prevContracts:0, avgContract:0, cost:0, prevCost:0, guests:0, prevGuests:0, avgGuest:0, profit:0, prevProfit:0, sparkline:[], pieLabels:[], pieValues:[] };
+    var d = { revenue: 0, prevRevenue: 0, revPct: 0, contracts: 0, prevContracts: 0, avgContract: 0, cost: 0, prevCost: 0, guests: 0, prevGuests: 0, avgGuest: 0, profit: 0, prevProfit: 0, sparkline: [], pieLabels: [], pieValues: [] };
     var sp = SectionPanel.create({
       icon: 'bar_chart', title: 'TỔNG QUAN DOANH THU',
       actions: [
-        { type:'select', id:'period-revenue',
-          options:[{value:'tuan',label:'Tuần này'},{value:'thang',label:'Tháng này'},{value:'quy',label:'Quý này'}],
-          defaultValue:'tuan',
-          onChange: function(v){ _period.revenue=v; _updateRevenue(); }
+        {
+          type: 'select', id: 'period-revenue',
+          options: [{ value: 'tuan', label: 'Tuần này' }, { value: 'thang', label: 'Tháng này' }, { value: 'quy', label: 'Quý này' }],
+          defaultValue: 'tuan',
+          onChange: function (v) { _period.revenue = v; _updateRevenue(); }
         },
-        { type:'refresh', onClick: function(){ _updateRevenue(); } }
+        { type: 'refresh', onClick: function () { _updateRevenue(); } }
       ]
     });
 
@@ -312,19 +323,19 @@ var DashboardPage = (function () {
     cmpRow.appendChild(cmpText);
     infoCol.appendChild(cmpRow);
 
-    _refs.sparkCanvas = SparklineChart.create({ data:d.sparkline, width:320, height:75 });
+    _refs.sparkCanvas = SparklineChart.create({ data: d.sparkline, width: 320, height: 75 });
     _refs.sparkCanvas.style.marginTop = '12px';
     _refs.sparkCanvas.style.width = '100%';
     _refs.sparkCanvas.style.maxWidth = '320px';
     _refs.sparkCanvas.style.height = '75px';
     infoCol.appendChild(_refs.sparkCanvas);
-    
+
     left.appendChild(infoCol);
 
     // Pie chart column
     var pieCol = document.createElement('div');
     pieCol.style.cssText = 'flex: 1 1 50%; max-width: 180px; min-width: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; margin: 0 auto;';
-    
+
     var pieWrap = document.createElement('div');
     pieWrap.style.cssText = 'width: 100%; aspect-ratio: 1/1; max-width: 170px; position: relative;';
     _refs.pieCanvas = document.createElement('canvas');
@@ -345,15 +356,15 @@ var DashboardPage = (function () {
     mid.className = 'db-revenue-stat-col';
     mid.innerHTML =
       '<div class="db-rev-stat-item">' +
-        '<div class="db-rev-stat-label">Hợp đồng</div>' +
-        '<div class="db-rev-stat-value" data-rv="contracts">'+d.contracts+'</div>' +
-        '<div class="db-rev-stat-compare" data-rv-cmp="contracts"></div>' +
-        '<div class="db-rev-stat-sub" data-rv="avgContract">Trung bình: '+_fmtShort(d.avgContract)+'/HĐ</div>' +
+      '<div class="db-rev-stat-label">Hợp đồng</div>' +
+      '<div class="db-rev-stat-value" data-rv="contracts">' + d.contracts + '</div>' +
+      '<div class="db-rev-stat-compare" data-rv-cmp="contracts"></div>' +
+      '<div class="db-rev-stat-sub" data-rv="avgContract">Trung bình: ' + _fmtShort(d.avgContract) + '/HĐ</div>' +
       '</div><div class="db-rev-stat-divider"></div>' +
       '<div class="db-rev-stat-item">' +
-        '<div class="db-rev-stat-label">Tổng chi phí</div>' +
-        '<div class="db-rev-stat-value" data-rv="cost">'+_fmtShort(d.cost)+'</div>' +
-        '<div class="db-rev-stat-compare" data-rv-cmp="cost"></div>' +
+      '<div class="db-rev-stat-label">Tổng chi phí</div>' +
+      '<div class="db-rev-stat-value" data-rv="cost">' + _fmtShort(d.cost) + '</div>' +
+      '<div class="db-rev-stat-compare" data-rv-cmp="cost"></div>' +
       '</div>';
 
     // Right: guests + profit
@@ -361,15 +372,15 @@ var DashboardPage = (function () {
     right.className = 'db-revenue-stat-col';
     right.innerHTML =
       '<div class="db-rev-stat-item">' +
-        '<div class="db-rev-stat-label">Số khách</div>' +
-        '<div class="db-rev-stat-value" data-rv="guests">'+d.guests.toLocaleString('vi-VN')+'</div>' +
-        '<div class="db-rev-stat-compare" data-rv-cmp="guests"></div>' +
-        '<div class="db-rev-stat-sub" data-rv="avgGuest">Trung bình: '+_fmtShort(d.avgGuest)+'/khách</div>' +
+      '<div class="db-rev-stat-label">Số khách</div>' +
+      '<div class="db-rev-stat-value" data-rv="guests">' + d.guests.toLocaleString('vi-VN') + '</div>' +
+      '<div class="db-rev-stat-compare" data-rv-cmp="guests"></div>' +
+      '<div class="db-rev-stat-sub" data-rv="avgGuest">Trung bình: ' + _fmtShort(d.avgGuest) + '/khách</div>' +
       '</div><div class="db-rev-stat-divider"></div>' +
       '<div class="db-rev-stat-item">' +
-        '<div class="db-rev-stat-label">Lợi nhuận ước tính</div>' +
-        '<div class="db-rev-stat-value success" data-rv="profit">'+_fmtShort(d.profit)+'</div>' +
-        '<div class="db-rev-stat-compare" data-rv-cmp="profit"></div>' +
+      '<div class="db-rev-stat-label">Lợi nhuận ước tính</div>' +
+      '<div class="db-rev-stat-value success" data-rv="profit">' + _fmtShort(d.profit) + '</div>' +
+      '<div class="db-rev-stat-compare" data-rv-cmp="profit"></div>' +
       '</div>';
 
     grid.appendChild(left);
@@ -384,7 +395,7 @@ var DashboardPage = (function () {
     container.appendChild(sp.panel);
 
     // Vẽ biểu đồ tròn sau khi DOM mount
-    setTimeout(function(){ _drawPie(_refs.pieCanvas, d.pieLabels, d.pieValues); }, 100);
+    setTimeout(function () { _drawPie(_refs.pieCanvas, d.pieLabels, d.pieValues); }, 100);
   }
 
   function _renderCompareBadges(grid, d) {
@@ -408,10 +419,10 @@ var DashboardPage = (function () {
     var costPct = calcPct(d.ChiPhi, d.ChiPhiKyTruoc);
     var gPct = calcPct(d.SoKhach, d.SoKhachKyTruoc);
     var prPct = calcPct(d.LoiNhuan, d.LoiNhuanKyTruoc);
-    set('[data-rv-cmp="contracts"]', cPct, {size:'sm'});
-    set('[data-rv-cmp="cost"]', costPct, {size:'sm', reverse:true});
-    set('[data-rv-cmp="guests"]', gPct, {size:'sm'});
-    set('[data-rv-cmp="profit"]', prPct, {size:'sm'});
+    set('[data-rv-cmp="contracts"]', cPct, { size: 'sm' });
+    set('[data-rv-cmp="cost"]', costPct, { size: 'sm', reverse: true });
+    set('[data-rv-cmp="guests"]', gPct, { size: 'sm' });
+    set('[data-rv-cmp="profit"]', prPct, { size: 'sm' });
   }
 
   function _buildBottom(container) {
@@ -420,22 +431,25 @@ var DashboardPage = (function () {
 
     // 1. Kết quả KD — KVTable
     var bizSP = SectionPanel.create({
-      icon:'trending_up', title:'KẾT QUẢ KINH DOANH',
-      actions:[
-        { type:'select', id:'period-biz',
-          options:[{value:'thang',label:'Tháng này'},{value:'quy',label:'Quý này'},{value:'nam',label:'Năm này'}],
-          onChange: function(v){ _period.biz=v; _updateBiz(); }
+      icon: 'trending_up', title: 'KẾT QUẢ KINH DOANH',
+      actions: [
+        {
+          type: 'select', id: 'period-biz',
+          options: [{ value: 'thang', label: 'Tháng này' }, { value: 'quy', label: 'Quý này' }, { value: 'nam', label: 'Năm này' }],
+          onChange: function (v) { _period.biz = v; _updateBiz(); }
         }
       ]
     });
-    var bd = { revenue:0, cost:0, discount:0, profit:0 };
-    _refs.bizTable = KVTable.create({ rows:[
-      { label:'', value:'Số tiền', isHeader:true },
-      { label:'Doanh thu từ tiệc cưới', value:_fmtShort(bd.revenue) },
-      { label:'Chi phí dịch vụ', value:_fmtShort(bd.cost), color:'danger' },
-      { label:'Khuyến mãi / Giảm giá', value:_fmtShort(bd.discount), color:'warning' },
-      { label:'Lợi nhuận từ tiệc cưới', value:_fmtShort(bd.profit), color:'success', isTotal:true }
-    ]});
+    var bd = { revenue: 0, cost: 0, discount: 0, profit: 0 };
+    _refs.bizTable = KVTable.create({
+      rows: [
+        { label: '', value: 'Số tiền', isHeader: true },
+        { label: 'Doanh thu từ tiệc cưới', value: _fmtShort(bd.revenue) },
+        { label: 'Chi phí dịch vụ', value: _fmtShort(bd.cost), color: 'danger' },
+        { label: 'Khuyến mãi / Giảm giá', value: _fmtShort(bd.discount), color: 'warning' },
+        { label: 'Lợi nhuận từ tiệc cưới', value: _fmtShort(bd.profit), color: 'success', isTotal: true }
+      ]
+    });
     // Fix header row label
     var headerRow = _refs.bizTable.querySelector('.kvtable__row--header .kvtable__label');
     if (headerRow) headerRow.textContent = 'Chỉ tiêu';
@@ -444,32 +458,36 @@ var DashboardPage = (function () {
 
     // 2. Báo cáo thanh toán — KVTable
     var paySP = SectionPanel.create({
-      icon:'account_balance', title:'BÁO CÁO THANH TOÁN',
-      actions:[
-        { type:'select', id:'period-payment',
-          options:[{value:'thang',label:'Tháng này'},{value:'quy',label:'Quý này'}],
-          onChange: function(v){ _period.payment=v; _updatePayment(); }
+      icon: 'account_balance', title: 'BÁO CÁO THANH TOÁN',
+      actions: [
+        {
+          type: 'select', id: 'period-payment',
+          options: [{ value: 'thang', label: 'Tháng này' }, { value: 'quy', label: 'Quý này' }],
+          onChange: function (v) { _period.payment = v; _updatePayment(); }
         }
       ]
     });
-    var pd = { deposit:0, paid:0, debt:0, total:0 };
-    _refs.payTable = KVTable.create({ rows:[
-      { label:'Khoản mục', value:'Số tiền', isHeader:true },
-      { label:'Đã thu (đặt cọc)', value:_fmtShort(pd.deposit), color:'success', dot:'#10B981' },
-      { label:'Đã thu (thanh toán)', value:_fmtShort(pd.paid), dot:'#0EA5E9' },
-      { label:'Còn nợ', value:_fmtShort(pd.debt), color:'warning', dot:'#F59E0B' },
-      { label:'Tổng doanh thu kỳ', value:_fmtShort(pd.total), isTotal:true }
-    ]});
+    var pd = { deposit: 0, paid: 0, debt: 0, total: 0 };
+    _refs.payTable = KVTable.create({
+      rows: [
+        { label: 'Khoản mục', value: 'Số tiền', isHeader: true },
+        { label: 'Đã thu (đặt cọc)', value: _fmtShort(pd.deposit), color: 'success', dot: '#10B981' },
+        { label: 'Đã thu (thanh toán)', value: _fmtShort(pd.paid), dot: '#0EA5E9' },
+        { label: 'Còn nợ', value: _fmtShort(pd.debt), color: 'warning', dot: '#F59E0B' },
+        { label: 'Tổng doanh thu kỳ', value: _fmtShort(pd.total), isTotal: true }
+      ]
+    });
     paySP.body.appendChild(_refs.payTable);
     bottom.appendChild(paySP.panel);
 
     // 3. Biểu đồ tuần
     var chartSP = SectionPanel.create({
-      icon:'calendar_month', title:'DOANH THU THEO THỨ TRONG TUẦN',
-      actions:[
-        { type:'select', id:'period-weekly',
-          options:[{value:'tuan',label:'Tuần này'},{value:'tuan_truoc',label:'Tuần trước'}],
-          onChange: function(v){ _period.weekly=v; _updateWeekly(); }
+      icon: 'calendar_month', title: 'DOANH THU THEO THỨ TRONG TUẦN',
+      actions: [
+        {
+          type: 'select', id: 'period-weekly',
+          options: [{ value: 'tuan', label: 'Tuần này' }, { value: 'tuan_truoc', label: 'Tuần trước' }],
+          onChange: function (v) { _period.weekly = v; _updateWeekly(); }
         }
       ]
     });
@@ -483,19 +501,19 @@ var DashboardPage = (function () {
     container.appendChild(bottom);
 
     // Vẽ bar chart sau khi DOM mount
-    setTimeout(function(){ _updateWeekly(); }, 100);
+    setTimeout(function () { _updateWeekly(); }, 100);
   }
 
   // ── Update & API Fetch logic ──────────────────────────────────
   function _updateTodayUI(d) {
     if (!d) return;
-    MetricCard.update(_refs.mcRevenue,   { value:_fmtShort(d.DoanhThuUocTinh) });
-    MetricCard.update(_refs.mcCollected, { value:_fmtShort(d.TienThuTrongNgay) });
-    HallGauge.update(_refs.hallGauge, { total:d.TongSoSanh, done:d.SanhDaXong, ongoing:d.SanhDangDienRa });
-    MetricCard.update(_refs.mcContractsPaid, { value:d.SoHopDongDaThanhToan, subValue:_fmtShort(d.TienDaThanhToan) });
-    MetricCard.update(_refs.mcOngoing,   { value:d.TiecDangDienRa, subValue:d.SoKhachDangDienRa+' khách' });
-    MetricCard.update(_refs.mcUpcoming,  { value:d.TiecSapDienRa, subValue:d.ThoiGianSapDienRa });
-    if (_refs.todayPanel) SectionPanel.setTrailing(_refs.todayPanel, '('+_now()+')');
+    MetricCard.update(_refs.mcRevenue, { value: _fmtShort(d.DoanhThuUocTinh) });
+    MetricCard.update(_refs.mcCollected, { value: _fmtShort(d.TienThuTrongNgay) });
+    HallGauge.update(_refs.hallGauge, { total: d.TongSoSanh, done: d.SanhDaXong, ongoing: d.SanhDangDienRa });
+    MetricCard.update(_refs.mcContractsPaid, { value: d.SoHopDongDaThanhToan, subValue: _fmtShort(d.TienDaThanhToan) });
+    MetricCard.update(_refs.mcOngoing, { value: d.TiecDangDienRa, subValue: d.SoKhachDangDienRa + ' khách' });
+    MetricCard.update(_refs.mcUpcoming, { value: d.TiecSapDienRa, subValue: d.ThoiGianSapDienRa });
+    if (_refs.todayPanel) SectionPanel.setTrailing(_refs.todayPanel, '(' + _now() + ')');
   }
 
   function _updateRevenueUI(d) {
@@ -505,22 +523,22 @@ var DashboardPage = (function () {
     var rv = grid.querySelector('[data-rv-value]') || grid.querySelector('.db-revenue-value');
     if (rv) rv.textContent = _fmtShort(d.DoanhThu);
     CompareBadge.update(_refs.badgeRevenue, d.PhanTramDoanhThu);
-    
+
     // Parse sparkline
     var sparkVals = d.Sparkline ? d.Sparkline.split(',').map(Number) : [0];
     SparklineChart.redraw(_refs.sparkCanvas, sparkVals);
-    
+
     // Parse Pie Chart
     var pLabels = d.PieLabels ? d.PieLabels.split(',') : [];
     var pValues = d.PieValues ? d.PieValues.split(',').map(Number) : [];
     _drawPie(_refs.pieCanvas, pLabels, pValues);
-    
-    var update = function(sel, val){ var el=grid.querySelector(sel); if(el) el.textContent=val; };
+
+    var update = function (sel, val) { var el = grid.querySelector(sel); if (el) el.textContent = val; };
     update('[data-rv="contracts"]', d.SoHopDong);
-    update('[data-rv="avgContract"]', 'Trung bình: '+_fmtShort(d.TrungBinhHopDong)+'/HĐ');
+    update('[data-rv="avgContract"]', 'Trung bình: ' + _fmtShort(d.TrungBinhHopDong) + '/HĐ');
     update('[data-rv="cost"]', _fmtShort(d.ChiPhi));
     update('[data-rv="guests"]', d.SoKhach.toLocaleString('vi-VN'));
-    update('[data-rv="avgGuest"]', 'Trung bình: '+_fmtShort(d.TrungBinhKhach)+'/khách');
+    update('[data-rv="avgGuest"]', 'Trung bình: ' + _fmtShort(d.TrungBinhKhach) + '/khách');
     update('[data-rv="profit"]', _fmtShort(d.LoiNhuan));
     _renderCompareBadges(grid, d);
   }
@@ -528,22 +546,22 @@ var DashboardPage = (function () {
   function _updateBizUI(d) {
     if (!d) return;
     KVTable.setRows(_refs.bizTable, [
-      { label:'Chỉ tiêu', value:'Số tiền', isHeader:true },
-      { label:'Doanh thu từ tiệc cưới', value:_fmtShort(d.DoanhThu) },
-      { label:'Chi phí dịch vụ', value:_fmtShort(d.ChiPhi), color:'danger' },
-      { label:'Khuyến mãi / Giảm giá', value:_fmtShort(d.KhuyenMai), color:'warning' },
-      { label:'Lợi nhuận từ tiệc cưới', value:_fmtShort(d.LoiNhuan), color:'success', isTotal:true }
+      { label: 'Chỉ tiêu', value: 'Số tiền', isHeader: true },
+      { label: 'Doanh thu từ tiệc cưới', value: _fmtShort(d.DoanhThu) },
+      { label: 'Chi phí dịch vụ', value: _fmtShort(d.ChiPhi), color: 'danger' },
+      { label: 'Khuyến mãi / Giảm giá', value: _fmtShort(d.KhuyenMai), color: 'warning' },
+      { label: 'Lợi nhuận từ tiệc cưới', value: _fmtShort(d.LoiNhuan), color: 'success', isTotal: true }
     ]);
   }
 
   function _updatePaymentUI(d) {
     if (!d) return;
     KVTable.setRows(_refs.payTable, [
-      { label:'Khoản mục', value:'Số tiền', isHeader:true },
-      { label:'Đã thu (đặt cọc)', value:_fmtShort(d.DaThuCoc), color:'success', dot:'#10B981' },
-      { label:'Đã thu (thanh toán)', value:_fmtShort(d.DaThuThanhToan), dot:'#0EA5E9' },
-      { label:'Còn nợ', value:_fmtShort(d.ConNo), color:'warning', dot:'#F59E0B' },
-      { label:'Tổng doanh thu kỳ', value:_fmtShort(d.TongDoanhThu), isTotal:true }
+      { label: 'Khoản mục', value: 'Số tiền', isHeader: true },
+      { label: 'Đã thu (đặt cọc)', value: _fmtShort(d.DaThuCoc), color: 'success', dot: '#10B981' },
+      { label: 'Đã thu (thanh toán)', value: _fmtShort(d.DaThuThanhToan), dot: '#0EA5E9' },
+      { label: 'Còn nợ', value: _fmtShort(d.ConNo), color: 'warning', dot: '#F59E0B' },
+      { label: 'Tổng doanh thu kỳ', value: _fmtShort(d.TongDoanhThu), isTotal: true }
     ]);
   }
 
@@ -551,7 +569,7 @@ var DashboardPage = (function () {
     if (!records) return;
     var labels = [];
     var values = [];
-    records.forEach(function(r) {
+    records.forEach(function (r) {
       labels.push(r.Nhan || r.nhan);
       values.push(Number(r.GiaTri || r.giatri || 0));
     });
@@ -560,14 +578,14 @@ var DashboardPage = (function () {
 
   function _refreshAllData() {
     _fetchDashboardData()
-      .then(function(res) {
+      .then(function (res) {
         if (res && res.code === 0) {
           var todayData = res.records ? res.records[0] : null;
           var revData = res.records2 ? res.records2[0] : null;
           var bizData = res.records3 ? res.records3[0] : null;
           var payData = res.records4 ? res.records4[0] : null;
           var weeklyData = res.records5 || [];
-          
+
           _updateTodayUI(todayData);
           _updateRevenueUI(revData);
           _updateBizUI(bizData);
@@ -575,7 +593,7 @@ var DashboardPage = (function () {
           _updateWeeklyUI(weeklyData);
         }
       })
-      .catch(function(err) {
+      .catch(function (err) {
         console.error('[Dashboard] Lỗi tải dữ liệu Dashboard:', err);
       });
   }
@@ -589,30 +607,30 @@ var DashboardPage = (function () {
   // ── Render ─────────────────────────────────────────────────────
   function render(container) {
     Router.fetchTemplate('src/pages/dashboard/dashboard.html')
-      .then(function(html){
+      .then(function (html) {
         container.innerHTML = html;
         var inner = container.querySelector('#dashboard-root');
         if (!inner) { inner = document.createElement('div'); container.appendChild(inner); }
 
         window.DashboardController = { refresh: _refreshAllData };
 
-        setTimeout(function(){
+        setTimeout(function () {
           _buildWarningBanner(inner);
           _buildToday(inner);
           _buildRevenue(inner);
           _buildBottom(inner);
-          
+
           // Gọi tải dữ liệu thực tế
           _refreshAllData();
 
           if (window._dbTimer) clearInterval(window._dbTimer);
-          window._dbTimer = setInterval(function(){
-            if(_refs.todayPanel) SectionPanel.setTrailing(_refs.todayPanel,'('+_now()+')');
+          window._dbTimer = setInterval(function () {
+            if (_refs.todayPanel) SectionPanel.setTrailing(_refs.todayPanel, '(' + _now() + ')');
             _refreshAllData();
           }, 60000);
         }, 80);
       })
-      .catch(function(){ container.innerHTML='<p style="color:red">Lỗi tải dashboard</p>'; });
+      .catch(function () { container.innerHTML = '<p style="color:red">Lỗi tải dashboard</p>'; });
   }
 
   return { render: render };

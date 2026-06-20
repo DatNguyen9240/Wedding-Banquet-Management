@@ -1,4 +1,4 @@
-﻿IF OBJECT_ID('API_LuuDong', 'P') IS NOT NULL
+IF OBJECT_ID('API_LuuDong', 'P') IS NOT NULL
     DROP PROCEDURE API_LuuDong;
 GO
 
@@ -43,6 +43,42 @@ BEGIN
                 AND name = [key] COLLATE DATABASE_DEFAULT
           );
         
+        -- TỰ ĐỘNG SINH KHÓA CHÍNH NẾU ĐỂ TRỐNG (INSERT MODE)
+        IF @IsEdit = 0 AND COLUMNPROPERTY(OBJECT_ID(@TableName), @PrimaryKey, 'IsIdentity') = 0
+        BEGIN
+            DECLARE @ExistingPKVal NVARCHAR(MAX) = '';
+            SELECT @ExistingPKVal = ColumnValue FROM #JsonData WHERE ColumnName = @PrimaryKey;
+            
+            IF @ExistingPKVal IS NULL OR LTRIM(RTRIM(@ExistingPKVal)) = ''
+            BEGIN
+                DECLARE @NextID NVARCHAR(50) = NULL;
+                
+                IF @TableName = 'dmSanhtiec'
+                BEGIN
+                    SELECT @NextID = 'ST' + RIGHT('000' + CAST(ISNULL(MAX(TRY_CAST(SUBSTRING(Sanhtiecid, 3, 10) AS INT)), 0) + 1 AS VARCHAR), 3)
+                    FROM dmSanhtiec
+                    WHERE Sanhtiecid LIKE 'ST%';
+                END
+                ELSE IF @TableName = 'dmThoigian'
+                BEGIN
+                    SELECT @NextID = 'CA' + RIGHT('00' + CAST(ISNULL(MAX(TRY_CAST(SUBSTRING(Thoigianid, 3, 10) AS INT)), 0) + 1 AS VARCHAR), 2)
+                    FROM dmThoigian
+                    WHERE Thoigianid LIKE 'CA%';
+                END
+                ELSE
+                BEGIN
+                    SET @NextID = NEWID();
+                END
+                
+                IF @NextID IS NOT NULL
+                BEGIN
+                    DELETE FROM #JsonData WHERE ColumnName = @PrimaryKey;
+                    INSERT INTO #JsonData (ColumnName, ColumnValue)
+                    VALUES (@PrimaryKey, @NextID);
+                END
+            END
+        END
+
         IF @IsEdit = 0 -- THÊM MỚI (INSERT)
         BEGIN
             DECLARE @Cols NVARCHAR(MAX) = '';

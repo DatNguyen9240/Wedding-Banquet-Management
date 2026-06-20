@@ -2814,14 +2814,14 @@ window.DynamicFormEngine = (function () {
 
   window.openQuickAddModal = function (formName, onSaved) {
     var dictionaryUrl = '/api/API_Gateway_Router';
-    var detailUrl = '/api/API_Gateway_Router';
+    var detailUrl = '/api/API_LayCacTruongGiaoDien';
     
-    var dictPayload = { List: 'SY_Dictionary', Func: 'View', UserName: 'Admin', Page: 1, Limit: 1000 };
-    var schemaPayload = { List: 'SY_FormatFields', Func: 'View', UserName: 'Admin', Page: 1, Limit: 1000, Keyword: formName };
+    var dictPayload = { List: 'SY_FrmLstTbl', Func: 'View', UserName: 'Admin', Page: 1, Limit: 1000 };
+    var schemaPayload = { FormName: formName };
     
     Promise.all([
       ApiClient.post(dictionaryUrl, dictPayload).catch(function () { return { records: [] }; }),
-      ApiClient.post(detailUrl, schemaPayload).catch(function () { return { records: [] }; })
+      ApiClient.post(detailUrl, schemaPayload).catch(function () { return { list: [] }; })
     ]).then(function (results) {
       var dictRes = results[0];
       var schemaRes = results[1];
@@ -2831,9 +2831,7 @@ window.DynamicFormEngine = (function () {
         dictionary[d.FieldName] = d;
       });
       
-      var rawSchema = (schemaRes.records || []).filter(function (f) {
-        return f.FormName === formName;
-      });
+      var rawSchema = schemaRes.list || schemaRes.records || [];
       
       if (rawSchema.length === 0) {
         Alert.error('Lỗi', 'Không tìm thấy cấu hình trường cho form: ' + formName);
@@ -2842,15 +2840,15 @@ window.DynamicFormEngine = (function () {
       
       var formSchema = rawSchema.map(function (f) {
         return {
-          name: f.FieldName,
-          label: f.CaptionVN || f.FieldName,
-          required: _bool(f.IsRequired, f.isRequired),
-          renderRule: (f.FormatID || '').toLowerCase(),
-          dataSource: f.DataSource,
-          position: f.FormPosition || '6',
-          showInAdd: _bool(f.ShowInAdd, f.showInAdd),
-          showInEdit: _bool(f.ShowInEdit, f.showInEdit),
-          orderNo: f.OrderNo || 0,
+          name: f.name || f.FieldName,
+          label: f.label || f.CaptionVN || f.name || f.FieldName,
+          required: _bool(f.required !== undefined ? f.required : f.IsRequired, f.isRequired),
+          renderRule: (f.renderRule || f.FormatID || '').toLowerCase(),
+          dataSource: f.dataSource || f.DataSource,
+          position: f.position || f.FormPosition || '6',
+          showInAdd: _bool(f.showInAdd !== undefined ? f.showInAdd : f.ShowInAdd, f.showInAdd),
+          showInEdit: _bool(f.showInEdit !== undefined ? f.showInEdit : f.ShowInEdit, f.showInEdit),
+          orderNo: f.orderNo || f.OrderNo || 0,
           value: ''
         };
       });
@@ -2943,7 +2941,10 @@ window.DynamicFormEngine = (function () {
       footer.appendChild(btnCancel);
       footer.appendChild(btnSave);
       
-      var titleCaption = (dictRes.records && dictRes.records.find(function(d) { return d.FieldName === formName; }))?.CaptionVN || formName;
+      var titleCaption = (dictRes.records && dictRes.records.find(function(d) {
+        var id = d.FormID || d.Formid || d.formID || d.formid || d.FormName || d.formName || d.FieldName || d.fieldname;
+        return id === formName;
+      }))?.CaptionVN || formName;
       var modal = UIModal.show({
         title: 'Thêm nhanh: ' + titleCaption,
         width: '800px',
@@ -2968,6 +2969,24 @@ window.DynamicFormEngine = (function () {
             payload[el.name] = val;
           }
         });
+        
+        var isInvalid = false;
+        for (var i = 0; i < formSchema.length; i++) {
+          var field = formSchema[i];
+          if (!field.showInAdd) continue;
+          var val = (payload[field.name] || '').trim();
+          if (field.required && !val) {
+            Alert.warning('Thiếu thông tin', 'Vui lòng nhập ' + field.label);
+            isInvalid = true;
+            break;
+          }
+        }
+        
+        if (isInvalid) {
+          btnSave.disabled = false;
+          btnSave.textContent = 'Lưu Lại';
+          return;
+        }
         
         var savePayload = {
           List: formName,
