@@ -91,7 +91,17 @@ BEGIN
     VALUES ('dmLoaihinhtiec', 'Save', 'API_LuuDong', '@List=N''dmLoaihinhtiec'', @Data=N''{JsonData}''');
     PRINT N'  + Đã đăng ký API Save cho dmLoaihinhtiec vào WA_API';
 END
+-- Đăng ký các trường cho dmLoaihinhtiec vào SY_FormatFields
+DELETE FROM SY_FormatFields WHERE FormName = 'dmLoaihinhtiec';
 GO
+INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, IsRequired)
+VALUES
+('dmLoaihinhtiec', 'Loaitiecid',   N'Mã Loại Tiệc',       't',  '6',  1,  1, 1, 0, 1, 1),
+('dmLoaihinhtiec', 'Tenloaitiec',   N'Tên Loại Tiệc',       't',  '6',  2,  1, 1, 0, 0, 1),
+('dmLoaihinhtiec', 'DinhBienCL',     N'Định Biên CL',       'n',  '6',  3,  1, 1, 0, 0, 0);
+PRINT N'  + Đã đăng ký các trường của dmLoaihinhtiec vào SY_FormatFields';
+GO
+
 
 -- Đăng ký 4 cột mới vào phiếu BEO (frmBEO) trong SY_FormatFields
 DELETE FROM SY_FormatFields WHERE FormName = 'frmBEO' AND FieldName IN ('DinhBienCL', 'SoNVPhanCong', 'CLDeXuat', 'CLThucTe');

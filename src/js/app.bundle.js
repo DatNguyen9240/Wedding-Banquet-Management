@@ -9046,19 +9046,6 @@ UIControls.createDataComboBox = function (options) {
   var actions = document.createElement('div');
   actions.className = 'combo-box-actions';
 
-  if (options.showAddNew && !options.disabled) {
-    var btnAdd = document.createElement('button');
-    btnAdd.className = 'combo-action-btn';
-    btnAdd.innerHTML = '<span class="material-symbols-outlined">add</span>';
-    btnAdd.title = 'Thêm mới (F2)';
-    btnAdd.type = 'button';
-    btnAdd.addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (typeof options.onF2 === 'function') options.onF2();
-    });
-    actions.appendChild(btnAdd);
-  }
-
   var btnArrow = document.createElement('button');
   btnArrow.className = 'combo-action-btn';
   btnArrow.innerHTML = '<span class="material-symbols-outlined">arrow_drop_down</span>';
@@ -9504,6 +9491,10 @@ UIControls.createDataComboBox = function (options) {
   input.addEventListener('kb:new', function () { if (options.onF2) options.onF2(); });
   input.addEventListener('kb:lookup', function () { if (options.onF3) options.onF3(); });
   input.addEventListener('kb:close', function () { hideDropdown(); });
+
+  // Lắng nghe các phím nóng khi đang focus vào ô tìm kiếm bên trong dropdown
+  searchInput.addEventListener('kb:new', function () { if (options.onF2) { hideDropdown(); options.onF2(); } });
+  searchInput.addEventListener('kb:close', function () { hideDropdown(); });
 
   container.appendChild(input);
   container.appendChild(actions);

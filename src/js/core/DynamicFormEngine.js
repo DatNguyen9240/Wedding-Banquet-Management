@@ -1462,12 +1462,19 @@ window.DynamicFormEngine = (function () {
                   showAddNew: true, // Bật nút Thêm mới
                   onF2: function () {
                     var targetFormName = field.dataSource;
-                    if (targetFormName.includes('|')) targetFormName = targetFormName.split('|')[0];
+                    var formIdParam = null;
+                    if (targetFormName.includes('|')) {
+                      var parts = targetFormName.split('|');
+                      targetFormName = parts[0];
+                      if (parts[1]) formIdParam = parts[1].trim();
+                    }
                     if (targetFormName.includes('?')) {
                       var searchParams = new URLSearchParams(targetFormName.split('?')[1]);
+                      formIdParam = formIdParam || searchParams.get('FormID') || searchParams.get('formId') || searchParams.get('FormName') || searchParams.get('formName');
                       var listParam = searchParams.get('List') || searchParams.get('list');
-                      if (listParam) targetFormName = listParam;
+                      if (listParam && !formIdParam) targetFormName = listParam;
                     }
+                    if (formIdParam) targetFormName = formIdParam;
                     
                     if (typeof window.openQuickAddModal === 'function') {
                       window.openQuickAddModal(targetFormName, function (newRecord) {
@@ -2107,12 +2114,19 @@ window.DynamicFormEngine = (function () {
               multiple: field.renderRule === 'ml',
               onF2: function () {
                 var targetFormName = field.dataSource;
-                if (targetFormName.includes('|')) targetFormName = targetFormName.split('|')[0];
+                var formIdParam = null;
+                if (targetFormName.includes('|')) {
+                  var parts = targetFormName.split('|');
+                  targetFormName = parts[0];
+                  if (parts[1]) formIdParam = parts[1].trim();
+                }
                 if (targetFormName.includes('?')) {
                   var searchParams = new URLSearchParams(targetFormName.split('?')[1]);
+                  formIdParam = formIdParam || searchParams.get('FormID') || searchParams.get('formId') || searchParams.get('FormName') || searchParams.get('formName');
                   var listParam = searchParams.get('List') || searchParams.get('list');
-                  if (listParam) targetFormName = listParam;
+                  if (listParam && !formIdParam) targetFormName = listParam;
                 }
+                if (formIdParam) targetFormName = formIdParam;
                 
                 if (typeof window.openQuickAddModal === 'function') {
                   window.openQuickAddModal(targetFormName, function (newRecord) {
