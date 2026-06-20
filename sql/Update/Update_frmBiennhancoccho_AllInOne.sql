@@ -799,7 +799,7 @@ GO
 
 -- Ẩn/Hiện và khóa (Read-Only) các trường mã tự sinh bởi database
 UPDATE SY_FormatFields 
-SET ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
+SET CaptionVN = N'Số phiếu', ShowInAdd = 0, ShowInEdit = 1, IsReadOnlyEdit = 1
 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SoPhieu';
 
 UPDATE SY_FormatFields 
@@ -834,20 +834,20 @@ UPDATE SY_FormatFields SET CaptionVN = N'Email', FormPosition = '6', OrderNo = 8
 -- Nhóm 2: Thông tin tiệc và sảnh
 UPDATE SY_FormatFields SET CaptionVN = N'Ngày tổ chức', FormPosition = '6', OrderNo = 9, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'dt', validateRule = 'trigger:/api/API_Gateway_Router?List=API_TinhLichAm&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'NgayToChuc';
 UPDATE SY_FormatFields SET CaptionVN = N'Nhằm ngày (Âm lịch)', FormPosition = '6', OrderNo = 10, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 1, IsReadOnlyEdit = 1, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Nhamngay';
-UPDATE SY_FormatFields SET CaptionVN = N'Ca tiệc', FormPosition = '6', OrderNo = 11, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachCaLam&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Thoigianid';
-UPDATE SY_FormatFields SET CaptionVN = N'Loại tiệc', FormPosition = '6', OrderNo = 12, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachLoaiHinhTiec&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Loaitiecid';
+UPDATE SY_FormatFields SET CaptionVN = N'Ca tiệc', FormPosition = '6', OrderNo = 11, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachCaLam&Func=View&FormID=dmThoigian' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Thoigianid';
+UPDATE SY_FormatFields SET CaptionVN = N'Loại tiệc', FormPosition = '6', OrderNo = 12, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachLoaiHinhTiec&Func=View&FormID=dmLoaihinhtiec' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Loaitiecid';
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID')
 BEGIN
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit, DataSource)
-    VALUES ('frmBiennhancoccho', 'GoiThucDonID', N'Gói tiệc', 'sr', '6', 13, 1, 1, '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View');
+    VALUES ('frmBiennhancoccho', 'GoiThucDonID', N'Gói tiệc', 'sr', '6', 13, 1, 1, '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View&FormID=dmGoiThucDon');
 END
 ELSE
 BEGIN
-    UPDATE SY_FormatFields SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
+    UPDATE SY_FormatFields SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View&FormID=dmGoiThucDon' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
 END
 
-UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', ShowInGrid = 0, DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', ShowInGrid = 0, DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View&FormID=dmSanhtiec' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
 
 -- Đảm bảo trường DaCocVND (Số tiền cọc) được hiển thị và cho phép nhập dạng số
 IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DaCocVND')
@@ -922,7 +922,7 @@ GO
 
 -- Đảm bảo trường GoiThucDonID hiển thị đúng định dạng Dropdown sau khi đồng bộ
 UPDATE SY_FormatFields 
-SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View' 
+SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View&FormID=dmGoiThucDon' 
 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
 GO
 
