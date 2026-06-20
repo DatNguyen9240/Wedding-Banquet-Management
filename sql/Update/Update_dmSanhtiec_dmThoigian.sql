@@ -51,24 +51,27 @@ PRINT N'2. Đang đăng ký API cho dmSanhtiec, dmThoigian, API_DanhSachCaLam...
 GO
 
 -- dmSanhtiec
-DELETE FROM WA_API WHERE List = 'dmSanhtiec' AND Func IN ('Save', 'View');
+DELETE FROM WA_API WHERE List = 'dmSanhtiec' AND Func IN ('Save', 'View', 'Delete');
 INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES 
 ('dmSanhtiec', 'Save', 'API_LuuDong', '@List=N''dmSanhtiec'', @Data=N''{JsonData}'''),
-('dmSanhtiec', 'View', 'API_TruyVanDong', '@List=N''dmSanhtiec'', @Keyword=N''{Keyword}''');
+('dmSanhtiec', 'View', 'API_TruyVanDong', '@List=N''dmSanhtiec'', @Keyword=N''{Keyword}'''),
+('dmSanhtiec', 'Delete', 'API_XoaDong', '@List=N''dmSanhtiec'', @Ids=N''{Sanhtiecid}'', @UserName=N''{User}''');
 
 -- dmThoigian
-DELETE FROM WA_API WHERE List = 'dmThoigian' AND Func IN ('Save', 'View');
+DELETE FROM WA_API WHERE List = 'dmThoigian' AND Func IN ('Save', 'View', 'Delete');
 INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES 
 ('dmThoigian', 'Save', 'API_LuuDong', '@List=N''dmThoigian'', @Data=N''{JsonData}'''),
-('dmThoigian', 'View', 'API_TruyVanDong', '@List=N''dmThoigian'', @Keyword=N''{Keyword}''');
+('dmThoigian', 'View', 'API_TruyVanDong', '@List=N''dmThoigian'', @Keyword=N''{Keyword}'''),
+('dmThoigian', 'Delete', 'API_XoaDong', '@List=N''dmThoigian'', @Ids=N''{Thoigianid}'', @UserName=N''{User}''');
 
 -- API_DanhSachCaLam
 DELETE FROM WA_API WHERE List = 'API_DanhSachCaLam' AND Func = 'Save';
 INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES 
 ('API_DanhSachCaLam', 'Save', 'API_LuuDong', '@List=N''API_DanhSachCaLam'', @Data=N''{JsonData}''');
+GO
 
 -- SY_FrmLstTbl (Đăng ký để FE có thể xem tiêu đề các form)
 IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'SY_FrmLstTbl')
