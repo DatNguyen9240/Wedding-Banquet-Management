@@ -255,7 +255,7 @@ img {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-width: 0;
+  flex-shrink: 0;
 }
 
 .page-title-heading {
@@ -296,7 +296,8 @@ img {
 }
 
 .page-title-actions .button-bar {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border: none;
   padding: 0;
   box-shadow: none;

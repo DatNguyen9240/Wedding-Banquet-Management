@@ -20,8 +20,9 @@ var CompareBadge = (function () {
    * @returns {'up'|'down'|'neutral'}
    */
   function _getDirection(pct, reverse) {
-    if (pct === 0 || isNaN(pct)) return 'neutral';
-    var isPositive = pct > 0;
+    var num = Number(pct);
+    if (pct === null || pct === undefined || isNaN(num) || num === 0) return 'neutral';
+    var isPositive = num > 0;
     return (isPositive !== reverse) ? 'up' : 'down';
   }
 
@@ -36,6 +37,9 @@ var CompareBadge = (function () {
     var reverse = !!opts.reverse;
     var size = opts.size || 'md'; // 'sm' | 'md'
     var places = opts.decimalPlaces !== undefined ? opts.decimalPlaces : 1;
+    
+    var numPct = Number(pct);
+    var isValValid = (pct !== null && pct !== undefined && !isNaN(numPct));
     var direction = _getDirection(pct, reverse);
 
     var icon = direction === 'up'
@@ -44,9 +48,8 @@ var CompareBadge = (function () {
         ? '<span class="material-symbols-outlined cb-icon">arrow_downward</span>'
         : '<span class="material-symbols-outlined cb-icon">remove</span>';
 
-    var sign = pct > 0 ? '+' : '';
-    var absVal = Math.abs(pct);
-    var text = sign + (isNaN(pct) ? '--' : pct.toFixed(places)) + '%';
+    var sign = (isValValid && numPct > 0) ? '+' : '';
+    var text = sign + (!isValValid ? '--' : numPct.toFixed(places)) + '%';
 
     var cls = 'compare-badge compare-badge--' + direction + ' compare-badge--' + size;
 

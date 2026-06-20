@@ -301,7 +301,7 @@ var Router = (function () {
               if (!route.hideHeader) {
                 var headerHtml =
                   '<div class="page-title-bar" id="global-header">' +
-                  '<div class="page-title-info" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-direction: row; min-width: 0;">' +
+                  '<div class="page-title-info" style="display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-direction: row; flex-shrink: 0;">' +
                   '<button class="btn-back-header" onclick="history.back()" title="Quay lại">' +
                   '<span class="material-symbols-outlined">arrow_back</span>' +
                   '</button>' +

@@ -187,10 +187,15 @@ var SparklineChart = (function () {
    */
   function redraw(canvas, data, color) {
     if (!canvas || !canvas.getContext) return;
-    var W = Math.round(parseInt(canvas.style.width) || 220);
-    var H = Math.round(parseInt(canvas.style.height) || 60);
+    var W = Math.round(canvas.offsetWidth || parseInt(canvas.style.width) || 220);
+    var H = Math.round(canvas.offsetHeight || parseInt(canvas.style.height) || 60);
+    
+    // Resize backing store to match the current rendered size * DPR
+    canvas.width = W * _dpr;
+    canvas.height = H * _dpr;
+    
     var ctx = canvas.getContext('2d');
-    ctx.setTransform(_dpr, 0, 0, _dpr, 0, 0);
+    ctx.scale(_dpr, _dpr);
     _render(ctx, data || [], W, H, color || _getPrimaryColor());
   }
 
