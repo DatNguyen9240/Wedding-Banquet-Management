@@ -44,28 +44,6 @@ var DocumentManagerPage = (function () {
     });
   }
 
-  // ── Đảm bảo MAMMOTH API đã load ──────────────────────────────────────
-  function _ensureMammothApi() {
-    return new Promise(function (resolve, reject) {
-      if (window.mammoth) { resolve(); return; }
-      var el = document.getElementById('__mammoth_api__');
-      if (el) {
-        var t = 0;
-        var iv = setInterval(function () {
-          if (window.mammoth) { clearInterval(iv); resolve(); }
-          else if (++t > 50) { clearInterval(iv); reject(new Error('Mammoth API timeout')); }
-        }, 200);
-        return;
-      }
-      var script = document.createElement('script');
-      script.id = '__mammoth_api__';
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
-      script.onload = function () { resolve(); };
-      script.onerror = function () { reject(new Error('Không thể tải Mammoth API')); };
-      document.head.appendChild(script);
-    });
-  }
-
   // ── Build layout ──────────────────────────────────────────────────────
   function _buildLayout() {
     _container.innerHTML = '';
@@ -273,7 +251,7 @@ var DocumentManagerPage = (function () {
 
     var fileUrl = DOC_CONFIG.UPLOADS_URL + encodeURIComponent(fileName);
 
-    // Nếu là file .docx -> Dùng Mammoth để view trực tiếp, không hiện OnlyOffice mặc định
+    // Nếu là file .docx -> Dùng OnlyOffice ở chế độ VIEW (Xem) làm mặc định cho sạch sẽ và đúng tỷ lệ A4
     if (fileName.endsWith('.docx')) {
       area.innerHTML =
         '<div style="display:flex;flex-direction:column;height:100%;">' +
@@ -289,7 +267,7 @@ var DocumentManagerPage = (function () {
         'background:rgba(245,158,11,0.15);color:#d97706;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .18s ease;" ' +
         'onmouseover="this.style.background=\'#d97706\';this.style.color=\'#fff\'" ' +
         'onmouseout="this.style.background=\'rgba(245,158,11,0.15)\';this.style.color=\'#d97706\'">' +
-        '<span class="material-symbols-outlined" style="font-size:14px;">edit</span> Sửa bằng OnlyOffice' +
+        '<span class="material-symbols-outlined" style="font-size:14px;">edit</span> Sửa tài liệu' +
         '</button>' +
         '<a href="' + fileUrl + '" download="' + fileName + '" ' +
         'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
@@ -298,24 +276,8 @@ var DocumentManagerPage = (function () {
         '</a>' +
         '</div>' +
         '</div>' +
-        '<div id="docmgr-preview-container" style="flex:1;position:relative;background:#f1f5f9;display:flex;flex-direction:column;">' +
-        '<div id="docmgr-preview-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.85);z-index:5;">' +
-        '<div style="display:flex;flex-direction:column;align-items:center;gap:10px;">' +
-        '<span class="material-symbols-outlined" style="font-size:36px;color:var(--color-primary, #4f46e5);animation:spin 1s linear infinite;">sync</span>' +
-        '<span style="font-size:.85rem;color:#64748b;">Đang tải bản xem trước tài liệu...</span>' +
-        '</div>' +
-        '</div>' +
-        '<iframe id="docmgr-iframe" style="flex:1;width:100%;border:none;background:#f1f5f9;" sandbox="allow-same-origin allow-scripts"></iframe>' +
-        '</div>' +
+        '<div id="docmgr-oo-viewer" style="flex:1;width:100%;"></div>' +
         '</div>';
-
-      // Đảm bảo có keyframe animation spin
-      if (!document.getElementById('__docmgr_spin_css__')) {
-        var spinStyle = document.createElement('style');
-        spinStyle.id = '__docmgr_spin_css__';
-        spinStyle.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
-        document.head.appendChild(spinStyle);
-      }
 
       var editBtn = _qs('#docmgr-btn-edit-oo');
       if (editBtn) {
@@ -324,64 +286,41 @@ var DocumentManagerPage = (function () {
         });
       }
 
-      _ensureMammothApi().then(function () {
-        fetch(fileUrl)
-          .then(function (res) {
-            if (!res.ok) throw new Error('Không thể tải file ' + fileName);
-            return res.arrayBuffer();
-          })
-          .then(function (arrayBuffer) {
-            return mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
-          })
-          .then(function (result) {
-            var htmlContent = result.value;
-            var iframe = _qs('#docmgr-iframe');
-            if (iframe) {
-              var css = [
-                'body { background-color: #f1f5f9; font-family: "Times New Roman", Times, serif; font-size: 13pt; line-height: 1.5; color: #1e293b; margin: 0; padding: 20px; display: flex; justify-content: center; }',
-                '.page-container { background: #ffffff; width: 100%; max-width: 800px; min-height: 297mm; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); padding: 2.5cm; box-sizing: border-box; border-radius: 8px; }',
-                'table { width: 100% !important; border-collapse: collapse; margin: 15px 0; }',
-                'table, th, td { border: 1px solid #cbd5e1; padding: 10px; }',
-                'th { background: #f8fafc; font-weight: bold; }',
-                'p { margin-top: 0; margin-bottom: 0.85em; text-align: justify; text-justify: inter-word; }',
-                'h1, h2, h3, h4 { color: #0f172a; margin-top: 1.5em; margin-bottom: 0.5em; line-height: 1.25; }',
-                'ul, ol { margin-top: 0; margin-bottom: 1em; padding-left: 20px; }',
-                'li { margin-bottom: 0.25em; }'
-              ].join('');
-
-              var iframeHtml = [
-                '<!DOCTYPE html>',
-                '<html>',
-                '<head>',
-                '<meta charset="utf-8">',
-                '<style>' + css + '</style>',
-                '</head>',
-                '<body>',
-                '<div class="page-container">',
-                htmlContent,
-                '</div>',
-                '</body>',
-                '</html>'
-              ].join('');
-
-              iframe.srcdoc = iframeHtml;
+      _ensureOnlyOfficeApi().then(function () {
+        var callbackUrl = DOC_CONFIG.BASE_API + '/callback?isTemplate=0&fileName=' + encodeURIComponent(fileName);
+        var config = {
+          document: {
+            fileType: 'docx',
+            key: fileName.replace(/[^a-zA-Z0-9_\-\.]/g, '') + '_' + Date.now(),
+            title: fileName,
+            url: fileUrl,
+            permissions: {
+              edit: false,     // Tắt quyền edit ở chế độ xem mặc định này
+              download: true,
+              print: true
             }
-            var loadingEl = _qs('#docmgr-preview-loading');
-            if (loadingEl) loadingEl.style.display = 'none';
-          })
-          .catch(function (err) {
-            console.error('Error generating preview with Mammoth:', err);
-            var loadingEl = _qs('#docmgr-preview-loading');
-            if (loadingEl) {
-              loadingEl.innerHTML = '<div style="color:#ef4444;font-size:.85rem;padding:2rem;text-align:center;">⚠️ Lỗi tải bản xem trước: ' + err.message + '</div>';
+          },
+          documentType: 'word',
+          editorConfig: {
+            mode: 'view',      // Chế độ xem (View mode)
+            callbackUrl: callbackUrl,
+            lang: 'vi',
+            user: { id: 'user_' + Date.now(), name: _getCurrentUserName() },
+            customization: {
+              compactHeader: true,
+              toolbarNoTabs: true,
+              hideRightMenu: true,
+              hideLeftMenu: true,
+              statusBar: false, // Ẩn thanh status dưới cùng
+              chat: false,
+              comments: false
             }
-          });
+          }
+        };
+        _docEditor = new DocsAPI.DocEditor('docmgr-oo-viewer', config);
       }).catch(function (err) {
-        console.error('Error loading Mammoth library:', err);
-        var loadingEl = _qs('#docmgr-preview-loading');
-        if (loadingEl) {
-          loadingEl.innerHTML = '<div style="color:#ef4444;font-size:.85rem;padding:2rem;text-align:center;">⚠️ Lỗi tải trình xem trước: ' + err.message + '</div>';
-        }
+        var v = _qs('#docmgr-oo-viewer');
+        if (v) v.innerHTML = '<div class="docmgr-onerror">⚠️ Lỗi tải OnlyOffice: ' + err.message + '</div>';
       });
 
       return;
@@ -501,8 +440,6 @@ var DocumentManagerPage = (function () {
       var v = _qs('#docmgr-oo-viewer');
       if (v) v.innerHTML = '<div class="docmgr-onerror">⚠️ Lỗi tải OnlyOffice: ' + err.message + '</div>';
     });
-
-  }
 
   // ── Chỉnh sửa Template ────────────────────────────────────────────────
   function _openTemplateEditor(relPath, fileName) {
