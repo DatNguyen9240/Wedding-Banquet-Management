@@ -300,7 +300,7 @@ var DocumentManagerPage = (function () {
               print: true
             }
           },
-          documentType: 'word',
+          documentType: 'text',
           editorConfig: {
             mode: 'view',      // Chế độ xem (View mode)
             callbackUrl: callbackUrl,
@@ -426,7 +426,7 @@ var DocumentManagerPage = (function () {
           url: fileUrl,
           permissions: { edit: true, download: true, print: true }
         },
-        documentType: 'word',
+        documentType: 'text',
         editorConfig: {
           mode: 'edit',
           callbackUrl: callbackUrl,
@@ -487,7 +487,7 @@ var DocumentManagerPage = (function () {
               copy: true
             }
           },
-          documentType: 'word',
+          documentType: 'text',
           editorConfig: {
             mode: 'edit',
             callbackUrl: callbackUrl,
