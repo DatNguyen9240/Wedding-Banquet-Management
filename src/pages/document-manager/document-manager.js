@@ -262,13 +262,6 @@ var DocumentManagerPage = (function () {
         fileName +
         '</span>' +
         '<div style="display:flex;gap:.5rem;align-items:center;">' +
-        '<button id="docmgr-btn-edit-oo" ' +
-        'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;border:none;' +
-        'background:rgba(245,158,11,0.15);color:#d97706;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .18s ease;" ' +
-        'onmouseover="this.style.background=\'#d97706\';this.style.color=\'#fff\'" ' +
-        'onmouseout="this.style.background=\'rgba(245,158,11,0.15)\';this.style.color=\'#d97706\'">' +
-        '<span class="material-symbols-outlined" style="font-size:14px;">edit</span> Sửa tài liệu' +
-        '</button>' +
         '<a href="' + fileUrl + '" download="' + fileName + '" ' +
         'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
         'background:var(--color-primary-light, rgba(79,70,229,0.1));color:var(--color-primary, #4f46e5);text-decoration:none;font-size:.8rem;">' +
@@ -278,13 +271,6 @@ var DocumentManagerPage = (function () {
         '</div>' +
         '<div id="docmgr-oo-viewer" style="flex:1;width:100%;"></div>' +
         '</div>';
-
-      var editBtn = _qs('#docmgr-btn-edit-oo');
-      if (editBtn) {
-        editBtn.addEventListener('click', function () {
-          _openOnlyOfficeEditor(fileName, fileUrl);
-        });
-      }
 
       _ensureOnlyOfficeApi().then(function () {
         var callbackUrl = DOC_CONFIG.BASE_API + '/callback?isTemplate=0&fileName=' + encodeURIComponent(fileName);
@@ -371,76 +357,6 @@ var DocumentManagerPage = (function () {
           iframe.outerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:#ef4444;">⚠️ Không thể hiển thị nội dung tài liệu.</div>';
         }
       });
-
-  }
-
-  // ── Mở trình chỉnh sửa OnlyOffice của file Của Khách ───────────────────
-  function _openOnlyOfficeEditor(fileName, fileUrl) {
-    if (_docEditor && typeof _docEditor.destroyEditor === 'function') {
-      try { _docEditor.destroyEditor(); } catch (e) { /* ignore */ }
-      _docEditor = null;
-    }
-
-    var area = _qs('#docmgr-editor-area');
-    if (!area) return;
-
-    area.innerHTML =
-      '<div style="display:flex;flex-direction:column;height:100%;">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;' +
-      'padding:.6rem 1rem;background:var(--color-surface, #ffffff);border-bottom:1px solid var(--color-border, #e2e8f0);">' +
-      '<span style="color:var(--color-text-secondary, #64748b);font-size:.82rem;font-family:monospace;">' +
-      '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">description</span> ' +
-      fileName +
-      '</span>' +
-      '<div style="display:flex;gap:.5rem;align-items:center;">' +
-      '<button id="docmgr-btn-view-preview" ' +
-      'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;border:none;' +
-      'background:rgba(79,70,229,0.15);color:#4f46e5;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .18s ease;" ' +
-      'onmouseover="this.style.background=\'#4f46e5\';this.style.color=\'#fff\'" ' +
-      'onmouseout="this.style.background=\'rgba(79,70,229,0.15)\';this.style.color=\'#4f46e5\'">' +
-      '<span class="material-symbols-outlined" style="font-size:14px;">visibility</span> Xem bản xem trước' +
-      '</button>' +
-      '<a href="' + fileUrl + '" download="' + fileName + '" ' +
-      'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
-      'background:var(--color-primary-light, rgba(79,70,229,0.1));color:var(--color-primary, #4f46e5);text-decoration:none;font-size:.8rem;">' +
-      '<span class="material-symbols-outlined" style="font-size:14px;">download</span> Tải về' +
-      '</a>' +
-      '</div>' +
-      '</div>' +
-      '<div id="docmgr-oo-viewer" style="flex:1;width:100%;"></div>' +
-      '</div>';
-
-    var viewBtn = _qs('#docmgr-btn-view-preview');
-    if (viewBtn) {
-      viewBtn.addEventListener('click', function () {
-        _openEditor(fileName);
-      });
-    }
-
-    _ensureOnlyOfficeApi().then(function () {
-      var callbackUrl = DOC_CONFIG.BASE_API + '/callback?isTemplate=0&fileName=' + encodeURIComponent(fileName);
-      var config = {
-        document: {
-          fileType: 'docx',
-          key: fileName.replace(/[^a-zA-Z0-9_\-\.]/g, '') + '_' + Date.now(),
-          title: fileName,
-          url: fileUrl,
-          permissions: { edit: true, download: true, print: true }
-        },
-        documentType: 'text',
-        editorConfig: {
-          mode: 'edit',
-          callbackUrl: callbackUrl,
-          lang: 'vi',
-          user: { id: 'user_' + Date.now(), name: _getCurrentUserName() },
-          customization: { compactHeader: true, toolbarNoTabs: false, hideRightMenu: true }
-        }
-      };
-      _docEditor = new DocsAPI.DocEditor('docmgr-oo-viewer', config);
-    }).catch(function (err) {
-      var v = _qs('#docmgr-oo-viewer');
-      if (v) v.innerHTML = '<div class="docmgr-onerror">⚠️ Lỗi tải OnlyOffice: ' + err.message + '</div>';
-    });
 
   }
 
