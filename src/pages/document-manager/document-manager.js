@@ -79,9 +79,7 @@ var DocumentManagerPage = (function () {
         '.docmgr-empty-icon{width:90px;height:90px;background:rgba(99,102,241,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;}',
         '.docmgr-empty h2{color:var(--color-text,#f8fafc);font-weight:500;margin-bottom:.4rem;font-size:1.3rem;}',
         '#docmgr-editor-area{flex:1;width:100%;height:100%;}',
-        '.docmgr-onerror{display:flex;align-items:center;justify-content:center;height:100%;font-size:1rem;color:#ef4444;padding:2rem;text-align:center;}',
-        '@keyframes docmgr-spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}',
-        '.docmgr-spinner{animation:docmgr-spin 1s linear infinite;display:inline-block;}'
+        '.docmgr-onerror{display:flex;align-items:center;justify-content:center;height:100%;font-size:1rem;color:#ef4444;padding:2rem;text-align:center;}'
       ].join('');
       document.head.appendChild(style);
     }
@@ -124,18 +122,18 @@ var DocumentManagerPage = (function () {
     ].join('');
 
     _container.innerHTML = html;
-    
+
     // Xử lý chuyển tab
     var tabUploads = _qs('#docmgr-tab-uploads');
     var tabTemplates = _qs('#docmgr-tab-templates');
-    
-    tabUploads.addEventListener('click', function() {
+
+    tabUploads.addEventListener('click', function () {
       tabUploads.style.cssText = 'flex:1;padding:0.5rem;border:none;border-radius:6px;background:#fff;color:var(--color-primary,#4f46e5);font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);';
       tabTemplates.style.cssText = 'flex:1;padding:0.5rem;border:none;border-radius:6px;background:transparent;color:var(--color-text-secondary,#64748b);font-weight:500;cursor:pointer;';
       _loadDocuments();
     });
-    
-    tabTemplates.addEventListener('click', function() {
+
+    tabTemplates.addEventListener('click', function () {
       tabTemplates.style.cssText = 'flex:1;padding:0.5rem;border:none;border-radius:6px;background:#fff;color:var(--color-primary,#4f46e5);font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.1);';
       tabUploads.style.cssText = 'flex:1;padding:0.5rem;border:none;border-radius:6px;background:transparent;color:var(--color-text-secondary,#64748b);font-weight:500;cursor:pointer;';
       _loadTemplates();
@@ -253,47 +251,64 @@ var DocumentManagerPage = (function () {
 
     var fileUrl = DOC_CONFIG.UPLOADS_URL + encodeURIComponent(fileName);
 
-    // Nếu là file .docx -> Gọi backend chuyển đổi sang PDF và hiển thị bằng PDF viewer của trình duyệt
+    // Nếu là file .docx -> Dùng OnlyOffice ở chế độ VIEW (Xem) làm mặc định cho sạch sẽ và đúng tỷ lệ A4
     if (fileName.endsWith('.docx')) {
-      area.innerHTML = 
-        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--color-text-secondary,#94a3b8);">' +
-        '<div style="text-align:center;">' +
-        '<span class="material-symbols-outlined docmgr-spinner" style="font-size:42px;color:var(--color-primary,#4f46e5);margin-bottom:0.75rem;">autorenew</span>' +
-        '<div style="font-size:0.95rem;font-weight:500;">Đang chuẩn bị bản PDF...</div>' +
-        '<div style="font-size:0.8rem;margin-top:0.25rem;opacity:0.8;">Quá trình chuyển đổi có thể mất vài giây</div>' +
+      area.innerHTML =
+        '<div style="display:flex;flex-direction:column;height:100%;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;' +
+        'padding:.6rem 1rem;background:var(--color-surface, #ffffff);border-bottom:1px solid var(--color-border, #e2e8f0);">' +
+        '<span style="color:var(--color-text-secondary, #64748b);font-size:.82rem;font-family:monospace;">' +
+        '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">description</span> ' +
+        fileName +
+        '</span>' +
+        '<div style="display:flex;gap:.5rem;align-items:center;">' +
+        '<a href="' + fileUrl + '" download="' + fileName + '" ' +
+        'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
+        'background:var(--color-primary-light, rgba(79,70,229,0.1));color:var(--color-primary, #4f46e5);text-decoration:none;font-size:.8rem;">' +
+        '<span class="material-symbols-outlined" style="font-size:14px;">download</span> Tải về' +
+        '</a>' +
         '</div>' +
+        '</div>' +
+        '<div id="docmgr-oo-viewer" style="flex:1;width:100%;"></div>' +
         '</div>';
 
-      fetch(DOC_CONFIG.BASE_API + '/pdf/' + encodeURIComponent(fileName))
-        .then(function (res) { return res.json(); })
-        .then(function (json) {
-          if (json.success && json.pdfUrl) {
-            var pdfName = fileName.replace(/\.docx$/i, '.pdf');
-            area.innerHTML =
-              '<div style="display:flex;flex-direction:column;height:100%;">' +
-              '<div style="display:flex;align-items:center;justify-content:space-between;' +
-              'padding:.6rem 1rem;background:var(--color-surface, #ffffff);border-bottom:1px solid var(--color-border, #e2e8f0);">' +
-              '<span style="color:var(--color-text-secondary, #64748b);font-size:.82rem;font-family:monospace;">' +
-              '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;">description</span> ' +
-              pdfName +
-              '</span>' +
-              '<div style="display:flex;gap:.5rem;align-items:center;">' +
-              '<a href="' + json.pdfUrl + '" download="' + pdfName + '" ' +
-              'style="display:flex;align-items:center;gap:.3rem;padding:.35rem .8rem;border-radius:6px;' +
-              'background:var(--color-primary-light, rgba(79,70,229,0.1));color:var(--color-primary, #4f46e5);text-decoration:none;font-size:.8rem;font-weight:500;">' +
-              '<span class="material-symbols-outlined" style="font-size:14px;">download</span> Tải PDF' +
-              '</a>' +
-              '</div>' +
-              '</div>' +
-              '<iframe id="docmgr-pdf-viewer" src="' + json.pdfUrl + '" style="flex:1;width:100%;border:none;background:#fff;"></iframe>' +
-              '</div>';
-          } else {
-            area.innerHTML = '<div class="docmgr-onerror">⚠️ Lỗi chuyển đổi tài liệu sang PDF: ' + (json.message || 'Không rõ nguyên nhân') + '</div>';
+      _ensureOnlyOfficeApi().then(function () {
+        var callbackUrl = DOC_CONFIG.BASE_API + '/callback?isTemplate=0&fileName=' + encodeURIComponent(fileName);
+        var config = {
+          document: {
+            fileType: 'docx',
+            key: fileName.replace(/[^a-zA-Z0-9_\-\.]/g, '') + '_' + Date.now(),
+            title: fileName,
+            url: fileUrl,
+            permissions: {
+              edit: false,     // Tắt quyền edit ở chế độ xem mặc định này
+              download: true,
+              print: true
+            }
+          },
+          documentType: 'text',
+          editorConfig: {
+            mode: 'edit',      // Dùng mode: 'edit' kèm permissions.edit = false để tránh 404
+            callbackUrl: callbackUrl,
+            lang: 'vi',
+            user: { id: 'user_' + Date.now(), name: _getCurrentUserName() },
+            customization: {
+              header: false,      // Ẩn hoàn toàn header trên cùng
+              toolbar: false,     // Ẩn hoàn toàn thanh công cụ (giống PDF)
+              statusBar: false,   // Ẩn thanh trạng thái dưới cùng
+              leftMenu: false,    // Ẩn thanh bên trái
+              rightMenu: false,   // Ẩn thanh bên phải
+              hideRulers: true,   // Ẩn thước đo để trông sạch sẽ nhất
+              chat: false,
+              comments: false
+            }
           }
-        })
-        .catch(function (err) {
-          area.innerHTML = '<div class="docmgr-onerror">⚠️ Không thể kết nối tới server: ' + err.message + '</div>';
-        });
+        };
+        _docEditor = new DocsAPI.DocEditor('docmgr-oo-viewer', config);
+      }).catch(function (err) {
+        var v = _qs('#docmgr-oo-viewer');
+        if (v) v.innerHTML = '<div class="docmgr-onerror">⚠️ Lỗi tải OnlyOffice: ' + err.message + '</div>';
+      });
 
       return;
     }
@@ -349,7 +364,7 @@ var DocumentManagerPage = (function () {
   function _openTemplateEditor(relPath, fileName) {
     _currentFile = relPath;
     _loadTemplates(); // Re-render list để cập nhật class .active
-    
+
     var empty = _qs('#docmgr-empty');
     if (empty) empty.style.display = 'none';
 

@@ -180,106 +180,6 @@ async function fetchFromSQLAPI(listName, keyword, authToken) {
 // API: QUẢN LÝ TÀI LIỆU
 // ==========================================
 
-function getUrls(req) {
-    const isHttps = SQL_API_BASE.startsWith('https://');
-    if (isHttps) {
-        return {
-            uploadsUrl: `${SQL_API_BASE}/docserver/uploads/`,
-            convertUrl: `${SQL_API_BASE}/onlyoffice/ConvertService.ashx`
-        };
-    } else {
-        const host = req.get('host') || '103.190.38.46:8081';
-        const ip = host.split(':')[0];
-        return {
-            uploadsUrl: `http://${ip}:8081/uploads/`,
-            convertUrl: `http://${ip}:8082/ConvertService.ashx`
-        };
-    }
-}
-
-/**
- * 1.1 Chuyển đổi và lấy link PDF của tài liệu (on-demand và cache)
- */
-app.get('/api/documents/pdf/:fileName', async (req, res) => {
-    try {
-        const fileName = req.params.fileName;
-        if (!fileName.endsWith('.docx')) {
-            return res.status(400).json({ success: false, message: 'Chỉ hỗ trợ chuyển đổi file .docx' });
-        }
-        
-        const docxPath = path.join(UPLOADS_DIR, fileName);
-        if (!fs.existsSync(docxPath)) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy file word nguồn' });
-        }
-        
-        const pdfFileName = fileName.replace(/\.docx$/i, '.pdf');
-        const pdfPath = path.join(UPLOADS_DIR, pdfFileName);
-        
-        // 1. Lấy thông tin cấu hình URL
-        const urls = getUrls(req);
-        const sourceFileUrl = urls.uploadsUrl + encodeURIComponent(fileName);
-        
-        // Nếu file PDF đã tồn tại, trả về luôn
-        if (fs.existsSync(pdfPath)) {
-            return res.json({ 
-                success: true, 
-                pdfUrl: urls.uploadsUrl + encodeURIComponent(pdfFileName) 
-            });
-        }
-        
-        // 2. Gọi OnlyOffice Conversion Service
-        console.log(`[CONVERT] Đang chuyển đổi ${fileName} sang PDF qua OnlyOffice...`);
-        const payload = {
-            async: false,
-            filetype: 'docx',
-            key: 'pdf_conv_' + fileName.replace(/[^a-zA-Z0-9]/g, '') + '_' + Date.now(),
-            outputtype: 'pdf',
-            title: pdfFileName,
-            url: sourceFileUrl
-        };
-        
-        const convertResp = await axios.post(urls.convertUrl, payload, {
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            timeout: 15000
-        });
-        
-        const convertData = convertResp.data;
-        if (!convertData || !convertData.fileUrl) {
-            console.error('[CONVERT] Lỗi phản hồi từ OnlyOffice:', convertData);
-            return res.status(500).json({ success: false, message: 'Lỗi chuyển đổi file từ OnlyOffice' });
-        }
-        
-        // 3. Tải file PDF đã chuyển đổi và lưu vào uploads
-        console.log(`[CONVERT] Tải file PDF từ OnlyOffice: ${convertData.fileUrl}`);
-        const downloadResp = await axios({
-            method: 'GET',
-            url: convertData.fileUrl,
-            responseType: 'stream',
-            timeout: 15000
-        });
-        
-        const writer = fs.createWriteStream(pdfPath);
-        downloadResp.data.pipe(writer);
-        
-        await new Promise((resolve, reject) => {
-            writer.on('finish', resolve);
-            writer.on('error', reject);
-        });
-        
-        console.log(`[CONVERT] Đã chuyển đổi và lưu thành công: ${pdfFileName}`);
-        return res.json({ 
-            success: true, 
-            pdfUrl: urls.uploadsUrl + encodeURIComponent(pdfFileName) 
-        });
-    } catch (err) {
-        console.error('[CONVERT] Lỗi chuyển đổi:', err.message);
-        return res.status(500).json({ success: false, message: 'Lỗi server khi chuyển đổi PDF: ' + err.message });
-    }
-});
-
 /**
  * 1. Lấy danh sách tài liệu
  */
@@ -343,10 +243,9 @@ app.get('/api/documents/templates', (req, res) => {
 app.get('/api/documents/fields/:listName', async (req, res) => {
     try {
         const listName = req.params.listName;
-        let sqlListName = listName;
-        if (listName === 'hop_dong') sqlListName = 'API_DanhSachHopDong';
-        else if (listName === 'phieu_thu') sqlListName = 'API_DanhSachPhieuCoc';
-        else if (listName === 'quyet_toan') sqlListName = 'frmQuyetToan';
+        const docConfig = getDocumentConfig();
+        const mappings = docConfig.formListMappings || {};
+        const sqlListName = mappings[listName] || listName;
 
         // Lấy 1 dòng dữ liệu mẫu từ SQL API để quét tự động 100% cột
         let sampleRow = {};
@@ -377,16 +276,16 @@ app.post('/api/documents/generate', async (req, res) => {
         if (!outputFileName) outputFileName = 'Generated_' + templateType;
         // Lọc bỏ tất cả ký tự đặc biệt, dấu ngoặc, dấu cộng để ONLYOFFICE không bị lỗi 400 Bad Request
         outputFileName = outputFileName.replace(/[\/\\:*?"<>|()+]/g, '_').replace(/\s+/g, '_');
-        
+
         // ── 0. Tải cấu hình tài liệu động ───────────────────────────
         const docConfig = getDocumentConfig();
-        
+
         // ── 1. Lấy thông tin nhà hàng từ Setup API ──────────────────────────
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
- 
+
         // ── 2. Map data từ rowData (frontend) hoặc SQL API ─────────
         let dataMap = { ...setup };
- 
+
         let dbRow = null;
         if (customerId) {
             try {
@@ -396,7 +295,7 @@ app.post('/api/documents/generate', async (req, res) => {
                 console.error('[GENERATE] Lỗi SQL API:', e.message);
             }
         }
- 
+
         // Merge dữ liệu: setup -> rowData từ frontend -> dbRow từ SQL API (ưu tiên cao nhất)
         if (rowData && typeof rowData === 'object') {
             dataMap = { ...dataMap, ...rowData };
@@ -404,10 +303,10 @@ app.post('/api/documents/generate', async (req, res) => {
         if (dbRow) {
             dataMap = { ...dataMap, ...dbRow };
         }
- 
+
         // Tự động parse JSON từ CSDL (kể cả JSON lồng nhau — menu/dịch vụ docx)
         dataMap = deepParseJsonStrings(dataMap);
- 
+
         // Format array of services to text string for fields that are converted to XML
         const arrayToStringFields = docConfig.arrayToStringFields || [];
         arrayToStringFields.forEach(key => {
@@ -416,10 +315,10 @@ app.post('/api/documents/generate', async (req, res) => {
                 dataMap[foundKey] = dataMap[foundKey].map(item => formatArrayItem(item, docConfig)).filter(Boolean).join('\n');
             }
         });
- 
+
         // Xác định danh sách các trường cần chuyển đổi thành XML Word (sẽ được tự động bổ sung khi quét template)
         let fieldsToConvert = Array.isArray(convertFields) ? [...convertFields] : [];
- 
+
         console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
 
         // ── 3. Đọc template DOCX (Tìm kiếm đệ quy) ───────────────────────────
@@ -485,7 +384,7 @@ app.post('/api/documents/generate', async (req, res) => {
             const fileNames = Object.keys(zip.files);
             const rawTagsFound = new Set();
             const rawTagRegex = /\{@\s*([a-zA-Z0-9_#]+)\s*\}/g;
-            
+
             for (const name of fileNames) {
                 if (name.endsWith('.xml')) {
                     const xmlFile = zip.file(name);
@@ -498,7 +397,7 @@ app.post('/api/documents/generate', async (req, res) => {
                     }
                 }
             }
-            
+
             if (rawTagsFound.size > 0) {
                 console.log('[GENERATE] Phát hiện các tag raw XML trong template:', Array.from(rawTagsFound));
                 rawTagsFound.forEach(tag => {
@@ -522,7 +421,7 @@ app.post('/api/documents/generate', async (req, res) => {
                 } else if (value && typeof value === 'object') {
                     value = JSON.stringify(value);
                 }
-                
+
                 // Đảm bảo kết quả là string và chuyển đổi sang Word XML
                 if (value !== undefined && value !== null) {
                     dataMap[foundKey] = convertTextToWordXML(String(value), foundKey, docConfig);
@@ -538,9 +437,9 @@ app.post('/api/documents/generate', async (req, res) => {
         const doc = new Docxtemplater(zip, {
             paragraphLoop: true,
             linebreaks: true,
-            parser: function(tag) {
+            parser: function (tag) {
                 return {
-                    get: function(scope) {
+                    get: function (scope) {
                         if (tag === '.') return scope;
                         let val = "";
                         if (scope && typeof scope === 'object') {
@@ -661,26 +560,13 @@ app.delete('/api/documents/:fileName', async (req, res) => {
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath); // Xóa file vật lý (Hard delete)
 
-            // Xóa file PDF tương ứng nếu có
-            if (fileName.endsWith('.docx')) {
-                const pdfPath = filePath.replace(/\.docx$/i, '.pdf');
-                if (fs.existsSync(pdfPath)) {
-                    try {
-                        fs.unlinkSync(pdfPath);
-                        console.log(`[DELETE] Đã xóa file PDF cache tương ứng: ${pdfPath}`);
-                    } catch (e) {
-                        console.error('Lỗi khi xóa file PDF cache:', e.message);
-                    }
-                }
-            }
-
             // Cập nhật Bia mộ (Soft Delete) trong CSDL
             try {
                 // Thử phân tách tên file để lấy TiecID và DocType phòng khi file chưa có trong CSDL
                 // Định dạng chuẩn: {DocType}_{TiecID}_{Timestamp}.docx
                 let parsedTiecID = 'UNKNOWN';
                 let parsedDocType = 'UNKNOWN';
-                
+
                 const nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
                 const parts = nameWithoutExt.split('_');
                 if (parts.length >= 3) {
@@ -912,10 +798,10 @@ function processSingleTable(tblXml, headerName) {
         const child = children[i];
         const childXml = flatTblXml.substring(child.start, child.end);
         const processedChildXml = processSingleTable(childXml, headerName);
-        
+
         const placeholder = `%%NESTED_TBL_${i}%%`;
         placeholders.push({ placeholder, content: processedChildXml });
-        
+
         flatTblXml = flatTblXml.substring(0, child.start) + placeholder + flatTblXml.substring(child.end);
     }
 
@@ -964,12 +850,12 @@ function escapeRegExp(string) {
 function formatArrayItem(item, docConfig) {
     if (!item) return '';
     if (typeof item !== 'object') return String(item);
-    
+
     const itemFieldNames = docConfig.itemFieldNames || [];
     const itemPriceNames = docConfig.itemPriceNames || [];
     const itemNoteNames = docConfig.itemNoteNames || [];
     const currencySuffix = docConfig.currencySuffix || '';
-    
+
     let name = '';
     for (const fName of itemFieldNames) {
         const foundNameKey = Object.keys(item).find(k => k.toLowerCase() === fName.toLowerCase());
@@ -984,7 +870,7 @@ function formatArrayItem(item, docConfig) {
         if (firstStringKey) name = item[firstStringKey];
         else return String(item);
     }
-    
+
     let price = '';
     for (const pName of itemPriceNames) {
         const foundPriceKey = Object.keys(item).find(k => k.toLowerCase() === pName.toLowerCase());
@@ -993,14 +879,14 @@ function formatArrayItem(item, docConfig) {
             break;
         }
     }
-    
+
     if (price && currencySuffix) {
         const cleanSuffix = currencySuffix.trim().toUpperCase();
         if (!String(price).toUpperCase().endsWith(cleanSuffix) && !String(price).toUpperCase().endsWith('VND') && !String(price).toUpperCase().endsWith('VNĐ')) {
             price = price + currencySuffix;
         }
     }
-    
+
     let note = '';
     for (const nName of itemNoteNames) {
         const foundNoteKey = Object.keys(item).find(k => k.toLowerCase() === nName.toLowerCase());
@@ -1009,7 +895,7 @@ function formatArrayItem(item, docConfig) {
             break;
         }
     }
-    
+
     return `- ${name}${price ? ': ' + price : ''}${note ? ' (' + note + ')' : ''}`;
 }
 
@@ -1017,47 +903,47 @@ function convertTextToWordXML(text, fieldName = '', docConfig = getDocumentConfi
     if (!text) return "";
     const lines = text.split(/\r?\n/);
     let xml = "";
-    
+
     const setupFieldName = docConfig.setupFieldName || '';
     const isSetupField = fieldName && setupFieldName && fieldName === setupFieldName;
-    
+
     const headerKeywords = docConfig.headerKeywords || [];
     const warningKeywords = docConfig.warningKeywords || [];
-    
+
     const xmlStyles = docConfig.xmlStyles || {};
     const fontName = xmlStyles.fontFamily || 'Times New Roman';
     const fontSize = xmlStyles.fontSize || 20;
     const warningColor = xmlStyles.warningColor || 'FF0000';
     const headerColor = xmlStyles.headerColor || 'FF0000';
-    
+
     const hasHeaderKeywords = headerKeywords.length > 0;
     const headerRegex = hasHeaderKeywords ? new RegExp(headerKeywords.map(escapeRegExp).join('|'), 'i') : null;
-    
+
     const hasWarningKeywords = warningKeywords.length > 0;
     const warningRegex = hasWarningKeywords ? new RegExp(warningKeywords.map(escapeRegExp).join('|'), 'i') : null;
-    
+
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
-        
+
         let currentLine = line;
         let isChanged = false;
         if (currentLine.startsWith('__CHANGED__')) {
             isChanged = true;
             currentLine = currentLine.substring(11).trim(); // Remove '__CHANGED__' prefix
         }
-        
+
         const isHeader = !/^[-\*\+\•\d]/.test(currentLine) && (currentLine.endsWith(':') || (headerRegex && headerRegex.test(currentLine)));
-        
+
         const escapedLine = currentLine
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&apos;");
-            
+
         const isWarningLine = warningRegex && warningRegex.test(currentLine);
-        
+
         if (isChanged) {
             xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:u w:val="single"/><w:highlight w:val="yellow"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
         } else if (isHeader) {
@@ -1071,7 +957,7 @@ function convertTextToWordXML(text, fieldName = '', docConfig = getDocumentConfi
         } else {
             xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
         }
-        
+
         if (i < lines.length - 1) {
             xml += `<w:r><w:br/></w:r>`;
         }

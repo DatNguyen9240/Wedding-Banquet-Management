@@ -63,5 +63,10 @@
     "fontSize": 20,
     "warningColor": "FF0000",
     "headerColor": "FF0000"
+  },
+  "formListMappings": {
+    "hop_dong": "API_DanhSachHopDong",
+    "phieu_thu": "API_DanhSachPhieuCoc",
+    "quyet_toan": "frmQuyetToan"
   }
 }
