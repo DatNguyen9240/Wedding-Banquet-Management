@@ -441,6 +441,8 @@ var DocumentManagerPage = (function () {
       if (v) v.innerHTML = '<div class="docmgr-onerror">⚠️ Lỗi tải OnlyOffice: ' + err.message + '</div>';
     });
 
+  }
+
   // ── Chỉnh sửa Template ────────────────────────────────────────────────
   function _openTemplateEditor(relPath, fileName) {
     _currentFile = relPath;
