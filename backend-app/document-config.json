@@ -64,6 +64,17 @@
     "warningColor": "FF0000",
     "headerColor": "FF0000"
   },
+  "excludeFields": [
+    "id",
+    "com1",
+    "menu_sync_ver",
+    "code",
+    "msg",
+    "records",
+    "autoid",
+    "formname",
+    "fieldname"
+  ],
   "formListMappings": {
     "phieu_thu": "frmBiennhancoccho",
     "quyet_toan": "frmQuyetToan",

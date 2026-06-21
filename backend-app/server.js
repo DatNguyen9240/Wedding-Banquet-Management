@@ -258,7 +258,27 @@ app.get('/api/documents/fields/:listName', async (req, res) => {
 
         console.log(`[FIELDS] Ánh xạ file mẫu '${listName}' -> Bảng CSDL '${sqlListName}'`);
 
-        // Lấy 1 dòng dữ liệu mẫu từ SQL API để quét tự động 100% cột
+        // 1. Lấy danh sách các trường được cấu hình trong SY_FormatFields cho form này
+        let formFields = [];
+        try {
+            const fieldsUrl = `${SQL_API_BASE}/api/API_DanhSachTruongGiaoDien`;
+            const payload = {
+                FormName: sqlListName,
+                Username: 'admin',
+                Limit: 1000
+            };
+            const headers = {};
+            if (req.headers.authorization) headers['Authorization'] = req.headers.authorization;
+            const fieldsResp = await axios.post(fieldsUrl, payload, { headers, timeout: 5000 });
+            if (fieldsResp.data && fieldsResp.data.records) {
+                formFields = fieldsResp.data.records.map(r => r.FieldName || r.fieldName || r.fieldname).filter(Boolean);
+                console.log(`[FIELDS] Lấy thành công ${formFields.length} trường từ SY_FormatFields cho ${sqlListName}`);
+            }
+        } catch (fieldsErr) {
+            console.warn(`[FIELDS] Lỗi lấy trường từ API_DanhSachTruongGiaoDien cho '${sqlListName}':`, fieldsErr.message);
+        }
+
+        // 2. Lấy 1 dòng dữ liệu mẫu từ SQL API làm dự phòng (fallback) để quét thêm cột nếu có
         let sampleRow = {};
         try {
             const sqlRow = await fetchFromSQLAPI(sqlListName, '', req.headers.authorization);
@@ -267,9 +287,19 @@ app.get('/api/documents/fields/:listName', async (req, res) => {
             console.log(`[FIELDS] Không lấy được data mẫu từ DB cho '${sqlListName}', dùng object rỗng:`, e.message);
         }
 
+        // 3. Lấy thông tin cấu hình nhà hàng (setup)
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
-        const finalData = { ...setup, ...sampleRow };
-        const fields = Object.keys(finalData);
+        
+        // Gộp tất cả các trường từ 3 nguồn và loại bỏ trùng lặp
+        const allFieldsSet = new Set([
+            ...Object.keys(setup),
+            ...formFields,
+            ...Object.keys(sampleRow)
+        ]);
+        
+        // Loại bỏ các trường hệ thống dư thừa không dùng trong biểu mẫu .docx (đọc động từ cấu hình)
+        const excludeFields = (docConfig.excludeFields || []).map(f => f.toLowerCase());
+        const fields = Array.from(allFieldsSet).filter(f => !excludeFields.includes(f.toLowerCase()));
 
         const formattedFields = fields.map(f => `{${f}}`);
         res.json({ success: true, fields: formattedFields });
