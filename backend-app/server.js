@@ -180,6 +180,106 @@ async function fetchFromSQLAPI(listName, keyword, authToken) {
 // API: QUẢN LÝ TÀI LIỆU
 // ==========================================
 
+function getUrls(req) {
+    const isHttps = SQL_API_BASE.startsWith('https://');
+    if (isHttps) {
+        return {
+            uploadsUrl: `${SQL_API_BASE}/docserver/uploads/`,
+            convertUrl: `${SQL_API_BASE}/onlyoffice/ConvertService.ashx`
+        };
+    } else {
+        const host = req.get('host') || '103.190.38.46:8081';
+        const ip = host.split(':')[0];
+        return {
+            uploadsUrl: `http://${ip}:8081/uploads/`,
+            convertUrl: `http://${ip}:8082/ConvertService.ashx`
+        };
+    }
+}
+
+/**
+ * 1.1 Chuyển đổi và lấy link PDF của tài liệu (on-demand và cache)
+ */
+app.get('/api/documents/pdf/:fileName', async (req, res) => {
+    try {
+        const fileName = req.params.fileName;
+        if (!fileName.endsWith('.docx')) {
+            return res.status(400).json({ success: false, message: 'Chỉ hỗ trợ chuyển đổi file .docx' });
+        }
+        
+        const docxPath = path.join(UPLOADS_DIR, fileName);
+        if (!fs.existsSync(docxPath)) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy file word nguồn' });
+        }
+        
+        const pdfFileName = fileName.replace(/\.docx$/i, '.pdf');
+        const pdfPath = path.join(UPLOADS_DIR, pdfFileName);
+        
+        // 1. Lấy thông tin cấu hình URL
+        const urls = getUrls(req);
+        const sourceFileUrl = urls.uploadsUrl + encodeURIComponent(fileName);
+        
+        // Nếu file PDF đã tồn tại, trả về luôn
+        if (fs.existsSync(pdfPath)) {
+            return res.json({ 
+                success: true, 
+                pdfUrl: urls.uploadsUrl + encodeURIComponent(pdfFileName) 
+            });
+        }
+        
+        // 2. Gọi OnlyOffice Conversion Service
+        console.log(`[CONVERT] Đang chuyển đổi ${fileName} sang PDF qua OnlyOffice...`);
+        const payload = {
+            async: false,
+            filetype: 'docx',
+            key: 'pdf_conv_' + fileName.replace(/[^a-zA-Z0-9]/g, '') + '_' + Date.now(),
+            outputtype: 'pdf',
+            title: pdfFileName,
+            url: sourceFileUrl
+        };
+        
+        const convertResp = await axios.post(urls.convertUrl, payload, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            timeout: 15000
+        });
+        
+        const convertData = convertResp.data;
+        if (!convertData || !convertData.fileUrl) {
+            console.error('[CONVERT] Lỗi phản hồi từ OnlyOffice:', convertData);
+            return res.status(500).json({ success: false, message: 'Lỗi chuyển đổi file từ OnlyOffice' });
+        }
+        
+        // 3. Tải file PDF đã chuyển đổi và lưu vào uploads
+        console.log(`[CONVERT] Tải file PDF từ OnlyOffice: ${convertData.fileUrl}`);
+        const downloadResp = await axios({
+            method: 'GET',
+            url: convertData.fileUrl,
+            responseType: 'stream',
+            timeout: 15000
+        });
+        
+        const writer = fs.createWriteStream(pdfPath);
+        downloadResp.data.pipe(writer);
+        
+        await new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
+        
+        console.log(`[CONVERT] Đã chuyển đổi và lưu thành công: ${pdfFileName}`);
+        return res.json({ 
+            success: true, 
+            pdfUrl: urls.uploadsUrl + encodeURIComponent(pdfFileName) 
+        });
+    } catch (err) {
+        console.error('[CONVERT] Lỗi chuyển đổi:', err.message);
+        return res.status(500).json({ success: false, message: 'Lỗi server khi chuyển đổi PDF: ' + err.message });
+    }
+});
+
 /**
  * 1. Lấy danh sách tài liệu
  */
@@ -243,14 +343,18 @@ app.get('/api/documents/templates', (req, res) => {
 app.get('/api/documents/fields/:listName', async (req, res) => {
     try {
         const listName = req.params.listName;
+        let sqlListName = listName;
+        if (listName === 'hop_dong') sqlListName = 'API_DanhSachHopDong';
+        else if (listName === 'phieu_thu') sqlListName = 'API_DanhSachPhieuCoc';
+        else if (listName === 'quyet_toan') sqlListName = 'frmQuyetToan';
 
         // Lấy 1 dòng dữ liệu mẫu từ SQL API để quét tự động 100% cột
         let sampleRow = {};
         try {
-            const sqlRow = await fetchFromSQLAPI(listName, '', req.headers.authorization);
+            const sqlRow = await fetchFromSQLAPI(sqlListName, '', req.headers.authorization);
             if (sqlRow) sampleRow = sqlRow;
         } catch (e) {
-            console.log('[FIELDS] Không lấy được data mẫu từ DB, dùng object rỗng');
+            console.log(`[FIELDS] Không lấy được data mẫu từ DB cho '${sqlListName}', dùng object rỗng:`, e.message);
         }
 
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
@@ -556,6 +660,19 @@ app.delete('/api/documents/:fileName', async (req, res) => {
         const filePath = path.join(UPLOADS_DIR, fileName);
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath); // Xóa file vật lý (Hard delete)
+
+            // Xóa file PDF tương ứng nếu có
+            if (fileName.endsWith('.docx')) {
+                const pdfPath = filePath.replace(/\.docx$/i, '.pdf');
+                if (fs.existsSync(pdfPath)) {
+                    try {
+                        fs.unlinkSync(pdfPath);
+                        console.log(`[DELETE] Đã xóa file PDF cache tương ứng: ${pdfPath}`);
+                    } catch (e) {
+                        console.error('Lỗi khi xóa file PDF cache:', e.message);
+                    }
+                }
+            }
 
             // Cập nhật Bia mộ (Soft Delete) trong CSDL
             try {
