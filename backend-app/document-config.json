@@ -65,8 +65,13 @@
     "headerColor": "FF0000"
   },
   "formListMappings": {
-    "hop_dong": "API_DanhSachHopDong",
-    "phieu_thu": "API_DanhSachPhieuCoc",
-    "quyet_toan": "frmQuyetToan"
+    "phieu_thu": "frmBiennhancoccho",
+    "quyet_toan": "frmQuyetToan",
+    "phu_luc": "frmPhuLucHopDong",
+    "thay_doi": "tbmk_Thaydoi",
+    "beo": "frmBEO",
+    "bao_gia": "frmBaoGia",
+    "phat_sinh": "API_DanhSachPhatSinh",
+    "hop_dong": "frmHopDong"
   }
 }

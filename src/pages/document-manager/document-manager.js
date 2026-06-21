@@ -428,7 +428,7 @@ var DocumentManagerPage = (function () {
           if (typeof Toast !== 'undefined') Toast.show({ message: 'Đang mở trình chỉnh sửa Template...', type: 'info' });
 
           // Inject Floating UI cho Drag & Drop Field
-          _injectDragDropUI(type, area);
+          _injectDragDropUI(fileName, area);
         }
       })
       .catch(function (err) {

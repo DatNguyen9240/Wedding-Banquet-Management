@@ -245,7 +245,18 @@ app.get('/api/documents/fields/:listName', async (req, res) => {
         const listName = req.params.listName;
         const docConfig = getDocumentConfig();
         const mappings = docConfig.formListMappings || {};
-        const sqlListName = mappings[listName] || listName;
+        
+        let sqlListName = 'frmHopDong'; // Mặc định là hợp đồng nếu không khớp từ khóa nào
+        
+        const lowerListName = listName.toLowerCase();
+        for (const key in mappings) {
+            if (lowerListName.includes(key.toLowerCase())) {
+                sqlListName = mappings[key];
+                break;
+            }
+        }
+
+        console.log(`[FIELDS] Ánh xạ file mẫu '${listName}' -> Bảng CSDL '${sqlListName}'`);
 
         // Lấy 1 dòng dữ liệu mẫu từ SQL API để quét tự động 100% cột
         let sampleRow = {};
