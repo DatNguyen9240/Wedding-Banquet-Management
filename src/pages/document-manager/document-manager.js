@@ -302,16 +302,17 @@ var DocumentManagerPage = (function () {
           },
           documentType: 'text',
           editorConfig: {
-            mode: 'view',      // Chế độ xem (View mode)
+            mode: 'edit',      // Dùng mode: 'edit' kèm permissions.edit = false để tránh 404
             callbackUrl: callbackUrl,
             lang: 'vi',
             user: { id: 'user_' + Date.now(), name: _getCurrentUserName() },
             customization: {
-              compactHeader: true,
-              toolbarNoTabs: true,
-              hideRightMenu: true,
-              hideLeftMenu: true,
-              statusBar: false, // Ẩn thanh status dưới cùng
+              header: false,      // Ẩn hoàn toàn header trên cùng
+              toolbar: false,     // Ẩn hoàn toàn thanh công cụ (giống PDF)
+              statusBar: false,   // Ẩn thanh trạng thái dưới cùng
+              leftMenu: false,    // Ẩn thanh bên trái
+              rightMenu: false,   // Ẩn thanh bên phải
+              hideRulers: true,   // Ẩn thước đo để trông sạch sẽ nhất
               chat: false,
               comments: false
             }
