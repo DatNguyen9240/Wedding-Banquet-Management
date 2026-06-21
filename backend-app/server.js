@@ -245,9 +245,9 @@ app.get('/api/documents/fields/:listName', async (req, res) => {
         const listName = req.params.listName;
         const docConfig = getDocumentConfig();
         const mappings = docConfig.formListMappings || {};
-        
+
         let sqlListName = 'frmHopDong'; // Mặc định là hợp đồng nếu không khớp từ khóa nào
-        
+
         const lowerListName = listName.toLowerCase();
         for (const key in mappings) {
             if (lowerListName.includes(key.toLowerCase())) {
@@ -258,27 +258,7 @@ app.get('/api/documents/fields/:listName', async (req, res) => {
 
         console.log(`[FIELDS] Ánh xạ file mẫu '${listName}' -> Bảng CSDL '${sqlListName}'`);
 
-        // 1. Lấy danh sách các trường được cấu hình trong SY_FormatFields cho form này
-        let formFields = [];
-        try {
-            const fieldsUrl = `${SQL_API_BASE}/api/API_DanhSachTruongGiaoDien`;
-            const payload = {
-                FormName: sqlListName,
-                Username: 'admin',
-                Limit: 1000
-            };
-            const headers = {};
-            if (req.headers.authorization) headers['Authorization'] = req.headers.authorization;
-            const fieldsResp = await axios.post(fieldsUrl, payload, { headers, timeout: 5000 });
-            if (fieldsResp.data && fieldsResp.data.records) {
-                formFields = fieldsResp.data.records.map(r => r.FieldName);
-                console.log(`[FIELDS] Lấy thành công ${formFields.length} trường từ SY_FormatFields cho ${sqlListName}`);
-            }
-        } catch (fieldsErr) {
-            console.warn(`[FIELDS] Lỗi lấy trường từ API_DanhSachTruongGiaoDien cho '${sqlListName}':`, fieldsErr.message);
-        }
-
-        // 2. Lấy 1 dòng dữ liệu mẫu từ SQL API làm dự phòng (fallback) để quét thêm cột nếu có
+        // Lấy 1 dòng dữ liệu mẫu từ SQL API để quét tự động 100% cột
         let sampleRow = {};
         try {
             const sqlRow = await fetchFromSQLAPI(sqlListName, '', req.headers.authorization);
@@ -287,17 +267,9 @@ app.get('/api/documents/fields/:listName', async (req, res) => {
             console.log(`[FIELDS] Không lấy được data mẫu từ DB cho '${sqlListName}', dùng object rỗng:`, e.message);
         }
 
-        // 3. Lấy thông tin cấu hình nhà hàng (setup)
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
-        
-        // Gộp tất cả các trường từ 3 nguồn (setup, SY_FormatFields, sample record) và loại bỏ trùng lặp
-        const allFieldsSet = new Set([
-            ...Object.keys(setup),
-            ...formFields,
-            ...Object.keys(sampleRow)
-        ]);
-        
-        const fields = Array.from(allFieldsSet);
+        const finalData = { ...setup, ...sampleRow };
+        const fields = Object.keys(finalData);
 
         const formattedFields = fields.map(f => `{${f}}`);
         res.json({ success: true, fields: formattedFields });
