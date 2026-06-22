@@ -157,7 +157,15 @@ SELECT
         FOR JSON PATH
     ), '[]') AS [JsonDichVu],
 
-    CAST('[]' AS NVARCHAR(MAX)) AS [JsonPhatSinh],
+    ISNULL((
+        SELECT ps.Mahang, ISNULL(hh.Tenhang, ps.Mahang) AS TenHang, ISNULL(hh.DVTID, N'') AS DvtID,
+               ISNULL(ps.Soluong, 0) AS Soluong, ISNULL(ps.Dongia, 0) AS Dongia,
+               ISNULL(ps.GhiChuPhatSinh, N'') AS GhiChuPhatSinh
+        FROM tbmk_HopdongPhatSinh ps
+        LEFT JOIN dmHanghoa hh ON ps.Mahang = hh.Mahang
+        WHERE ps.Sohopdong = h.Sohopdong
+        FOR JSON PATH
+    ), '[]') AS [JsonPhatSinh],
 
     (
         SELECT 

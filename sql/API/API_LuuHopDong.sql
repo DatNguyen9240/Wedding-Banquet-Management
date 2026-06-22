@@ -397,6 +397,24 @@ BEGIN
             ) j;
         END
 
+        -- 5. LƯU MÓN PHÁT SINH TRỰC TIẾP VÀO HỢP ĐỒNG
+        IF (@JsonPhatSinh IS NOT NULL)
+        BEGIN
+            DELETE FROM tbmk_HopdongPhatSinh WHERE Sohopdong = @Sohopdong;
+            INSERT INTO tbmk_HopdongPhatSinh (
+                UserAutoid, Sohopdong, Mahang, Soluong, Dongia, Sotien,
+                GhiChuPhatSinh, UserCreate, DateCreate
+            )
+            SELECT
+                NEWID(), @Sohopdong, j.Mahang, j.Soluong, j.Dongia, (j.Soluong * j.Dongia),
+                j.GhiChuPhatSinh, @UserCreate, @Now
+            FROM OPENJSON(@JsonPhatSinh)
+            WITH (
+                Mahang VARCHAR(50), Soluong DECIMAL(18,2), Dongia DECIMAL(18,2),
+                GhiChuPhatSinh NVARCHAR(500)
+            ) j;
+        END
+
         COMMIT TRANSACTION;
         SELECT 1 AS [Success], N'Lưu Hợp đồng Tiệc Cưới thành công' AS [Message], @Sohopdong AS [Sohopdong], @Makh AS [Makh];
         

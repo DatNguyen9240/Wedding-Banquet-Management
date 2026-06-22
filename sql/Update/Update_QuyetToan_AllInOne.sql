@@ -370,8 +370,8 @@ BEGIN
                     UNION ALL
 
                     -- B. NẾU CHƯA CÓ CHI TIẾT, DỰ PHÒNG TỪ BẢNG MẸ
-                    SELECT N'Chi phí phát sinh' AS [DienGiai], N'Lần' AS [DVT], 1 AS [SoLuong], FORMAT(ISNULL(pt.Sotienphatsinh, 0), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL(pt.Sotienphatsinh, 0), 'N0', 'vi-VN') AS [ThanhTien], ISNULL(pt.Sotienphatsinh, 0) AS val, 1 AS sort_order
-                    WHERE ISNULL(pt.Sotienphatsinh, 0) > 0 AND NOT EXISTS (SELECT 1 FROM tbmk_Phieuthuphatsinh WHERE SPthu = pt.SPthu)
+                    SELECT N'Chi phí phát sinh' AS [DienGiai], N'Lần' AS [DVT], 1 AS [SoLuong], FORMAT(ISNULL((SELECT SUM(Sotien) FROM tbmk_HopdongPhatSinh WHERE Sohopdong = pt.Sohopdong), ISNULL(pt.Sotienphatsinh, 0)), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL((SELECT SUM(Sotien) FROM tbmk_HopdongPhatSinh WHERE Sohopdong = pt.Sohopdong), ISNULL(pt.Sotienphatsinh, 0)), 'N0', 'vi-VN') AS [ThanhTien], ISNULL((SELECT SUM(Sotien) FROM tbmk_HopdongPhatSinh WHERE Sohopdong = pt.Sohopdong), ISNULL(pt.Sotienphatsinh, 0)) AS val, 1 AS sort_order
+                    WHERE ISNULL((SELECT SUM(Sotien) FROM tbmk_HopdongPhatSinh WHERE Sohopdong = pt.Sohopdong), ISNULL(pt.Sotienphatsinh, 0)) > 0 AND NOT EXISTS (SELECT 1 FROM tbmk_Phieuthuphatsinh WHERE SPthu = pt.SPthu)
                     
                     UNION ALL
                     
@@ -414,7 +414,7 @@ BEGIN
         ) AS Cong1Val
     ) c1
     CROSS APPLY (
-        SELECT (ISNULL(pt.Sotienphatsinh, 0) + ISNULL(pt.PhiBuSanh, 0) + ISNULL(pt.PhiBuBanTang, 0) + ISNULL(pt.PhiBuTTS, 0) + ISNULL(pt.PhiBuNTL, 0)) AS Cong2Val
+        SELECT (ISNULL((SELECT SUM(Sotien) FROM tbmk_HopdongPhatSinh WHERE Sohopdong = pt.Sohopdong), ISNULL(pt.Sotienphatsinh, 0)) + ISNULL(pt.PhiBuSanh, 0) + ISNULL(pt.PhiBuBanTang, 0) + ISNULL(pt.PhiBuTTS, 0) + ISNULL(pt.PhiBuNTL, 0)) AS Cong2Val
     ) c2
     WHERE 
         ISNULL(pt.IsDeleted, 0) = 0

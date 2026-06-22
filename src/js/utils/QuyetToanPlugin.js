@@ -288,9 +288,8 @@ var QuyetToanPlugin = (function () {
               </div>
 
               <div class="mb-3">
-                <label class="form-label fw-bold">Chi phí phát sinh khác (VND)</label>
-                <input type="text" inputmode="numeric" id="inpSotienphatsinh" class="ui-input fee-trigger" value="0" style="width:100%;">
-                <div class="money-words-text" id="wordSotienphatsinh" style="font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;"></div>
+                <label class="form-label fw-bold">Chi phí phát sinh từ Hợp Đồng (VND)</label>
+                <input type="text" id="inpSotienphatsinh" class="ui-input" readonly value="0" style="width:100%; background: var(--color-background, #f8fafc); font-weight: bold; color: var(--color-primary, #3b82f6);">
               </div>
             </div>
 
@@ -515,7 +514,9 @@ var QuyetToanPlugin = (function () {
       var phiTTS = parseMoney(modalContent.querySelector('#inpPhiBuTTS').value);
       var phiNTL = parseMoney(modalContent.querySelector('#inpPhiBuNTL').value);
       var phiPhucVu = parseMoney(modalContent.querySelector('#inpPhiPhucVu').value);
-      var phatSinhManual = parseMoney(modalContent.querySelector('#inpSotienphatsinh').value);
+      // Cập nhật ô hiển thị Phát Sinh bằng tổng từ grid
+      modalContent.querySelector('#inpSotienphatsinh').value = totalPhatSinh.toLocaleString('vi-VN') + ' đ';
+      var phatSinhManual = 0; // Đã cộng trong totalGrid
 
       var subtotal = totalGrid + phiSanh + phiBanTang + phiTTS + phiNTL + phiPhucVu + phatSinhManual;
 
@@ -587,7 +588,7 @@ var QuyetToanPlugin = (function () {
       var phiTTS = parseMoney(modalContent.querySelector('#inpPhiBuTTS').value);
       var phiBuNTL = parseMoney(modalContent.querySelector('#inpPhiBuNTL').value);
       var phiPhucVu = parseMoney(modalContent.querySelector('#inpPhiPhucVu').value);
-      var phatSinh = parseMoney(modalContent.querySelector('#inpSotienphatsinh').value);
+      var phatSinh = 0; // Đã xử lý cộng trong totalPhatSinh
       var banPhatSinh = Number(modalContent.querySelector('#inpBanPhatSinh').value || 0);
 
       var ptVAT = Number(modalContent.querySelector('#inpPTThueVAT').value || 0);

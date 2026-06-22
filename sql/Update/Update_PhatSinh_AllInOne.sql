@@ -62,7 +62,7 @@ SELECT
     ISNULL(hd.BanPhatSinh, 0) AS [BanPhatSinh],
     (ISNULL(hd.SobanManchinhthuc, 0) + ISNULL(hd.SobanChaychinhthuc, 0) + ISNULL(hd.SobanManduphong, 0) + ISNULL(hd.SobanChayduphong, 0) + ISNULL(hd.BanPhatSinh, 0)) AS [TongSoBan],
     
-    -- Mảng Món Phát Sinh (Lấy từ bảng tbmk_Phieuthuphatsinh)
+    -- Mảng Món Phát Sinh (Lấy từ bảng tbmk_HopdongPhatSinh)
     (
         SELECT 
             ROW_NUMBER() OVER(ORDER BY ptps.DateCreate) AS [STT],
@@ -72,10 +72,9 @@ SELECT
             ptps.Soluong AS [SoLuong],
             ptps.Dongia AS [DonGia],
             ptps.Sotien AS [ThanhTien]
-        FROM tbmk_Phieuthu pt
-        INNER JOIN tbmk_Phieuthuphatsinh ptps ON pt.SPthu = ptps.SPthu
+        FROM tbmk_HopdongPhatSinh ptps
         LEFT JOIN dmHanghoa hh ON ptps.Mahang = hh.Mahang
-        WHERE pt.Sohopdong = hd.Sohopdong
+        WHERE ptps.Sohopdong = hd.Sohopdong
         FOR JSON PATH
     ) AS [MenuPhatSinh]
 

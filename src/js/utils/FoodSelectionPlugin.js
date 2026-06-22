@@ -14,12 +14,14 @@ var FoodSelectionPlugin = (function () {
   var selectedFoodsChay = [];
   var selectedThucUong = [];
   var selectedDichVu = [];
+  var selectedPhatSinh = [];
 
   // Trạng thái các món gốc trong Hợp đồng/Phụ lục để đối chiếu (Quyết toán)
   var contractFoodsMan = [];
   var contractFoodsChay = [];
   var contractThucUong = [];
   var contractDichVu = [];
+  var contractPhatSinh = [];
 
   // Thêm styles cho giao diện plugin
   function _injectStyles() {
@@ -281,14 +283,17 @@ var FoodSelectionPlugin = (function () {
     var inpBanTiec = modal.querySelector('[name="JsonBanTiec"]');
     var inpThucUong = modal.querySelector('[name="JsonThucUong"]');
     var inpDichVu = modal.querySelector('[name="JsonDichVu"]');
+    var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
 
     var rawBanTiec = [];
     var rawThucUong = [];
     var rawDichVu = [];
+    var rawPhatSinh = [];
 
     try { if (inpBanTiec && inpBanTiec.value) rawBanTiec = JSON.parse(inpBanTiec.value); } catch (e) { }
     try { if (inpThucUong && inpThucUong.value) rawThucUong = JSON.parse(inpThucUong.value); } catch (e) { }
     try { if (inpDichVu && inpDichVu.value) rawDichVu = JSON.parse(inpDichVu.value); } catch (e) { }
+    try { if (inpPhatSinh && inpPhatSinh.value) rawPhatSinh = JSON.parse(inpPhatSinh.value); } catch (e) { }
 
     var mappedBanTiec = _mapRawItems(rawBanTiec, 0);
 
@@ -298,25 +303,30 @@ var FoodSelectionPlugin = (function () {
 
     selectedThucUong = _mapRawItems(rawThucUong, 0);
     selectedDichVu = _mapRawItems(rawDichVu, 0);
+    selectedPhatSinh = _mapRawItems(rawPhatSinh, 0);
 
     // Đọc dữ liệu hợp đồng đối chiếu (dành cho Quyết toán)
     var inpBanTiecHD = modal.querySelector('[name="JsonBanTiecHopDong"]');
     var inpThucUongHD = modal.querySelector('[name="JsonThucUongHopDong"]');
     var inpDichVuHD = modal.querySelector('[name="JsonDichVuHopDong"]');
+    var inpPhatSinhHD = modal.querySelector('[name="JsonPhatSinhHopDong"]');
 
     var rawBanTiecHD = [];
     var rawThucUongHD = [];
     var rawDichVuHD = [];
+    var rawPhatSinhHD = [];
 
     try { if (inpBanTiecHD && inpBanTiecHD.value) rawBanTiecHD = JSON.parse(inpBanTiecHD.value); } catch (e) { }
     try { if (inpThucUongHD && inpThucUongHD.value) rawThucUongHD = JSON.parse(inpThucUongHD.value); } catch (e) { }
     try { if (inpDichVuHD && inpDichVuHD.value) rawDichVuHD = JSON.parse(inpDichVuHD.value); } catch (e) { }
+    try { if (inpPhatSinhHD && inpPhatSinhHD.value) rawPhatSinhHD = JSON.parse(inpPhatSinhHD.value); } catch (e) { }
 
     var mappedBanTiecHD = _mapRawItems(rawBanTiecHD, 0);
     contractFoodsMan = mappedBanTiecHD.filter(function (x) { return x.IsChay === 0 || x.IsChay === false; });
     contractFoodsChay = mappedBanTiecHD.filter(function (x) { return x.IsChay === 1 || x.IsChay === true; });
     contractThucUong = _mapRawItems(rawThucUongHD, 0);
     contractDichVu = _mapRawItems(rawDichVuHD, 0);
+    contractPhatSinh = _mapRawItems(rawPhatSinhHD, 0);
   }
 
   // Ghi dữ liệu ngược lại các input ẩn và phát sự kiện change
@@ -349,6 +359,17 @@ var FoodSelectionPlugin = (function () {
         Soluongle: 0,
         Dongiale: 0,
         Ghichuthucuong: ''
+      };
+    });
+
+    var listPhatSinh = selectedPhatSinh.map(function (x) {
+      return {
+        Mahang: x.MaMon,
+        TenHang: x.TenMon || '',
+        DvtID: x.DvtID || '',
+        Soluong: x.SoLuong || 1,
+        Dongia: x.DonGia,
+        GhiChuPhatSinh: x.TenMon || ''
       };
     });
 
@@ -904,6 +925,8 @@ var FoodSelectionPlugin = (function () {
     var list = [];
     if (type === 'drink') list = selectedThucUong;
     else if (type === 'service') list = selectedDichVu;
+    else if (type === 'phatsinh') list = selectedPhatSinh;
+    else if (type === 'phatsinh') list = selectedPhatSinh;
 
     var item = null;
     if (typeof key === 'number') {
@@ -989,6 +1012,7 @@ var FoodSelectionPlugin = (function () {
     var tempFoodsChay = JSON.parse(JSON.stringify(selectedFoodsChay));
     var tempThucUong = JSON.parse(JSON.stringify(selectedThucUong));
     var tempDichVu = JSON.parse(JSON.stringify(selectedDichVu));
+    var tempPhatSinh = JSON.parse(JSON.stringify(selectedPhatSinh));
 
     var modalContent = document.createElement('div');
     modalContent.className = 'modal-main-container';
@@ -1318,7 +1342,8 @@ var FoodSelectionPlugin = (function () {
         tempFoodsMan.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
         tempFoodsChay.reduce(function (sum, item) { return sum + item.DonGia; }, 0) +
         tempThucUong.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0) +
-        tempDichVu.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
+        tempDichVu.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0) +
+        tempPhatSinh.reduce(function (sum, item) { return sum + item.DonGia * item.SoLuong; }, 0);
 
       var activeList = getTempListByTab(modalTab);
 
@@ -1397,6 +1422,7 @@ var FoodSelectionPlugin = (function () {
       selectedFoodsChay = tempFoodsChay;
       selectedThucUong = tempThucUong;
       selectedDichVu = tempDichVu;
+      selectedPhatSinh = tempPhatSinh;
 
       _writeInputs(activeModal);
       m.closeNow();
