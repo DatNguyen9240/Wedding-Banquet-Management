@@ -420,6 +420,20 @@ var FoodSelectionPlugin = (function () {
       inpDichVu.value = JSON.stringify(listDichVu);
       inpDichVu.dispatchEvent(new Event('change', { bubbles: true }));
     }
+    
+    if (!inpPhatSinh) {
+      inpPhatSinh = document.createElement('input');
+      inpPhatSinh.type = 'hidden';
+      inpPhatSinh.name = 'JsonPhatSinh';
+      var theForm = modal.closest('form') || document.querySelector('form');
+      if (theForm) {
+          theForm.appendChild(inpPhatSinh);
+      } else {
+          modal.appendChild(inpPhatSinh);
+      }
+    }
+    inpPhatSinh.value = JSON.stringify(listPhatSinh);
+    inpPhatSinh.dispatchEvent(new Event('change', { bubbles: true }));
 
     _renderSummaryTables();
   }
@@ -1056,6 +1070,9 @@ var FoodSelectionPlugin = (function () {
         </button>
         <button type="button" class="food-modal-tab-btn" data-tab="service">
           <span class="material-symbols-outlined" style="font-size:20px">content_cut</span> Dịch Vụ
+        </button>
+        <button type="button" class="food-modal-tab-btn" data-tab="phatsinh">
+          <span class="material-symbols-outlined" style="font-size:20px">add_box</span> Phát Sinh
         </button>
       </div>
 
