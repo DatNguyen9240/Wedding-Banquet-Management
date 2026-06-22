@@ -168,12 +168,8 @@ async function fetchFromSQLAPI(listName, keyword, authToken) {
     try {
         const resp = await axiosGetWithRetry(url, { headers, timeout: 10000 }, 3, 1000);
         const json = resp.data;
-        if (json) {
-            if (json.records && json.records.length > 0) return json.records[0];
-            if (json.data && json.data.length > 0) return json.data[0];
-            if (Array.isArray(json) && json.length > 0) return json[0];
-            if (json.code === 0) return json;
-        }
+        if (json && json.records && json.records.length > 0) return json.records[0];
+        if (json && json.code === 0) return json;
     } catch (err) {
         console.error(`[SQL API] Lỗi khi gọi ${listName}:`, err.message);
     }
@@ -293,14 +289,14 @@ app.get('/api/documents/fields/:listName', async (req, res) => {
 
         // 3. Lấy thông tin cấu hình nhà hàng (setup)
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
-        
+
         // Gộp tất cả các trường từ 3 nguồn và loại bỏ trùng lặp
         const allFieldsSet = new Set([
             ...Object.keys(setup),
             ...formFields,
             ...Object.keys(sampleRow)
         ]);
-        
+
         // Loại bỏ các trường hệ thống dư thừa không dùng trong biểu mẫu .docx (đọc động từ cấu hình)
         const excludeFields = (docConfig.excludeFields || []).map(f => f.toLowerCase());
         const fields = Array.from(allFieldsSet).filter(f => !excludeFields.includes(f.toLowerCase()));
