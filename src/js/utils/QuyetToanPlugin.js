@@ -392,15 +392,6 @@ var QuyetToanPlugin = (function () {
       return Number(String(val || '').replace(/\D/g, '')) || 0;
     };
 
-    // Gán dữ liệu ban đầu
-    modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(details.JsonBanTiec);
-    modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(details.JsonThucUong);
-    modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(details.JsonDichVu);
-    modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(details.JsonPhatSinh);
-    modalContent.querySelector('#inpJsonBanTiecHopDong').value = _stringifyJson(details.JsonBanTiecHopDong);
-    modalContent.querySelector('#inpJsonThucUongHopDong').value = _stringifyJson(details.JsonThucUongHopDong);
-    modalContent.querySelector('#inpJsonDichVuHopDong').value = _stringifyJson(details.JsonDichVuHopDong);
-
     var getVal = function (obj, key) {
       if (!obj) return undefined;
       if (obj[key] !== undefined) return obj[key];
@@ -410,6 +401,16 @@ var QuyetToanPlugin = (function () {
       }
       return undefined;
     };
+
+    // Gán dữ liệu ban đầu
+    modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(getVal(details, 'JsonBanTiec'));
+    modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(getVal(details, 'JsonThucUong'));
+    modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(getVal(details, 'JsonDichVu'));
+    modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(getVal(details, 'JsonPhatSinh'));
+    modalContent.querySelector('#inpJsonBanTiecHopDong').value = _stringifyJson(getVal(details, 'JsonBanTiecHopDong'));
+    modalContent.querySelector('#inpJsonThucUongHopDong').value = _stringifyJson(getVal(details, 'JsonThucUongHopDong'));
+    modalContent.querySelector('#inpJsonDichVuHopDong').value = _stringifyJson(getVal(details, 'JsonDichVuHopDong'));
+
 
     if (existingSettlement) {
       modalContent.querySelector('#inpDocumentID').value = getVal(existingSettlement, 'DocumentID') || '';

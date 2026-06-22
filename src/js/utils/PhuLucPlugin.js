@@ -377,10 +377,20 @@ var PhuLucPlugin = (function () {
         modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = rec.ThoaThuanPhuLucKhac || '';
         modalContent.querySelector('#inpThoathuan').value = rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || '';
 
-        modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(rec.JsonBanTiec);
-        modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(rec.JsonThucUong);
-        modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(rec.JsonDichVu);
-        modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(rec.JsonPhatSinh);
+        var getVal = function (obj, key) {
+          if (!obj) return undefined;
+          if (obj[key] !== undefined) return obj[key];
+          var lower = key.toLowerCase();
+          for (var k in obj) {
+            if (k.toLowerCase() === lower) return obj[k];
+          }
+          return undefined;
+        };
+
+        modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(getVal(rec, 'JsonBanTiec'));
+        modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(getVal(rec, 'JsonThucUong'));
+        modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(getVal(rec, 'JsonDichVu'));
+        modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(getVal(rec, 'JsonPhatSinh'));
         if (typeof FoodSelectionPlugin !== 'undefined' && typeof FoodSelectionPlugin.reloadForm === 'function') {
           FoodSelectionPlugin.reloadForm(modalContent);
         }
