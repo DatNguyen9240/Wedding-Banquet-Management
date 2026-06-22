@@ -334,6 +334,7 @@ var FoodSelectionPlugin = (function () {
     var inpBanTiec = modal.querySelector('[name="JsonBanTiec"]');
     var inpThucUong = modal.querySelector('[name="JsonThucUong"]');
     var inpDichVu = modal.querySelector('[name="JsonDichVu"]');
+    var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
 
     // Nối món mặn & món chay
     var listBanTiec = selectedFoodsMan.concat(selectedFoodsChay).map(function (x) {

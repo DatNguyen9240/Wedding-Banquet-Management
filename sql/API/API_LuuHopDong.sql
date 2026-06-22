@@ -56,7 +56,12 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @JsonBanTiec NVARCHAR(MAX) = NULL,
     @JsonThucUong NVARCHAR(MAX) = NULL,
     @JsonDichVu NVARCHAR(MAX) = NULL,
-    @JsonPhatSinh NVARCHAR(MAX) = NULL
+    @JsonPhatSinh NVARCHAR(MAX) = NULL,
+    
+    -- Các trường mở rộng từ UI form (bỏ trống không lưu hoặc lưu nếu cần)
+    @DieuKhoanBoSung NVARCHAR(MAX) = NULL,
+    @BenBTenDaiDien NVARCHAR(255) = NULL,
+    @LoaiHinhSuKien NVARCHAR(255) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
