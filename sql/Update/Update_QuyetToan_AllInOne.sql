@@ -36,6 +36,33 @@ BEGIN
 END
 GO
 
+-- Đảm bảo bảng tbmk_Phieuthuphatsinh tồn tại và đầy đủ cấu trúc cột
+IF OBJECT_ID(N'[dbo].[tbmk_Phieuthuphatsinh]', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[tbmk_Phieuthuphatsinh] (
+        [UserAutoid] VARCHAR(50) NOT NULL PRIMARY KEY,
+        [SPthu] VARCHAR(50) NULL,
+        [Mahang] VARCHAR(30) NULL,
+        [Soluong] DECIMAL(18,2) NULL,
+        [Dongia] DECIMAL(18,2) NULL,
+        [Sotien] DECIMAL(18,2) NULL,
+        [UserCreate] VARCHAR(50) NULL,
+        [DateCreate] DATETIME NULL,
+        [GhiChuPhatSinh] NVARCHAR(500) NULL
+    );
+    PRINT N'Đã tạo bảng tbmk_Phieuthuphatsinh mới';
+END
+ELSE
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Phieuthuphatsinh]') AND name = 'GhiChuPhatSinh')
+    BEGIN
+        ALTER TABLE tbmk_Phieuthuphatsinh ADD GhiChuPhatSinh NVARCHAR(500) NULL;
+        PRINT N'Đã thêm cột GhiChuPhatSinh cho bảng tbmk_Phieuthuphatsinh';
+    END
+END
+GO
+
+
 -- =========================================================================
 -- 2. CẬP NHẬT STORED PROCEDURE LẤY DANH SÁCH QUYẾT TOÁN (ĐỘNG TỪ BẢNG CHI TIẾT)
 -- =========================================================================
