@@ -1762,6 +1762,16 @@ var PhatSinhPlugin = (function () {
       UIToast.show('Đang tải danh sách phát sinh...', 'info');
     }
 
+    var getVal = function (obj, key) {
+      if (!obj) return undefined;
+      if (obj[key] !== undefined) return obj[key];
+      var lower = key.toLowerCase();
+      for (var k in obj) {
+        if (k.toLowerCase() === lower) return obj[k];
+      }
+      return undefined;
+    };
+
     _loadCatalog().then(function (catalog) {
       ApiClient.post(window.API_CONFIG.ENDPOINTS.ROUTER, {
         List: 'API_DanhSachPhatSinh',
@@ -1778,8 +1788,8 @@ var PhatSinhPlugin = (function () {
         }
 
         var rawPhatSinh = [];
-        if (details && details.MenuPhatSinh) {
-          var rawVal = details.MenuPhatSinh;
+        var rawVal = getVal(details, 'MenuPhatSinh');
+        if (rawVal) {
           if (typeof rawVal === 'string') {
             try { rawPhatSinh = JSON.parse(rawVal); } catch (e) { }
           } else if (Array.isArray(rawVal)) {
