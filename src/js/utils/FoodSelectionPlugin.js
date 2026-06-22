@@ -15,6 +15,8 @@ var FoodSelectionPlugin = (function () {
   var selectedThucUong = [];
   var selectedDichVu = [];
   var selectedPhatSinh = [];
+  var contractPhatSinh = [];
+  var selectedPhatSinh = [];
 
   // Trạng thái các món gốc trong Hợp đồng/Phụ lục để đối chiếu (Quyết toán)
   var contractFoodsMan = [];
@@ -284,15 +286,19 @@ var FoodSelectionPlugin = (function () {
     var inpThucUong = modal.querySelector('[name="JsonThucUong"]');
     var inpDichVu = modal.querySelector('[name="JsonDichVu"]');
     var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
+    var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
+    var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
 
     var rawBanTiec = [];
     var rawThucUong = [];
     var rawDichVu = [];
     var rawPhatSinh = [];
+    var rawPhatSinh = [];
 
     try { if (inpBanTiec && inpBanTiec.value) rawBanTiec = JSON.parse(inpBanTiec.value); } catch (e) { }
     try { if (inpThucUong && inpThucUong.value) rawThucUong = JSON.parse(inpThucUong.value); } catch (e) { }
     try { if (inpDichVu && inpDichVu.value) rawDichVu = JSON.parse(inpDichVu.value); } catch (e) { }
+    try { if (inpPhatSinh && inpPhatSinh.value) rawPhatSinh = JSON.parse(inpPhatSinh.value); } catch (e) { }
     try { if (inpPhatSinh && inpPhatSinh.value) rawPhatSinh = JSON.parse(inpPhatSinh.value); } catch (e) { }
 
     var mappedBanTiec = _mapRawItems(rawBanTiec, 0);
@@ -304,21 +310,25 @@ var FoodSelectionPlugin = (function () {
     selectedThucUong = _mapRawItems(rawThucUong, 0);
     selectedDichVu = _mapRawItems(rawDichVu, 0);
     selectedPhatSinh = _mapRawItems(rawPhatSinh, 0);
+    selectedPhatSinh = _mapRawItems(rawPhatSinh, 0);
 
     // Đọc dữ liệu hợp đồng đối chiếu (dành cho Quyết toán)
     var inpBanTiecHD = modal.querySelector('[name="JsonBanTiecHopDong"]');
     var inpThucUongHD = modal.querySelector('[name="JsonThucUongHopDong"]');
     var inpDichVuHD = modal.querySelector('[name="JsonDichVuHopDong"]');
     var inpPhatSinhHD = modal.querySelector('[name="JsonPhatSinhHopDong"]');
+    var inpPhatSinhHD = modal.querySelector('[name="JsonPhatSinhHopDong"]');
 
     var rawBanTiecHD = [];
     var rawThucUongHD = [];
     var rawDichVuHD = [];
     var rawPhatSinhHD = [];
+    var rawPhatSinhHD = [];
 
     try { if (inpBanTiecHD && inpBanTiecHD.value) rawBanTiecHD = JSON.parse(inpBanTiecHD.value); } catch (e) { }
     try { if (inpThucUongHD && inpThucUongHD.value) rawThucUongHD = JSON.parse(inpThucUongHD.value); } catch (e) { }
     try { if (inpDichVuHD && inpDichVuHD.value) rawDichVuHD = JSON.parse(inpDichVuHD.value); } catch (e) { }
+    try { if (inpPhatSinhHD && inpPhatSinhHD.value) rawPhatSinhHD = JSON.parse(inpPhatSinhHD.value); } catch (e) { }
     try { if (inpPhatSinhHD && inpPhatSinhHD.value) rawPhatSinhHD = JSON.parse(inpPhatSinhHD.value); } catch (e) { }
 
     var mappedBanTiecHD = _mapRawItems(rawBanTiecHD, 0);
@@ -326,6 +336,7 @@ var FoodSelectionPlugin = (function () {
     contractFoodsChay = mappedBanTiecHD.filter(function (x) { return x.IsChay === 1 || x.IsChay === true; });
     contractThucUong = _mapRawItems(rawThucUongHD, 0);
     contractDichVu = _mapRawItems(rawDichVuHD, 0);
+    contractPhatSinh = _mapRawItems(rawPhatSinhHD, 0);
     contractPhatSinh = _mapRawItems(rawPhatSinhHD, 0);
   }
 
@@ -360,6 +371,17 @@ var FoodSelectionPlugin = (function () {
         Soluongle: 0,
         Dongiale: 0,
         Ghichuthucuong: ''
+      };
+    });
+
+    var listPhatSinh = selectedPhatSinh.map(function (x) {
+      return {
+        Mahang: x.MaMon,
+        TenHang: x.TenMon || '',
+        DvtID: x.DvtID || '',
+        Soluong: x.SoLuong || 1,
+        Dongia: x.DonGia,
+        GhiChuPhatSinh: x.TenMon || ''
       };
     });
 
@@ -1014,6 +1036,7 @@ var FoodSelectionPlugin = (function () {
     var tempThucUong = JSON.parse(JSON.stringify(selectedThucUong));
     var tempDichVu = JSON.parse(JSON.stringify(selectedDichVu));
     var tempPhatSinh = JSON.parse(JSON.stringify(selectedPhatSinh));
+    var tempPhatSinh = JSON.parse(JSON.stringify(selectedPhatSinh));
 
     var modalContent = document.createElement('div');
     modalContent.className = 'modal-main-container';
@@ -1423,6 +1446,7 @@ var FoodSelectionPlugin = (function () {
       selectedFoodsChay = tempFoodsChay;
       selectedThucUong = tempThucUong;
       selectedDichVu = tempDichVu;
+      selectedPhatSinh = tempPhatSinh;
       selectedPhatSinh = tempPhatSinh;
 
       _writeInputs(activeModal);
