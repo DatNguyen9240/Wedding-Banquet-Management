@@ -66,6 +66,8 @@ SELECT
     (
         SELECT 
             ROW_NUMBER() OVER(ORDER BY ptps.DateCreate) AS [STT],
+            ptps.Mahang AS [Mahang],
+            ptps.Mahang AS [MaMon],
             ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonPhatSinh],
             ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonMan], -- Fallback
             ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonChay], -- Fallback

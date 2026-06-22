@@ -1071,9 +1071,7 @@ var FoodSelectionPlugin = (function () {
         <button type="button" class="food-modal-tab-btn" data-tab="service">
           <span class="material-symbols-outlined" style="font-size:20px">content_cut</span> Dịch Vụ
         </button>
-        <button type="button" class="food-modal-tab-btn" data-tab="phatsinh">
-          <span class="material-symbols-outlined" style="font-size:20px">add_box</span> Phát Sinh
-        </button>
+
       </div>
 
       <!-- Search Bar -->

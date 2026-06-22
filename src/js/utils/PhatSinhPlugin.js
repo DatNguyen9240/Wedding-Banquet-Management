@@ -1,9 +1,8 @@
 /**
  * PhatSinhPlugin
  * ─────────────────────────────────────────────────────────────────────
- * Plugin quản lý việc Chọn Thực đơn & Dịch vụ dưới dạng lưới thẻ Card.
- * Tự động tích hợp vào các form động (frmHopDong, tbmk_Thaydoi, frmQuyetToan)
- * thông qua MutationObserver để ẩn các trường JSON thô và thay thế bằng UI đẹp mắt.
+ * Plugin quản lý việc Chọn Thực đơn & Dịch vụ Phát Sinh dưới dạng lưới thẻ Card.
+ * Chạy độc lập thông qua nút bấm "Nhập Phát Sinh" trên Grid Hợp đồng.
  */
 var PhatSinhPlugin = (function () {
   var catalogCache = null; // Bộ nhớ đệm danh mục món ăn từ API
@@ -16,7 +15,6 @@ var PhatSinhPlugin = (function () {
   var selectedDichVu = [];
   var selectedPhatSinh = [];
   var contractPhatSinh = [];
-  var selectedPhatSinh = [];
 
   // Trạng thái các món gốc trong Hợp đồng/Phụ lục để đối chiếu (Quyết toán)
   var contractFoodsMan = [];
@@ -286,19 +284,15 @@ var PhatSinhPlugin = (function () {
     var inpThucUong = modal.querySelector('[name="JsonThucUong"]');
     var inpDichVu = modal.querySelector('[name="JsonDichVu"]');
     var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
-    var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
-    var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
 
     var rawBanTiec = [];
     var rawThucUong = [];
     var rawDichVu = [];
     var rawPhatSinh = [];
-    var rawPhatSinh = [];
 
     try { if (inpBanTiec && inpBanTiec.value) rawBanTiec = JSON.parse(inpBanTiec.value); } catch (e) { }
     try { if (inpThucUong && inpThucUong.value) rawThucUong = JSON.parse(inpThucUong.value); } catch (e) { }
     try { if (inpDichVu && inpDichVu.value) rawDichVu = JSON.parse(inpDichVu.value); } catch (e) { }
-    try { if (inpPhatSinh && inpPhatSinh.value) rawPhatSinh = JSON.parse(inpPhatSinh.value); } catch (e) { }
     try { if (inpPhatSinh && inpPhatSinh.value) rawPhatSinh = JSON.parse(inpPhatSinh.value); } catch (e) { }
 
     var mappedBanTiec = _mapRawItems(rawBanTiec, 0);
@@ -310,25 +304,21 @@ var PhatSinhPlugin = (function () {
     selectedThucUong = _mapRawItems(rawThucUong, 0);
     selectedDichVu = _mapRawItems(rawDichVu, 0);
     selectedPhatSinh = _mapRawItems(rawPhatSinh, 0);
-    selectedPhatSinh = _mapRawItems(rawPhatSinh, 0);
 
     // Đọc dữ liệu hợp đồng đối chiếu (dành cho Quyết toán)
     var inpBanTiecHD = modal.querySelector('[name="JsonBanTiecHopDong"]');
     var inpThucUongHD = modal.querySelector('[name="JsonThucUongHopDong"]');
     var inpDichVuHD = modal.querySelector('[name="JsonDichVuHopDong"]');
     var inpPhatSinhHD = modal.querySelector('[name="JsonPhatSinhHopDong"]');
-    var inpPhatSinhHD = modal.querySelector('[name="JsonPhatSinhHopDong"]');
 
     var rawBanTiecHD = [];
     var rawThucUongHD = [];
     var rawDichVuHD = [];
     var rawPhatSinhHD = [];
-    var rawPhatSinhHD = [];
 
     try { if (inpBanTiecHD && inpBanTiecHD.value) rawBanTiecHD = JSON.parse(inpBanTiecHD.value); } catch (e) { }
     try { if (inpThucUongHD && inpThucUongHD.value) rawThucUongHD = JSON.parse(inpThucUongHD.value); } catch (e) { }
     try { if (inpDichVuHD && inpDichVuHD.value) rawDichVuHD = JSON.parse(inpDichVuHD.value); } catch (e) { }
-    try { if (inpPhatSinhHD && inpPhatSinhHD.value) rawPhatSinhHD = JSON.parse(inpPhatSinhHD.value); } catch (e) { }
     try { if (inpPhatSinhHD && inpPhatSinhHD.value) rawPhatSinhHD = JSON.parse(inpPhatSinhHD.value); } catch (e) { }
 
     var mappedBanTiecHD = _mapRawItems(rawBanTiecHD, 0);
@@ -337,28 +327,94 @@ var PhatSinhPlugin = (function () {
     contractThucUong = _mapRawItems(rawThucUongHD, 0);
     contractDichVu = _mapRawItems(rawDichVuHD, 0);
     contractPhatSinh = _mapRawItems(rawPhatSinhHD, 0);
-    contractPhatSinh = _mapRawItems(rawPhatSinhHD, 0);
   }
 
   // Ghi dữ liệu ngược lại các input ẩn và phát sự kiện change
-  
   function _writeInputs(modal) {
-    if (!modal) return;
+    var inpBanTiec = modal.querySelector('[name="JsonBanTiec"]');
+    var inpThucUong = modal.querySelector('[name="JsonThucUong"]');
+    var inpDichVu = modal.querySelector('[name="JsonDichVu"]');
     var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
-    var listPhatSinh = [];
 
-    selectedFoodsMan.forEach(function(x) { listPhatSinh.push({ Mahang: x.MaMon, TenHang: x.TenMon, DvtID: x.DvtID||'Đĩa', Soluong: x.SoLuong||1, Dongia: x.DonGia, GhiChuPhatSinh: '' }); });
-    selectedFoodsChay.forEach(function(x) { listPhatSinh.push({ Mahang: x.MaMon, TenHang: x.TenMon, DvtID: x.DvtID||'Đĩa', Soluong: x.SoLuong||1, Dongia: x.DonGia, GhiChuPhatSinh: '' }); });
-    selectedThucUong.forEach(function(x) { listPhatSinh.push({ Mahang: x.MaMon, TenHang: x.TenMon, DvtID: x.DvtID||'', Soluong: x.SoLuong||1, Dongia: x.DonGia, GhiChuPhatSinh: '' }); });
-    selectedDichVu.forEach(function(x) { listPhatSinh.push({ Mahang: x.MaMon, TenHang: x.TenMon, DvtID: x.DvtID||'', Soluong: x.SoLuong||1, Dongia: x.DonGia, GhiChuPhatSinh: '' }); });
+    // Nối món mặn & món chay
+    var listBanTiec = selectedFoodsMan.concat(selectedFoodsChay).map(function (x) {
+      return {
+        Mahang: x.MaMon,
+        TenHang: x.TenMon,
+        DvtID: x.DvtID || 'Đĩa',
+        Soluong: x.SoLuong || 1,
+        Dongia: x.DonGia,
+        Giamgia: 0,
+        Sotiengiamgia: 0
+      };
+    });
 
-    if (inpPhatSinh) {
-        inpPhatSinh.value = JSON.stringify(listPhatSinh);
-        inpPhatSinh.dispatchEvent(new Event('change', { bubbles: true }));
+    var listThucUong = selectedThucUong.map(function (x) {
+      return {
+        Mahang: x.MaMon,
+        IsKhuyenmai: x.IsKhuyenmai ? 1 : 0,
+        Soluong: x.SoLuong || 1,
+        Dongia: x.DonGia,
+        Giamgia: 0,
+        Sotiengiamgia: 0,
+        Soluongle: 0,
+        Dongiale: 0,
+        Ghichuthucuong: ''
+      };
+    });
+
+    var listPhatSinh = selectedPhatSinh.map(function (x) {
+      return {
+        Mahang: x.MaMon,
+        TenHang: x.TenMon || '',
+        DvtID: x.DvtID || '',
+        Soluong: x.SoLuong || 1,
+        Dongia: x.DonGia,
+        GhiChuPhatSinh: x.TenMon || ''
+      };
+    });
+
+    var listDichVu = selectedDichVu.map(function (x) {
+      return {
+        Mahang: x.MaMon,
+        TenHang: x.TenMon || '',
+        DvtID: x.DvtID || '',
+        Soluong: x.SoLuong || 1,
+        Dongia: x.DonGia,
+        Giamgia: 0,
+        Sotiengiamgia: 0
+      };
+    });
+
+    if (inpBanTiec) {
+      inpBanTiec.value = JSON.stringify(listBanTiec);
+      inpBanTiec.dispatchEvent(new Event('change', { bubbles: true }));
     }
+    if (inpThucUong) {
+      inpThucUong.value = JSON.stringify(listThucUong);
+      inpThucUong.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (inpDichVu) {
+      inpDichVu.value = JSON.stringify(listDichVu);
+      inpDichVu.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    
+    if (!inpPhatSinh) {
+      inpPhatSinh = document.createElement('input');
+      inpPhatSinh.type = 'hidden';
+      inpPhatSinh.name = 'JsonPhatSinh';
+      var theForm = modal.closest('form') || document.querySelector('form');
+      if (theForm) {
+          theForm.appendChild(inpPhatSinh);
+      } else {
+          modal.appendChild(inpPhatSinh);
+      }
+    }
+    inpPhatSinh.value = JSON.stringify(listPhatSinh);
+    inpPhatSinh.dispatchEvent(new Event('change', { bubbles: true }));
+
     _renderSummaryTables();
   }
-
 
   // Lấy danh sách đối chiếu so sánh giữa thực tế và hợp đồng
   function _getComparisonList(selectedList, contractList) {
@@ -885,7 +941,6 @@ var PhatSinhPlugin = (function () {
     if (type === 'drink') list = selectedThucUong;
     else if (type === 'service') list = selectedDichVu;
     else if (type === 'phatsinh') list = selectedPhatSinh;
-    else if (type === 'phatsinh') list = selectedPhatSinh;
 
     var item = null;
     if (typeof key === 'number') {
@@ -962,7 +1017,7 @@ var PhatSinhPlugin = (function () {
   }
 
   // Vẽ chi tiết popup chọn món
-  function _showSelectorModal(catalog) {
+  function _showSelectorModal(catalog, onSaveCallback) {
     var modalTab = 'man'; // Mặc định là món mặn
     var searchKeyword = '';
 
@@ -971,7 +1026,6 @@ var PhatSinhPlugin = (function () {
     var tempFoodsChay = JSON.parse(JSON.stringify(selectedFoodsChay));
     var tempThucUong = JSON.parse(JSON.stringify(selectedThucUong));
     var tempDichVu = JSON.parse(JSON.stringify(selectedDichVu));
-    var tempPhatSinh = JSON.parse(JSON.stringify(selectedPhatSinh));
     var tempPhatSinh = JSON.parse(JSON.stringify(selectedPhatSinh));
 
     var modalContent = document.createElement('div');
@@ -1057,18 +1111,24 @@ var PhatSinhPlugin = (function () {
       if (tab === 'chay') return tempFoodsChay;
       if (tab === 'drink') return tempThucUong;
       if (tab === 'service') return tempDichVu;
+      if (tab === 'phatsinh') return tempPhatSinh;
       return [];
     }
 
     // Phân loại các sản phẩm trong Catalog theo tab
     function filterCatalogByTab(tab, keyword) {
       var kw = (keyword || '').toLowerCase().trim();
+      
+      // Tab phát sinh tự do cho phép nhập text tùy biến
+      if (tab === 'phatsinh') {
+        return [];
+      }
+
       return catalog.filter(function (item) {
         var name = (item.Tenhang || item.TenMon || '').toLowerCase();
         var code = (item.Mahang || item.MaMon || '').toLowerCase();
         if (kw && !name.includes(kw) && !code.includes(kw)) return false;
 
-        // Dùng == 1 (loose equality) vì API gateway trả flags về dạng string "0"/"1"
         var isChay = item.IsChay == 1;
         var isDrink = item.IsDrink == 1;
         var isService = item.IsDichVu == 1;
@@ -1086,6 +1146,69 @@ var PhatSinhPlugin = (function () {
     function renderGrid() {
       var gridWrapper = modalContent.querySelector('#modal-food-grid-wrapper');
       if (!gridWrapper) return;
+
+      if (modalTab === 'phatsinh') {
+        // Vẽ form nhập phát sinh tự do
+        gridWrapper.innerHTML = `
+          <div class="p-3" style="max-width: 500px; margin: 0 auto; background: var(--color-surface); border-radius: 8px; border: 1px solid var(--color-border);">
+            <h6 style="margin-top:0; margin-bottom:15px; font-weight:700;">Nhập món phát sinh tự do</h6>
+            <div class="mb-3">
+              <label class="form-label" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">Tên mặt hàng/Ghi chú:</label>
+              <input type="text" id="inp-free-name" class="ui-input" placeholder="Ví dụ: Thêm 2 con tôm hùm, Hộp quẹt..." style="width:100%;">
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">Số lượng:</label>
+                <input type="number" id="inp-free-qty" class="ui-input" min="1" value="1" style="width:100%;">
+              </div>
+              <div class="col-6">
+                <label class="form-label" style="font-weight:600; font-size:13px; display:block; margin-bottom:4px;">Đơn giá (VNĐ):</label>
+                <input type="number" id="inp-free-price" class="ui-input" min="0" value="0" style="width:100%;">
+              </div>
+            </div>
+            <button type="button" id="btn-free-add" class="btn btn-primary d-flex align-items-center justify-content-center gap-1 w-100" style="height:38px; font-weight:600;">
+              <span class="material-symbols-outlined">add</span> Thêm vào danh sách
+            </button>
+          </div>
+        `;
+
+        modalContent.querySelector('#btn-free-add').onclick = function () {
+          var name = modalContent.querySelector('#inp-free-name').value.trim();
+          var qty = parseFloat(modalContent.querySelector('#inp-free-qty').value || 1);
+          var price = parseFloat(modalContent.querySelector('#inp-free-price').value || 0);
+
+          if (!name) {
+            alert('Vui lòng nhập tên mặt hàng phát sinh!');
+            return;
+          }
+
+          var code = 'PS_' + Date.now();
+          var newItem = {
+            MaMon: code,
+            Mahang: code,
+            TenMon: name,
+            TenHang: name,
+            PhanLoai: 'Phát Sinh',
+            DvtID: 'Lần',
+            DonGia: price,
+            Dongia: price,
+            SoLuong: qty,
+            Soluong: qty,
+            IsChay: 0,
+            IsKhuyenmai: 0
+          };
+
+          tempPhatSinh.push(newItem);
+          modalContent.querySelector('#inp-free-name').value = '';
+          modalContent.querySelector('#inp-free-qty').value = 1;
+          modalContent.querySelector('#inp-free-price').value = 0;
+
+          updateTotals();
+          renderDrawer();
+          if (window.Toast) Toast.success('Đã thêm món phát sinh tự do!');
+        };
+        return;
+      }
 
       var filtered = filterCatalogByTab(modalTab, searchKeyword);
       if (filtered.length === 0) {
@@ -1243,7 +1366,8 @@ var PhatSinhPlugin = (function () {
         var sub = item.DonGia * item.SoLuong;
         var qtyControl = '';
 
-        if (modalTab === 'drink' || modalTab === 'service') {
+        // Tab Thức uống, Dịch vụ và Phát sinh cho phép sửa số lượng trực tiếp
+        if (modalTab === 'drink' || modalTab === 'service' || modalTab === 'phatsinh') {
           qtyControl = `
             <div class="d-inline-flex align-items-center gap-1">
               <button type="button" class="btn btn-sm btn-light px-2 py-0 btn-drawer-qty" data-idx="${idx}" data-delta="-1">-</button>
@@ -1289,7 +1413,6 @@ var PhatSinhPlugin = (function () {
       drawerBody.querySelectorAll('.btn-drawer-remove').forEach(function (btn) {
         btn.onclick = function () {
           var idx = parseInt(this.getAttribute('data-idx'));
-          var removed = currentList[idx];
           currentList.splice(idx, 1);
 
           updateTotals();
@@ -1386,11 +1509,14 @@ var PhatSinhPlugin = (function () {
       selectedThucUong = tempThucUong;
       selectedDichVu = tempDichVu;
       selectedPhatSinh = tempPhatSinh;
-      selectedPhatSinh = tempPhatSinh;
 
-      _writeInputs(activeModal);
-      m.closeNow();
-      if (window.Toast) Toast.success('Đã cập nhật danh sách thực đơn & dịch vụ thành công!');
+      if (typeof onSaveCallback === 'function') {
+        onSaveCallback(m);
+      } else {
+        _writeInputs(activeModal);
+        m.closeNow();
+        if (window.Toast) Toast.success('Đã cập nhật danh sách thực đơn & dịch vụ thành công!');
+      }
     };
 
     // Khởi chạy vẽ ban đầu trong Modal
@@ -1399,8 +1525,8 @@ var PhatSinhPlugin = (function () {
     renderDrawer();
   }
 
-  // Danh sách form name cần kích hoạt plugin
-  var SUPPORTED_FORMS = ['frmHopDong', 'tbmk_Thaydoi', 'frmThayDoiBoSung', 'frmPhuLucHopDong', 'frmQuyetToan'];
+  // Danh sách form name cần kích hoạt plugin (đóng băng form, chạy độc lập qua toolbar button)
+  var SUPPORTED_FORMS = [];
 
   function _resolveEditRow(modalContent, row) {
     if (row) return row;
@@ -1447,7 +1573,6 @@ var PhatSinhPlugin = (function () {
     if (modalContent.dataset.foodPluginDone === '1') return;
     modalContent.dataset.foodPluginDone = '1';
 
-    // Cho modal rộng ra vừa phải để hiển thị bảng đối chiếu/thực đơn đẹp hơn (không quá rộng 1200px)
     var actualModal = modalContent.closest('.modal-content');
     if (actualModal) {
       actualModal.style.width = '1150px';
@@ -1474,21 +1599,17 @@ var PhatSinhPlugin = (function () {
 
         var hasExisting = selectedFoodsMan.length > 0 || selectedFoodsChay.length > 0 || selectedThucUong.length > 0 || selectedDichVu.length > 0;
         
-        // Tránh ghi đè/hỏi han khi load form sửa (sự kiện programmatic change khi đã có dữ liệu món)
         if (!event.isTrusted) {
           if (hasExisting) {
-            // Đây là lúc load dữ liệu cũ của Hợp đồng/Quyết toán, không được ghi đè
             return;
           }
         } else {
-          // Người dùng trực tiếp thao tác click chọn gói trên UI
           if (hasExisting && !confirm('Bạn có muốn tự động tải thực đơn mẫu từ gói này không? Thực đơn hiện tại sẽ bị ghi đè.')) {
             return;
           }
         }
 
         _loadCatalog().then(function (catalog) {
-          // Lọc ra các món ăn thuộc Gói thực đơn
           var matchedItems = catalog.filter(function (item) {
             return item.GoiThucDonID === goiThucDonId;
           });
@@ -1504,7 +1625,6 @@ var PhatSinhPlugin = (function () {
           selectedThucUong = matchedItems.filter(function (x) { return x.IsDrink === 1; });
           selectedDichVu = matchedItems.filter(function (x) { return x.IsDichVu === 1; });
 
-          // Ghi dữ liệu và vẽ lại bảng
           _writeInputs(modalContent);
           
           if (window.Toast) {
@@ -1517,7 +1637,6 @@ var PhatSinhPlugin = (function () {
       });
     }
 
-    // 3. Ẩn các Form Group của trường JSON thô nếu đang hiển thị
     var rawInputNames = ['JsonBanTiec', 'JsonThucUong', 'JsonDichVu', 'JsonPhatSinh'];
     rawInputNames.forEach(function (name) {
       var inp = modalContent.querySelector('[name="' + name + '"]');
@@ -1527,17 +1646,15 @@ var PhatSinhPlugin = (function () {
       }
     });
 
-    // 4. Tìm vùng grid - ưu tiên div[data-form-name] (body của DFE), hoặc .ui-modal-body > div
     var grid = modalContent.querySelector('[data-form-name]');
     if (!grid) {
-      // Fallback: tìm div flex chứa các trường form trong .ui-modal-body
       var modalBody = modalContent.querySelector('.ui-modal-body') || modalContent.querySelector('.card-body');
       if (modalBody) {
         grid = modalBody.querySelector('div');
       }
     }
     if (!grid) {
-      grid = modalContent; // Last resort
+      grid = modalContent;
     }
 
     if (!grid.querySelector('.food-selection-tables-wrapper')) {
@@ -1556,17 +1673,12 @@ var PhatSinhPlugin = (function () {
           </button>
         </div>
 
-        <!-- Switch Tab hiển thị trong Form -->
         <div class="food-modal-tabs">
-          <!-- Tải động từ render -->
         </div>
 
-        <!-- Bảng danh sách mặt hàng -->
         <div class="table-responsive food-summary-grid-body" style="max-height: 280px; overflow-y: auto; overflow-x: auto; width: 100%; border: 1px solid var(--color-border); border-radius: 8px;">
-          <!-- Tải động từ render -->
         </div>
 
-        <!-- Footer tóm tắt tiền -->
         <div class="food-footer-container d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top: 1px solid var(--color-border);">
           <div style="font-size:13px; color:var(--color-text-secondary);">
             Tổng cộng Tab: <strong class="food-tab-total text-danger" style="font-size:14px;">0 đ</strong>
@@ -1586,7 +1698,6 @@ var PhatSinhPlugin = (function () {
       _renderSummaryTables();
     }
 
-    // Đọc lại sau khi DynamicFormEngine gán giá trị vào các input ẩn
     setTimeout(function () {
       _readInputs(modalContent);
       _renderSummaryTables();
@@ -1603,28 +1714,21 @@ var PhatSinhPlugin = (function () {
         mutation.addedNodes.forEach(function (node) {
           if (node.nodeType !== Node.ELEMENT_NODE) return;
 
-          // UIModal thêm .modal-overlay vào #modal-container
-          // Bên trong có .modal-content > .ui-modal-body > body[data-form-name]
           var formBody = null;
 
-          // Cách 1: Tìm element có data-form-name
           var bodyWithFormName = node.querySelector('[data-form-name]');
           if (bodyWithFormName) {
             var formName = bodyWithFormName.getAttribute('data-form-name');
             if (SUPPORTED_FORMS.indexOf(formName) !== -1) {
               formBody = bodyWithFormName;
             } else {
-              // Form name được khai báo nhưng KHÔNG nằm trong danh sách hỗ trợ
-              // (Ví dụ: frmHopDong) => Từ chối kích hoạt Plugin
               return;
             }
           }
 
           if (formBody) {
-            // Lấy .modal-content để dùng làm activeModal
             var modalContentEl = formBody.closest('.modal-content') || formBody;
             _loadCatalog();
-            // DynamicFormEngine render form async — polling chờ form render xong
             var checkInterval = setInterval(function () {
               if (modalContentEl.querySelector('.df-col-12, .df-col-6, .df-col-4, .form-group, [name="JsonBanTiec"]')) {
                 clearInterval(checkInterval);
@@ -1640,6 +1744,189 @@ var PhatSinhPlugin = (function () {
     _observer.observe(document.body, { childList: true, subtree: true });
   }
 
+  function openPhatSinhModalDirect(sohopdong, onReload) {
+    if (typeof ApiClient === 'undefined' || !window.API_CONFIG || !window.API_CONFIG.ENDPOINTS) {
+      if (typeof Alert !== 'undefined') Alert.error('Lỗi', 'Không tìm thấy cấu hình ApiClient.');
+      return;
+    }
+
+    if (typeof UIToast !== 'undefined') {
+      UIToast.show('Đang tải danh sách phát sinh...', 'info');
+    }
+
+    _loadCatalog().then(function (catalog) {
+      ApiClient.post(window.API_CONFIG.ENDPOINTS.ROUTER, {
+        List: 'API_DanhSachPhatSinh',
+        Func: 'View',
+        Keyword: sohopdong
+      }).then(function (res) {
+        var details = null;
+        if (res) {
+          if (res.records && res.records.length > 0)      details = res.records[0];
+          else if (res.data && res.data.length > 0)       details = res.data[0];
+          else if (res.records && Array.isArray(res.records)) details = res.records[0];
+          else if (Array.isArray(res) && res.length > 0)  details = res[0];
+          else if (!res.records && !res.data && !Array.isArray(res)) details = res;
+        }
+
+        var rawPhatSinh = [];
+        if (details && details.MenuPhatSinh) {
+          var rawVal = details.MenuPhatSinh;
+          if (typeof rawVal === 'string') {
+            try { rawPhatSinh = JSON.parse(rawVal); } catch (e) { }
+          } else if (Array.isArray(rawVal)) {
+            rawPhatSinh = rawVal;
+          }
+        }
+
+        // Phân loại vào các tab
+        var mappedPhatSinh = _mapRawItems(rawPhatSinh, 0);
+
+        selectedFoodsMan = [];
+        selectedFoodsChay = [];
+        selectedThucUong = [];
+        selectedDichVu = [];
+        selectedPhatSinh = [];
+
+        mappedPhatSinh.forEach(function (item) {
+          var maMon = item.MaMon;
+          var catalogItem = catalog.find(function (c) { return (c.Mahang || c.MaMon) === maMon; });
+
+          if (catalogItem) {
+            if (catalogItem.IsDrink === 1 || catalogItem.IsDrink === true) {
+              selectedThucUong.push(item);
+            } else if (catalogItem.IsDichVu === 1 || catalogItem.IsDichVu === true) {
+              selectedDichVu.push(item);
+            } else if (catalogItem.IsChay === 1 || catalogItem.IsChay === true) {
+              selectedFoodsChay.push(item);
+            } else {
+              selectedFoodsMan.push(item);
+            }
+          } else {
+            selectedPhatSinh.push(item);
+          }
+        });
+
+        // Callback khi bấm "Hoàn tất & Đóng"
+        var onSaveCallback = function (modalInstance) {
+          var allItems = [];
+          
+          selectedFoodsMan.forEach(function (x) {
+            allItems.push({
+              Mahang: x.MaMon || x.Mahang,
+              Soluong: x.SoLuong || x.Soluong || 1,
+              Dongia: x.DonGia || x.Dongia || 0,
+              GhiChuPhatSinh: ''
+            });
+          });
+
+          selectedFoodsChay.forEach(function (x) {
+            allItems.push({
+              Mahang: x.MaMon || x.Mahang,
+              Soluong: x.SoLuong || x.Soluong || 1,
+              Dongia: x.DonGia || x.Dongia || 0,
+              GhiChuPhatSinh: ''
+            });
+          });
+
+          selectedThucUong.forEach(function (x) {
+            allItems.push({
+              Mahang: x.MaMon || x.Mahang,
+              Soluong: x.SoLuong || x.Soluong || 1,
+              Dongia: x.DonGia || x.Dongia || 0,
+              GhiChuPhatSinh: ''
+            });
+          });
+
+          selectedDichVu.forEach(function (x) {
+            allItems.push({
+              Mahang: x.MaMon || x.Mahang,
+              Soluong: x.SoLuong || x.Soluong || 1,
+              Dongia: x.DonGia || x.Dongia || 0,
+              GhiChuPhatSinh: ''
+            });
+          });
+
+          selectedPhatSinh.forEach(function (x) {
+            allItems.push({
+              Mahang: x.MaMon || x.Mahang || 'PHATSINH',
+              Soluong: x.SoLuong || x.Soluong || 1,
+              Dongia: x.DonGia || x.Dongia || 0,
+              GhiChuPhatSinh: x.TenMon || x.TenHang || ''
+            });
+          });
+
+          if (typeof UIToast !== 'undefined') UIToast.show('Đang lưu phát sinh...', 'info');
+
+          ApiClient.post(window.API_CONFIG.ENDPOINTS.ROUTER, {
+            List: 'frmHopDong',
+            Func: 'SavePhatSinh',
+            Sohopdong: sohopdong,
+            JsonPhatSinh: JSON.stringify(allItems)
+          }).then(function (saveRes) {
+            var isOk = false;
+            var msg = 'Đã lưu danh sách phát sinh thành công!';
+            if (saveRes) {
+              if (saveRes.Success === 1 || saveRes.Success === true || saveRes.code === 0) {
+                isOk = true;
+              } else if (Array.isArray(saveRes) && saveRes.length > 0) {
+                var first = saveRes[0];
+                if (first.Success === 1 || first.code === 0 || first.Success === true) isOk = true;
+                msg = first.Message || first.msg || msg;
+              }
+            }
+
+            if (isOk) {
+              modalInstance.closeNow();
+              if (typeof Alert !== 'undefined') Alert.success('Thành công', msg);
+              else if (window.Toast) Toast.success(msg);
+              if (typeof onReload === 'function') onReload();
+            } else {
+              if (typeof Alert !== 'undefined') Alert.error('Lỗi', msg);
+              else alert('Lỗi: ' + msg);
+            }
+          }).catch(function (err) {
+            console.error('[PhatSinhPlugin] Lỗi lưu phát sinh:', err);
+            if (typeof Alert !== 'undefined') Alert.error('Lỗi', 'Không thể gửi yêu cầu lưu phát sinh.');
+          });
+        };
+
+        // Mở popup chọn món
+        _showSelectorModal(catalog, onSaveCallback);
+      }).catch(function (err) {
+        console.error('[PhatSinhPlugin] Lỗi tải thông tin phát sinh:', err);
+        if (typeof Alert !== 'undefined') Alert.error('Lỗi', 'Không thể tải thông tin phát sinh của hợp đồng.');
+      });
+    });
+  }
+
+  function getExtraButtons(formName, getSelectedRows, moduleConfig, onReload) {
+    if (formName !== 'frmHopDong') return [];
+
+    return [{
+      id: 'btn-nhap-phatsinh',
+      text: 'Nhập Phát Sinh',
+      icon: 'add_box',
+      type: 'tool',
+      onClick: function () {
+        var selectedRows = getSelectedRows();
+        if (!selectedRows || selectedRows.length !== 1) {
+          if (typeof Alert !== 'undefined') {
+            Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 Hợp Đồng duy nhất để nhập phát sinh.');
+          } else {
+            alert('Vui lòng chọn 1 Hợp Đồng!');
+          }
+          return;
+        }
+
+        var row = selectedRows[0];
+        var sohopdong = row.Sohopdong || row.sohopdong || row.SoHopDong;
+
+        openPhatSinhModalDirect(sohopdong, onReload);
+      }
+    }];
+  }
+
   // Auto-init khi load plugin
   init();
 
@@ -1649,6 +1936,8 @@ var PhatSinhPlugin = (function () {
     removeItem: removeItem,
     changeQty: changeQty,
     addBack: addBack,
+    getExtraButtons: getExtraButtons,
+    openPhatSinhModalDirect: openPhatSinhModalDirect,
     reloadForm: function (modal) {
       if (modal) {
         activeModal = modal;
@@ -1663,3 +1952,6 @@ var PhatSinhPlugin = (function () {
   };
 })();
 
+// Đăng ký Plugin vào hệ thống FormActionPlugins
+window.FormActionPlugins = window.FormActionPlugins || [];
+window.FormActionPlugins.push({ getExtraButtons: PhatSinhPlugin.getExtraButtons });
