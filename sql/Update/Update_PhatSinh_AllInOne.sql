@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -66,14 +66,15 @@ SELECT
     (
         SELECT 
             ROW_NUMBER() OVER(ORDER BY ptps.DateCreate) AS [STT],
-            ptps.Mahang AS [MonPhatSinh],
-            ptps.Mahang AS [MonMan], -- Fallback
-            ptps.Mahang AS [MonChay], -- Fallback
+            ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonPhatSinh],
+            ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonMan], -- Fallback
+            ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonChay], -- Fallback
             ptps.Soluong AS [SoLuong],
             ptps.Dongia AS [DonGia],
             ptps.Sotien AS [ThanhTien]
         FROM tbmk_Phieuthu pt
         INNER JOIN tbmk_Phieuthuphatsinh ptps ON pt.SPthu = ptps.SPthu
+        LEFT JOIN dmHanghoa hh ON ptps.Mahang = hh.Mahang
         WHERE pt.Sohopdong = hd.Sohopdong
         FOR JSON PATH
     ) AS [MenuPhatSinh]
