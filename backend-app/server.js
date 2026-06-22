@@ -168,8 +168,12 @@ async function fetchFromSQLAPI(listName, keyword, authToken) {
     try {
         const resp = await axiosGetWithRetry(url, { headers, timeout: 10000 }, 3, 1000);
         const json = resp.data;
-        if (json && json.records && json.records.length > 0) return json.records[0];
-        if (json && json.code === 0) return json;
+        if (json) {
+            if (json.records && json.records.length > 0) return json.records[0];
+            if (json.data && json.data.length > 0) return json.data[0];
+            if (Array.isArray(json) && json.length > 0) return json[0];
+            if (json.code === 0) return json;
+        }
     } catch (err) {
         console.error(`[SQL API] Lỗi khi gọi ${listName}:`, err.message);
     }
