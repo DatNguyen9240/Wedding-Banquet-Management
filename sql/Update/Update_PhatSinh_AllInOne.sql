@@ -80,7 +80,8 @@ SELECT
         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, ''), '') AS [MonChay],
 
     ISNULL(STUFF((
-        SELECT CHAR(10) + ISNULL(ptps.GhiChuPhatSinh, hh.Tenhang)
+        SELECT CHAR(10) + ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), hh.Tenhang) 
+               + CASE WHEN ISNULL(ptps.Soluong, 0) > 0 THEN N' (SL: ' + CAST(CAST(ptps.Soluong AS FLOAT) AS NVARCHAR(50)) + N')' ELSE N'' END
         FROM tbmk_HopdongPhatSinh ptps
         LEFT JOIN dmHanghoa hh ON ptps.Mahang = hh.Mahang
         WHERE ptps.Sohopdong = hd.Sohopdong
@@ -93,11 +94,16 @@ SELECT
             ROW_NUMBER() OVER(ORDER BY ptps.DateCreate) AS [STT],
             ptps.Mahang AS [Mahang],
             ptps.Mahang AS [MaMon],
-            ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonPhatSinh],
-            ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonMan], -- Fallback
-            ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonChay], -- Fallback
-            ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), ISNULL(hh.Tenhang, ptps.Mahang)) AS [TenHang], -- Fallback
-            ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), ISNULL(hh.Tenhang, ptps.Mahang)) AS [TenMon], -- Fallback
+            ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), ISNULL(hh.Tenhang, ptps.Mahang)) 
+                + CASE WHEN ISNULL(ptps.Soluong, 0) > 0 THEN N' (SL: ' + CAST(CAST(ptps.Soluong AS FLOAT) AS NVARCHAR(50)) + N')' ELSE N'' END AS [MonPhatSinh],
+            ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), ISNULL(hh.Tenhang, ptps.Mahang)) 
+                + CASE WHEN ISNULL(ptps.Soluong, 0) > 0 THEN N' (SL: ' + CAST(CAST(ptps.Soluong AS FLOAT) AS NVARCHAR(50)) + N')' ELSE N'' END AS [MonMan], -- Fallback
+            ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), ISNULL(hh.Tenhang, ptps.Mahang)) 
+                + CASE WHEN ISNULL(ptps.Soluong, 0) > 0 THEN N' (SL: ' + CAST(CAST(ptps.Soluong AS FLOAT) AS NVARCHAR(50)) + N')' ELSE N'' END AS [MonChay], -- Fallback
+            ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), ISNULL(hh.Tenhang, ptps.Mahang)) 
+                + CASE WHEN ISNULL(ptps.Soluong, 0) > 0 THEN N' (SL: ' + CAST(CAST(ptps.Soluong AS FLOAT) AS NVARCHAR(50)) + N')' ELSE N'' END AS [TenHang], -- Fallback
+            ISNULL(NULLIF(ptps.GhiChuPhatSinh, ''), ISNULL(hh.Tenhang, ptps.Mahang)) 
+                + CASE WHEN ISNULL(ptps.Soluong, 0) > 0 THEN N' (SL: ' + CAST(CAST(ptps.Soluong AS FLOAT) AS NVARCHAR(50)) + N')' ELSE N'' END AS [TenMon], -- Fallback
             ptps.GhiChuPhatSinh AS [GhiChuPhatSinh],
             ptps.Soluong AS [SoLuong],
             ptps.Dongia AS [DonGia],
