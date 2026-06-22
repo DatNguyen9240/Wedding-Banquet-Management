@@ -71,6 +71,9 @@ SELECT
             ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonPhatSinh],
             ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonMan], -- Fallback
             ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [MonChay], -- Fallback
+            ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [TenHang], -- Fallback
+            ISNULL(ptps.GhiChuPhatSinh, ISNULL(hh.Tenhang, ptps.Mahang)) AS [TenMon], -- Fallback
+            ptps.GhiChuPhatSinh AS [GhiChuPhatSinh],
             ptps.Soluong AS [SoLuong],
             ptps.Dongia AS [DonGia],
             ptps.Sotien AS [ThanhTien]

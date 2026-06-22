@@ -251,7 +251,7 @@ BEGIN
         (
             SELECT
                 ROW_NUMBER() OVER (ORDER BY ptp.Mahang) AS [STT],
-                hh.Tenhang AS [TenPhatSinh],
+                ISNULL(hh.Tenhang, ptp.GhiChuPhatSinh) AS [TenPhatSinh],
                 CAST(ISNULL(ptp.Soluong, 0) AS INT) AS [SoLuong],
                 N'' AS [XacNhan]
             FROM tbmk_Phieuthuphatsinh ptp
@@ -357,15 +357,16 @@ BEGIN
                 FROM (
                     -- A. LẤY CHI TIẾT TỪ BẢNG PHÁT SINH NẾU CÓ DỮ LIỆU
                     SELECT 
-                        ISNULL(GhiChuPhatSinh, N'Phát sinh thực tế') AS [DienGiai], 
-                        N'Lần' AS [DVT], 
-                        ISNULL(Soluong, 1) AS [SoLuong], 
-                        FORMAT(ISNULL(Dongia, 0), 'N0', 'vi-VN') AS [DonGia], 
-                        FORMAT(ISNULL(Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien], 
-                        ISNULL(Sotien, 0) AS val, 
+                        ISNULL(ptp.GhiChuPhatSinh, hh.Tenhang) AS [DienGiai], 
+                        ISNULL(hh.DVTID, N'Lần') AS [DVT], 
+                        ISNULL(ptp.Soluong, 1) AS [SoLuong], 
+                        FORMAT(ISNULL(ptp.Dongia, 0), 'N0', 'vi-VN') AS [DonGia], 
+                        FORMAT(ISNULL(ptp.Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien], 
+                        ISNULL(ptp.Sotien, 0) AS val, 
                         1 AS sort_order
-                    FROM tbmk_Phieuthuphatsinh
-                    WHERE SPthu = pt.SPthu
+                    FROM tbmk_Phieuthuphatsinh ptp
+                    LEFT JOIN dmHanghoa hh ON ptp.Mahang = hh.Mahang
+                    WHERE ptp.SPthu = pt.SPthu
 
                     UNION ALL
 
@@ -816,7 +817,8 @@ BEGIN
             (
                 SELECT 
                     ptp.Mahang,
-                    h.Tenhang AS [TenHang],
+                    ISNULL(h.Tenhang, ISNULL(ptp.GhiChuPhatSinh, ptp.Mahang)) AS [TenHang],
+                    ISNULL(h.Tenhang, ISNULL(ptp.GhiChuPhatSinh, ptp.Mahang)) AS [TenMon],
                     h.DVTID AS [DvtID],
                     ptp.Soluong,
                     ptp.Dongia,
@@ -989,8 +991,23 @@ BEGIN
             '[]'
         ) AS [JsonDichVu],
  
-        -- 2.4. Phát sinh lấy từ Phụ lục đã ký gần nhất (nếu có)
+        -- 2.4. Phát sinh lấy từ bảng phát sinh nhanh tbmk_HopdongPhatSinh (nếu có), nếu không lấy từ Phụ lục đã ký gần nhất (nếu có)
         COALESCE(
+            (
+                SELECT 
+                    pt.Mahang,
+                    ISNULL(hh.Tenhang, ISNULL(pt.GhiChuPhatSinh, pt.Mahang)) AS [TenHang],
+                    ISNULL(hh.Tenhang, ISNULL(pt.GhiChuPhatSinh, pt.Mahang)) AS [TenMon],
+                    ISNULL(hh.DVTID, N'Lần') AS [DvtID],
+                    pt.Soluong,
+                    pt.Dongia,
+                    pt.Sotien,
+                    pt.GhiChuPhatSinh
+                FROM tbmk_HopdongPhatSinh pt
+                LEFT JOIN dmHanghoa hh ON pt.Mahang = hh.Mahang
+                WHERE pt.Sohopdong = @Sohopdong
+                FOR JSON PATH
+            ),
             (
                 SELECT TOP 1 td.JsonPhatSinh
                 FROM tbmk_Thaydoi td

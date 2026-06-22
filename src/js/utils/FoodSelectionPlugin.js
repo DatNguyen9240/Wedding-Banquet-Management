@@ -2,7 +2,7 @@
  * FoodSelectionPlugin
  * ─────────────────────────────────────────────────────────────────────
  * Plugin quản lý việc Chọn Thực đơn & Dịch vụ dưới dạng lưới thẻ Card.
- * Tự động tích hợp vào các form động (frmHopDong, tbmk_Thaydoi, frmQuyetToan)
+ * Tự động tích hợp vào các form động (frmHopDong, tbmk_Thaydoi, frmThayDoiBoSung, frmPhuLucHopDong, frmQuyetToan)
  * thông qua MutationObserver để ẩn các trường JSON thô và thay thế bằng UI đẹp mắt.
  */
 var FoodSelectionPlugin = (function () {
@@ -14,8 +14,6 @@ var FoodSelectionPlugin = (function () {
   var selectedFoodsChay = [];
   var selectedThucUong = [];
   var selectedDichVu = [];
-  var selectedPhatSinh = [];
-  var contractPhatSinh = [];
   var selectedPhatSinh = [];
 
   // Trạng thái các món gốc trong Hợp đồng/Phụ lục để đối chiếu (Quyết toán)
@@ -263,11 +261,17 @@ var FoodSelectionPlugin = (function () {
       // Chuẩn hóa thành 0 hoặc 1 (để tránh lệch kiểu dữ liệu string "0"/"1" từ API)
       isChayVal = (isChayVal == 1 || isChayVal === true) ? 1 : 0;
 
+      var nameVal = rawItem.TenHang || rawItem.TenMon || '';
+      if (nameVal === 'PHATSINH' || nameVal.startsWith('PS_')) {
+        nameVal = '';
+      }
+      var finalName = nameVal || rawItem.GhiChuPhatSinh || rawItem.GhiChu || (catalogItem ? (catalogItem.Tenhang || catalogItem.TenMon) : '');
+
       return {
         MaMon: maMon,
         Mahang: maMon,
-        TenMon: rawItem.TenHang || rawItem.TenMon || (catalogItem ? (catalogItem.Tenhang || catalogItem.TenMon) : ''),
-        TenHang: rawItem.TenHang || rawItem.TenMon || (catalogItem ? (catalogItem.Tenhang || catalogItem.TenMon) : ''),
+        TenMon: finalName,
+        TenHang: finalName,
         PhanLoai: rawItem.PhanLoai || (catalogItem ? catalogItem.PhanLoai : 'Khác'),
         DvtID: rawItem.DvtID || (catalogItem ? catalogItem.DvtID : 'Đĩa'),
         DonGia: parseFloat(rawItem.Dongia || rawItem.DonGia || (catalogItem ? catalogItem.Dongia : 0) || 0),
@@ -286,19 +290,15 @@ var FoodSelectionPlugin = (function () {
     var inpThucUong = modal.querySelector('[name="JsonThucUong"]');
     var inpDichVu = modal.querySelector('[name="JsonDichVu"]');
     var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
-    var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
-    var inpPhatSinh = modal.querySelector('[name="JsonPhatSinh"]');
 
     var rawBanTiec = [];
     var rawThucUong = [];
     var rawDichVu = [];
     var rawPhatSinh = [];
-    var rawPhatSinh = [];
 
     try { if (inpBanTiec && inpBanTiec.value) rawBanTiec = JSON.parse(inpBanTiec.value); } catch (e) { }
     try { if (inpThucUong && inpThucUong.value) rawThucUong = JSON.parse(inpThucUong.value); } catch (e) { }
     try { if (inpDichVu && inpDichVu.value) rawDichVu = JSON.parse(inpDichVu.value); } catch (e) { }
-    try { if (inpPhatSinh && inpPhatSinh.value) rawPhatSinh = JSON.parse(inpPhatSinh.value); } catch (e) { }
     try { if (inpPhatSinh && inpPhatSinh.value) rawPhatSinh = JSON.parse(inpPhatSinh.value); } catch (e) { }
 
     var mappedBanTiec = _mapRawItems(rawBanTiec, 0);
@@ -310,25 +310,21 @@ var FoodSelectionPlugin = (function () {
     selectedThucUong = _mapRawItems(rawThucUong, 0);
     selectedDichVu = _mapRawItems(rawDichVu, 0);
     selectedPhatSinh = _mapRawItems(rawPhatSinh, 0);
-    selectedPhatSinh = _mapRawItems(rawPhatSinh, 0);
 
     // Đọc dữ liệu hợp đồng đối chiếu (dành cho Quyết toán)
     var inpBanTiecHD = modal.querySelector('[name="JsonBanTiecHopDong"]');
     var inpThucUongHD = modal.querySelector('[name="JsonThucUongHopDong"]');
     var inpDichVuHD = modal.querySelector('[name="JsonDichVuHopDong"]');
     var inpPhatSinhHD = modal.querySelector('[name="JsonPhatSinhHopDong"]');
-    var inpPhatSinhHD = modal.querySelector('[name="JsonPhatSinhHopDong"]');
 
     var rawBanTiecHD = [];
     var rawThucUongHD = [];
     var rawDichVuHD = [];
     var rawPhatSinhHD = [];
-    var rawPhatSinhHD = [];
 
     try { if (inpBanTiecHD && inpBanTiecHD.value) rawBanTiecHD = JSON.parse(inpBanTiecHD.value); } catch (e) { }
     try { if (inpThucUongHD && inpThucUongHD.value) rawThucUongHD = JSON.parse(inpThucUongHD.value); } catch (e) { }
     try { if (inpDichVuHD && inpDichVuHD.value) rawDichVuHD = JSON.parse(inpDichVuHD.value); } catch (e) { }
-    try { if (inpPhatSinhHD && inpPhatSinhHD.value) rawPhatSinhHD = JSON.parse(inpPhatSinhHD.value); } catch (e) { }
     try { if (inpPhatSinhHD && inpPhatSinhHD.value) rawPhatSinhHD = JSON.parse(inpPhatSinhHD.value); } catch (e) { }
 
     var mappedBanTiecHD = _mapRawItems(rawBanTiecHD, 0);
@@ -336,7 +332,6 @@ var FoodSelectionPlugin = (function () {
     contractFoodsChay = mappedBanTiecHD.filter(function (x) { return x.IsChay === 1 || x.IsChay === true; });
     contractThucUong = _mapRawItems(rawThucUongHD, 0);
     contractDichVu = _mapRawItems(rawDichVuHD, 0);
-    contractPhatSinh = _mapRawItems(rawPhatSinhHD, 0);
     contractPhatSinh = _mapRawItems(rawPhatSinhHD, 0);
   }
 
@@ -371,17 +366,6 @@ var FoodSelectionPlugin = (function () {
         Soluongle: 0,
         Dongiale: 0,
         Ghichuthucuong: ''
-      };
-    });
-
-    var listPhatSinh = selectedPhatSinh.map(function (x) {
-      return {
-        Mahang: x.MaMon,
-        TenHang: x.TenMon || '',
-        DvtID: x.DvtID || '',
-        Soluong: x.SoLuong || 1,
-        Dongia: x.DonGia,
-        GhiChuPhatSinh: x.TenMon || ''
       };
     });
 
@@ -919,12 +903,11 @@ var FoodSelectionPlugin = (function () {
       if (isQuyetToan) {
         var sums = _getTabSums(activeTab);
         var diffColor = sums.diff > 0 ? '#ef4444' : (sums.diff < 0 ? '#10b981' : 'var(--color-text)');
+        var grandDiffColor = grandDiff > 0 ? '#ef4444' : (grandDiff < 0 ? '#10b981' : 'var(--color-text)');
         var diffSign = sums.diff > 0 ? '+' : '';
+        var grandDiffSign = grandDiff > 0 ? '+' : '';
 
         var tabDetailHtml = `Tab này: HĐ gốc: <strong class="text-dark">${sums.contract.toLocaleString('vi-VN')} đ</strong> | Thực tế: <strong class="text-primary">${sums.actual.toLocaleString('vi-VN')} đ</strong> | Chênh lệch: <strong style="color:${diffColor};">${diffSign}${sums.diff.toLocaleString('vi-VN')} đ</strong>`;
-
-        var grandDiffColor = grandDiff > 0 ? '#ef4444' : (grandDiff < 0 ? '#10b981' : 'var(--color-text)');
-        var grandDiffSign = grandDiff > 0 ? '+' : '';
         var grandDetailHtml = `Tổng Quyết Toán: HĐ gốc: <strong class="text-dark">${grandContract.toLocaleString('vi-VN')} đ</strong> | Thực tế: <strong class="text-primary">${grandTotal.toLocaleString('vi-VN')} đ</strong> | Bù/Bớt: <strong style="color:${grandDiffColor}; font-size:16px;">${grandDiffSign}${grandDiff.toLocaleString('vi-VN')} đ</strong>`;
 
         footerContainer.innerHTML = `
@@ -962,7 +945,6 @@ var FoodSelectionPlugin = (function () {
     var list = [];
     if (type === 'drink') list = selectedThucUong;
     else if (type === 'service') list = selectedDichVu;
-    else if (type === 'phatsinh') list = selectedPhatSinh;
     else if (type === 'phatsinh') list = selectedPhatSinh;
 
     var item = null;
@@ -1050,7 +1032,6 @@ var FoodSelectionPlugin = (function () {
     var tempThucUong = JSON.parse(JSON.stringify(selectedThucUong));
     var tempDichVu = JSON.parse(JSON.stringify(selectedDichVu));
     var tempPhatSinh = JSON.parse(JSON.stringify(selectedPhatSinh));
-    var tempPhatSinh = JSON.parse(JSON.stringify(selectedPhatSinh));
 
     var modalContent = document.createElement('div');
     modalContent.className = 'modal-main-container';
@@ -1071,7 +1052,6 @@ var FoodSelectionPlugin = (function () {
         <button type="button" class="food-modal-tab-btn" data-tab="service">
           <span class="material-symbols-outlined" style="font-size:20px">content_cut</span> Dịch Vụ
         </button>
-
       </div>
 
       <!-- Search Bar -->
@@ -1365,7 +1345,6 @@ var FoodSelectionPlugin = (function () {
       drawerBody.querySelectorAll('.btn-drawer-remove').forEach(function (btn) {
         btn.onclick = function () {
           var idx = parseInt(this.getAttribute('data-idx'));
-          var removed = currentList[idx];
           currentList.splice(idx, 1);
 
           updateTotals();
@@ -1461,7 +1440,6 @@ var FoodSelectionPlugin = (function () {
       selectedFoodsChay = tempFoodsChay;
       selectedThucUong = tempThucUong;
       selectedDichVu = tempDichVu;
-      selectedPhatSinh = tempPhatSinh;
       selectedPhatSinh = tempPhatSinh;
 
       _writeInputs(activeModal);
@@ -1680,27 +1658,21 @@ var FoodSelectionPlugin = (function () {
           if (node.nodeType !== Node.ELEMENT_NODE) return;
 
           // UIModal thêm .modal-overlay vào #modal-container
-          // Bên trong có .modal-content > .ui-modal-body > body[data-form-name]
           var formBody = null;
 
-          // Cách 1: Tìm element có data-form-name
           var bodyWithFormName = node.querySelector('[data-form-name]');
           if (bodyWithFormName) {
             var formName = bodyWithFormName.getAttribute('data-form-name');
             if (SUPPORTED_FORMS.indexOf(formName) !== -1) {
               formBody = bodyWithFormName;
             } else {
-              // Form name được khai báo nhưng KHÔNG nằm trong danh sách hỗ trợ
-              // (Ví dụ: frmHopDong) => Từ chối kích hoạt Plugin
               return;
             }
           }
 
           if (formBody) {
-            // Lấy .modal-content để dùng làm activeModal
             var modalContentEl = formBody.closest('.modal-content') || formBody;
             _loadCatalog();
-            // DynamicFormEngine render form async — polling chờ form render xong
             var checkInterval = setInterval(function () {
               if (modalContentEl.querySelector('.df-col-12, .df-col-6, .df-col-4, .form-group, [name="JsonBanTiec"]')) {
                 clearInterval(checkInterval);
@@ -1738,4 +1710,3 @@ var FoodSelectionPlugin = (function () {
     }
   };
 })();
-

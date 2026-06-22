@@ -3912,6 +3912,7 @@ var PhatSinhPlugin = (function () {
 
   // Vẽ chi tiết popup chọn món
   function _showSelectorModal(catalog, onSaveCallback) {
+    _injectStyles();
     var modalTab = 'man'; // Mặc định là món mặn
     var searchKeyword = '';
 
@@ -4639,6 +4640,7 @@ var PhatSinhPlugin = (function () {
   }
 
   function openPhatSinhModalDirect(sohopdong, onReload) {
+    _injectStyles();
     if (typeof ApiClient === 'undefined' || !window.API_CONFIG || !window.API_CONFIG.ENDPOINTS) {
       if (typeof Alert !== 'undefined') Alert.error('Lỗi', 'Không tìm thấy cấu hình ApiClient.');
       return;
@@ -4752,21 +4754,54 @@ var PhatSinhPlugin = (function () {
 
           if (typeof UIToast !== 'undefined') UIToast.show('Đang lưu phát sinh...', 'info');
 
+          var userName = 'system';
+          if (typeof _currentUser === 'function') {
+            userName = _currentUser();
+          } else {
+            try {
+              var userStr = localStorage.getItem('pmql_user');
+              if (userStr) {
+                var userObj = JSON.parse(userStr);
+                userName = userObj.Username || userObj.UserName || userName;
+              }
+            } catch (e) {}
+          }
+
+          var jsonData = {
+            Sohopdong: sohopdong,
+            JsonPhatSinh: JSON.stringify(allItems),
+            UserName: userName,
+            User: userName
+          };
+
           ApiClient.post(window.API_CONFIG.ENDPOINTS.ROUTER, {
             List: 'frmHopDong',
             Func: 'SavePhatSinh',
-            Sohopdong: sohopdong,
-            JsonPhatSinh: JSON.stringify(allItems)
+            JsonData: JSON.stringify(jsonData)
           }).then(function (saveRes) {
             var isOk = false;
             var msg = 'Đã lưu danh sách phát sinh thành công!';
             if (saveRes) {
-              if (saveRes.Success === 1 || saveRes.Success === true || saveRes.code === 0) {
-                isOk = true;
-              } else if (Array.isArray(saveRes) && saveRes.length > 0) {
-                var first = saveRes[0];
-                if (first.Success === 1 || first.code === 0 || first.Success === true) isOk = true;
-                msg = first.Message || first.msg || msg;
+              var checkSuccess = function (obj) {
+                if (!obj) return false;
+                var s = obj.Success !== undefined ? obj.Success : obj.success;
+                return s == 1 || s === true || String(s) === '1' || String(s).toLowerCase() === 'true';
+              };
+
+              if (Array.isArray(saveRes)) {
+                if (saveRes.length > 0) {
+                  isOk = checkSuccess(saveRes[0]);
+                  msg = saveRes[0].Message || saveRes[0].message || saveRes[0].msg || msg;
+                }
+              } else {
+                var records = saveRes.records || saveRes.data || saveRes.list;
+                if (Array.isArray(records) && records.length > 0) {
+                  isOk = checkSuccess(records[0]);
+                  msg = records[0].Message || records[0].message || records[0].msg || msg;
+                } else if (saveRes.code === 0 || saveRes.Success === 1 || saveRes.Success === true || saveRes.success === true) {
+                  isOk = true;
+                  msg = saveRes.Message || saveRes.msg || msg;
+                }
               }
             }
 
