@@ -231,7 +231,8 @@ var DocumentExportPlugin = (function () {
             docType: 'phat_sinh.docx',
             altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
             sqlListName: 'API_DanhSachPhatSinh',
-            ignoreTemplateFile: true
+            ignoreTemplateFile: true,
+            convertFields: ['MenuPhatSinh']
           });
         }
       });

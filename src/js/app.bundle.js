@@ -1,4 +1,4 @@
-﻿/* --- apiClient.js --- */
+/* --- apiClient.js --- */
 /**
  * API Client Helper
  * Gói gọn logic gọi Fetch API, tự động gắn Base URL, Token, và xử lý lỗi chung.
@@ -434,7 +434,8 @@ var DocumentExportPlugin = (function () {
             docType: 'phat_sinh.docx',
             altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
             sqlListName: 'API_DanhSachPhatSinh',
-            ignoreTemplateFile: true
+            ignoreTemplateFile: true,
+            convertFields: ['MenuPhatSinh']
           });
         }
       });
