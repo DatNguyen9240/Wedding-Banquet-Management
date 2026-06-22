@@ -1778,6 +1778,7 @@ var PhatSinhPlugin = (function () {
         Func: 'View',
         Keyword: sohopdong
       }).then(function (res) {
+        console.log('[DEBUG PhatSinh] res:', res);
         var details = null;
         if (res) {
           if (res.records && res.records.length > 0)      details = res.records[0];
@@ -1786,9 +1787,11 @@ var PhatSinhPlugin = (function () {
           else if (Array.isArray(res) && res.length > 0)  details = res[0];
           else if (!res.records && !res.data && !Array.isArray(res)) details = res;
         }
+        console.log('[DEBUG PhatSinh] details:', details);
 
         var rawPhatSinh = [];
         var rawVal = getVal(details, 'MenuPhatSinh');
+        console.log('[DEBUG PhatSinh] rawVal:', rawVal);
         if (rawVal) {
           if (typeof rawVal === 'string') {
             try { rawPhatSinh = JSON.parse(rawVal); } catch (e) { }

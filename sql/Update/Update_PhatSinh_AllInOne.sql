@@ -114,7 +114,6 @@ BEGIN
     DECLARE @Offset INT = (@Page - 1) * @Limit;
 
     DECLARE @SQL NVARCHAR(MAX) = N'';
-    DECLARE @TotalSQL NVARCHAR(MAX) = N'';
     
     DECLARE @BaseQuery NVARCHAR(MAX) = N'
         FROM [dbo].[v_DanhSachPhatSinh]
@@ -135,22 +134,12 @@ BEGIN
         SET @BaseQuery = @BaseQuery + N' AND (' + @Where + N')';
     END
 
-    SET @TotalSQL = N'SELECT @TotalRows = COUNT(*) ' + @BaseQuery;
-
     SET @SQL = N'
         SELECT *
         ' + @BaseQuery + N'
         ORDER BY ' + @OrderBy + N'
         OFFSET @Off ROWS FETCH NEXT @Lim ROWS ONLY;
     ';
-
-    DECLARE @TotalRows INT = 0;
-    EXEC sp_executesql 
-        @TotalSQL, 
-        N'@Kw NVARCHAR(MAX), @TotalRows INT OUTPUT', 
-        @Kw = @Keyword, @TotalRows = @TotalRows OUTPUT;
-
-    SELECT @TotalRows AS TotalRows, @Page AS CurrentPage, @Limit AS PageSize;
 
     EXEC sp_executesql 
         @SQL, 
