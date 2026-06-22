@@ -232,7 +232,7 @@ var DocumentExportPlugin = (function () {
             altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
             sqlListName: 'API_DanhSachPhatSinh',
             ignoreTemplateFile: true,
-            convertFields: []
+            convertFields: ['MonMan', 'MonChay', 'MonPhatSinh']
           });
         }
       });

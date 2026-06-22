@@ -62,6 +62,31 @@ SELECT
     ISNULL(hd.BanPhatSinh, 0) AS [BanPhatSinh],
     (ISNULL(hd.SobanManchinhthuc, 0) + ISNULL(hd.SobanChaychinhthuc, 0) + ISNULL(hd.SobanManduphong, 0) + ISNULL(hd.SobanChayduphong, 0) + ISNULL(hd.BanPhatSinh, 0)) AS [TongSoBan],
     
+    -- Thực đơn bàn gốc (Món mặn + Món chay) từ hợp đồng để hiển thị đối chiếu
+    ISNULL(STUFF((
+        SELECT CHAR(10) + hh.Tenhang
+        FROM tbmk_Hopdongthucdonman td
+        LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+        WHERE td.Sohopdong = hd.Sohopdong
+        ORDER BY td.STTmon
+        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, ''), '') AS [MonMan],
+        
+    ISNULL(STUFF((
+        SELECT CHAR(10) + hh.Tenhang
+        FROM tbmk_Hopdongthucdonchay td
+        LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+        WHERE td.Sohopdong = hd.Sohopdong
+        ORDER BY td.STTmon
+        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, ''), '') AS [MonChay],
+
+    ISNULL(STUFF((
+        SELECT CHAR(10) + ISNULL(ptps.GhiChuPhatSinh, hh.Tenhang)
+        FROM tbmk_HopdongPhatSinh ptps
+        LEFT JOIN dmHanghoa hh ON ptps.Mahang = hh.Mahang
+        WHERE ptps.Sohopdong = hd.Sohopdong
+        ORDER BY ptps.DateCreate
+        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, ''), '') AS [MonPhatSinh],
+
     -- Mảng Món Phát Sinh (Lấy từ bảng tbmk_HopdongPhatSinh)
     (
         SELECT 

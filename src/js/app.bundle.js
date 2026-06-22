@@ -435,7 +435,7 @@ var DocumentExportPlugin = (function () {
             altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
             sqlListName: 'API_DanhSachPhatSinh',
             ignoreTemplateFile: true,
-            convertFields: ['MenuPhatSinh']
+            convertFields: ['MonMan', 'MonChay', 'MonPhatSinh']
           });
         }
       });
@@ -4627,12 +4627,23 @@ var PhatSinhPlugin = (function () {
       UIToast.show('Đang tải danh sách phát sinh...', 'info');
     }
 
+    var getVal = function (obj, key) {
+      if (!obj) return undefined;
+      if (obj[key] !== undefined) return obj[key];
+      var lower = key.toLowerCase();
+      for (var k in obj) {
+        if (k.toLowerCase() === lower) return obj[k];
+      }
+      return undefined;
+    };
+
     _loadCatalog().then(function (catalog) {
       ApiClient.post(window.API_CONFIG.ENDPOINTS.ROUTER, {
         List: 'API_DanhSachPhatSinh',
         Func: 'View',
         Keyword: sohopdong
       }).then(function (res) {
+        console.log('[DEBUG PhatSinh] res:', res);
         var details = null;
         if (res) {
           if (res.records && res.records.length > 0)      details = res.records[0];
@@ -4641,10 +4652,12 @@ var PhatSinhPlugin = (function () {
           else if (Array.isArray(res) && res.length > 0)  details = res[0];
           else if (!res.records && !res.data && !Array.isArray(res)) details = res;
         }
+        console.log('[DEBUG PhatSinh] details:', details);
 
         var rawPhatSinh = [];
-        if (details && details.MenuPhatSinh) {
-          var rawVal = details.MenuPhatSinh;
+        var rawVal = getVal(details, 'MenuPhatSinh');
+        console.log('[DEBUG PhatSinh] rawVal:', rawVal);
+        if (rawVal) {
           if (typeof rawVal === 'string') {
             try { rawPhatSinh = JSON.parse(rawVal); } catch (e) { }
           } else if (Array.isArray(rawVal)) {
