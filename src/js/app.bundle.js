@@ -5573,7 +5573,7 @@ var PhuLucPlugin = (function () {
         historyHtml = '<tr><td colspan="5" class="text-center text-muted">Chưa có phụ lục / thay đổi nào.</td></tr>';
       } else {
         historyRecords.forEach(function (rec, index) {
-          var ngay = rec.NgayLapPL || rec.Ngaythaydoi || '';
+          var ngay = rec.Ngaythaydoi || rec.NgayLapPL || '';
           if (ngay && ngay.indexOf('T') !== -1) ngay = ngay.split('T')[0];
           historyHtml += `
             <tr>
@@ -5766,7 +5766,7 @@ var PhuLucPlugin = (function () {
         modalContent.querySelector('#inpSothaydoi').value = rec.SoPhuLuc || rec.Sothaydoi || '';
         modalContent.querySelector('#inpSothaydoi').disabled = true;
 
-        var ngayLap = rec.NgayLapPL || rec.Ngaythaydoi || rec.NgayLap || '';
+        var ngayLap = rec.Ngaythaydoi || rec.NgayLapPL || rec.NgayLap || '';
         if (ngayLap && ngayLap.indexOf('T') !== -1) ngayLap = ngayLap.split('T')[0];
         modalContent.querySelector('#inpNgayLapPL').value = ngayLap;
 
