@@ -5143,10 +5143,21 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   left: 0;
   right: 0;
   height: 3px;
-  z-index: 99999;
+  z-index: 1001;
   pointer-events: none;
   background: transparent;
   overflow: hidden;
+}
+
+/* Tránh đè lên sidebar khi dùng layout dọc trên màn hình lớn */
+body[data-layout="vertical"] .page-loading-bar-container {
+  left: var(--sidebar-width, 290px);
+}
+
+@media (max-width: 1024px) {
+  body[data-layout="vertical"] .page-loading-bar-container {
+    left: 0;
+  }
 }
 
 .page-loading-bar {

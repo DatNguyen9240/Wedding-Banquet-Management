@@ -133,7 +133,7 @@ var Sidebar = (function () {
     var html = `
       <aside class="app-sidebar" id="app-sidebar">
         <div class="sidebar-header">
-          <div onclick="window.location.href = window.location.pathname + '#/'" style="display:flex; align-items:center; justify-content:flex-start; width:100%; margin: 16px 0; padding-left: 16px; cursor: pointer;">
+          <div onclick="window.location.href = window.location.pathname + '#/'; var sb=document.getElementById('app-sidebar'); if(sb) sb.classList.remove('open'); var sbo=document.getElementById('sidebar-overlay'); if(sbo) sbo.classList.remove('active'); var md=document.getElementById('mobile-drawer'); if(md) md.classList.remove('open'); var mdo=document.getElementById('mobile-drawer-overlay'); if(mdo) mdo.classList.remove('active');" style="display:flex; align-items:center; justify-content:flex-start; width:100%; margin: 16px 0; padding-left: 16px; cursor: pointer;">
             <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 150px; height: auto;">
             <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 150px; height: auto;">
           </div>

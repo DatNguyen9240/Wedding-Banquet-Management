@@ -178,7 +178,7 @@ var Navbar = (function () {
         </button>
 
         <!-- Brand / Logo -->
-        <div class="navbar-brand" onclick="window.location.href = window.location.pathname + '#/'" style="display:flex; align-items:center; cursor: pointer;">
+        <div class="navbar-brand" onclick="window.location.href = window.location.pathname + '#/'; var sb=document.getElementById('app-sidebar'); if(sb) sb.classList.remove('open'); var sbo=document.getElementById('sidebar-overlay'); if(sbo) sbo.classList.remove('active'); var md=document.getElementById('mobile-drawer'); if(md) md.classList.remove('open'); var mdo=document.getElementById('mobile-drawer-overlay'); if(mdo) mdo.classList.remove('active');" style="display:flex; align-items:center; cursor: pointer;">
           <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 150px; height: auto; margin-left: 16px;">
           <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 150px; height: auto; margin-left: 16px;">
         </div>
@@ -243,7 +243,7 @@ var Navbar = (function () {
       <div class="mobile-drawer-overlay" id="mobile-drawer-overlay"></div>
       <div class="mobile-drawer" id="mobile-drawer">
         <div class="mobile-drawer-header">
-          <div class="mobile-drawer-brand" onclick="window.location.href = window.location.pathname + '#/'" style="display:flex; align-items:center; justify-content:center; width:100%; margin: 12px 0; cursor: pointer;">
+          <div class="mobile-drawer-brand" onclick="window.location.href = window.location.pathname + '#/'; var sb=document.getElementById('app-sidebar'); if(sb) sb.classList.remove('open'); var sbo=document.getElementById('sidebar-overlay'); if(sbo) sbo.classList.remove('active'); var md=document.getElementById('mobile-drawer'); if(md) md.classList.remove('open'); var mdo=document.getElementById('mobile-drawer-overlay'); if(mdo) mdo.classList.remove('active');" style="display:flex; align-items:center; justify-content:center; width:100%; margin: 12px 0; cursor: pointer;">
             <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 150px; height: auto; border-radius: 6px;">
             <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 150px; height: auto;">
           </div>
@@ -272,7 +272,7 @@ var Navbar = (function () {
         <!-- Sidebar -->
         <aside class="app-sidebar" id="app-sidebar">
           <div class="sidebar-header">
-            <div onclick="window.location.href = window.location.pathname + '#/'" style="display:flex; align-items:center; justify-content:flex-start; width:100%; margin: 16px 0; padding-left: 16px; cursor: pointer;">
+            <div onclick="window.location.href = window.location.pathname + '#/'; var sb=document.getElementById('app-sidebar'); if(sb) sb.classList.remove('open'); var sbo=document.getElementById('sidebar-overlay'); if(sbo) sbo.classList.remove('active'); var md=document.getElementById('mobile-drawer'); if(md) md.classList.remove('open'); var mdo=document.getElementById('mobile-drawer-overlay'); if(mdo) mdo.classList.remove('active');" style="display:flex; align-items:center; justify-content:flex-start; width:100%; margin: 16px 0; padding-left: 16px; cursor: pointer;">
               <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 150px; height: auto; border-radius: 6px;">
               <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 150px; height: auto;">
             </div>
