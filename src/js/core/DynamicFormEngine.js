@@ -1451,7 +1451,23 @@ window.DynamicFormEngine = (function () {
               if (matched && newDisplayInput) newDisplayInput.value = matched[1];
               inputEl.replaceChild(newCombo, comboLoading);
             } else {
-              ApiClient.post(MODULE_CONFIG.ApiSearch, { FormName: field.dataSource, Limit: 1000 }).then(function (res) {
+              var endpointRaw = field.dataSource;
+              if (endpointRaw.indexOf('|') > -1) {
+                endpointRaw = endpointRaw.split('|')[0];
+              }
+              var finalUrl = endpointRaw;
+              var fetchPayload = { Limit: 1000 };
+              if (endpointRaw.indexOf('?') > -1) {
+                var parts = endpointRaw.split('?');
+                finalUrl = parts[0];
+                var searchParams = new URLSearchParams(parts[1]);
+                searchParams.forEach(function (value, key) { fetchPayload[key] = value; });
+              } else {
+                fetchPayload.FormName = endpointRaw;
+              }
+              if (!fetchPayload.UserName) fetchPayload.UserName = _currentUser();
+
+              ApiClient.post(finalUrl, fetchPayload).then(function (res) {
                 var comboData = [];
                 var headers = ['Mã', 'Tên'];
                 var colFilterIndex = 1;
@@ -1492,7 +1508,23 @@ window.DynamicFormEngine = (function () {
                     if (typeof window.openQuickAddModal === 'function') {
                       window.openQuickAddModal(targetFormName, function (newRecord) {
                         if (newRecord) {
-                          ApiClient.post(MODULE_CONFIG.ApiSearch, { FormName: field.dataSource, Limit: 1000 }).then(function (res) {
+                          var endpointRaw = field.dataSource;
+                          if (endpointRaw.indexOf('|') > -1) {
+                            endpointRaw = endpointRaw.split('|')[0];
+                          }
+                          var finalUrl = endpointRaw;
+                          var fetchPayload = { Limit: 1000 };
+                          if (endpointRaw.indexOf('?') > -1) {
+                            var parts = endpointRaw.split('?');
+                            finalUrl = parts[0];
+                            var searchParams = new URLSearchParams(parts[1]);
+                            searchParams.forEach(function (value, key) { fetchPayload[key] = value; });
+                          } else {
+                            fetchPayload.FormName = endpointRaw;
+                          }
+                          if (!fetchPayload.UserName) fetchPayload.UserName = _currentUser();
+
+                          ApiClient.post(finalUrl, fetchPayload).then(function (res) {
                             var updatedComboData = [];
                             var dataList = res.list || res.records || [];
                             if (dataList && dataList.length > 0) {
