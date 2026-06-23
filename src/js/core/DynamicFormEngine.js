@@ -971,7 +971,7 @@ window.DynamicFormEngine = (function () {
         var style = document.createElement('style');
         style.id = 'selection-counter-style';
         style.innerHTML = `
-          /* Toolbar gốc: Cho phép rớt dòng để chứa counter ở dưới trên mobile */
+          /* Toolbar gốc: Giữ cùng hàng */
           #dynamic-btn-container .button-bar,
           .page-title-actions .button-bar {
             display: flex;
@@ -982,7 +982,7 @@ window.DynamicFormEngine = (function () {
           @media (max-width: 768px) {
             #dynamic-btn-container .button-bar,
             .page-title-actions .button-bar {
-              flex-wrap: wrap;
+              flex-wrap: nowrap !important;
             }
           }
           /* Wrapper chứa nút bấm: Cuộn ngang, không rớt dòng */
@@ -1017,15 +1017,17 @@ window.DynamicFormEngine = (function () {
           }
           @media (max-width: 768px) {
             .btn-scroll-wrapper {
-              flex: 1 1 100%;
-              width: 100%;
+              flex: 0 1 auto !important;
+              width: auto !important;
             }
             #selection-counter {
-              margin-left: 0;
-              margin-top: 4px;
-              width: 100%;
-              flex: 1 1 100%;
-              justify-content: center;
+              margin-left: auto !important; /* Đẩy sát về bên phải */
+              margin-top: 0 !important;
+              width: auto !important;
+              flex: 0 0 auto !important;
+              font-size: 11px !important; /* Thu nhỏ cỡ chữ */
+              padding: 2px 6px 2px 10px !important; /* Thu gọn padding */
+              border-radius: 12px !important; /* Thu nhỏ bo góc */
             }
           }
         `;

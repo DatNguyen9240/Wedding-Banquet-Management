@@ -1,4 +1,4 @@
-﻿/* --- design-tokens.css --- */
+/* --- design-tokens.css --- */
 /* ═══════════════════════════════════════════
    Design Tokens — TailAdmin Style
    Dành cho Quản lý Tiệc Cưới
@@ -3193,7 +3193,8 @@ body.dark-theme .section-panel .card-header {
 .action-dropdown-menu {
   display: none;
   position: absolute;
-  right: 0;
+  left: 0;
+  right: auto;
   top: calc(100% + 6px);
   background: var(--color-surface);
   border: 1px solid var(--color-border-strong);
