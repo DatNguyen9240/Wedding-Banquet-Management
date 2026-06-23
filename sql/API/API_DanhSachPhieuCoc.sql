@@ -60,7 +60,7 @@ BEGIN
         d.Nam AS [Nam],
         CONVERT(VARCHAR(10), d.DDate, 103) AS [NgayThu],
         d.DDate AS [DocumentDate],
-        b.DocumentID AS [Sohopdong],
+        ISNULL((SELECT TOP 1 Sohopdong FROM tbmk_Hopdong WHERE Sobiennhan = b.DocumentID AND ISNULL(IsHuy, 0) = 0), b.DocumentID) AS [Sohopdong],
         FORMAT(ISNULL(b.Tongtien, 0), 'N0', 'vi-VN') AS [Tongtien],
         ISNULL(b.Tongtien, 0) AS [TongtienRaw],
         [dbo].[fn_DocTienBangChu](ISNULL(b.Tongtien, 0)) AS [SoTienBangChu],
