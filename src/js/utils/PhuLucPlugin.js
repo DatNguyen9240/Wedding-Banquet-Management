@@ -237,7 +237,7 @@ var PhuLucPlugin = (function () {
               </div>
               <div class="col-md-3 mb-3">
                 <label class="form-label" style="font-weight: 600;">Đơn Giá Bàn Tiệc (VND)</label>
-                <input type="number" id="inpDonGiaBanTiec" class="ui-input" style="width: 100%;" min="0" step="1000">
+                <input type="text" id="inpDonGiaBanTiec" class="ui-input" style="width: 100%;">
               </div>
               <div class="col-md-3 mb-3">
                 <label class="form-label" style="font-weight: 600;">Số Khách / Bàn</label>
@@ -252,7 +252,7 @@ var PhuLucPlugin = (function () {
               </div>
               <div class="col-md-3 mb-3">
                 <label class="form-label" style="font-weight: 600;">Số Tiền Đợt 2 (VND)</label>
-                <input type="number" id="inpThanhToanDot2SoTien" class="ui-input" style="width: 100%;" min="0" step="1000">
+                <input type="text" id="inpThanhToanDot2SoTien" class="ui-input" style="width: 100%;">
               </div>
               <div class="col-md-3 mb-3">
                 <label class="form-label" style="font-weight: 600;">Hình Thức T.Toán</label>
@@ -335,6 +335,21 @@ var PhuLucPlugin = (function () {
       });
       modalContent.querySelector('#containerNgayToChucTD').appendChild(ngayToChucTDInput);
 
+      // Cài đặt tự động format tiền tệ cho Đơn Giá và Số Tiền Đợt 2
+      var inpDonGia = modalContent.querySelector('#inpDonGiaBanTiec');
+      var wordDonGia = document.createElement('div');
+      wordDonGia.className = 'money-words-text';
+      wordDonGia.style.cssText = 'font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;';
+      inpDonGia.parentNode.appendChild(wordDonGia);
+      UIInput.setupMoneyInput(inpDonGia, wordDonGia);
+
+      var inpThanhToanDot2 = modalContent.querySelector('#inpThanhToanDot2SoTien');
+      var wordThanhToanDot2 = document.createElement('div');
+      wordThanhToanDot2.className = 'money-words-text';
+      wordThanhToanDot2.style.cssText = 'font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;';
+      inpThanhToanDot2.parentNode.appendChild(wordThanhToanDot2);
+      UIInput.setupMoneyInput(inpThanhToanDot2, wordThanhToanDot2);
+
       // Lấy username hiện hành
       var userObj = {};
       try {
@@ -356,11 +371,18 @@ var PhuLucPlugin = (function () {
 
         modalContent.querySelector('#inpQuyMoBanTu').value = (rec.QuyMoBanTu !== null && rec.QuyMoBanTu !== undefined) ? rec.QuyMoBanTu : '';
         modalContent.querySelector('#inpQuyMoBanDen').value = (rec.QuyMoBanDen !== null && rec.QuyMoBanDen !== undefined) ? rec.QuyMoBanDen : '';
-        modalContent.querySelector('#inpDonGiaBanTiec').value = (rec.DonGiaBanTiec !== null && rec.DonGiaBanTiec !== undefined) ? rec.DonGiaBanTiec : '';
+        
+        var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
+        inpDonGiaEl.value = (rec.DonGiaBanTiec !== null && rec.DonGiaBanTiec !== undefined) ? rec.DonGiaBanTiec : '';
+        inpDonGiaEl.dispatchEvent(new Event('change'));
+
         modalContent.querySelector('#inpSoKhachTrenBan').value = (rec.SoKhachTrenBan !== null && rec.SoKhachTrenBan !== undefined) ? rec.SoKhachTrenBan : '';
 
         modalContent.querySelector('#inpTenDotThanhToan').value = rec.TenDotThanhToan || '';
-        modalContent.querySelector('#inpThanhToanDot2SoTien').value = (rec.ThanhToanDot2SoTien !== null && rec.ThanhToanDot2SoTien !== undefined) ? rec.ThanhToanDot2SoTien : '';
+        
+        var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
+        inpThanhToanDot2El.value = (rec.ThanhToanDot2SoTien !== null && rec.ThanhToanDot2SoTien !== undefined) ? rec.ThanhToanDot2SoTien : '';
+        inpThanhToanDot2El.dispatchEvent(new Event('change'));
         modalContent.querySelector('#inpHinhThucThanhToanDot2').value = rec.HinhThucThanhToanDot2 || 'Chuyển khoản';
 
         var hanTT = rec.HanThanhToanDot2 || '';
@@ -411,10 +433,17 @@ var PhuLucPlugin = (function () {
 
         modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
         modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
-        modalContent.querySelector('#inpDonGiaBanTiec').value = donGia;
+        
+        var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
+        inpDonGiaEl.value = donGia;
+        inpDonGiaEl.dispatchEvent(new Event('change'));
+
         modalContent.querySelector('#inpSoKhachTrenBan').value = soKhach;
         modalContent.querySelector('#inpTenDotThanhToan').value = tenDot;
-        modalContent.querySelector('#inpThanhToanDot2SoTien').value = soTienDot2;
+        
+        var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
+        inpThanhToanDot2El.value = soTienDot2;
+        inpThanhToanDot2El.dispatchEvent(new Event('change'));
         modalContent.querySelector('#inpHinhThucThanhToanDot2').value = hinhThuc;
         modalContent.querySelector('#inpHanThanhToanDot2').value = hanThanhToan;
         modalContent.querySelector('#inpBenAChucVuDaiDien').value = chucVu;
@@ -536,10 +565,17 @@ var PhuLucPlugin = (function () {
 
       modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
       modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
-      modalContent.querySelector('#inpDonGiaBanTiec').value = donGia;
+      
+      var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
+      inpDonGiaEl.value = donGia;
+      inpDonGiaEl.dispatchEvent(new Event('change'));
+
       modalContent.querySelector('#inpSoKhachTrenBan').value = soKhach;
       modalContent.querySelector('#inpTenDotThanhToan').value = tenDot;
-      modalContent.querySelector('#inpThanhToanDot2SoTien').value = soTienDot2;
+      
+      var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
+      inpThanhToanDot2El.value = soTienDot2;
+      inpThanhToanDot2El.dispatchEvent(new Event('change'));
       modalContent.querySelector('#inpHinhThucThanhToanDot2').value = hinhThuc;
 
       var inpHan = modalContent.querySelector('#inpHanThanhToanDot2');
@@ -570,11 +606,11 @@ var PhuLucPlugin = (function () {
 
         var qmTuVal = modalContent.querySelector('#inpQuyMoBanTu').value;
         var qmDenVal = modalContent.querySelector('#inpQuyMoBanDen').value;
-        var donGiaVal = modalContent.querySelector('#inpDonGiaBanTiec').value;
+        var donGiaVal = modalContent.querySelector('#inpDonGiaBanTiec').value.replace(/\D/g, '');
         var soKhachVal = modalContent.querySelector('#inpSoKhachTrenBan').value;
 
         var tenDotVal = modalContent.querySelector('#inpTenDotThanhToan').value.trim();
-        var soTienDot2Val = modalContent.querySelector('#inpThanhToanDot2SoTien').value;
+        var soTienDot2Val = modalContent.querySelector('#inpThanhToanDot2SoTien').value.replace(/\D/g, '');
         var hinhThucVal = modalContent.querySelector('#inpHinhThucThanhToanDot2').value;
         var hanThanhToanVal = modalContent.querySelector('#inpHanThanhToanDot2').value;
 
