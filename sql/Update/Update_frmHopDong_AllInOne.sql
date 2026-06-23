@@ -1094,7 +1094,7 @@ WHERE FormName = 'frmHopDong' AND FieldName = 'Ghichu';
 
 -- Điều khoản bổ sung hiển thị ở Form dưới dạng textarea/textbox lớn
 UPDATE SY_FormatFields
-SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = 'form', OrderNo = 95, FormatID = 't'
+SET ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 0, FormPosition = 'form', OrderNo = 95, FormatID = 'ta'
 WHERE FormName = 'frmHopDong' AND FieldName = 'DieuKhoanBoSung';
 
 -- Ẩn các cột chỉ dùng để IN ẤN hoặc thông tin phụ khỏi giao diện Grid/Form
@@ -1102,7 +1102,7 @@ UPDATE SY_FormatFields
 SET ShowInEdit = 0, ShowInAdd = 0, ShowInFilter = 0, FormPosition = 'hidden'
 WHERE FormName = 'frmHopDong' 
   AND FieldName IN (
-    'NgayLapHD', 'ThangLapHD', 'NamLapHD',
+    'NgayLapHD', 'ThangLapHD', 'NamLapHD', 'Id',
     'BenANhanVienPhuTrach', 'BenASDTNhanVien', 'BenAChucVu', 'BenANguoiDaiDien', 'BenADaiDien', 'BenATenCongTy', 'BenADiaChi', 'BenASDT', 'BenAEmail', 'BenAMST',
     'BenBTenChuTiec', 'BenBCCCD', 'BenBDiaChi', 'BenBDienThoai', 'BenBChucVu', 'BenBEmail',
     'TiecGioBatDau', 'TiecGioKetThuc', 'TiecNgayDL', 'TiecThangDL', 'TiecNamDL',
@@ -1218,7 +1218,7 @@ INSERT INTO WA_API (List, Func, [SQL], Para)
 VALUES ('API_DanhSachPhieuCoc_Dropdown', 'View', 'API_DanhSachPhieuCoc', '@Keyword=N''{Keyword}''');
 
 UPDATE SY_FormatFields 
-SET FormatID = 'sl',
+SET FormatID = 'sr',
     DataSource = '/api/API_Gateway_Router?List=API_DanhSachPhieuCoc_Dropdown&Func=View',
     IsReadOnlyAdd = 0,
     IsReadOnlyEdit = 1
