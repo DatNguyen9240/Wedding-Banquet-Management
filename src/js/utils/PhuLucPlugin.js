@@ -235,10 +235,7 @@ var PhuLucPlugin = (function () {
                 <label class="form-label" style="font-weight: 600;">Quy Mô Bàn (Đến)</label>
                 <input type="number" id="inpQuyMoBanDen" class="ui-input" style="width: 100%;" min="0">
               </div>
-              <div class="col-md-3 mb-3">
-                <label class="form-label" style="font-weight: 600;">Đơn Giá Bàn Tiệc (VND)</label>
-                <input type="text" id="inpDonGiaBanTiec" class="ui-input" style="width: 100%;">
-              </div>
+              <div class="col-md-3" id="containerDonGia"></div>
               <div class="col-md-3 mb-3">
                 <label class="form-label" style="font-weight: 600;">Số Khách / Bàn</label>
                 <input type="number" id="inpSoKhachTrenBan" class="ui-input" style="width: 100%;" min="1" max="100">
@@ -250,10 +247,7 @@ var PhuLucPlugin = (function () {
                 <label class="form-label" style="font-weight: 600;">Tên Đợt Thanh Toán</label>
                 <input type="text" id="inpTenDotThanhToan" class="ui-input" placeholder="Ví dụ: Đợt 2" style="width: 100%;">
               </div>
-              <div class="col-md-3 mb-3">
-                <label class="form-label" style="font-weight: 600;">Số Tiền Đợt 2 (VND)</label>
-                <input type="text" id="inpThanhToanDot2SoTien" class="ui-input" style="width: 100%;">
-              </div>
+              <div class="col-md-3" id="containerThanhToanDot2"></div>
               <div class="col-md-3 mb-3">
                 <label class="form-label" style="font-weight: 600;">Hình Thức T.Toán</label>
                 <select id="inpHinhThucThanhToanDot2" class="ui-input" style="width: 100%;">
@@ -280,14 +274,14 @@ var PhuLucPlugin = (function () {
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Dịch vụ ưu đãi & thỏa thuận khác (Mỗi dòng 1 mục)</label>
-                <textarea id="inpThoaThuanPhuLucKhac" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. Tặng 1 xe hoa rước dâu&#10;2. Miễn phí phí phục vụ nước ngọt"></textarea>
+                <textarea id="inpDichVuUuDaiPhuLuc" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. Sân khấu tiêu chuẩn&#10;2. Âm thanh ánh sáng"></textarea>
               </div>
             </div>
 
             <div class="row">
               <div class="col-md-12 mb-3">
                 <label class="form-label" style="font-weight: 600;">Nội dung thỏa thuận</label>
-                <textarea id="inpThoathuan" class="ui-input" rows="2" style="width: 100%; resize: vertical;" placeholder="Nhập nội dung thỏa thuận..."></textarea>
+                <textarea id="inpNoiDungThoaThuan" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Nhập nội dung thỏa thuận..."></textarea>
               </div>
             </div>
 
@@ -335,20 +329,20 @@ var PhuLucPlugin = (function () {
       });
       modalContent.querySelector('#containerNgayToChucTD').appendChild(ngayToChucTDInput);
 
-      // Cài đặt tự động format tiền tệ cho Đơn Giá và Số Tiền Đợt 2
-      var inpDonGia = modalContent.querySelector('#inpDonGiaBanTiec');
-      var wordDonGia = document.createElement('div');
-      wordDonGia.className = 'money-words-text';
-      wordDonGia.style.cssText = 'font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;';
-      inpDonGia.parentNode.appendChild(wordDonGia);
-      UIInput.setupMoneyInput(inpDonGia, wordDonGia);
+      // Cài đặt tự động format tiền tệ cho Đơn Giá và Số Tiền Đợt 2 bằng component UIInput.createMoney
+      var donGiaInput = UIInput.createMoney({
+        id: 'inpDonGiaBanTiec',
+        label: 'Đơn Giá Bàn Tiệc (VND)',
+        value: ''
+      });
+      modalContent.querySelector('#containerDonGia').appendChild(donGiaInput);
 
-      var inpThanhToanDot2 = modalContent.querySelector('#inpThanhToanDot2SoTien');
-      var wordThanhToanDot2 = document.createElement('div');
-      wordThanhToanDot2.className = 'money-words-text';
-      wordThanhToanDot2.style.cssText = 'font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;';
-      inpThanhToanDot2.parentNode.appendChild(wordThanhToanDot2);
-      UIInput.setupMoneyInput(inpThanhToanDot2, wordThanhToanDot2);
+      var thanhToanDot2Input = UIInput.createMoney({
+        id: 'inpThanhToanDot2SoTien',
+        label: 'Số Tiền Đợt 2 (VND)',
+        value: soTienDot2
+      });
+      modalContent.querySelector('#containerThanhToanDot2').appendChild(thanhToanDot2Input);
 
       // Lấy username hiện hành
       var userObj = {};

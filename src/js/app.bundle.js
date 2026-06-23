@@ -5211,58 +5211,9 @@ var PromotionAutoFillPlugin = (function () {
     _validateLive(modalContent, formName);
   }
 
-  // Intercept nút Lưu/Thêm để thực thi chặn nếu số bàn không hợp lệ
+  // Đã bỏ chặn lưu số bàn vượt quá sức chứa sảnh để người dùng vẫn nhập và lưu được bình thường (chỉ giữ lại cảnh báo trực quan)
   function _bindValidation(modalContent, formName) {
-    var actualModal = modalContent.closest('.modal-content') || modalContent;
-    var saveBtn = actualModal.querySelector('.btn-primary');
-    if (!saveBtn) return;
-
-    if (saveBtn.dataset.promoValidationBound === '1') return;
-    saveBtn.dataset.promoValidationBound = '1';
-
-    saveBtn.addEventListener('click', function (e) {
-      var fields = _getFormFields(modalContent, formName);
-      var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]') || modalContent.querySelector('[name="SanhTiecID"]');
-      if (!sanhInput || !sanhInput.value) return; // Không chọn sảnh => không chặn
-
-      var banMan = fields.banManEl ? Number(fields.banManEl.value || 0) : 0;
-      var banChay = fields.banChayEl ? Number(fields.banChayEl.value || 0) : 0;
-      var totalTables = banMan + banChay;
-
-      var selectedIds = sanhInput.value.split(',').map(function (id) { return id.trim(); }).filter(Boolean);
-      if (selectedIds.length === 0) return;
-
-      var totalMin = 0;
-      var totalMax = 0;
-      var names = [];
-      var hasValidCache = false;
-
-      selectedIds.forEach(function (id) {
-        var hall = hallCache[id];
-        if (hall) {
-          totalMin += hall.min;
-          totalMax += hall.max;
-          names.push(hall.name);
-          hasValidCache = true;
-        }
-      });
-
-      if (!hasValidCache) return; // Nếu chưa kịp load cache sảnh => bỏ qua chặn để an toàn
-
-      // Đã bỏ chặn số bàn tối thiểu theo yêu cầu (do có phụ thu)
-
-      if (totalMax > 0 && totalTables > totalMax) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        var errMsg = 'Tổng số bàn chính thức (' + totalTables + ' bàn) vượt quá số bàn tối đa của sảnh ' + names.join(', ') + ' là ' + totalMax + ' bàn.';
-        if (typeof Alert !== 'undefined') {
-          Alert.error('Lỗi số lượng bàn', errMsg);
-        } else {
-          alert(errMsg);
-        }
-        return false;
-      }
-    }, true); // Dùng capture phase để chạy chặn trước onclick mặc định
+    // Không chặn lưu nữa
   }
 
   var _observer = null;
@@ -5691,10 +5642,7 @@ var PhuLucPlugin = (function () {
                 <label class="form-label" style="font-weight: 600;">Quy Mô Bàn (Đến)</label>
                 <input type="number" id="inpQuyMoBanDen" class="ui-input" style="width: 100%;" min="0">
               </div>
-              <div class="col-md-3 mb-3">
-                <label class="form-label" style="font-weight: 600;">Đơn Giá Bàn Tiệc (VND)</label>
-                <input type="text" id="inpDonGiaBanTiec" class="ui-input" style="width: 100%;">
-              </div>
+              <div class="col-md-3" id="containerDonGia"></div>
               <div class="col-md-3 mb-3">
                 <label class="form-label" style="font-weight: 600;">Số Khách / Bàn</label>
                 <input type="number" id="inpSoKhachTrenBan" class="ui-input" style="width: 100%;" min="1" max="100">
@@ -5706,10 +5654,7 @@ var PhuLucPlugin = (function () {
                 <label class="form-label" style="font-weight: 600;">Tên Đợt Thanh Toán</label>
                 <input type="text" id="inpTenDotThanhToan" class="ui-input" placeholder="Ví dụ: Đợt 2" style="width: 100%;">
               </div>
-              <div class="col-md-3 mb-3">
-                <label class="form-label" style="font-weight: 600;">Số Tiền Đợt 2 (VND)</label>
-                <input type="text" id="inpThanhToanDot2SoTien" class="ui-input" style="width: 100%;">
-              </div>
+              <div class="col-md-3" id="containerThanhToanDot2"></div>
               <div class="col-md-3 mb-3">
                 <label class="form-label" style="font-weight: 600;">Hình Thức T.Toán</label>
                 <select id="inpHinhThucThanhToanDot2" class="ui-input" style="width: 100%;">
@@ -5736,14 +5681,14 @@ var PhuLucPlugin = (function () {
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Dịch vụ ưu đãi & thỏa thuận khác (Mỗi dòng 1 mục)</label>
-                <textarea id="inpThoaThuanPhuLucKhac" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. Tặng 1 xe hoa rước dâu&#10;2. Miễn phí phí phục vụ nước ngọt"></textarea>
+                <textarea id="inpDichVuUuDaiPhuLuc" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. Sân khấu tiêu chuẩn&#10;2. Âm thanh ánh sáng"></textarea>
               </div>
             </div>
 
             <div class="row">
               <div class="col-md-12 mb-3">
                 <label class="form-label" style="font-weight: 600;">Nội dung thỏa thuận</label>
-                <textarea id="inpThoathuan" class="ui-input" rows="2" style="width: 100%; resize: vertical;" placeholder="Nhập nội dung thỏa thuận..."></textarea>
+                <textarea id="inpNoiDungThoaThuan" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Nhập nội dung thỏa thuận..."></textarea>
               </div>
             </div>
 
@@ -5791,20 +5736,20 @@ var PhuLucPlugin = (function () {
       });
       modalContent.querySelector('#containerNgayToChucTD').appendChild(ngayToChucTDInput);
 
-      // Cài đặt tự động format tiền tệ cho Đơn Giá và Số Tiền Đợt 2
-      var inpDonGia = modalContent.querySelector('#inpDonGiaBanTiec');
-      var wordDonGia = document.createElement('div');
-      wordDonGia.className = 'money-words-text';
-      wordDonGia.style.cssText = 'font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;';
-      inpDonGia.parentNode.appendChild(wordDonGia);
-      UIInput.setupMoneyInput(inpDonGia, wordDonGia);
+      // Cài đặt tự động format tiền tệ cho Đơn Giá và Số Tiền Đợt 2 bằng component UIInput.createMoney
+      var donGiaInput = UIInput.createMoney({
+        id: 'inpDonGiaBanTiec',
+        label: 'Đơn Giá Bàn Tiệc (VND)',
+        value: ''
+      });
+      modalContent.querySelector('#containerDonGia').appendChild(donGiaInput);
 
-      var inpThanhToanDot2 = modalContent.querySelector('#inpThanhToanDot2SoTien');
-      var wordThanhToanDot2 = document.createElement('div');
-      wordThanhToanDot2.className = 'money-words-text';
-      wordThanhToanDot2.style.cssText = 'font-size: 11px; color: var(--color-success); margin-top: 4px; min-height: 16px; font-style: italic;';
-      inpThanhToanDot2.parentNode.appendChild(wordThanhToanDot2);
-      UIInput.setupMoneyInput(inpThanhToanDot2, wordThanhToanDot2);
+      var thanhToanDot2Input = UIInput.createMoney({
+        id: 'inpThanhToanDot2SoTien',
+        label: 'Số Tiền Đợt 2 (VND)',
+        value: soTienDot2
+      });
+      modalContent.querySelector('#containerThanhToanDot2').appendChild(thanhToanDot2Input);
 
       // Lấy username hiện hành
       var userObj = {};
@@ -13607,7 +13552,6 @@ var UIActionToolbar = (function () {
     var buttons = [
       { text: 'Thêm',  icon: 'add',        type: 'tool', onClick: actions.onAdd,    className: 'btn-tool-add',    attrs: 'data-tooltip="Thêm bản ghi mới (Ins)"' },
       { text: 'Sửa',   icon: 'edit',       type: 'tool', onClick: actions.onEdit,   className: 'btn-tool-edit',   attrs: 'data-tooltip="Sửa bản ghi đã chọn (F2)"' },
-      { text: 'Copy',  icon: 'content_copy', type: 'tool', onClick: actions.onCopy,   className: 'btn-tool-copy',   attrs: 'data-tooltip="Sao chép bản ghi đã chọn"' },
       { text: 'Xóa',   icon: 'delete',     type: 'tool', onClick: actions.onDelete, className: 'btn-tool-delete', attrs: 'data-tooltip="Xóa bản ghi đã chọn (Del)"' },
       { text: 'Lọc',   icon: 'filter_alt', type: 'tool', onClick: actions.onFilter, className: 'btn-tool-filter', attrs: 'data-tooltip="Lọc / Tìm kiếm dữ liệu"' },
       { text: 'In',    icon: 'print',      type: 'tool', onClick: actions.onPrint,  className: 'btn-tool-print',  attrs: 'data-tooltip="In danh sách (Ctrl+P)"' },
