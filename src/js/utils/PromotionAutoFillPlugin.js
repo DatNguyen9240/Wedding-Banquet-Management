@@ -332,58 +332,9 @@ var PromotionAutoFillPlugin = (function () {
     _validateLive(modalContent, formName);
   }
 
-  // Intercept nút Lưu/Thêm để thực thi chặn nếu số bàn không hợp lệ
+  // Đã bỏ chặn lưu số bàn vượt quá sức chứa sảnh để người dùng vẫn nhập và lưu được bình thường (chỉ giữ lại cảnh báo trực quan)
   function _bindValidation(modalContent, formName) {
-    var actualModal = modalContent.closest('.modal-content') || modalContent;
-    var saveBtn = actualModal.querySelector('.btn-primary');
-    if (!saveBtn) return;
-
-    if (saveBtn.dataset.promoValidationBound === '1') return;
-    saveBtn.dataset.promoValidationBound = '1';
-
-    saveBtn.addEventListener('click', function (e) {
-      var fields = _getFormFields(modalContent, formName);
-      var sanhInput = modalContent.querySelector('[name="JsonSanhTiec"]') || modalContent.querySelector('[name="SanhTiecID"]');
-      if (!sanhInput || !sanhInput.value) return; // Không chọn sảnh => không chặn
-
-      var banMan = fields.banManEl ? Number(fields.banManEl.value || 0) : 0;
-      var banChay = fields.banChayEl ? Number(fields.banChayEl.value || 0) : 0;
-      var totalTables = banMan + banChay;
-
-      var selectedIds = sanhInput.value.split(',').map(function (id) { return id.trim(); }).filter(Boolean);
-      if (selectedIds.length === 0) return;
-
-      var totalMin = 0;
-      var totalMax = 0;
-      var names = [];
-      var hasValidCache = false;
-
-      selectedIds.forEach(function (id) {
-        var hall = hallCache[id];
-        if (hall) {
-          totalMin += hall.min;
-          totalMax += hall.max;
-          names.push(hall.name);
-          hasValidCache = true;
-        }
-      });
-
-      if (!hasValidCache) return; // Nếu chưa kịp load cache sảnh => bỏ qua chặn để an toàn
-
-      // Đã bỏ chặn số bàn tối thiểu theo yêu cầu (do có phụ thu)
-
-      if (totalMax > 0 && totalTables > totalMax) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        var errMsg = 'Tổng số bàn chính thức (' + totalTables + ' bàn) vượt quá số bàn tối đa của sảnh ' + names.join(', ') + ' là ' + totalMax + ' bàn.';
-        if (typeof Alert !== 'undefined') {
-          Alert.error('Lỗi số lượng bàn', errMsg);
-        } else {
-          alert(errMsg);
-        }
-        return false;
-      }
-    }, true); // Dùng capture phase để chạy chặn trước onclick mặc định
+    // Không chặn lưu nữa
   }
 
   var _observer = null;

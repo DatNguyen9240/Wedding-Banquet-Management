@@ -29,15 +29,17 @@ BEGIN
 
         IF @IsEdit = 0
         BEGIN
-            -- Kiểm tra trùng SĐT trước khi thêm mới
+            -- Kiểm tra trùng SĐT trước khi thêm mới (chỉ kiểm tra các SĐT không rỗng/NULL)
             IF EXISTS (
                 SELECT 1 FROM dmkhachhang
-                WHERE Dienthoai = @Dienthoai
-                   OR DTchure   = ISNULL(@DTchure, @Dienthoai)
-                   OR DTcodau   = ISNULL(@DTcodau, @Dienthoai)
+                WHERE (
+                    (@Dienthoai IS NOT NULL AND @Dienthoai <> '' AND (Dienthoai = @Dienthoai OR DTchure = @Dienthoai OR DTcodau = @Dienthoai))
+                    OR (@DTchure IS NOT NULL AND @DTchure <> '' AND (Dienthoai = @DTchure OR DTchure = @DTchure OR DTcodau = @DTchure))
+                    OR (@DTcodau IS NOT NULL AND @DTcodau <> '' AND (Dienthoai = @DTcodau OR DTchure = @DTcodau OR DTcodau = @DTcodau))
+                )
             )
             BEGIN
-                SELECT 0 AS [code], N'Số điện thoại đã tồn tại trong hệ thống!' AS [msg], NULL AS [Makh];
+                SELECT 1 AS [code], N'Số điện thoại đã tồn tại trong hệ thống!' AS [msg], NULL AS [Makh];
                 RETURN;
             END
 
