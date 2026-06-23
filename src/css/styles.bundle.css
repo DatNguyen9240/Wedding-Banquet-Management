@@ -5924,7 +5924,7 @@ body.dark-theme .data-table tbody tr:hover {
 
   /* Make table wrapper fit the master container height & auto-scroll */
   body:has(.split-master-detail-container) #dynamic-grid-container .table-wrapper {
-    flex: 1;
+    flex: 0 1 auto;
     overflow-y: auto;
     overflow-x: auto;
     min-height: 0;
@@ -6001,7 +6001,7 @@ body:has(.no-mobile-stack) .page-wrapper {
 }
 
 body:has(.no-mobile-stack) .dynamic-grid-card {
-  flex: 1;
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -6024,7 +6024,7 @@ body:has(.no-mobile-stack) #dynamic-grid-container {
 }
 
 body:has(.no-mobile-stack) .table-wrapper {
-  flex: 1;
+  flex: 0 1 auto;
   overflow-y: auto !important;
   overflow-x: auto !important;
   min-height: 0;
