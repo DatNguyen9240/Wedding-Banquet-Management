@@ -886,7 +886,7 @@ UPDATE SY_FormatFields SET CaptionVN = N'Kèm theo chứng từ', FormPosition =
 UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú', FormPosition = '12', OrderNo = 24, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Ghichu';
 
 -- Cập nhật lần cọc (cọc lần 1 / lần 2) hiển thị trên Form
-UPDATE SY_FormatFields SET CaptionVN = N'Lần cọc', FormPosition = '6', OrderNo = 15, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = N'STATIC:1|Cọc lần 1,2|Cọc lần 2' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Solan';
+UPDATE SY_FormatFields SET CaptionVN = N'Lần cọc', FormPosition = '6', OrderNo = 15, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = N'STATIC:1|Cọc lần 1' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Solan';
 
 -- Cấu hình hiển thị động (VisibleRule) cho các trường Chú rể / Cô dâu
 -- Chỉ hiển thị khi chọn loại tiệc là Tiệc cưới (blt000001 hoặc t01)
