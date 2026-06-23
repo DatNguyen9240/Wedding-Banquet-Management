@@ -2672,8 +2672,11 @@ window.DynamicFormEngine = (function () {
           _loadData();
         }
       },
-      function (err) {               // onError → tiếp tục
-        console.error('Grid Edit Error', err);
+      function (err, payload, index) {               // onError → hiển thị lỗi và dừng chuỗi
+        Alert.error('Lỗi ở dòng ' + (index + 1), err.message);
+        btnSave.disabled = false;
+        btnSave.textContent = MODULE_CONFIG.BtnSaveAll || 'Lưu Tất Cả';
+        return false;
       }
     );
   }
