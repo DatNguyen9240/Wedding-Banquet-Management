@@ -1120,7 +1120,11 @@ BEGIN
             h.DanhSachChiPhi = COALESCE(NULLIF(lc.DanhSachChiPhiTD, ''), h.DanhSachChiPhi),
             h.BenAChucVuDaiDien = COALESCE(NULLIF(lc.BenAChucVuDaiDienTD, ''), h.BenAChucVuDaiDien),
             h.DonGiaBanTiec = COALESCE(NULLIF(lc.DonGiaBanTiecTD, 0), h.DonGiaBanTiec),
-            h.SoKhachTrenBan = COALESCE(NULLIF(lc.SoKhachTrenBanTD, 0), h.SoKhachTrenBan)
+            h.SoKhachTrenBan = COALESCE(NULLIF(lc.SoKhachTrenBanTD, 0), h.SoKhachTrenBan),
+            
+            -- Đồng bộ cọc lần 2 và tổng tiền cọc tương ứng
+            h.Sotiencochopdong = COALESCE(NULLIF(lc.ThanhToanDot2SoTienTD, 0), h.Sotiencochopdong),
+            h.Tongtiencoc = ISNULL(h.Sotiencoccho, 0) + COALESCE(NULLIF(lc.ThanhToanDot2SoTienTD, 0), ISNULL(h.Sotiencochopdong, 0))
         FROM tbmk_Hopdong h
         INNER JOIN LatestChanges lc ON h.Sohopdong = lc.Sohopdong
         WHERE lc.rn = 1;

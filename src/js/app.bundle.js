@@ -5772,7 +5772,7 @@ var PhuLucPlugin = (function () {
 
         modalContent.querySelector('#inpQuyMoBanTu').value = (rec.QuyMoBanTu !== null && rec.QuyMoBanTu !== undefined) ? rec.QuyMoBanTu : '';
         modalContent.querySelector('#inpQuyMoBanDen').value = (rec.QuyMoBanDen !== null && rec.QuyMoBanDen !== undefined) ? rec.QuyMoBanDen : '';
-        
+
         var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
         inpDonGiaEl.value = (rec.DonGiaBanTiec !== null && rec.DonGiaBanTiec !== undefined) ? rec.DonGiaBanTiec : '';
         inpDonGiaEl.dispatchEvent(new Event('change'));
@@ -5780,7 +5780,7 @@ var PhuLucPlugin = (function () {
         modalContent.querySelector('#inpSoKhachTrenBan').value = (rec.SoKhachTrenBan !== null && rec.SoKhachTrenBan !== undefined) ? rec.SoKhachTrenBan : '';
 
         modalContent.querySelector('#inpTenDotThanhToan').value = rec.TenDotThanhToan || '';
-        
+
         var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
         inpThanhToanDot2El.value = (rec.ThanhToanDot2SoTien !== null && rec.ThanhToanDot2SoTien !== undefined) ? rec.ThanhToanDot2SoTien : '';
         inpThanhToanDot2El.dispatchEvent(new Event('change'));
@@ -5834,14 +5834,14 @@ var PhuLucPlugin = (function () {
 
         modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
         modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
-        
+
         var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
         inpDonGiaEl.value = donGia;
         inpDonGiaEl.dispatchEvent(new Event('change'));
 
         modalContent.querySelector('#inpSoKhachTrenBan').value = soKhach;
         modalContent.querySelector('#inpTenDotThanhToan').value = tenDot;
-        
+
         var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
         inpThanhToanDot2El.value = soTienDot2;
         inpThanhToanDot2El.dispatchEvent(new Event('change'));
@@ -5959,21 +5959,21 @@ var PhuLucPlugin = (function () {
       modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(defaultJsonThucUong);
       modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(defaultJsonDichVu);
       modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(defaultJsonPhatSinh);
-      
+
       if (typeof FoodSelectionPlugin !== 'undefined' && typeof FoodSelectionPlugin.reloadForm === 'function') {
         FoodSelectionPlugin.reloadForm(modalContent);
       }
 
       modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
       modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
-      
+
       var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
       inpDonGiaEl.value = donGia;
       inpDonGiaEl.dispatchEvent(new Event('change'));
 
       modalContent.querySelector('#inpSoKhachTrenBan').value = soKhach;
       modalContent.querySelector('#inpTenDotThanhToan').value = tenDot;
-      
+
       var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
       inpThanhToanDot2El.value = soTienDot2;
       inpThanhToanDot2El.dispatchEvent(new Event('change'));
@@ -6185,9 +6185,9 @@ var PhuLucPlugin = (function () {
           }).then(function (res) {
             var details = {};
             if (res) {
-              if (res.records && res.records.length > 0)      details = res.records[0];
-              else if (res.data && res.data.length > 0)       details = res.data[0];
-              else if (Array.isArray(res) && res.length > 0)  details = res[0];
+              if (res.records && res.records.length > 0) details = res.records[0];
+              else if (res.data && res.data.length > 0) details = res.data[0];
+              else if (Array.isArray(res) && res.length > 0) details = res[0];
               else if (!res.records && !res.data && !Array.isArray(res)) details = res;
             }
             var jsonBanTiec = details.JsonBanTiec || '[]';
