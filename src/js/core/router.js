@@ -193,7 +193,7 @@ var Router = (function () {
       '<span class="material-symbols-outlined" style="font-size:72px;color:var(--color-border-strong);margin-bottom:16px;">search_off</span>' +
       '<h2 style="font-size:2rem;font-weight:700;margin:0 0 8px;">404</h2>' +
       '<p style="color:var(--color-text-secondary);margin:0 0 24px;">Trang <code style="background: rgba(148, 163, 184, 0.1);padding:2px 8px;border-radius:4px;">' + path + '</code> không tồn tại</p>' +
-      '<a href="#/dashboard" class="btn btn-primary" style="text-decoration:none;">Về trang chủ</a>' +
+      '<a href="javascript:void(0)" onclick="window.location.href = window.location.pathname + \'#/dashboard\'" class="btn btn-primary" style="text-decoration:none;">Về trang chủ</a>' +
       '</div>';
   }
 
@@ -243,6 +243,13 @@ var Router = (function () {
     var rawHash = window.location.hash.replace('#', '') || '/dashboard';
     var hashParts = rawHash.split('?');
     var pathOnly = hashParts[0];
+
+    // Nếu đường dẫn là gốc '/' hoặc rỗng '', tự động chuyển hướng về '/dashboard'
+    if (pathOnly === '/' || pathOnly === '') {
+      window.location.hash = '#/dashboard';
+      return;
+    }
+
     var route = _findRoute(pathOnly);
 
     if (typeof LoadingBar !== 'undefined') {
