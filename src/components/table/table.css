@@ -220,16 +220,86 @@ body.dark-theme .data-table tbody tr:hover {
 
 /* Global sticky headers for all tables inside table-wrapper */
 .table-wrapper .data-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: var(--color-surface);
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  background-color: var(--color-surface) !important;
   box-shadow: 0 1px 0 var(--color-border);
 }
 
-/* Responsive override to disable table height capping on mobile */
+/* Responsive override to disable table height capping on mobile & stick pagination to viewport bottom */
 @media (max-width: 768px) {
-  .table-wrapper {
+  /* Chỉ gỡ bỏ giới hạn chiều cao đối với bảng chuyển thành dạng card stack trên mobile */
+  .table-wrapper:has(.data-table:not(.no-mobile-stack)) {
     max-height: none !important;
   }
+
+  /* Reset overflow on card containers to allow sticky positioning to bubble up to .app-content (chỉ cho card stack) */
+  .dynamic-grid-card:not(:has(.no-mobile-stack)),
+  .dynamic-grid-card:not(:has(.no-mobile-stack)) .card-body,
+  #dynamic-grid-container:not(:has(.no-mobile-stack)) {
+    overflow: visible !important;
+  }
+
+  .datagrid-pager {
+    position: sticky !important;
+    bottom: -16px !important;
+    /* Offset the 16px mobile padding of .app-content */
+    z-index: 100 !important;
+    background-color: var(--color-surface) !important;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08) !important;
+    border-top: 1px solid var(--color-border) !important;
+    margin-left: -16px !important;
+    margin-right: -16px !important;
+    padding: 10px 16px !important;
+    width: calc(100% + 32px) !important;
+  }
 }
+
+/* Prevent page scrolling and make grid card fit viewport exactly for no-mobile-stack tables */
+body:has(.no-mobile-stack) #app-content {
+  display: flex;
+  flex-direction: column;
+  height: 100% !important;
+  overflow: hidden !important;
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+
+body:has(.no-mobile-stack) .page-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+body:has(.no-mobile-stack) .dynamic-grid-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-bottom: 0 !important;
+}
+
+body:has(.no-mobile-stack) .dynamic-grid-card>.card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 !important;
+}
+
+body:has(.no-mobile-stack) #dynamic-grid-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+body:has(.no-mobile-stack) .table-wrapper {
+  flex: 1;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
+  min-height: 0;
+  max-height: none !important; /* Let flex layout control the height dynamically */
+}

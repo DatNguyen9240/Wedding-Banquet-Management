@@ -564,12 +564,17 @@ window.DynamicFormEngine = (function () {
               _openBulkGridEditForm(emptyRows, true);
             }
           });
-          // Chèn sau nút Thêm
-          var btnAddOriginal = toolbar.querySelector('.btn-primary, [title*="Thêm bản ghi mới"]');
+          // Chèn sau nút Thêm (bên trong dropdown menu)
+          var btnAddOriginal = toolbar.querySelector('.btn-tool-add');
           if (btnAddOriginal) {
             btnAddOriginal.parentNode.insertBefore(btnBulkAdd, btnAddOriginal.nextSibling);
           } else {
-            toolbar.insertBefore(btnBulkAdd, toolbar.firstChild);
+            var menu = toolbar.querySelector('.action-dropdown-menu');
+            if (menu) {
+              menu.insertBefore(btnBulkAdd, menu.firstChild);
+            } else {
+              toolbar.insertBefore(btnBulkAdd, toolbar.firstChild);
+            }
           }
         }
 

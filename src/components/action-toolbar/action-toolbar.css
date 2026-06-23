@@ -1,0 +1,95 @@
+/* ═══════════════════════════════════════════
+   ACTION TOOLBAR / DROPDOWN COMPONENT
+   ═══════════════════════════════════════════ */
+
+.action-dropdown {
+  position: relative;
+  display: inline-block;
+  overflow: visible !important;
+}
+
+.action-dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 10005 !important;
+  min-width: 170px;
+  padding: 6px 0;
+  animation: slideUp 0.15s ease;
+}
+
+/* Force container visibility so the absolute menu doesn't get clipped */
+.page-title-actions:has(.action-dropdown),
+.btn-scroll-wrapper:has(.action-dropdown-menu),
+.action-dropdown .btn-scroll-wrapper {
+  overflow: visible !important;
+}
+
+/* Style the buttons inside the dropdown menu to look like menu items */
+.action-dropdown-menu button,
+.action-dropdown-menu .btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 10px 16px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  color: var(--color-text) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  transition: background 0.15s !important;
+  margin: 0 !important;
+}
+
+.action-dropdown-menu button:hover,
+.action-dropdown-menu .btn:hover {
+  background: rgba(148, 163, 184, 0.08) !important;
+  color: var(--color-primary) !important;
+}
+
+.action-dropdown-menu button:disabled,
+.action-dropdown-menu .btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: transparent !important;
+}
+.action-dropdown-menu button .material-symbols-outlined,
+.action-dropdown-menu .btn .material-symbols-outlined {
+  font-size: 18px !important;
+  margin-right: 0 !important;
+}
+
+/* Trigger Button styles */
+.action-dropdown-trigger {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-sm) !important;
+  border: none !important;
+  cursor: pointer !important;
+  background: var(--color-primary) !important;
+  color: #fff !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.action-dropdown-trigger .icon-settings {
+  font-size: 18px !important;
+}
+
+.action-dropdown-trigger .icon-arrow {
+  font-size: 16px !important;
+  margin-left: 2px !important;
+}

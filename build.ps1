@@ -20,6 +20,7 @@ $cssFiles = @(
   "components\section-panel\section-panel.css",
   "components\report-filter\report-filter.css",
   "components\accordion\accordion.css",
+  "components\action-toolbar\action-toolbar.css",
   "components\alert\alert.css",
   "components\badge\badge.css",
   "components\button\button.css",

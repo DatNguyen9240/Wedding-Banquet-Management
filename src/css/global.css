@@ -94,6 +94,7 @@ img {
 .app-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 32px var(--spacing-xl);
   background: var(--color-background);
 }
@@ -116,6 +117,11 @@ img {
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
   margin-bottom: 24px;
+  
+  /* Sticky Header */
+  position: sticky;
+  top: -32px; /* Khớp với padding-top của .app-content */
+  z-index: 100;
 }
 
 .page-title-info {
@@ -259,11 +265,16 @@ img {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 12px !important;
-    background: transparent !important;
+    background: var(--color-background) !important; /* Dùng nền trang để che nội dung cuộn bên dưới */
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
     margin-bottom: 16px !important;
+    
+    /* Sticky Header on mobile */
+    position: sticky !important;
+    top: -16px !important; /* Khớp với padding-top của .app-content trên mobile */
+    z-index: 100 !important;
   }
 
   /* Biến phần tiêu đề thành một khối (card) riêng */

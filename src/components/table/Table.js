@@ -180,7 +180,7 @@ var UITable = (function () {
         if (h.align) th.style.textAlign = h.align;
         
         // --- COLUMN RESIZING LOGIC ---
-        th.style.position = 'relative'; // Cần thiết để neo resizer
+        th.style.position = 'sticky'; // Cần thiết cho sticky header & neo resizer
         
         var resizer = document.createElement('div');
         resizer.className = 'col-resizer';
