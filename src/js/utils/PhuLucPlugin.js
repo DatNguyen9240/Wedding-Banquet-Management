@@ -49,6 +49,32 @@ var PhuLucPlugin = (function () {
         font-weight: 600;
         color: var(--color-text-secondary, #94a3b8);
       }
+      .phuluc-table tr.active-row {
+        background: rgba(79, 70, 229, 0.15) !important;
+      }
+      .phuluc-table tr.active-row td {
+        font-weight: 600;
+        color: var(--color-primary, #4f46e5) !important;
+      }
+      .badge-mode {
+        display: inline-block;
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 4px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+      .badge-mode-new {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--color-success, #10b981);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+      .badge-mode-edit {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--color-warning, #f59e0b);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
     `;
     document.head.appendChild(style);
   }
@@ -191,7 +217,15 @@ var PhuLucPlugin = (function () {
       modalContent.className = 'phuluc-plugin-wrapper';
       modalContent.innerHTML = `
         <div class="phuluc-history-card">
-          <h5 style="margin-top: 0; font-size: 15px; color: var(--color-primary);"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">history</span> Lịch Sử Phụ Lục / Thay Đổi</h5>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 8px;">
+            <h5 style="margin: 0; font-size: 15px; color: var(--color-primary); display: flex; align-items: center; gap: 6px;">
+              <span class="material-symbols-outlined" style="font-size: 20px;">history</span> 
+              <span>Lịch Sử Phụ Lục / Thay Đổi</span>
+            </h5>
+            <button type="button" id="btnCreateNewPLTop" class="btn btn-sm btn-primary d-flex align-items-center gap-1" style="font-size: 12px; padding: 6px 12px; font-weight: 600;">
+              <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Tạo Mới Phụ Lục
+            </button>
+          </div>
           <p class="text-muted" style="margin-bottom: 12px; font-size: 13px;">Hợp đồng: <strong>${sohopdong}</strong> - Khách hàng: <strong>${khachhang}</strong></p>
           <div style="max-height: 150px; overflow-y: auto;">
             <table class="phuluc-table">
@@ -212,7 +246,14 @@ var PhuLucPlugin = (function () {
         </div>
 
         <div class="phuluc-form-card">
-          <h5 id="form-title" style="margin-top: 0; font-size: 15px; color: var(--color-primary);"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">add_circle</span> Tạo Phụ Lục Mới</h5>
+          <h5 id="form-title" style="margin-top: 0; font-size: 15px; color: var(--color-primary); display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-outlined" style="font-size: 20px;">add_circle</span> 
+            <span>Tạo Phụ Lục Mới</span>
+            <span class="badge-mode badge-mode-new">CHẾ ĐỘ: TẠO MỚI</span>
+          </h5>
+          <p class="text-muted" style="margin-top: -6px; margin-bottom: 16px; font-size: 12px; font-style: italic;">
+            * Form được điền sẵn thông tin gốc từ Hợp đồng để bạn dễ dàng đối chiếu và điều chỉnh.
+          </p>
           <form id="frmPhuLucCreate">
             <input type="hidden" name="JsonBanTiec" id="inpJsonBanTiec" value="[]">
             <input type="hidden" name="JsonThucUong" id="inpJsonThucUong" value="[]">
@@ -251,6 +292,7 @@ var PhuLucPlugin = (function () {
               <div class="col-md-3 mb-3">
                 <label class="form-label" style="font-weight: 600;">Hình Thức T.Toán</label>
                 <select id="inpHinhThucThanhToanDot2" class="ui-input" style="width: 100%;">
+                  <option value="">Giữ nguyên từ Hợp đồng</option>
                   <option value="Chuyển khoản">Chuyển khoản</option>
                   <option value="Tiền mặt">Tiền mặt</option>
                   <option value="Tiền mặt / Chuyển khoản">Tiền mặt / Chuyển khoản</option>
@@ -318,14 +360,14 @@ var PhuLucPlugin = (function () {
       var hanThanhToanInput = UIInput.createDate({
         id: 'inpHanThanhToanDot2',
         label: 'Hạn Thanh Toán Đợt 2',
-        value: hanThanhToan
+        value: ''
       });
       modalContent.querySelector('#containerHanThanhToanDot2').appendChild(hanThanhToanInput);
 
       var ngayToChucTDInput = UIInput.createDate({
         id: 'inpNgayToChucTD',
         label: 'Điều chỉnh Ngày Tổ Chức (Nếu có)',
-        value: ngayToChuc
+        value: ''
       });
       modalContent.querySelector('#containerNgayToChucTD').appendChild(ngayToChucTDInput);
 
@@ -340,7 +382,7 @@ var PhuLucPlugin = (function () {
       var thanhToanDot2Input = UIInput.createMoney({
         id: 'inpThanhToanDot2SoTien',
         label: 'Số Tiền Đợt 2 (VND)',
-        value: soTienDot2
+        value: ''
       });
       modalContent.querySelector('#containerThanhToanDot2').appendChild(thanhToanDot2Input);
 
@@ -352,8 +394,71 @@ var PhuLucPlugin = (function () {
       var currentUserName = userObj.Username || userObj.UserName || userObj.username || 'system';
 
       // Định nghĩa các helper điền form/reset form
-      function _fillFormForEdit(rec) {
-        modalContent.querySelector('#form-title').innerHTML = `<span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">edit_document</span> Cập Nhật Phụ Lục: <strong style="color: var(--color-primary);">${rec.SoPhuLuc || rec.Sothaydoi || ''}</strong>`;
+      function _setupFormPlaceholders() {
+        var _formatDateVN = function (dateStr) {
+          if (!dateStr) return '';
+          var p = dateStr.split('-');
+          if (p.length === 3) return p[2] + '/' + p[1] + '/' + p[0];
+          return dateStr;
+        };
+
+        var _formatMoneyVN = function (val) {
+          if (!val) return '0';
+          var num = parseInt(String(val).replace(/\D/g, ''), 10);
+          return isNaN(num) ? '0' : num.toLocaleString('vi-VN');
+        };
+
+        modalContent.querySelector('#inpQuyMoBanTu').placeholder = qmTu ? 'Hiện tại: ' + qmTu : 'Nhập quy mô từ...';
+        modalContent.querySelector('#inpQuyMoBanDen').placeholder = qmDen ? 'Hiện tại: ' + qmDen : 'Nhập quy mô đến...';
+        
+        var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
+        if (inpDonGiaEl) {
+          inpDonGiaEl.placeholder = donGia ? 'Hiện tại: ' + _formatMoneyVN(donGia) : 'Nhập đơn giá...';
+        }
+
+        modalContent.querySelector('#inpSoKhachTrenBan').placeholder = soKhach ? 'Hiện tại: ' + soKhach : 'Nhập số khách...';
+        modalContent.querySelector('#inpTenDotThanhToan').placeholder = tenDot ? 'Hiện tại: ' + tenDot : 'Nhập tên đợt...';
+        
+        var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
+        if (inpThanhToanDot2El) {
+          inpThanhToanDot2El.placeholder = soTienDot2 ? 'Hiện tại: ' + _formatMoneyVN(soTienDot2) : 'Nhập số tiền đợt 2...';
+        }
+
+        var inpHinhThucOpt = modalContent.querySelector('#inpHinhThucThanhToanDot2 option[value=""]');
+        if (inpHinhThucOpt) {
+          inpHinhThucOpt.innerText = hinhThuc ? 'Giữ nguyên: ' + hinhThuc : 'Giữ nguyên từ Hợp đồng';
+        }
+
+        var inpHanVisible = modalContent.querySelector('#inpHanThanhToanDot2_visible');
+        if (inpHanVisible) {
+          inpHanVisible.placeholder = hanThanhToan ? 'Hiện tại: ' + _formatDateVN(hanThanhToan) : 'Chọn hạn thanh toán...';
+        }
+
+        modalContent.querySelector('#inpBenAChucVuDaiDien').placeholder = chucVu ? 'Hiện tại: ' + chucVu : 'Nhập chức vụ...';
+
+        var inpNgayTCVisible = modalContent.querySelector('#inpNgayToChucTD_visible');
+        if (inpNgayTCVisible) {
+          inpNgayTCVisible.placeholder = ngayToChuc ? 'Hiện tại: ' + _formatDateVN(ngayToChuc) : 'Chọn ngày tổ chức...';
+        }
+
+        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').placeholder = dvTinhPhi ? 'Hiện tại:\n' + dvTinhPhi : 'Nhập dịch vụ tính phí...';
+        modalContent.querySelector('#inpThoaThuanPhuLucKhac').placeholder = uuDai ? 'Hiện tại:\n' + uuDai : 'Nhập dịch vụ ưu đãi...';
+        modalContent.querySelector('#inpThoathuan').placeholder = lyDo ? 'Hiện tại:\n' + lyDo : 'Nhập nội dung thỏa thuận...';
+      }
+
+      function _fillFormForEdit(rec, rowElement) {
+        modalContent.querySelectorAll('.phuluc-table tbody tr').forEach(function (tr) {
+          tr.classList.remove('active-row');
+        });
+        if (rowElement) {
+          rowElement.classList.add('active-row');
+        }
+
+        modalContent.querySelector('#form-title').innerHTML = `
+          <span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">edit_document</span> 
+          <span style="vertical-align: middle;">Cập Nhật Phụ Lục</span>
+          <span class="badge-mode badge-mode-edit">ĐANG SỬA BẢN GHI: ${rec.SoPhuLuc || rec.Sothaydoi || ''}</span>
+        `;
         modalContent.querySelector('#btnCancelEdit').style.display = 'block';
 
         modalContent.querySelector('#inpSothaydoi').value = rec.SoPhuLuc || rec.Sothaydoi || '';
@@ -367,27 +472,39 @@ var PhuLucPlugin = (function () {
         modalContent.querySelector('#inpQuyMoBanDen').value = (rec.QuyMoBanDen !== null && rec.QuyMoBanDen !== undefined) ? rec.QuyMoBanDen : '';
 
         var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
-        inpDonGiaEl.value = (rec.DonGiaBanTiec !== null && rec.DonGiaBanTiec !== undefined) ? rec.DonGiaBanTiec : '';
-        inpDonGiaEl.dispatchEvent(new Event('change'));
+        if (inpDonGiaEl) {
+          inpDonGiaEl.value = (rec.DonGiaBanTiec !== null && rec.DonGiaBanTiec !== undefined) ? rec.DonGiaBanTiec : '';
+          inpDonGiaEl.dispatchEvent(new Event('change'));
+        }
 
         modalContent.querySelector('#inpSoKhachTrenBan').value = (rec.SoKhachTrenBan !== null && rec.SoKhachTrenBan !== undefined) ? rec.SoKhachTrenBan : '';
 
         modalContent.querySelector('#inpTenDotThanhToan').value = rec.TenDotThanhToan || '';
 
         var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
-        inpThanhToanDot2El.value = (rec.ThanhToanDot2SoTien !== null && rec.ThanhToanDot2SoTien !== undefined) ? rec.ThanhToanDot2SoTien : '';
-        inpThanhToanDot2El.dispatchEvent(new Event('change'));
-        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = rec.HinhThucThanhToanDot2 || 'Chuyển khoản';
+        if (inpThanhToanDot2El) {
+          inpThanhToanDot2El.value = (rec.ThanhToanDot2SoTien !== null && rec.ThanhToanDot2SoTien !== undefined) ? rec.ThanhToanDot2SoTien : '';
+          inpThanhToanDot2El.dispatchEvent(new Event('change'));
+        }
+        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = rec.HinhThucThanhToanDot2 || '';
 
         var hanTT = rec.HanThanhToanDot2 || '';
         if (hanTT && hanTT.indexOf('T') !== -1) hanTT = hanTT.split('T')[0];
-        modalContent.querySelector('#inpHanThanhToanDot2').value = hanTT;
+        var inpHanTTEl = modalContent.querySelector('#inpHanThanhToanDot2');
+        if (inpHanTTEl) {
+          inpHanTTEl.value = hanTT;
+          inpHanTTEl.dispatchEvent(new Event('change'));
+        }
 
         modalContent.querySelector('#inpBenAChucVuDaiDien').value = rec.BenAChucVuDaiDien || '';
 
         var ngayTCTD = rec.NgayToChuc || '';
         if (ngayTCTD && ngayTCTD.indexOf('T') !== -1) ngayTCTD = ngayTCTD.split('T')[0];
-        modalContent.querySelector('#inpNgayToChucTD').value = ngayTCTD;
+        var inpNgayTCTDEl = modalContent.querySelector('#inpNgayToChucTD');
+        if (inpNgayTCTDEl) {
+          inpNgayTCTDEl.value = ngayTCTD;
+          inpNgayTCTDEl.dispatchEvent(new Event('change'));
+        }
 
         modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = rec.DichVuTinhPhiPhuLuc || '';
         modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = rec.ThoaThuanPhuLucKhac || '';
@@ -413,7 +530,15 @@ var PhuLucPlugin = (function () {
       }
 
       function _resetFormToNew() {
-        modalContent.querySelector('#form-title').innerHTML = `<span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">add_circle</span> Tạo Phụ Lục Mới`;
+        modalContent.querySelectorAll('.phuluc-table tbody tr').forEach(function (tr) {
+          tr.classList.remove('active-row');
+        });
+
+        modalContent.querySelector('#form-title').innerHTML = `
+          <span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">add_circle</span> 
+          <span style="vertical-align: middle;">Tạo Phụ Lục Mới</span>
+          <span class="badge-mode badge-mode-new">CHẾ ĐỘ: TẠO MỚI</span>
+        `;
         modalContent.querySelector('#btnCancelEdit').style.display = 'none';
 
         modalContent.querySelector('#inpSothaydoi').value = '';
@@ -425,26 +550,42 @@ var PhuLucPlugin = (function () {
         var dd = String(today.getDate()).padStart(2, '0');
         modalContent.querySelector('#inpNgayLapPL').value = yyyy + '-' + mm + '-' + dd;
 
-        modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
-        modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
+        modalContent.querySelector('#inpQuyMoBanTu').value = '';
+        modalContent.querySelector('#inpQuyMoBanDen').value = '';
 
         var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
-        inpDonGiaEl.value = donGia;
-        inpDonGiaEl.dispatchEvent(new Event('change'));
+        if (inpDonGiaEl) {
+          inpDonGiaEl.value = '';
+          inpDonGiaEl.dispatchEvent(new Event('change'));
+        }
 
-        modalContent.querySelector('#inpSoKhachTrenBan').value = soKhach;
-        modalContent.querySelector('#inpTenDotThanhToan').value = tenDot;
+        modalContent.querySelector('#inpSoKhachTrenBan').value = '';
+        modalContent.querySelector('#inpTenDotThanhToan').value = '';
 
         var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
-        inpThanhToanDot2El.value = soTienDot2;
-        inpThanhToanDot2El.dispatchEvent(new Event('change'));
-        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = hinhThuc;
-        modalContent.querySelector('#inpHanThanhToanDot2').value = hanThanhToan;
-        modalContent.querySelector('#inpBenAChucVuDaiDien').value = chucVu;
-        modalContent.querySelector('#inpNgayToChucTD').value = ngayToChuc;
-        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = dvTinhPhi;
-        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = uuDai;
-        modalContent.querySelector('#inpThoathuan').value = lyDo;
+        if (inpThanhToanDot2El) {
+          inpThanhToanDot2El.value = '';
+          inpThanhToanDot2El.dispatchEvent(new Event('change'));
+        }
+        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = '';
+
+        var inpHan = modalContent.querySelector('#inpHanThanhToanDot2');
+        if (inpHan) {
+          inpHan.value = '';
+          inpHan.dispatchEvent(new Event('change'));
+        }
+
+        modalContent.querySelector('#inpBenAChucVuDaiDien').value = '';
+
+        var inpNgayTC = modalContent.querySelector('#inpNgayToChucTD');
+        if (inpNgayTC) {
+          inpNgayTC.value = '';
+          inpNgayTC.dispatchEvent(new Event('change'));
+        }
+
+        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = '';
+        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = '';
+        modalContent.querySelector('#inpThoathuan').value = '';
 
         modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(defaultJsonBanTiec);
         modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(defaultJsonThucUong);
@@ -503,12 +644,22 @@ var PhuLucPlugin = (function () {
 
       // Đăng ký sự kiện Click (Event delegation) cho History table và Cancel button
       modalContent.addEventListener('click', function (e) {
+        var createNewBtnTop = e.target.closest('#btnCreateNewPLTop');
+        if (createNewBtnTop) {
+          _resetFormToNew();
+          if (typeof UIToast !== 'undefined') {
+            UIToast.show('Đã chuyển sang chế độ Tạo mới Phụ lục', 'info');
+          }
+          return;
+        }
+
         var editBtn = e.target.closest('.btn-edit-pl');
         if (editBtn) {
           var idx = parseInt(editBtn.getAttribute('data-idx'));
           var rec = historyRecords[idx];
           if (rec) {
-            _fillFormForEdit(rec);
+            var tr = editBtn.closest('tr');
+            _fillFormForEdit(rec, tr);
           }
           return;
         }
@@ -540,55 +691,9 @@ var PhuLucPlugin = (function () {
         }
       });
 
-      // Gán ngày hiện tại làm mặc định
-      var inpNgayLap = modalContent.querySelector('#inpNgayLapPL');
-      if (inpNgayLap) {
-        inpNgayLap.value = defaultToday;
-        inpNgayLap.dispatchEvent(new Event('change'));
-      }
-
-      // Điền sẵn các giá trị mặc định từ hợp đồng gốc
-      modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(defaultJsonBanTiec);
-      modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(defaultJsonThucUong);
-      modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(defaultJsonDichVu);
-      modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(defaultJsonPhatSinh);
-
-      if (typeof FoodSelectionPlugin !== 'undefined' && typeof FoodSelectionPlugin.reloadForm === 'function') {
-        FoodSelectionPlugin.reloadForm(modalContent);
-      }
-
-      modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
-      modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
-
-      var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
-      inpDonGiaEl.value = donGia;
-      inpDonGiaEl.dispatchEvent(new Event('change'));
-
-      modalContent.querySelector('#inpSoKhachTrenBan').value = soKhach;
-      modalContent.querySelector('#inpTenDotThanhToan').value = tenDot;
-
-      var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
-      inpThanhToanDot2El.value = soTienDot2;
-      inpThanhToanDot2El.dispatchEvent(new Event('change'));
-      modalContent.querySelector('#inpHinhThucThanhToanDot2').value = hinhThuc;
-
-      var inpHan = modalContent.querySelector('#inpHanThanhToanDot2');
-      if (inpHan) {
-        inpHan.value = hanThanhToan;
-        inpHan.dispatchEvent(new Event('change'));
-      }
-
-      modalContent.querySelector('#inpBenAChucVuDaiDien').value = chucVu;
-
-      var inpNgayTC = modalContent.querySelector('#inpNgayToChucTD');
-      if (inpNgayTC) {
-        inpNgayTC.value = ngayToChuc;
-        inpNgayTC.dispatchEvent(new Event('change'));
-      }
-
-      modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = dvTinhPhi;
-      modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = uuDai;
-      modalContent.querySelector('#inpThoathuan').value = lyDo;
+      // Thiết lập placeholder và khởi tạo form trống với thông tin gốc làm placeholder
+      _setupFormPlaceholders();
+      _resetFormToNew();
 
       // Xử lý Form Submit
       var form = modalContent.querySelector('#frmPhuLucCreate');
