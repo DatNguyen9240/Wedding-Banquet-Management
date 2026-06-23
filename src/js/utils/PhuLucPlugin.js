@@ -274,14 +274,14 @@ var PhuLucPlugin = (function () {
               </div>
               <div class="col-md-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Dịch vụ ưu đãi & thỏa thuận khác (Mỗi dòng 1 mục)</label>
-                <textarea id="inpDichVuUuDaiPhuLuc" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. Sân khấu tiêu chuẩn&#10;2. Âm thanh ánh sáng"></textarea>
+                <textarea id="inpThoaThuanPhuLucKhac" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. Sân khấu tiêu chuẩn&#10;2. Âm thanh ánh sáng"></textarea>
               </div>
             </div>
 
             <div class="row">
               <div class="col-md-12 mb-3">
                 <label class="form-label" style="font-weight: 600;">Nội dung thỏa thuận</label>
-                <textarea id="inpNoiDungThoaThuan" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Nhập nội dung thỏa thuận..."></textarea>
+                <textarea id="inpThoathuan" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Nhập nội dung thỏa thuận..."></textarea>
               </div>
             </div>
 
