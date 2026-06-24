@@ -1180,12 +1180,9 @@ var FoodSelectionPlugin = (function () {
     style.id = 'food-selection-plugin-styles';
     style.innerHTML = `
       .food-plugin-wrapper {
-        margin-top: 15px;
-        border: 1px solid var(--color-border);
-        border-radius: 12px;
-        background: var(--color-surface);
-        padding: 20px;
-        box-shadow: var(--shadow-sm);
+        margin-top: 20px;
+        padding: 20px 0 0 0;
+        border-top: 1px solid var(--color-border);
         max-width: 100%;
         box-sizing: border-box;
       }
@@ -1193,6 +1190,8 @@ var FoodSelectionPlugin = (function () {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
         margin-bottom: 16px;
         border-bottom: 1px solid var(--color-border);
         padding-bottom: 12px;
@@ -1205,6 +1204,7 @@ var FoodSelectionPlugin = (function () {
         display: flex;
         align-items: center;
         gap: 8px;
+        white-space: nowrap;
       }
       .food-badge-type {
         background: var(--color-background);
@@ -1218,16 +1218,22 @@ var FoodSelectionPlugin = (function () {
       /* Selector Modal Styles */
       .food-modal-tabs {
         display: flex;
-        gap: 8px;
+        gap: 4px;
         border-bottom: 2px solid var(--color-border);
         padding-bottom: 0;
         margin-bottom: 16px;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none; /* Hide scrollbar for Firefox */
+      }
+      .food-modal-tabs::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for Chrome, Safari and Opera */
       }
       .food-modal-tab-btn {
         background: none;
         border: none;
-        padding: 10px 18px;
-        font-size: 14px;
+        padding: 8px 14px;
+        font-size: 13px;
         font-weight: 600;
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -1236,6 +1242,8 @@ var FoodSelectionPlugin = (function () {
         display: flex;
         align-items: center;
         gap: 6px;
+        flex-shrink: 0;
+        white-space: nowrap;
       }
       .food-modal-tab-btn:hover {
         color: var(--color-primary);
@@ -1243,6 +1251,61 @@ var FoodSelectionPlugin = (function () {
       .food-modal-tab-btn.active {
         color: var(--color-primary);
         border-bottom-color: var(--color-primary);
+      }
+
+      /* Summary Grid & Table Styles */
+      .food-summary-grid-body table {
+        min-width: 650px;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .food-summary-grid-body table.table-comparison {
+        min-width: 950px;
+      }
+      .food-summary-grid-body th {
+        white-space: nowrap;
+        background-color: var(--color-background);
+        font-weight: 700;
+        vertical-align: middle;
+      }
+      .food-summary-grid-body td {
+        white-space: nowrap;
+        vertical-align: middle;
+      }
+      .food-summary-grid-body td.food-name-col {
+        white-space: normal !important;
+        word-break: break-word;
+        min-width: 150px;
+      }
+      .food-footer-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+      }
+      .quyettoan-footer-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+      }
+      .quyettoan-footer-row span {
+        white-space: nowrap;
+      }
+      .quyettoan-footer-sep {
+        color: var(--color-border-strong, #cbd5e1);
+      }
+      @media (max-width: 576px) {
+        .quyettoan-footer-sep {
+          display: none !important;
+        }
+        .quyettoan-footer-row {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+          justify-content: flex-start !important;
+          gap: 4px !important;
+        }
       }
       .food-grid-container {
         display: grid;
@@ -1357,20 +1420,51 @@ var FoodSelectionPlugin = (function () {
         z-index: 100;
         box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
       }
-      @media (max-width: 600px) {
+      @media (max-width: 768px) {
         .modal-main-container {
           height: 100% !important;
           padding-bottom: 110px !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+        #modal-food-grid-wrapper {
+          padding: 8px !important;
+          border-radius: 0 !important;
+          border-left: none !important;
+          border-right: none !important;
+        }
+        .food-modal-tabs {
+          padding: 0 8px !important;
+        }
+        .modal-main-container > .d-flex {
+          padding: 0 8px !important;
+        }
+        .food-category-section {
+          padding: 0 8px !important;
         }
         .modal-bottom-bar {
           height: 110px !important;
           flex-direction: column !important;
           justify-content: space-around !important;
-          padding: 10px 10px !important;
+          padding: 8px 12px !important;
           align-items: stretch !important;
+        }
+        .modal-bottom-bar > div:first-child button {
+          width: 100%;
+          justify-content: center;
+        }
+        .modal-bottom-bar > div:last-child {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
         }
         .selected-drawer {
           bottom: 110px !important;
+          left: 0 !important;
+          right: 0 !important;
+          border-radius: 0 !important;
+          border-left: none !important;
+          border-right: none !important;
         }
       }
     `;
@@ -1554,16 +1648,16 @@ var FoodSelectionPlugin = (function () {
       inpDichVu.value = JSON.stringify(listDichVu);
       inpDichVu.dispatchEvent(new Event('change', { bubbles: true }));
     }
-    
+
     if (!inpPhatSinh) {
       inpPhatSinh = document.createElement('input');
       inpPhatSinh.type = 'hidden';
       inpPhatSinh.name = 'JsonPhatSinh';
       var theForm = modal.closest('form') || document.querySelector('form');
       if (theForm) {
-          theForm.appendChild(inpPhatSinh);
+        theForm.appendChild(inpPhatSinh);
       } else {
-          modal.appendChild(inpPhatSinh);
+        modal.appendChild(inpPhatSinh);
       }
     }
     inpPhatSinh.value = JSON.stringify(listPhatSinh);
@@ -1729,7 +1823,7 @@ var FoodSelectionPlugin = (function () {
           activeTab === 'man' ? contractFoodsMan : contractFoodsChay
         );
 
-        contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+        contentHtml = `<table class="table table-hover align-middle m-0 table-comparison" style="font-size: 13px;">
           <thead>
             <tr>
               <th class="text-center" style="width: 50px;">STT</th>
@@ -1773,7 +1867,7 @@ var FoodSelectionPlugin = (function () {
             contentHtml += `<tr ${rowStyle}>
               <td class="text-center">${idx + 1}</td>
               <td><span class="food-badge-type">${item.PhanLoai}</span></td>
-              <td style="${nameStyle}">${item.TenMon}</td>
+              <td class="food-name-col" style="${nameStyle}">${item.TenMon}</td>
               <td class="text-center">${hdCheck}</td>
               <td class="text-center">${ttCheck}</td>
               <td class="text-center">${statusBadge}</td>
@@ -1789,7 +1883,7 @@ var FoodSelectionPlugin = (function () {
           activeTab === 'drink' ? contractThucUong : contractDichVu
         );
 
-        contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+        contentHtml = `<table class="table table-hover align-middle m-0 table-comparison" style="font-size: 13px;">
           <thead>
             <tr>
               <th class="text-center" style="width: 45px;">STT</th>
@@ -1861,7 +1955,7 @@ var FoodSelectionPlugin = (function () {
 
             contentHtml += `<tr ${rowStyle}>
               <td class="text-center">${idx + 1}</td>
-              <td style="${nameStyle}">${item.TenMon}</td>
+              <td class="food-name-col" style="${nameStyle}">${item.TenMon}</td>
               <td class="text-end">${item.actualPrice.toLocaleString('vi-VN')} đ</td>
               <td class="text-center fw-semibold text-secondary">${item.contractQty}</td>
               <td class="text-center">${qtyControls}</td>
@@ -1898,7 +1992,7 @@ var FoodSelectionPlugin = (function () {
             contentHtml += `<tr>
               <td class="text-center">${idx + 1}</td>
               <td><span class="food-badge-type">${item.PhanLoai}</span></td>
-              <td class="fw-medium">${item.TenMon}</td>
+              <td class="fw-medium food-name-col">${item.TenMon}</td>
               <td class="text-end text-danger fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
               <td class="text-center">
                 <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('man', ${idx})">delete</span>
@@ -1929,7 +2023,7 @@ var FoodSelectionPlugin = (function () {
             contentHtml += `<tr>
               <td class="text-center">${idx + 1}</td>
               <td><span class="food-badge-type">${item.PhanLoai}</span></td>
-              <td class="fw-medium">${item.TenMon}</td>
+              <td class="fw-medium food-name-col">${item.TenMon}</td>
               <td class="text-end text-success fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
               <td class="text-center">
                 <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('chay', ${idx})">delete</span>
@@ -1961,7 +2055,7 @@ var FoodSelectionPlugin = (function () {
             var sub = item.DonGia * item.SoLuong;
             contentHtml += `<tr>
               <td class="text-center">${idx + 1}</td>
-              <td class="fw-medium">${item.TenMon}</td>
+              <td class="fw-medium food-name-col">${item.TenMon}</td>
               <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
               <td class="text-center">
                 <div class="d-inline-flex align-items-center gap-2">
@@ -2001,7 +2095,7 @@ var FoodSelectionPlugin = (function () {
             var sub = item.DonGia * item.SoLuong;
             contentHtml += `<tr>
               <td class="text-center">${idx + 1}</td>
-              <td class="fw-medium">${item.TenMon}</td>
+              <td class="fw-medium food-name-col">${item.TenMon}</td>
               <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
               <td class="text-center">
                 <div class="d-inline-flex align-items-center gap-2">
@@ -2057,23 +2151,35 @@ var FoodSelectionPlugin = (function () {
         var diffSign = sums.diff > 0 ? '+' : '';
         var grandDiffSign = grandDiff > 0 ? '+' : '';
 
-        var tabDetailHtml = `Tab này: HĐ gốc: <strong class="text-dark">${sums.contract.toLocaleString('vi-VN')} đ</strong> | Thực tế: <strong class="text-primary">${sums.actual.toLocaleString('vi-VN')} đ</strong> | Chênh lệch: <strong style="color:${diffColor};">${diffSign}${sums.diff.toLocaleString('vi-VN')} đ</strong>`;
-        var grandDetailHtml = `Tổng Quyết Toán: HĐ gốc: <strong class="text-dark">${grandContract.toLocaleString('vi-VN')} đ</strong> | Thực tế: <strong class="text-primary">${grandTotal.toLocaleString('vi-VN')} đ</strong> | Bù/Bớt: <strong style="color:${grandDiffColor}; font-size:16px;">${grandDiffSign}${grandDiff.toLocaleString('vi-VN')} đ</strong>`;
+        var tabDetailHtml = `
+          <span>Tab này: HĐ gốc: <strong class="text-dark">${sums.contract.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Thực tế: <strong class="text-primary">${sums.actual.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Chênh lệch: <strong style="color:${diffColor};">${diffSign}${sums.diff.toLocaleString('vi-VN')} đ</strong></span>
+        `;
+        var grandDetailHtml = `
+          <span>Tổng Quyết Toán: HĐ gốc: <strong class="text-dark">${grandContract.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Thực tế: <strong class="text-primary">${grandTotal.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Bù/Bớt: <strong style="color:${grandDiffColor}; font-size:16px;">${grandDiffSign}${grandDiff.toLocaleString('vi-VN')} đ</strong></span>
+        `;
 
         footerContainer.innerHTML = `
-          <div style="font-size:13px; color:var(--color-text-secondary); display:flex; flex-direction:column; gap:4px;">
+          <div class="quyettoan-footer-row" style="font-size:13px; color:var(--color-text-secondary);">
             ${tabDetailHtml}
           </div>
-          <div style="font-size:14px; font-weight:700; text-align:right; display:flex; flex-direction:column; gap:4px;">
+          <div class="quyettoan-footer-row" style="font-size:14px; font-weight:700; justify-content: flex-end;">
             ${grandDetailHtml}
           </div>
         `;
       } else {
         footerContainer.innerHTML = `
-          <div style="font-size:13px; color:var(--color-text-secondary);">
+          <div style="font-size:13px; color:var(--color-text-secondary); white-space: nowrap;">
             Tổng cộng Tab: <strong class="food-tab-total text-danger" style="font-size:14px;">${totalText}</strong>
           </div>
-          <div style="font-size:14px; font-weight:700;">
+          <div style="font-size:14px; font-weight:700; white-space: nowrap;">
             Tổng cộng Hợp đồng: <strong class="food-sum-total text-danger" style="font-size:16px;">${grandTotal.toLocaleString('vi-VN')} đ</strong>
           </div>
         `;
@@ -2677,7 +2783,7 @@ var FoodSelectionPlugin = (function () {
         if (!goiThucDonId) return;
 
         var hasExisting = selectedFoodsMan.length > 0 || selectedFoodsChay.length > 0 || selectedThucUong.length > 0 || selectedDichVu.length > 0;
-        
+
         // Tránh ghi đè/hỏi han khi load form sửa (sự kiện programmatic change khi đã có dữ liệu món)
         if (!event.isTrusted) {
           if (hasExisting) {
@@ -2710,10 +2816,10 @@ var FoodSelectionPlugin = (function () {
 
           // Ghi dữ liệu và vẽ lại bảng
           _writeInputs(modalContent);
-          
+
           if (window.Toast) {
-            var selectedText = selectGoiThucDon.options && selectGoiThucDon.options[selectGoiThucDon.selectedIndex] 
-              ? selectGoiThucDon.options[selectGoiThucDon.selectedIndex].text 
+            var selectedText = selectGoiThucDon.options && selectGoiThucDon.options[selectGoiThucDon.selectedIndex]
+              ? selectGoiThucDon.options[selectGoiThucDon.selectedIndex].text
               : 'gói tiệc';
             Toast.success('Đã tải thành công thực đơn của ' + selectedText + '!');
           }
@@ -2895,12 +3001,9 @@ var PhatSinhPlugin = (function () {
     style.id = 'food-selection-plugin-styles';
     style.innerHTML = `
       .food-plugin-wrapper {
-        margin-top: 15px;
-        border: 1px solid var(--color-border);
-        border-radius: 12px;
-        background: var(--color-surface);
-        padding: 20px;
-        box-shadow: var(--shadow-sm);
+        margin-top: 20px;
+        padding: 20px 0 0 0;
+        border-top: 1px solid var(--color-border);
         max-width: 100%;
         box-sizing: border-box;
       }
@@ -2908,6 +3011,8 @@ var PhatSinhPlugin = (function () {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
         margin-bottom: 16px;
         border-bottom: 1px solid var(--color-border);
         padding-bottom: 12px;
@@ -2920,6 +3025,7 @@ var PhatSinhPlugin = (function () {
         display: flex;
         align-items: center;
         gap: 8px;
+        white-space: nowrap;
       }
       .food-badge-type {
         background: var(--color-background);
@@ -2933,16 +3039,22 @@ var PhatSinhPlugin = (function () {
       /* Selector Modal Styles */
       .food-modal-tabs {
         display: flex;
-        gap: 8px;
+        gap: 4px;
         border-bottom: 2px solid var(--color-border);
         padding-bottom: 0;
         margin-bottom: 16px;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none; /* Hide scrollbar for Firefox */
+      }
+      .food-modal-tabs::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for Chrome, Safari and Opera */
       }
       .food-modal-tab-btn {
         background: none;
         border: none;
-        padding: 10px 18px;
-        font-size: 14px;
+        padding: 8px 14px;
+        font-size: 13px;
         font-weight: 600;
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -2951,6 +3063,8 @@ var PhatSinhPlugin = (function () {
         display: flex;
         align-items: center;
         gap: 6px;
+        flex-shrink: 0;
+        white-space: nowrap;
       }
       .food-modal-tab-btn:hover {
         color: var(--color-primary);
@@ -2958,6 +3072,61 @@ var PhatSinhPlugin = (function () {
       .food-modal-tab-btn.active {
         color: var(--color-primary);
         border-bottom-color: var(--color-primary);
+      }
+
+      /* Summary Grid & Table Styles */
+      .food-summary-grid-body table {
+        min-width: 650px;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .food-summary-grid-body table.table-comparison {
+        min-width: 950px;
+      }
+      .food-summary-grid-body th {
+        white-space: nowrap;
+        background-color: var(--color-background);
+        font-weight: 700;
+        vertical-align: middle;
+      }
+      .food-summary-grid-body td {
+        white-space: nowrap;
+        vertical-align: middle;
+      }
+      .food-summary-grid-body td.food-name-col {
+        white-space: normal !important;
+        word-break: break-word;
+        min-width: 150px;
+      }
+      .food-footer-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+      }
+      .quyettoan-footer-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+      }
+      .quyettoan-footer-row span {
+        white-space: nowrap;
+      }
+      .quyettoan-footer-sep {
+        color: var(--color-border-strong, #cbd5e1);
+      }
+      @media (max-width: 576px) {
+        .quyettoan-footer-sep {
+          display: none !important;
+        }
+        .quyettoan-footer-row {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+          justify-content: flex-start !important;
+          gap: 4px !important;
+        }
       }
       .food-grid-container {
         display: grid;
@@ -3072,20 +3241,51 @@ var PhatSinhPlugin = (function () {
         z-index: 100;
         box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
       }
-      @media (max-width: 600px) {
+      @media (max-width: 768px) {
         .modal-main-container {
           height: 100% !important;
           padding-bottom: 110px !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+        #modal-food-grid-wrapper {
+          padding: 8px !important;
+          border-radius: 0 !important;
+          border-left: none !important;
+          border-right: none !important;
+        }
+        .food-modal-tabs {
+          padding: 0 8px !important;
+        }
+        .modal-main-container > .d-flex {
+          padding: 0 8px !important;
+        }
+        .food-category-section {
+          padding: 0 8px !important;
         }
         .modal-bottom-bar {
           height: 110px !important;
           flex-direction: column !important;
           justify-content: space-around !important;
-          padding: 10px 10px !important;
+          padding: 8px 12px !important;
           align-items: stretch !important;
+        }
+        .modal-bottom-bar > div:first-child button {
+          width: 100%;
+          justify-content: center;
+        }
+        .modal-bottom-bar > div:last-child {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
         }
         .selected-drawer {
           bottom: 110px !important;
+          left: 0 !important;
+          right: 0 !important;
+          border-radius: 0 !important;
+          border-left: none !important;
+          border-right: none !important;
         }
       }
     `;
@@ -3269,16 +3469,16 @@ var PhatSinhPlugin = (function () {
       inpDichVu.value = JSON.stringify(listDichVu);
       inpDichVu.dispatchEvent(new Event('change', { bubbles: true }));
     }
-    
+
     if (!inpPhatSinh) {
       inpPhatSinh = document.createElement('input');
       inpPhatSinh.type = 'hidden';
       inpPhatSinh.name = 'JsonPhatSinh';
       var theForm = modal.closest('form') || document.querySelector('form');
       if (theForm) {
-          theForm.appendChild(inpPhatSinh);
+        theForm.appendChild(inpPhatSinh);
       } else {
-          modal.appendChild(inpPhatSinh);
+        modal.appendChild(inpPhatSinh);
       }
     }
     inpPhatSinh.value = JSON.stringify(listPhatSinh);
@@ -3770,17 +3970,29 @@ var PhatSinhPlugin = (function () {
         var diffColor = sums.diff > 0 ? '#ef4444' : (sums.diff < 0 ? '#10b981' : 'var(--color-text)');
         var diffSign = sums.diff > 0 ? '+' : '';
 
-        var tabDetailHtml = `Tab này: HĐ gốc: <strong class="text-dark">${sums.contract.toLocaleString('vi-VN')} đ</strong> | Thực tế: <strong class="text-primary">${sums.actual.toLocaleString('vi-VN')} đ</strong> | Chênh lệch: <strong style="color:${diffColor};">${diffSign}${sums.diff.toLocaleString('vi-VN')} đ</strong>`;
+        var tabDetailHtml = `
+          <span>Tab này: HĐ gốc: <strong class="text-dark">${sums.contract.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Thực tế: <strong class="text-primary">${sums.actual.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Chênh lệch: <strong style="color:${diffColor};">${diffSign}${sums.diff.toLocaleString('vi-VN')} đ</strong></span>
+        `;
 
         var grandDiffColor = grandDiff > 0 ? '#ef4444' : (grandDiff < 0 ? '#10b981' : 'var(--color-text)');
         var grandDiffSign = grandDiff > 0 ? '+' : '';
-        var grandDetailHtml = `Tổng Quyết Toán: HĐ gốc: <strong class="text-dark">${grandContract.toLocaleString('vi-VN')} đ</strong> | Thực tế: <strong class="text-primary">${grandTotal.toLocaleString('vi-VN')} đ</strong> | Bù/Bớt: <strong style="color:${grandDiffColor}; font-size:16px;">${grandDiffSign}${grandDiff.toLocaleString('vi-VN')} đ</strong>`;
+        var grandDetailHtml = `
+          <span>Tổng Quyết Toán: HĐ gốc: <strong class="text-dark">${grandContract.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Thực tế: <strong class="text-primary">${grandTotal.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Bù/Bớt: <strong style="color:${grandDiffColor}; font-size:16px;">${grandDiffSign}${grandDiff.toLocaleString('vi-VN')} đ</strong></span>
+        `;
 
         footerContainer.innerHTML = `
-          <div style="font-size:13px; color:var(--color-text-secondary); display:flex; flex-direction:column; gap:4px;">
+          <div class="quyettoan-footer-row" style="font-size:13px; color:var(--color-text-secondary);">
             ${tabDetailHtml}
           </div>
-          <div style="font-size:14px; font-weight:700; text-align:right; display:flex; flex-direction:column; gap:4px;">
+          <div class="quyettoan-footer-row" style="font-size:14px; font-weight:700; justify-content: flex-end;">
             ${grandDetailHtml}
           </div>
         `;
@@ -3990,7 +4202,7 @@ var PhatSinhPlugin = (function () {
     // Phân loại các sản phẩm trong Catalog theo tab
     function filterCatalogByTab(tab, keyword) {
       var kw = (keyword || '').toLowerCase().trim();
-      
+
       // Tab phát sinh tự do cho phép nhập text tùy biến
       if (tab === 'phatsinh') {
         return [];
@@ -4470,7 +4682,7 @@ var PhatSinhPlugin = (function () {
         if (!goiThucDonId) return;
 
         var hasExisting = selectedFoodsMan.length > 0 || selectedFoodsChay.length > 0 || selectedThucUong.length > 0 || selectedDichVu.length > 0;
-        
+
         if (!event.isTrusted) {
           if (hasExisting) {
             return;
@@ -4498,10 +4710,10 @@ var PhatSinhPlugin = (function () {
           selectedDichVu = matchedItems.filter(function (x) { return x.IsDichVu === 1; });
 
           _writeInputs(modalContent);
-          
+
           if (window.Toast) {
-            var selectedText = selectGoiThucDon.options && selectGoiThucDon.options[selectGoiThucDon.selectedIndex] 
-              ? selectGoiThucDon.options[selectGoiThucDon.selectedIndex].text 
+            var selectedText = selectGoiThucDon.options && selectGoiThucDon.options[selectGoiThucDon.selectedIndex]
+              ? selectGoiThucDon.options[selectGoiThucDon.selectedIndex].text
               : 'gói tiệc';
             Toast.success('Đã tải thành công thực đơn của ' + selectedText + '!');
           }
@@ -4646,10 +4858,10 @@ var PhatSinhPlugin = (function () {
         console.log('[DEBUG PhatSinh] res:', res);
         var details = null;
         if (res) {
-          if (res.records && res.records.length > 0)      details = res.records[0];
-          else if (res.data && res.data.length > 0)       details = res.data[0];
+          if (res.records && res.records.length > 0) details = res.records[0];
+          else if (res.data && res.data.length > 0) details = res.data[0];
           else if (res.records && Array.isArray(res.records)) details = res.records[0];
-          else if (Array.isArray(res) && res.length > 0)  details = res[0];
+          else if (Array.isArray(res) && res.length > 0) details = res[0];
           else if (!res.records && !res.data && !Array.isArray(res)) details = res;
         }
         console.log('[DEBUG PhatSinh] details:', details);
@@ -4696,7 +4908,7 @@ var PhatSinhPlugin = (function () {
         // Callback khi bấm "Hoàn tất & Đóng"
         var onSaveCallback = function (modalInstance) {
           var allItems = [];
-          
+
           selectedFoodsMan.forEach(function (x) {
             allItems.push({
               Mahang: x.MaMon || x.Mahang,
@@ -4754,7 +4966,7 @@ var PhatSinhPlugin = (function () {
                 var userObj = JSON.parse(userStr);
                 userName = userObj.Username || userObj.UserName || userName;
               }
-            } catch (e) {}
+            } catch (e) { }
           }
 
           var jsonData = {
@@ -5440,8 +5652,40 @@ var PhuLucPlugin = (function () {
         background: var(--color-surface);
         padding: 16px;
       }
+      @media (max-width: 768px) {
+        .phuluc-history-card, .phuluc-form-card {
+          border: none !important;
+          border-radius: 0px !important;
+          padding: 12px 0px !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+      }
+      .phuluc-history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 0;
+        margin-bottom: 8px;
+      }
+      .phuluc-history-title {
+        margin: 0;
+        font-size: 15px;
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      .phuluc-btn-create {
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
       .phuluc-table {
         width: 100%;
+        min-width: 600px;
         border-collapse: collapse;
         font-size: 13px;
       }
@@ -5455,6 +5699,14 @@ var PhuLucPlugin = (function () {
         background: var(--color-background);
         font-weight: 600;
         color: var(--color-text-secondary, #94a3b8);
+        white-space: nowrap;
+      }
+      .phuluc-table td {
+        white-space: nowrap;
+      }
+      .phuluc-table td.phuluc-content-col {
+        white-space: normal;
+        word-break: break-word;
       }
       .phuluc-table tr.active-row {
         background: rgba(79, 70, 229, 0.15) !important;
@@ -5606,7 +5858,7 @@ var PhuLucPlugin = (function () {
               <td class="text-center">${index + 1}</td>
               <td><a href="javascript:void(0)" class="btn-edit-pl" style="font-weight: 600; color: var(--color-primary); text-decoration: none;" data-idx="${index}">${rec.SoPhuLuc || rec.Sothaydoi || ''}</a></td>
               <td>${ngay}</td>
-              <td>${rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || ''}</td>
+              <td class="phuluc-content-col">${rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || ''}</td>
               <td class="text-center">
                 <button type="button" class="btn btn-sm btn-link btn-edit-pl" data-idx="${index}" title="Sửa" style="padding: 2px 4px; border: none; background: transparent; cursor: pointer; color: var(--color-primary);">
                   <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit</span>
@@ -5624,17 +5876,17 @@ var PhuLucPlugin = (function () {
       modalContent.className = 'phuluc-plugin-wrapper';
       modalContent.innerHTML = `
         <div class="phuluc-history-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 8px;">
-            <h5 style="margin: 0; font-size: 15px; color: var(--color-primary); display: flex; align-items: center; gap: 6px;">
+          <div class="phuluc-history-header">
+            <h5 class="phuluc-history-title">
               <span class="material-symbols-outlined" style="font-size: 20px;">history</span> 
               <span>Lịch Sử Phụ Lục / Thay Đổi</span>
             </h5>
-            <button type="button" id="btnCreateNewPLTop" class="btn btn-sm btn-primary d-flex align-items-center gap-1" style="font-size: 12px; padding: 6px 12px; font-weight: 600;">
+            <button type="button" id="btnCreateNewPLTop" class="btn btn-sm btn-primary d-flex align-items-center gap-1 phuluc-btn-create" style="font-size: 12px; padding: 6px 12px; font-weight: 600;">
               <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Tạo Mới Phụ Lục
             </button>
           </div>
           <p class="text-muted" style="margin-bottom: 12px; font-size: 13px;">Hợp đồng: <strong>${sohopdong}</strong> - Khách hàng: <strong>${khachhang}</strong></p>
-          <div style="max-height: 150px; overflow-y: auto;">
+          <div style="max-height: 150px; overflow-y: auto; overflow-x: auto;">
             <table class="phuluc-table">
               <thead>
                 <tr>
@@ -5653,7 +5905,7 @@ var PhuLucPlugin = (function () {
         </div>
 
         <div class="phuluc-form-card">
-          <h5 id="form-title" style="margin-top: 0; font-size: 15px; color: var(--color-primary); display: flex; align-items: center; gap: 8px;">
+          <h5 id="form-title" style="margin-top: 0; font-size: 15px; color: var(--color-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span class="material-symbols-outlined" style="font-size: 20px;">add_circle</span> 
             <span>Tạo Phụ Lục Mới</span>
             <span class="badge-mode badge-mode-new">CHẾ ĐỘ: TẠO MỚI</span>
@@ -6448,6 +6700,47 @@ var QuyetToanPlugin = (function () {
         margin-top: 8px !important;
         padding-top: 8px !important;
       }
+      .quyettoan-flex-row {
+        display: flex;
+        gap: 16px;
+      }
+      #containerNgayQuyetToan.form-group {
+        gap: 0 !important;
+      }
+      #containerNgayQuyetToan label {
+        font-weight: 700 !important;
+        color: var(--color-text) !important;
+        font-size: 12px !important;
+        margin-bottom: 4px !important;
+        display: inline-block !important;
+        white-space: nowrap !important;
+      }
+      @media (max-width: 768px) {
+        .quyettoan-card {
+          border: none !important;
+          border-radius: 0 !important;
+          padding: 0 !important;
+          background: transparent !important;
+        }
+      }
+      @media (max-width: 576px) {
+        .quyettoan-flex-row {
+          gap: 8px !important;
+        }
+        .quyettoan-plugin-wrapper .form-label {
+          font-size: 11px !important;
+          margin-bottom: 2px !important;
+        }
+        .quyettoan-plugin-wrapper .ui-input,
+        .quyettoan-plugin-wrapper select.ui-input {
+          padding: 4px 8px !important;
+          font-size: 12px !important;
+        }
+        #containerNgayQuyetToan label {
+          font-size: 11px !important;
+          margin-bottom: 2px !important;
+        }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -6563,18 +6856,20 @@ var QuyetToanPlugin = (function () {
           <div class="quyettoan-form-section">
             <!-- Cột trái: Thông tin chung & các chi phí phụ thu -->
             <div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">Mã Phiếu Quyết Toán</label>
-                <input type="text" id="inpDocumentID" class="ui-input" readonly placeholder="Hệ thống tự sinh..." style="width:100%;">
+              <div class="quyettoan-flex-row">
+                <div style="flex: 1; min-width: 0;" class="mb-3">
+                  <label class="form-label fw-bold">Mã Phiếu Quyết Toán</label>
+                  <input type="text" id="inpDocumentID" class="ui-input" readonly placeholder="Hệ thống tự sinh..." style="width:100%;">
+                </div>
+                <div style="flex: 1; min-width: 0;" class="mb-3" id="containerNgayQuyetToan"></div>
               </div>
-              <div class="mb-3" id="containerNgayQuyetToan"></div>
               
               <div class="mb-3">
                 <label class="form-label fw-bold">Người nộp tiền</label>
                 <input type="text" id="inpNguoinop" class="ui-input" placeholder="Tên khách hàng nộp quyết toán..." style="width:100%;" required>
               </div>
 
-              <div class="d-flex gap-3">
+              <div class="quyettoan-flex-row">
                 <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Bù chênh lệch sảnh (VND)</label>
                   <input type="text" inputmode="numeric" id="inpPhiBuSanh" class="ui-input fee-trigger" value="0" style="width:100%;">
@@ -6587,7 +6882,7 @@ var QuyetToanPlugin = (function () {
                 </div>
               </div>
 
-              <div class="d-flex gap-3">
+              <div class="quyettoan-flex-row">
                 <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Bù trang trí sảnh (VND)</label>
                   <input type="text" inputmode="numeric" id="inpPhiBuTTS" class="ui-input fee-trigger" value="0" style="width:100%;">
@@ -6600,7 +6895,7 @@ var QuyetToanPlugin = (function () {
                 </div>
               </div>
 
-              <div class="d-flex gap-3">
+              <div class="quyettoan-flex-row">
                 <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Số bàn phát sinh</label>
                   <input type="number" id="inpBanPhatSinh" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
@@ -6711,7 +7006,14 @@ var QuyetToanPlugin = (function () {
       required: true,
       value: defaultToday
     });
-    modalContent.querySelector('#containerNgayQuyetToan').appendChild(dateInput);
+    var containerNgay = modalContent.querySelector('#containerNgayQuyetToan');
+    if (containerNgay) {
+      containerNgay.parentNode.replaceChild(dateInput, containerNgay);
+      dateInput.id = 'containerNgayQuyetToan';
+      dateInput.style.flex = '1';
+      dateInput.style.minWidth = '0';
+      dateInput.classList.add('mb-3');
+    }
 
     var parseMoney = function (val) {
       return Number(String(val || '').replace(/\D/g, '')) || 0;

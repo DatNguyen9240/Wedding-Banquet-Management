@@ -30,12 +30,9 @@ var FoodSelectionPlugin = (function () {
     style.id = 'food-selection-plugin-styles';
     style.innerHTML = `
       .food-plugin-wrapper {
-        margin-top: 15px;
-        border: 1px solid var(--color-border);
-        border-radius: 12px;
-        background: var(--color-surface);
-        padding: 20px;
-        box-shadow: var(--shadow-sm);
+        margin-top: 20px;
+        padding: 20px 0 0 0;
+        border-top: 1px solid var(--color-border);
         max-width: 100%;
         box-sizing: border-box;
       }
@@ -43,6 +40,8 @@ var FoodSelectionPlugin = (function () {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
         margin-bottom: 16px;
         border-bottom: 1px solid var(--color-border);
         padding-bottom: 12px;
@@ -55,6 +54,7 @@ var FoodSelectionPlugin = (function () {
         display: flex;
         align-items: center;
         gap: 8px;
+        white-space: nowrap;
       }
       .food-badge-type {
         background: var(--color-background);
@@ -68,16 +68,22 @@ var FoodSelectionPlugin = (function () {
       /* Selector Modal Styles */
       .food-modal-tabs {
         display: flex;
-        gap: 8px;
+        gap: 4px;
         border-bottom: 2px solid var(--color-border);
         padding-bottom: 0;
         margin-bottom: 16px;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none; /* Hide scrollbar for Firefox */
+      }
+      .food-modal-tabs::-webkit-scrollbar {
+        display: none; /* Hide scrollbar for Chrome, Safari and Opera */
       }
       .food-modal-tab-btn {
         background: none;
         border: none;
-        padding: 10px 18px;
-        font-size: 14px;
+        padding: 8px 14px;
+        font-size: 13px;
         font-weight: 600;
         color: var(--color-text-secondary);
         cursor: pointer;
@@ -86,6 +92,8 @@ var FoodSelectionPlugin = (function () {
         display: flex;
         align-items: center;
         gap: 6px;
+        flex-shrink: 0;
+        white-space: nowrap;
       }
       .food-modal-tab-btn:hover {
         color: var(--color-primary);
@@ -93,6 +101,61 @@ var FoodSelectionPlugin = (function () {
       .food-modal-tab-btn.active {
         color: var(--color-primary);
         border-bottom-color: var(--color-primary);
+      }
+
+      /* Summary Grid & Table Styles */
+      .food-summary-grid-body table {
+        min-width: 650px;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .food-summary-grid-body table.table-comparison {
+        min-width: 950px;
+      }
+      .food-summary-grid-body th {
+        white-space: nowrap;
+        background-color: var(--color-background);
+        font-weight: 700;
+        vertical-align: middle;
+      }
+      .food-summary-grid-body td {
+        white-space: nowrap;
+        vertical-align: middle;
+      }
+      .food-summary-grid-body td.food-name-col {
+        white-space: normal !important;
+        word-break: break-word;
+        min-width: 150px;
+      }
+      .food-footer-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+      }
+      .quyettoan-footer-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+      }
+      .quyettoan-footer-row span {
+        white-space: nowrap;
+      }
+      .quyettoan-footer-sep {
+        color: var(--color-border-strong, #cbd5e1);
+      }
+      @media (max-width: 576px) {
+        .quyettoan-footer-sep {
+          display: none !important;
+        }
+        .quyettoan-footer-row {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+          justify-content: flex-start !important;
+          gap: 4px !important;
+        }
       }
       .food-grid-container {
         display: grid;
@@ -207,20 +270,51 @@ var FoodSelectionPlugin = (function () {
         z-index: 100;
         box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
       }
-      @media (max-width: 600px) {
+      @media (max-width: 768px) {
         .modal-main-container {
           height: 100% !important;
           padding-bottom: 110px !important;
+          padding-left: 0 !important;
+          padding-right: 0 !important;
+        }
+        #modal-food-grid-wrapper {
+          padding: 8px !important;
+          border-radius: 0 !important;
+          border-left: none !important;
+          border-right: none !important;
+        }
+        .food-modal-tabs {
+          padding: 0 8px !important;
+        }
+        .modal-main-container > .d-flex {
+          padding: 0 8px !important;
+        }
+        .food-category-section {
+          padding: 0 8px !important;
         }
         .modal-bottom-bar {
           height: 110px !important;
           flex-direction: column !important;
           justify-content: space-around !important;
-          padding: 10px 10px !important;
+          padding: 8px 12px !important;
           align-items: stretch !important;
+        }
+        .modal-bottom-bar > div:first-child button {
+          width: 100%;
+          justify-content: center;
+        }
+        .modal-bottom-bar > div:last-child {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
         }
         .selected-drawer {
           bottom: 110px !important;
+          left: 0 !important;
+          right: 0 !important;
+          border-radius: 0 !important;
+          border-left: none !important;
+          border-right: none !important;
         }
       }
     `;
@@ -404,16 +498,16 @@ var FoodSelectionPlugin = (function () {
       inpDichVu.value = JSON.stringify(listDichVu);
       inpDichVu.dispatchEvent(new Event('change', { bubbles: true }));
     }
-    
+
     if (!inpPhatSinh) {
       inpPhatSinh = document.createElement('input');
       inpPhatSinh.type = 'hidden';
       inpPhatSinh.name = 'JsonPhatSinh';
       var theForm = modal.closest('form') || document.querySelector('form');
       if (theForm) {
-          theForm.appendChild(inpPhatSinh);
+        theForm.appendChild(inpPhatSinh);
       } else {
-          modal.appendChild(inpPhatSinh);
+        modal.appendChild(inpPhatSinh);
       }
     }
     inpPhatSinh.value = JSON.stringify(listPhatSinh);
@@ -579,7 +673,7 @@ var FoodSelectionPlugin = (function () {
           activeTab === 'man' ? contractFoodsMan : contractFoodsChay
         );
 
-        contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+        contentHtml = `<table class="table table-hover align-middle m-0 table-comparison" style="font-size: 13px;">
           <thead>
             <tr>
               <th class="text-center" style="width: 50px;">STT</th>
@@ -623,7 +717,7 @@ var FoodSelectionPlugin = (function () {
             contentHtml += `<tr ${rowStyle}>
               <td class="text-center">${idx + 1}</td>
               <td><span class="food-badge-type">${item.PhanLoai}</span></td>
-              <td style="${nameStyle}">${item.TenMon}</td>
+              <td class="food-name-col" style="${nameStyle}">${item.TenMon}</td>
               <td class="text-center">${hdCheck}</td>
               <td class="text-center">${ttCheck}</td>
               <td class="text-center">${statusBadge}</td>
@@ -639,7 +733,7 @@ var FoodSelectionPlugin = (function () {
           activeTab === 'drink' ? contractThucUong : contractDichVu
         );
 
-        contentHtml = `<table class="table table-hover align-middle m-0" style="font-size: 13px;">
+        contentHtml = `<table class="table table-hover align-middle m-0 table-comparison" style="font-size: 13px;">
           <thead>
             <tr>
               <th class="text-center" style="width: 45px;">STT</th>
@@ -711,7 +805,7 @@ var FoodSelectionPlugin = (function () {
 
             contentHtml += `<tr ${rowStyle}>
               <td class="text-center">${idx + 1}</td>
-              <td style="${nameStyle}">${item.TenMon}</td>
+              <td class="food-name-col" style="${nameStyle}">${item.TenMon}</td>
               <td class="text-end">${item.actualPrice.toLocaleString('vi-VN')} đ</td>
               <td class="text-center fw-semibold text-secondary">${item.contractQty}</td>
               <td class="text-center">${qtyControls}</td>
@@ -748,7 +842,7 @@ var FoodSelectionPlugin = (function () {
             contentHtml += `<tr>
               <td class="text-center">${idx + 1}</td>
               <td><span class="food-badge-type">${item.PhanLoai}</span></td>
-              <td class="fw-medium">${item.TenMon}</td>
+              <td class="fw-medium food-name-col">${item.TenMon}</td>
               <td class="text-end text-danger fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
               <td class="text-center">
                 <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('man', ${idx})">delete</span>
@@ -779,7 +873,7 @@ var FoodSelectionPlugin = (function () {
             contentHtml += `<tr>
               <td class="text-center">${idx + 1}</td>
               <td><span class="food-badge-type">${item.PhanLoai}</span></td>
-              <td class="fw-medium">${item.TenMon}</td>
+              <td class="fw-medium food-name-col">${item.TenMon}</td>
               <td class="text-end text-success fw-semibold">${item.DonGia.toLocaleString('vi-VN')} đ</td>
               <td class="text-center">
                 <span class="material-symbols-outlined text-danger cursor-pointer" style="font-size:18px" onclick="FoodSelectionPlugin.removeItem('chay', ${idx})">delete</span>
@@ -811,7 +905,7 @@ var FoodSelectionPlugin = (function () {
             var sub = item.DonGia * item.SoLuong;
             contentHtml += `<tr>
               <td class="text-center">${idx + 1}</td>
-              <td class="fw-medium">${item.TenMon}</td>
+              <td class="fw-medium food-name-col">${item.TenMon}</td>
               <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
               <td class="text-center">
                 <div class="d-inline-flex align-items-center gap-2">
@@ -851,7 +945,7 @@ var FoodSelectionPlugin = (function () {
             var sub = item.DonGia * item.SoLuong;
             contentHtml += `<tr>
               <td class="text-center">${idx + 1}</td>
-              <td class="fw-medium">${item.TenMon}</td>
+              <td class="fw-medium food-name-col">${item.TenMon}</td>
               <td class="text-end">${item.DonGia.toLocaleString('vi-VN')} đ</td>
               <td class="text-center">
                 <div class="d-inline-flex align-items-center gap-2">
@@ -907,23 +1001,35 @@ var FoodSelectionPlugin = (function () {
         var diffSign = sums.diff > 0 ? '+' : '';
         var grandDiffSign = grandDiff > 0 ? '+' : '';
 
-        var tabDetailHtml = `Tab này: HĐ gốc: <strong class="text-dark">${sums.contract.toLocaleString('vi-VN')} đ</strong> | Thực tế: <strong class="text-primary">${sums.actual.toLocaleString('vi-VN')} đ</strong> | Chênh lệch: <strong style="color:${diffColor};">${diffSign}${sums.diff.toLocaleString('vi-VN')} đ</strong>`;
-        var grandDetailHtml = `Tổng Quyết Toán: HĐ gốc: <strong class="text-dark">${grandContract.toLocaleString('vi-VN')} đ</strong> | Thực tế: <strong class="text-primary">${grandTotal.toLocaleString('vi-VN')} đ</strong> | Bù/Bớt: <strong style="color:${grandDiffColor}; font-size:16px;">${grandDiffSign}${grandDiff.toLocaleString('vi-VN')} đ</strong>`;
+        var tabDetailHtml = `
+          <span>Tab này: HĐ gốc: <strong class="text-dark">${sums.contract.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Thực tế: <strong class="text-primary">${sums.actual.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Chênh lệch: <strong style="color:${diffColor};">${diffSign}${sums.diff.toLocaleString('vi-VN')} đ</strong></span>
+        `;
+        var grandDetailHtml = `
+          <span>Tổng Quyết Toán: HĐ gốc: <strong class="text-dark">${grandContract.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Thực tế: <strong class="text-primary">${grandTotal.toLocaleString('vi-VN')} đ</strong></span>
+          <span class="quyettoan-footer-sep">|</span>
+          <span>Bù/Bớt: <strong style="color:${grandDiffColor}; font-size:16px;">${grandDiffSign}${grandDiff.toLocaleString('vi-VN')} đ</strong></span>
+        `;
 
         footerContainer.innerHTML = `
-          <div style="font-size:13px; color:var(--color-text-secondary); display:flex; flex-direction:column; gap:4px;">
+          <div class="quyettoan-footer-row" style="font-size:13px; color:var(--color-text-secondary);">
             ${tabDetailHtml}
           </div>
-          <div style="font-size:14px; font-weight:700; text-align:right; display:flex; flex-direction:column; gap:4px;">
+          <div class="quyettoan-footer-row" style="font-size:14px; font-weight:700; justify-content: flex-end;">
             ${grandDetailHtml}
           </div>
         `;
       } else {
         footerContainer.innerHTML = `
-          <div style="font-size:13px; color:var(--color-text-secondary);">
+          <div style="font-size:13px; color:var(--color-text-secondary); white-space: nowrap;">
             Tổng cộng Tab: <strong class="food-tab-total text-danger" style="font-size:14px;">${totalText}</strong>
           </div>
-          <div style="font-size:14px; font-weight:700;">
+          <div style="font-size:14px; font-weight:700; white-space: nowrap;">
             Tổng cộng Hợp đồng: <strong class="food-sum-total text-danger" style="font-size:16px;">${grandTotal.toLocaleString('vi-VN')} đ</strong>
           </div>
         `;
@@ -1527,7 +1633,7 @@ var FoodSelectionPlugin = (function () {
         if (!goiThucDonId) return;
 
         var hasExisting = selectedFoodsMan.length > 0 || selectedFoodsChay.length > 0 || selectedThucUong.length > 0 || selectedDichVu.length > 0;
-        
+
         // Tránh ghi đè/hỏi han khi load form sửa (sự kiện programmatic change khi đã có dữ liệu món)
         if (!event.isTrusted) {
           if (hasExisting) {
@@ -1560,10 +1666,10 @@ var FoodSelectionPlugin = (function () {
 
           // Ghi dữ liệu và vẽ lại bảng
           _writeInputs(modalContent);
-          
+
           if (window.Toast) {
-            var selectedText = selectGoiThucDon.options && selectGoiThucDon.options[selectGoiThucDon.selectedIndex] 
-              ? selectGoiThucDon.options[selectGoiThucDon.selectedIndex].text 
+            var selectedText = selectGoiThucDon.options && selectGoiThucDon.options[selectGoiThucDon.selectedIndex]
+              ? selectGoiThucDon.options[selectGoiThucDon.selectedIndex].text
               : 'gói tiệc';
             Toast.success('Đã tải thành công thực đơn của ' + selectedText + '!');
           }

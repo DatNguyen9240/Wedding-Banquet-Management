@@ -33,8 +33,40 @@ var PhuLucPlugin = (function () {
         background: var(--color-surface);
         padding: 16px;
       }
+      @media (max-width: 768px) {
+        .phuluc-history-card, .phuluc-form-card {
+          border: none !important;
+          border-radius: 0px !important;
+          padding: 12px 0px !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+      }
+      .phuluc-history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 0;
+        margin-bottom: 8px;
+      }
+      .phuluc-history-title {
+        margin: 0;
+        font-size: 15px;
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+      }
+      .phuluc-btn-create {
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
       .phuluc-table {
         width: 100%;
+        min-width: 600px;
         border-collapse: collapse;
         font-size: 13px;
       }
@@ -48,6 +80,14 @@ var PhuLucPlugin = (function () {
         background: var(--color-background);
         font-weight: 600;
         color: var(--color-text-secondary, #94a3b8);
+        white-space: nowrap;
+      }
+      .phuluc-table td {
+        white-space: nowrap;
+      }
+      .phuluc-table td.phuluc-content-col {
+        white-space: normal;
+        word-break: break-word;
       }
       .phuluc-table tr.active-row {
         background: rgba(79, 70, 229, 0.15) !important;
@@ -199,7 +239,7 @@ var PhuLucPlugin = (function () {
               <td class="text-center">${index + 1}</td>
               <td><a href="javascript:void(0)" class="btn-edit-pl" style="font-weight: 600; color: var(--color-primary); text-decoration: none;" data-idx="${index}">${rec.SoPhuLuc || rec.Sothaydoi || ''}</a></td>
               <td>${ngay}</td>
-              <td>${rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || ''}</td>
+              <td class="phuluc-content-col">${rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || ''}</td>
               <td class="text-center">
                 <button type="button" class="btn btn-sm btn-link btn-edit-pl" data-idx="${index}" title="Sửa" style="padding: 2px 4px; border: none; background: transparent; cursor: pointer; color: var(--color-primary);">
                   <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit</span>
@@ -217,17 +257,17 @@ var PhuLucPlugin = (function () {
       modalContent.className = 'phuluc-plugin-wrapper';
       modalContent.innerHTML = `
         <div class="phuluc-history-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0; margin-bottom: 8px;">
-            <h5 style="margin: 0; font-size: 15px; color: var(--color-primary); display: flex; align-items: center; gap: 6px;">
+          <div class="phuluc-history-header">
+            <h5 class="phuluc-history-title">
               <span class="material-symbols-outlined" style="font-size: 20px;">history</span> 
               <span>Lịch Sử Phụ Lục / Thay Đổi</span>
             </h5>
-            <button type="button" id="btnCreateNewPLTop" class="btn btn-sm btn-primary d-flex align-items-center gap-1" style="font-size: 12px; padding: 6px 12px; font-weight: 600;">
+            <button type="button" id="btnCreateNewPLTop" class="btn btn-sm btn-primary d-flex align-items-center gap-1 phuluc-btn-create" style="font-size: 12px; padding: 6px 12px; font-weight: 600;">
               <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Tạo Mới Phụ Lục
             </button>
           </div>
           <p class="text-muted" style="margin-bottom: 12px; font-size: 13px;">Hợp đồng: <strong>${sohopdong}</strong> - Khách hàng: <strong>${khachhang}</strong></p>
-          <div style="max-height: 150px; overflow-y: auto;">
+          <div style="max-height: 150px; overflow-y: auto; overflow-x: auto;">
             <table class="phuluc-table">
               <thead>
                 <tr>
@@ -246,7 +286,7 @@ var PhuLucPlugin = (function () {
         </div>
 
         <div class="phuluc-form-card">
-          <h5 id="form-title" style="margin-top: 0; font-size: 15px; color: var(--color-primary); display: flex; align-items: center; gap: 8px;">
+          <h5 id="form-title" style="margin-top: 0; font-size: 15px; color: var(--color-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span class="material-symbols-outlined" style="font-size: 20px;">add_circle</span> 
             <span>Tạo Phụ Lục Mới</span>
             <span class="badge-mode badge-mode-new">CHẾ ĐỘ: TẠO MỚI</span>

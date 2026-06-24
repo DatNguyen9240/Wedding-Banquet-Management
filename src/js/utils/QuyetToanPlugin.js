@@ -123,6 +123,47 @@ var QuyetToanPlugin = (function () {
         margin-top: 8px !important;
         padding-top: 8px !important;
       }
+      .quyettoan-flex-row {
+        display: flex;
+        gap: 16px;
+      }
+      #containerNgayQuyetToan.form-group {
+        gap: 0 !important;
+      }
+      #containerNgayQuyetToan label {
+        font-weight: 700 !important;
+        color: var(--color-text) !important;
+        font-size: 12px !important;
+        margin-bottom: 4px !important;
+        display: inline-block !important;
+        white-space: nowrap !important;
+      }
+      @media (max-width: 768px) {
+        .quyettoan-card {
+          border: none !important;
+          border-radius: 0 !important;
+          padding: 0 !important;
+          background: transparent !important;
+        }
+      }
+      @media (max-width: 576px) {
+        .quyettoan-flex-row {
+          gap: 8px !important;
+        }
+        .quyettoan-plugin-wrapper .form-label {
+          font-size: 11px !important;
+          margin-bottom: 2px !important;
+        }
+        .quyettoan-plugin-wrapper .ui-input,
+        .quyettoan-plugin-wrapper select.ui-input {
+          padding: 4px 8px !important;
+          font-size: 12px !important;
+        }
+        #containerNgayQuyetToan label {
+          font-size: 11px !important;
+          margin-bottom: 2px !important;
+        }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -238,18 +279,20 @@ var QuyetToanPlugin = (function () {
           <div class="quyettoan-form-section">
             <!-- Cột trái: Thông tin chung & các chi phí phụ thu -->
             <div>
-              <div class="mb-3">
-                <label class="form-label fw-bold">Mã Phiếu Quyết Toán</label>
-                <input type="text" id="inpDocumentID" class="ui-input" readonly placeholder="Hệ thống tự sinh..." style="width:100%;">
+              <div class="quyettoan-flex-row">
+                <div style="flex: 1; min-width: 0;" class="mb-3">
+                  <label class="form-label fw-bold">Mã Phiếu Quyết Toán</label>
+                  <input type="text" id="inpDocumentID" class="ui-input" readonly placeholder="Hệ thống tự sinh..." style="width:100%;">
+                </div>
+                <div style="flex: 1; min-width: 0;" class="mb-3" id="containerNgayQuyetToan"></div>
               </div>
-              <div class="mb-3" id="containerNgayQuyetToan"></div>
               
               <div class="mb-3">
                 <label class="form-label fw-bold">Người nộp tiền</label>
                 <input type="text" id="inpNguoinop" class="ui-input" placeholder="Tên khách hàng nộp quyết toán..." style="width:100%;" required>
               </div>
 
-              <div class="d-flex gap-3">
+              <div class="quyettoan-flex-row">
                 <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Bù chênh lệch sảnh (VND)</label>
                   <input type="text" inputmode="numeric" id="inpPhiBuSanh" class="ui-input fee-trigger" value="0" style="width:100%;">
@@ -262,7 +305,7 @@ var QuyetToanPlugin = (function () {
                 </div>
               </div>
 
-              <div class="d-flex gap-3">
+              <div class="quyettoan-flex-row">
                 <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Bù trang trí sảnh (VND)</label>
                   <input type="text" inputmode="numeric" id="inpPhiBuTTS" class="ui-input fee-trigger" value="0" style="width:100%;">
@@ -275,7 +318,7 @@ var QuyetToanPlugin = (function () {
                 </div>
               </div>
 
-              <div class="d-flex gap-3">
+              <div class="quyettoan-flex-row">
                 <div style="flex: 1; min-width: 0;" class="mb-3">
                   <label class="form-label fw-bold">Số bàn phát sinh</label>
                   <input type="number" id="inpBanPhatSinh" class="ui-input fee-trigger" min="0" value="0" style="width:100%;">
@@ -386,7 +429,14 @@ var QuyetToanPlugin = (function () {
       required: true,
       value: defaultToday
     });
-    modalContent.querySelector('#containerNgayQuyetToan').appendChild(dateInput);
+    var containerNgay = modalContent.querySelector('#containerNgayQuyetToan');
+    if (containerNgay) {
+      containerNgay.parentNode.replaceChild(dateInput, containerNgay);
+      dateInput.id = 'containerNgayQuyetToan';
+      dateInput.style.flex = '1';
+      dateInput.style.minWidth = '0';
+      dateInput.classList.add('mb-3');
+    }
 
     var parseMoney = function (val) {
       return Number(String(val || '').replace(/\D/g, '')) || 0;

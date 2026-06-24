@@ -36,6 +36,7 @@
 .action-dropdown-menu .btn {
   display: flex !important;
   align-items: center !important;
+  justify-content: flex-start !important;
   gap: 8px !important;
   width: 100% !important;
   padding: 10px 16px !important;
@@ -64,6 +65,7 @@
   cursor: not-allowed !important;
   background: transparent !important;
 }
+
 .action-dropdown-menu button .material-symbols-outlined,
 .action-dropdown-menu .btn .material-symbols-outlined {
   font-size: 18px !important;
@@ -153,7 +155,7 @@
     flex: 1 1 auto !important;
     min-width: 0 !important;
   }
-  
+
   .action-dropdown.button-bar .btn-scroll-wrapper::-webkit-scrollbar {
     display: none !important;
   }
@@ -181,5 +183,9 @@
     background: transparent !important;
     padding: 0 !important;
     box-shadow: none !important;
+  }
+  .action-dropdown-menu {
+    max-height: 300px !important;
+    overflow-y: auto !important;
   }
 }
