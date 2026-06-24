@@ -115,6 +115,13 @@ var PhuLucPlugin = (function () {
         color: var(--color-warning, #f59e0b);
         border: 1px solid rgba(245, 158, 11, 0.3);
       }
+      .phuluc-form-card label,
+      .phuluc-form-card .form-label {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: block !important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -300,36 +307,42 @@ var PhuLucPlugin = (function () {
             <input type="hidden" name="JsonDichVu" id="inpJsonDichVu" value="[]">
             <input type="hidden" name="JsonPhatSinh" id="inpJsonPhatSinh" value="[]">
             <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label" style="font-weight: 600;">Số Phụ Lục (Hệ thống tự sinh nếu để trống)</label>
-                <input type="text" id="inpSothaydoi" class="ui-input" placeholder="Ví dụ: PL01/2026" maxlength="20" style="width: 100%;">
+              <div class="col-6 mb-3">
+                <label class="form-label" style="font-weight: 600;">Số Phụ Lục</label>
+                <input type="text" id="inpSothaydoi" class="ui-input" placeholder="Tự sinh nếu để trống" maxlength="20" style="width: 100%;">
               </div>
-              <div class="col-md-6" id="containerNgayLapPL"></div>
+              <div class="col-6 mb-3" id="containerNgayLapPL"></div>
             </div>
 
             <div class="row">
-              <div class="col-md-3 mb-3">
+              <div class="col-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Quy Mô Bàn (Từ)</label>
                 <input type="number" id="inpQuyMoBanTu" class="ui-input" style="width: 100%;" min="0">
               </div>
-              <div class="col-md-3 mb-3">
+              <div class="col-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Quy Mô Bàn (Đến)</label>
                 <input type="number" id="inpQuyMoBanDen" class="ui-input" style="width: 100%;" min="0">
               </div>
-              <div class="col-md-3" id="containerDonGia"></div>
-              <div class="col-md-3 mb-3">
+            </div>
+
+            <div class="row">
+              <div class="col-6 mb-3" id="containerDonGia"></div>
+              <div class="col-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Số Khách / Bàn</label>
                 <input type="number" id="inpSoKhachTrenBan" class="ui-input" style="width: 100%;" min="1" max="100">
               </div>
             </div>
 
             <div class="row">
-              <div class="col-md-3 mb-3">
-                <label class="form-label" style="font-weight: 600;">Tên Đợt Thanh Toán</label>
+              <div class="col-6 mb-3">
+                <label class="form-label" style="font-weight: 600;">Đợt Thanh Toán</label>
                 <input type="text" id="inpTenDotThanhToan" class="ui-input" placeholder="Ví dụ: Đợt 2" style="width: 100%;">
               </div>
-              <div class="col-md-3" id="containerThanhToanDot2"></div>
-              <div class="col-md-3 mb-3">
+              <div class="col-6 mb-3" id="containerThanhToanDot2"></div>
+            </div>
+
+            <div class="row">
+              <div class="col-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Hình Thức T.Toán</label>
                 <select id="inpHinhThucThanhToanDot2" class="ui-input" style="width: 100%;">
                   <option value="">Giữ nguyên từ Hợp đồng</option>
@@ -338,30 +351,33 @@ var PhuLucPlugin = (function () {
                   <option value="Tiền mặt / Chuyển khoản">Tiền mặt / Chuyển khoản</option>
                 </select>
               </div>
-              <div class="col-md-3" id="containerHanThanhToanDot2"></div>
+              <div class="col-6 mb-3" id="containerHanThanhToanDot2"></div>
             </div>
 
             <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label" style="font-weight: 600;">Chức vụ đại diện ký Bên A</label>
+              <div class="col-6 mb-3">
+                <label class="form-label" style="font-weight: 600;">Chức Vụ Đại Diện</label>
                 <input type="text" id="inpBenAChucVuDaiDien" class="ui-input" placeholder="Ví dụ: Đại diện kinh doanh" style="width: 100%;">
               </div>
-              <div class="col-md-6" id="containerNgayToChucTD"></div>
+              <div class="col-6 mb-3" id="containerNgayToChucTD"></div>
             </div>
 
             <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label" style="font-weight: 600;">Dịch vụ tính phí phụ lục (Mỗi dòng 1 mục)</label>
+              <div class="col-12 mb-3">
+                <label class="form-label" style="font-weight: 600;">Dịch Vụ Tính Phí</label>
                 <textarea id="inpDichVuTinhPhiPhuLuc" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. MC tiệc cưới: 2.000.000 VND&#10;2. Màn hình LED: 5.000.000 VND"></textarea>
               </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label" style="font-weight: 600;">Dịch vụ ưu đãi & thỏa thuận khác (Mỗi dòng 1 mục)</label>
+            </div>
+
+            <div class="row">
+              <div class="col-12 mb-3">
+                <label class="form-label" style="font-weight: 600;">Dịch Vụ Ưu Đãi</label>
                 <textarea id="inpThoaThuanPhuLucKhac" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. Sân khấu tiêu chuẩn&#10;2. Âm thanh ánh sáng"></textarea>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-md-12 mb-3">
+              <div class="col-12 mb-3">
                 <label class="form-label" style="font-weight: 600;">Nội dung thỏa thuận</label>
                 <textarea id="inpThoathuan" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Nhập nội dung thỏa thuận..."></textarea>
               </div>
@@ -391,7 +407,7 @@ var PhuLucPlugin = (function () {
 
       var ngayLapInput = UIInput.createDate({
         id: 'inpNgayLapPL',
-        label: 'Ngày Lập Phụ Lục',
+        label: 'Ngày Lập PL',
         required: true,
         value: defaultToday
       });
@@ -399,14 +415,14 @@ var PhuLucPlugin = (function () {
 
       var hanThanhToanInput = UIInput.createDate({
         id: 'inpHanThanhToanDot2',
-        label: 'Hạn Thanh Toán Đợt 2',
+        label: 'Hạn Thanh Toán',
         value: ''
       });
       modalContent.querySelector('#containerHanThanhToanDot2').appendChild(hanThanhToanInput);
 
       var ngayToChucTDInput = UIInput.createDate({
         id: 'inpNgayToChucTD',
-        label: 'Điều chỉnh Ngày Tổ Chức (Nếu có)',
+        label: 'Ngày Tổ Chức Mới',
         value: ''
       });
       modalContent.querySelector('#containerNgayToChucTD').appendChild(ngayToChucTDInput);
@@ -414,7 +430,7 @@ var PhuLucPlugin = (function () {
       // Cài đặt tự động format tiền tệ cho Đơn Giá và Số Tiền Đợt 2 bằng component UIInput.createMoney
       var donGiaInput = UIInput.createMoney({
         id: 'inpDonGiaBanTiec',
-        label: 'Đơn Giá Bàn Tiệc (VND)',
+        label: 'Đơn Giá Bàn (VND)',
         value: ''
       });
       modalContent.querySelector('#containerDonGia').appendChild(donGiaInput);

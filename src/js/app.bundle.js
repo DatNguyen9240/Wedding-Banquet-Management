@@ -5734,6 +5734,13 @@ var PhuLucPlugin = (function () {
         color: var(--color-warning, #f59e0b);
         border: 1px solid rgba(245, 158, 11, 0.3);
       }
+      .phuluc-form-card label,
+      .phuluc-form-card .form-label {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: block !important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -5919,36 +5926,42 @@ var PhuLucPlugin = (function () {
             <input type="hidden" name="JsonDichVu" id="inpJsonDichVu" value="[]">
             <input type="hidden" name="JsonPhatSinh" id="inpJsonPhatSinh" value="[]">
             <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label" style="font-weight: 600;">Số Phụ Lục (Hệ thống tự sinh nếu để trống)</label>
-                <input type="text" id="inpSothaydoi" class="ui-input" placeholder="Ví dụ: PL01/2026" maxlength="20" style="width: 100%;">
+              <div class="col-6 mb-3">
+                <label class="form-label" style="font-weight: 600;">Số Phụ Lục</label>
+                <input type="text" id="inpSothaydoi" class="ui-input" placeholder="Tự sinh nếu để trống" maxlength="20" style="width: 100%;">
               </div>
-              <div class="col-md-6" id="containerNgayLapPL"></div>
+              <div class="col-6 mb-3" id="containerNgayLapPL"></div>
             </div>
 
             <div class="row">
-              <div class="col-md-3 mb-3">
+              <div class="col-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Quy Mô Bàn (Từ)</label>
                 <input type="number" id="inpQuyMoBanTu" class="ui-input" style="width: 100%;" min="0">
               </div>
-              <div class="col-md-3 mb-3">
+              <div class="col-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Quy Mô Bàn (Đến)</label>
                 <input type="number" id="inpQuyMoBanDen" class="ui-input" style="width: 100%;" min="0">
               </div>
-              <div class="col-md-3" id="containerDonGia"></div>
-              <div class="col-md-3 mb-3">
+            </div>
+
+            <div class="row">
+              <div class="col-6 mb-3" id="containerDonGia"></div>
+              <div class="col-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Số Khách / Bàn</label>
                 <input type="number" id="inpSoKhachTrenBan" class="ui-input" style="width: 100%;" min="1" max="100">
               </div>
             </div>
 
             <div class="row">
-              <div class="col-md-3 mb-3">
-                <label class="form-label" style="font-weight: 600;">Tên Đợt Thanh Toán</label>
+              <div class="col-6 mb-3">
+                <label class="form-label" style="font-weight: 600;">Đợt Thanh Toán</label>
                 <input type="text" id="inpTenDotThanhToan" class="ui-input" placeholder="Ví dụ: Đợt 2" style="width: 100%;">
               </div>
-              <div class="col-md-3" id="containerThanhToanDot2"></div>
-              <div class="col-md-3 mb-3">
+              <div class="col-6 mb-3" id="containerThanhToanDot2"></div>
+            </div>
+
+            <div class="row">
+              <div class="col-6 mb-3">
                 <label class="form-label" style="font-weight: 600;">Hình Thức T.Toán</label>
                 <select id="inpHinhThucThanhToanDot2" class="ui-input" style="width: 100%;">
                   <option value="">Giữ nguyên từ Hợp đồng</option>
@@ -5957,30 +5970,33 @@ var PhuLucPlugin = (function () {
                   <option value="Tiền mặt / Chuyển khoản">Tiền mặt / Chuyển khoản</option>
                 </select>
               </div>
-              <div class="col-md-3" id="containerHanThanhToanDot2"></div>
+              <div class="col-6 mb-3" id="containerHanThanhToanDot2"></div>
             </div>
 
             <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label" style="font-weight: 600;">Chức vụ đại diện ký Bên A</label>
+              <div class="col-6 mb-3">
+                <label class="form-label" style="font-weight: 600;">Chức Vụ Đại Diện</label>
                 <input type="text" id="inpBenAChucVuDaiDien" class="ui-input" placeholder="Ví dụ: Đại diện kinh doanh" style="width: 100%;">
               </div>
-              <div class="col-md-6" id="containerNgayToChucTD"></div>
+              <div class="col-6 mb-3" id="containerNgayToChucTD"></div>
             </div>
 
             <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label" style="font-weight: 600;">Dịch vụ tính phí phụ lục (Mỗi dòng 1 mục)</label>
+              <div class="col-12 mb-3">
+                <label class="form-label" style="font-weight: 600;">Dịch Vụ Tính Phí</label>
                 <textarea id="inpDichVuTinhPhiPhuLuc" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. MC tiệc cưới: 2.000.000 VND&#10;2. Màn hình LED: 5.000.000 VND"></textarea>
               </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label" style="font-weight: 600;">Dịch vụ ưu đãi & thỏa thuận khác (Mỗi dòng 1 mục)</label>
+            </div>
+
+            <div class="row">
+              <div class="col-12 mb-3">
+                <label class="form-label" style="font-weight: 600;">Dịch Vụ Ưu Đãi</label>
                 <textarea id="inpThoaThuanPhuLucKhac" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Ví dụ:&#10;1. Sân khấu tiêu chuẩn&#10;2. Âm thanh ánh sáng"></textarea>
               </div>
             </div>
 
             <div class="row">
-              <div class="col-md-12 mb-3">
+              <div class="col-12 mb-3">
                 <label class="form-label" style="font-weight: 600;">Nội dung thỏa thuận</label>
                 <textarea id="inpThoathuan" class="ui-input" rows="3" style="width: 100%; resize: vertical;" placeholder="Nhập nội dung thỏa thuận..."></textarea>
               </div>
@@ -6010,7 +6026,7 @@ var PhuLucPlugin = (function () {
 
       var ngayLapInput = UIInput.createDate({
         id: 'inpNgayLapPL',
-        label: 'Ngày Lập Phụ Lục',
+        label: 'Ngày Lập PL',
         required: true,
         value: defaultToday
       });
@@ -6018,14 +6034,14 @@ var PhuLucPlugin = (function () {
 
       var hanThanhToanInput = UIInput.createDate({
         id: 'inpHanThanhToanDot2',
-        label: 'Hạn Thanh Toán Đợt 2',
+        label: 'Hạn Thanh Toán',
         value: ''
       });
       modalContent.querySelector('#containerHanThanhToanDot2').appendChild(hanThanhToanInput);
 
       var ngayToChucTDInput = UIInput.createDate({
         id: 'inpNgayToChucTD',
-        label: 'Điều chỉnh Ngày Tổ Chức (Nếu có)',
+        label: 'Ngày Tổ Chức Mới',
         value: ''
       });
       modalContent.querySelector('#containerNgayToChucTD').appendChild(ngayToChucTDInput);
@@ -6033,7 +6049,7 @@ var PhuLucPlugin = (function () {
       // Cài đặt tự động format tiền tệ cho Đơn Giá và Số Tiền Đợt 2 bằng component UIInput.createMoney
       var donGiaInput = UIInput.createMoney({
         id: 'inpDonGiaBanTiec',
-        label: 'Đơn Giá Bàn Tiệc (VND)',
+        label: 'Đơn Giá Bàn (VND)',
         value: ''
       });
       modalContent.querySelector('#containerDonGia').appendChild(donGiaInput);
@@ -10773,10 +10789,6 @@ var Navbar = (function () {
             <div class="user-dropdown" id="user-dropdown">
               <!-- No Header (Admin/Role removed) -->
 
-              <div class="user-dropdown-item">
-                <span class="material-symbols-outlined">person</span>
-                Hồ sơ cá nhân
-              </div>
               <a href="#/appearance" class="user-dropdown-item" style="text-decoration: none;">
                 <span class="material-symbols-outlined">palette</span>
                 Cài đặt Giao diện
@@ -10878,10 +10890,6 @@ var Navbar = (function () {
                 <!-- Vertical user dropdown -->
                 <div class="user-dropdown" id="vertical-user-dropdown">
                   <!-- No Header (Admin/Role removed) -->
-                  <div class="user-dropdown-item">
-                    <span class="material-symbols-outlined">person</span>
-                    Hồ sơ cá nhân
-                  </div>
                   <a href="#/appearance" class="user-dropdown-item" style="text-decoration: none;">
                     <span class="material-symbols-outlined">palette</span>
                     Cài đặt Giao diện
@@ -11149,9 +11157,9 @@ var Navbar = (function () {
 
     function updateScrollArrows() {
       if (!$menu || !$scrollLeft || !$scrollRight) return;
-      var scrollable = $menu.scrollWidth > $menu.clientWidth + 2;
-      $scrollLeft.style.display = (scrollable && $menu.scrollLeft > 5) ? 'flex' : 'none';
-      $scrollRight.style.display = (scrollable && $menu.scrollLeft < $menu.scrollWidth - $menu.clientWidth - 5) ? 'flex' : 'none';
+      var scrollable = $menu.scrollWidth > $menu.clientWidth + 15;
+      $scrollLeft.style.display = (scrollable && $menu.scrollLeft > 10) ? 'flex' : 'none';
+      $scrollRight.style.display = (scrollable && $menu.scrollLeft < $menu.scrollWidth - $menu.clientWidth - 10) ? 'flex' : 'none';
     }
 
     if ($menu && $scrollLeft && $scrollRight) {
@@ -11165,7 +11173,31 @@ var Navbar = (function () {
       });
       $menu.addEventListener('scroll', updateScrollArrows);
       window.addEventListener('resize', updateScrollArrows);
+      
+      // Update when mouse enters menu or wrapper area
+      var $wrapper = document.getElementById('navbar-menu-wrapper');
+      if ($wrapper) {
+        $wrapper.addEventListener('mouseenter', updateScrollArrows);
+      }
+      $menu.addEventListener('mouseenter', updateScrollArrows);
+      
+      // Update on menu click (e.g. expanding/toggling group)
+      $menu.addEventListener('click', function() {
+        setTimeout(updateScrollArrows, 50);
+        setTimeout(updateScrollArrows, 300);
+      });
+
+      // MutationObserver to watch for dynamic DOM modifications (e.g. database dynamic route rendering)
+      if (typeof MutationObserver !== 'undefined') {
+        var observer = new MutationObserver(updateScrollArrows);
+        observer.observe($menu, { childList: true, subtree: true, characterData: true });
+      }
+
+      // Run multiple delayed checks in case assets/fonts/styles render dynamically later
       setTimeout(updateScrollArrows, 100);
+      setTimeout(updateScrollArrows, 300);
+      setTimeout(updateScrollArrows, 800);
+      setTimeout(updateScrollArrows, 1500);
     }
 
     _highlightActive();
@@ -13987,6 +14019,19 @@ var UIActionToolbar = (function () {
     var container = document.createElement('div');
     container.className = 'action-dropdown button-bar';
 
+    // Tạo nút cuộn trái
+    var scrollLeftBtn = document.createElement('button');
+    scrollLeftBtn.type = 'button';
+    scrollLeftBtn.className = 'actionbar-scroll-arrow actionbar-scroll-left';
+    scrollLeftBtn.title = 'Cuộn trái';
+    scrollLeftBtn.innerHTML = '<span class="material-symbols-outlined">chevron_left</span>';
+    container.appendChild(scrollLeftBtn);
+
+    // Tạo wrapper cuộn chứa trigger và menu
+    var wrapper = document.createElement('div');
+    wrapper.className = 'btn-scroll-wrapper';
+    container.appendChild(wrapper);
+
     // 2. Tạo Trigger Button
     var trigger = document.createElement('button');
     trigger.className = 'btn btn-primary action-dropdown-trigger';
@@ -13995,18 +14040,26 @@ var UIActionToolbar = (function () {
       <span>Thao tác</span>
       <span class="material-symbols-outlined icon-arrow">arrow_drop_down</span>
     `;
-    container.appendChild(trigger);
+    wrapper.appendChild(trigger);
 
     // 3. Tạo Menu Container
     var menu = document.createElement('div');
     menu.className = 'action-dropdown-menu';
-    container.appendChild(menu);
+    wrapper.appendChild(menu);
 
     // 4. Tạo các buttons bên trong menu
     filteredButtons.forEach(function(bConfig) {
       var btn = UIButton.create(bConfig);
       menu.appendChild(btn);
     });
+
+    // Tạo nút cuộn phải
+    var scrollRightBtn = document.createElement('button');
+    scrollRightBtn.type = 'button';
+    scrollRightBtn.className = 'actionbar-scroll-arrow actionbar-scroll-right';
+    scrollRightBtn.title = 'Cuộn phải';
+    scrollRightBtn.innerHTML = '<span class="material-symbols-outlined">chevron_right</span>';
+    container.appendChild(scrollRightBtn);
 
     // 5. Toggle logic
     trigger.addEventListener('click', function(e) {
@@ -14025,6 +14078,39 @@ var UIActionToolbar = (function () {
     document.addEventListener('click', function() {
       menu.style.display = 'none';
     });
+
+    // Cập nhật mũi tên cuộn
+    function updateActionbarArrows() {
+      var scrollable = wrapper.scrollWidth > wrapper.clientWidth + 15;
+      scrollLeftBtn.style.display = (scrollable && wrapper.scrollLeft > 10) ? 'flex' : 'none';
+      scrollRightBtn.style.display = (scrollable && wrapper.scrollLeft < wrapper.scrollWidth - wrapper.clientWidth - 10) ? 'flex' : 'none';
+    }
+
+    // Sự kiện cuộn mượt
+    scrollLeftBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      wrapper.scrollBy({ left: -180, behavior: 'smooth' });
+    });
+    scrollRightBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      wrapper.scrollBy({ left: 180, behavior: 'smooth' });
+    });
+
+    wrapper.addEventListener('scroll', updateActionbarArrows);
+    window.addEventListener('resize', updateActionbarArrows);
+    wrapper.addEventListener('mouseenter', updateActionbarArrows);
+    container.addEventListener('mouseenter', updateActionbarArrows);
+
+    // MutationObserver để tự động cập nhật khi nút/chữ thay đổi bên trong
+    if (typeof MutationObserver !== 'undefined') {
+      var observer = new MutationObserver(updateActionbarArrows);
+      observer.observe(wrapper, { childList: true, subtree: true, characterData: true });
+    }
+
+    // Kích hoạt tính toán ban đầu
+    setTimeout(updateActionbarArrows, 100);
+    setTimeout(updateActionbarArrows, 300);
+    setTimeout(updateActionbarArrows, 800);
 
     return container;
   }

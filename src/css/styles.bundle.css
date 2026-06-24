@@ -3282,7 +3282,9 @@ body.dark-theme .section-panel .card-header {
 /* Responsive visibility: show flat buttons on desktop, dropdown on mobile */
 @media (min-width: 769px) {
   .action-dropdown.button-bar {
-    display: inline-flex !important;
+    display: flex !important;
+    max-width: 100% !important;
+    flex-wrap: nowrap !important;
   }
 
   .action-dropdown-trigger {
@@ -3299,6 +3301,8 @@ body.dark-theme .section-panel .card-header {
     gap: 8px !important;
     animation: none !important;
     width: auto !important;
+    flex-wrap: nowrap !important;
+    flex-shrink: 0 !important;
   }
 
   .action-dropdown-menu button,
@@ -3319,6 +3323,8 @@ body.dark-theme .section-panel .card-header {
     cursor: pointer !important;
     transition: all 0.15s !important;
     margin: 0 !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
   }
 
   .action-dropdown-menu button:hover,
@@ -3326,9 +3332,7 @@ body.dark-theme .section-panel .card-header {
     background: var(--color-background) !important;
     color: var(--color-primary) !important;
   }
-}
 
-@media (min-width: 769px) and (max-width: 1440px) {
   .action-dropdown.button-bar .btn-scroll-wrapper {
     overflow-x: auto !important;
     overflow-y: hidden !important;
@@ -3342,20 +3346,33 @@ body.dark-theme .section-panel .card-header {
     display: none !important;
   }
 
-  .action-dropdown.button-bar {
-    max-width: 100% !important;
-    display: flex !important;
-    flex-wrap: nowrap !important;
+  /* Nút cuộn actionbar không viền */
+  .actionbar-scroll-arrow {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none !important;
+    background: var(--color-sidebar) !important;
+    color: var(--color-text-secondary) !important;
+    cursor: pointer;
+    border-radius: 50%;
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: opacity 0.2s, background 0.2s;
+    z-index: 2;
+    padding: 0;
   }
 
-  .action-dropdown-menu {
-    flex-wrap: nowrap !important;
+  .actionbar-scroll-arrow .material-symbols-outlined {
+    font-size: 20px !important;
   }
 
-  .action-dropdown-menu button,
-  .action-dropdown-menu .btn {
-    flex-shrink: 0 !important;
-    white-space: nowrap !important;
+  .actionbar-scroll-arrow:hover {
+    opacity: 1 !important;
+    background: var(--color-background) !important;
+    color: var(--color-primary) !important;
   }
 }
 

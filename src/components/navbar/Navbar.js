@@ -219,10 +219,6 @@ var Navbar = (function () {
             <div class="user-dropdown" id="user-dropdown">
               <!-- No Header (Admin/Role removed) -->
 
-              <div class="user-dropdown-item">
-                <span class="material-symbols-outlined">person</span>
-                Hồ sơ cá nhân
-              </div>
               <a href="#/appearance" class="user-dropdown-item" style="text-decoration: none;">
                 <span class="material-symbols-outlined">palette</span>
                 Cài đặt Giao diện
@@ -324,10 +320,6 @@ var Navbar = (function () {
                 <!-- Vertical user dropdown -->
                 <div class="user-dropdown" id="vertical-user-dropdown">
                   <!-- No Header (Admin/Role removed) -->
-                  <div class="user-dropdown-item">
-                    <span class="material-symbols-outlined">person</span>
-                    Hồ sơ cá nhân
-                  </div>
                   <a href="#/appearance" class="user-dropdown-item" style="text-decoration: none;">
                     <span class="material-symbols-outlined">palette</span>
                     Cài đặt Giao diện
@@ -595,9 +587,9 @@ var Navbar = (function () {
 
     function updateScrollArrows() {
       if (!$menu || !$scrollLeft || !$scrollRight) return;
-      var scrollable = $menu.scrollWidth > $menu.clientWidth + 2;
-      $scrollLeft.style.display = (scrollable && $menu.scrollLeft > 5) ? 'flex' : 'none';
-      $scrollRight.style.display = (scrollable && $menu.scrollLeft < $menu.scrollWidth - $menu.clientWidth - 5) ? 'flex' : 'none';
+      var scrollable = $menu.scrollWidth > $menu.clientWidth + 15;
+      $scrollLeft.style.display = (scrollable && $menu.scrollLeft > 10) ? 'flex' : 'none';
+      $scrollRight.style.display = (scrollable && $menu.scrollLeft < $menu.scrollWidth - $menu.clientWidth - 10) ? 'flex' : 'none';
     }
 
     if ($menu && $scrollLeft && $scrollRight) {
@@ -611,7 +603,31 @@ var Navbar = (function () {
       });
       $menu.addEventListener('scroll', updateScrollArrows);
       window.addEventListener('resize', updateScrollArrows);
+      
+      // Update when mouse enters menu or wrapper area
+      var $wrapper = document.getElementById('navbar-menu-wrapper');
+      if ($wrapper) {
+        $wrapper.addEventListener('mouseenter', updateScrollArrows);
+      }
+      $menu.addEventListener('mouseenter', updateScrollArrows);
+      
+      // Update on menu click (e.g. expanding/toggling group)
+      $menu.addEventListener('click', function() {
+        setTimeout(updateScrollArrows, 50);
+        setTimeout(updateScrollArrows, 300);
+      });
+
+      // MutationObserver to watch for dynamic DOM modifications (e.g. database dynamic route rendering)
+      if (typeof MutationObserver !== 'undefined') {
+        var observer = new MutationObserver(updateScrollArrows);
+        observer.observe($menu, { childList: true, subtree: true, characterData: true });
+      }
+
+      // Run multiple delayed checks in case assets/fonts/styles render dynamically later
       setTimeout(updateScrollArrows, 100);
+      setTimeout(updateScrollArrows, 300);
+      setTimeout(updateScrollArrows, 800);
+      setTimeout(updateScrollArrows, 1500);
     }
 
     _highlightActive();

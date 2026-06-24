@@ -955,18 +955,20 @@ window.DynamicFormEngine = (function () {
     var actualToolbar = btnContainer.firstElementChild; // .button-bar
     if (!actualToolbar) return;
 
+    var wrapper = actualToolbar.querySelector('.btn-scroll-wrapper');
+
+    var updateActionbarArrows = function() {
+      if (!wrapper) return;
+      var scrollLeftBtn = actualToolbar.querySelector('.actionbar-scroll-left');
+      var scrollRightBtn = actualToolbar.querySelector('.actionbar-scroll-right');
+      if (!scrollLeftBtn || !scrollRightBtn) return;
+      var scrollable = wrapper.scrollWidth > wrapper.clientWidth + 15;
+      scrollLeftBtn.style.display = (scrollable && wrapper.scrollLeft > 10) ? 'flex' : 'none';
+      scrollRightBtn.style.display = (scrollable && wrapper.scrollLeft < wrapper.scrollWidth - wrapper.clientWidth - 10) ? 'flex' : 'none';
+    };
+
     var counter = actualToolbar.querySelector('#selection-counter');
     if (!counter) {
-      // Bọc các nút bấm hiện tại vào một vùng cuộn riêng để bảo toàn background trắng của toolbar gốc
-      if (!actualToolbar.querySelector('.btn-scroll-wrapper')) {
-        var wrapper = document.createElement('div');
-        wrapper.className = 'btn-scroll-wrapper';
-        while (actualToolbar.firstChild) {
-          wrapper.appendChild(actualToolbar.firstChild);
-        }
-        actualToolbar.appendChild(wrapper);
-      }
-
       if (!document.getElementById('selection-counter-style')) {
         var style = document.createElement('style');
         style.id = 'selection-counter-style';
@@ -977,28 +979,13 @@ window.DynamicFormEngine = (function () {
             display: flex;
             flex-wrap: nowrap;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
           }
           @media (max-width: 768px) {
             #dynamic-btn-container .button-bar,
             .page-title-actions .button-bar {
               flex-wrap: nowrap !important;
             }
-          }
-          /* Wrapper chứa nút bấm: Cuộn ngang, không rớt dòng */
-          .btn-scroll-wrapper {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            flex: 1 1 auto;
-            min-width: 0;
-            gap: 8px;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-            padding-bottom: 2px;
-          }
-          .btn-scroll-wrapper::-webkit-scrollbar {
-            display: none;
           }
           /* Badge Đã chọn */
           #selection-counter {
@@ -1016,10 +1003,6 @@ window.DynamicFormEngine = (function () {
             gap: 4px;
           }
           @media (max-width: 768px) {
-            .btn-scroll-wrapper {
-              flex: 0 1 auto !important;
-              width: auto !important;
-            }
             #selection-counter {
               margin-left: auto !important; /* Đẩy sát về bên phải */
               margin-top: 0 !important;
@@ -1064,6 +1047,10 @@ window.DynamicFormEngine = (function () {
     } else {
       counter.style.display = 'none';
       counter.innerHTML = '';
+    }
+
+    if (typeof updateActionbarArrows === 'function') {
+      setTimeout(updateActionbarArrows, 60);
     }
   }
 
