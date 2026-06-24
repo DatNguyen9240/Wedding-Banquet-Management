@@ -1267,6 +1267,13 @@ var FoodSelectionPlugin = (function () {
         background-color: var(--color-background);
         font-weight: 700;
         vertical-align: middle;
+        text-align: left !important;
+      }
+      .food-summary-grid-body th.text-center {
+        text-align: center !important;
+      }
+      .food-summary-grid-body th.text-end {
+        text-align: right !important;
       }
       .food-summary-grid-body td {
         white-space: nowrap;
@@ -1978,7 +1985,7 @@ var FoodSelectionPlugin = (function () {
           <thead>
             <tr>
               <th class="text-center" style="width: 60px;">STT</th>
-              <th>Phân Loại</th>
+              <th style="width: 120px;">Phân Loại</th>
               <th>Tên Món Ăn</th>
               <th class="text-end" style="width: 140px;">Đơn Giá</th>
               <th class="text-center" style="width: 60px;">Xóa</th>
@@ -2009,7 +2016,7 @@ var FoodSelectionPlugin = (function () {
           <thead>
             <tr>
               <th class="text-center" style="width: 60px;">STT</th>
-              <th>Phân Loại</th>
+              <th style="width: 120px;">Phân Loại</th>
               <th>Tên Món Chay</th>
               <th class="text-end" style="width: 140px;">Đơn Giá</th>
               <th class="text-center" style="width: 60px;">Xóa</th>
@@ -3088,6 +3095,13 @@ var PhatSinhPlugin = (function () {
         background-color: var(--color-background);
         font-weight: 700;
         vertical-align: middle;
+        text-align: left !important;
+      }
+      .food-summary-grid-body th.text-center {
+        text-align: center !important;
+      }
+      .food-summary-grid-body th.text-end {
+        text-align: right !important;
       }
       .food-summary-grid-body td {
         white-space: nowrap;
@@ -3799,7 +3813,7 @@ var PhatSinhPlugin = (function () {
           <thead>
             <tr>
               <th class="text-center" style="width: 60px;">STT</th>
-              <th>Phân Loại</th>
+              <th style="width: 120px;">Phân Loại</th>
               <th>Tên Món Ăn</th>
               <th class="text-end" style="width: 140px;">Đơn Giá</th>
               <th class="text-center" style="width: 60px;">Xóa</th>
@@ -3830,7 +3844,7 @@ var PhatSinhPlugin = (function () {
           <thead>
             <tr>
               <th class="text-center" style="width: 60px;">STT</th>
-              <th>Phân Loại</th>
+              <th style="width: 120px;">Phân Loại</th>
               <th>Tên Món Chay</th>
               <th class="text-end" style="width: 140px;">Đơn Giá</th>
               <th class="text-center" style="width: 60px;">Xóa</th>
