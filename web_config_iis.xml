@@ -3,16 +3,16 @@
   <system.webServer>
     <rewrite>
       <rules>
-        <!-- Chuyển tiếp các request /docserver/ sang Node.js Document Server (103.190.38.46:8081) -->
+        <!-- Chuyển tiếp các request /docserver/ sang Node.js Document Server (127.0.0.1:8081) -->
         <rule name="DocServer Proxy" stopProcessing="true">
           <match url="^docserver/(.*)" />
-          <action type="Rewrite" url="http://103.190.38.46:8081/{R:1}" />
+          <action type="Rewrite" url="http://127.0.0.1:8081/{R:1}" />
         </rule>
         
-        <!-- Chuyển tiếp các request /onlyoffice/ sang OnlyOffice Server (103.190.38.46:8082) -->
+        <!-- Chuyển tiếp các request /onlyoffice/ sang OnlyOffice Server (127.0.0.1:8000) -->
         <rule name="OnlyOffice Proxy" stopProcessing="true">
           <match url="^onlyoffice/(.*)" />
-          <action type="Rewrite" url="http://103.190.38.46:8082/{R:1}" />
+          <action type="Rewrite" url="http://127.0.0.1:8000/{R:1}" />
         </rule>
       </rules>
     </rewrite>
