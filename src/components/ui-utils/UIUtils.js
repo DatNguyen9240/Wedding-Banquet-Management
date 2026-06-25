@@ -90,13 +90,52 @@ UIControls.utils = (function() {
    * Sinh HTML cho Dropdown Table List
    */
   function createDropdownTableHTML(headers, data, colHighlightIndex) {
-    var theadHTML = headers.map(h => `<th>${h}</th>`).join('');
+    // Xác định các cột là cột số dựa trên dữ liệu dòng
+    var numericCols = {};
+    for (var cIdx = 0; cIdx < headers.length; cIdx++) {
+      numericCols[cIdx] = data && data.some(function(row) {
+        var cellVal = row[cIdx];
+        if (cellVal === null || cellVal === undefined || cellVal === '') return false;
+        var str = String(cellVal).trim();
+        return (str !== '' && !isNaN(Number(str)) && !/^0\d{9,11}$/.test(str) && str.length < 15);
+      });
+    }
+
+    var theadHTML = headers.map(function(h, cIdx) {
+      var styleAttr = numericCols[cIdx] ? ' style="text-align: right;"' : '';
+      return `<th${styleAttr}>${h}</th>`;
+    }).join('');
+
     var tbodyHTML = data.map(function(row, rIdx) {
       // Chỉ render số lượng cột bằng với số lượng headers, các cột thừa sẽ bị ẩn (để dùng cho Auto-fill)
       var displayRow = row.slice(0, headers.length);
       var cells = displayRow.map(function(cell, cIdx) {
         var cls = (cIdx === colHighlightIndex) ? 'highlight-col' : '';
-        return `<td class="${cls}">${cell}</td>`;
+        
+        var cellContent = cell;
+        var styleAttr = '';
+        var titleAttr = '';
+        
+        if (numericCols[cIdx] && cell !== null && cell !== undefined && cell !== '') {
+          var strVal = String(cell).trim();
+          if (strVal !== '') {
+            var num = Number(strVal);
+            if (!isNaN(num)) {
+              styleAttr = ' style="text-align: right;"';
+              cellContent = typeof FormatUtils !== 'undefined' ? FormatUtils.number(num) : num.toLocaleString('vi-VN');
+              var words = typeof FormatUtils !== 'undefined' && typeof FormatUtils.docSoTienVN === 'function' ? FormatUtils.docSoTienVN(num) : '';
+              if (words) {
+                words = words.charAt(0).toUpperCase() + words.slice(1);
+                if (words.endsWith(' đồng')) {
+                  words = words.substring(0, words.length - 5);
+                }
+                titleAttr = ' title="' + words + '"';
+              }
+            }
+          }
+        }
+        
+        return `<td class="${cls}"${styleAttr}${titleAttr}>${cellContent}</td>`;
       }).join('');
       return `<tr data-index="${rIdx}">${cells}</tr>`;
     }).join('');

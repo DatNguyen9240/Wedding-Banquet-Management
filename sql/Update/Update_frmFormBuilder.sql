@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 -- 0. Khởi tạo/Bổ sung đầy đủ các trường cấu hình cho FormBuilder nếu chưa có
@@ -28,7 +28,7 @@ IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' A
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'OrderNo')
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
-    VALUES ('frmFormBuilder', 'OrderNo', N'Thứ tự ưu tiên', 'Order No', 'nm', 1, '6', 1, 1, 0, 0, 7);
+    VALUES ('frmFormBuilder', 'OrderNo', N'Thứ tự ưu tiên', 'Order No', 'n', 1, '6', 1, 1, 0, 0, 7);
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmFormBuilder' AND FieldName = 'IsRequired')
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, CaptionEN, FormatID, IsRequired, FormPosition, ShowInAdd, ShowInEdit, IsReadOnlyEdit, IsReadOnlyAdd, OrderNo)
@@ -102,7 +102,7 @@ UPDATE SY_FormatFields SET FormatID = 'sl', DataSource = N'STATIC:12|Đầy đ�
 WHERE FormName = 'frmFormBuilder' AND FieldName = 'FormPosition';
 
 -- Cột số thứ tự
-UPDATE SY_FormatFields SET FormatID = 'nm' 
+UPDATE SY_FormatFields SET FormatID = 'n' 
 WHERE FormName = 'frmFormBuilder' AND FieldName = 'OrderNo';
 
 -- 3. Cập nhật FormPosition để dàn layout cho gọn gàng (2 ô 1 hàng)

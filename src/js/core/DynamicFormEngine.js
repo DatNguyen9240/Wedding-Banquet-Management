@@ -347,8 +347,12 @@ window.DynamicFormEngine = (function () {
 
           // Xây dựng Custom Renderers Động từ cấu hình DB (tránh đè logic JSON của UITable)
           if (item.renderRule && item.renderRule.toLowerCase() !== 'js' && item.renderRule.toLowerCase() !== 'json') {
+            var outerRule = item.renderRule.toLowerCase();
+            var outerNameLower = (item.name || '').toLowerCase();
+
             globalRenderers[item.name] = function (v) {
-              var rule = item.renderRule.toLowerCase();
+              var rule = outerRule;
+              var nameLower = outerNameLower;
 
               // Các rule là boolean/switch
               if (rule === 'sw' || rule === 'boolean') {
@@ -370,8 +374,8 @@ window.DynamicFormEngine = (function () {
                 if (matched) return matched.text;
               }
 
-              // Định dạng tiền Việt Nam (dấu chấm phân tách, hover hiện chữ tiếng Việt)
-              if (rule === 'mn') {
+              // Định dạng tiền / số Việt Nam (dấu chấm phân tách, hover hiện chữ tiếng Việt có dấu)
+              if (rule === 'mn' || rule === 'n') {
                 if (v === null || v === undefined || v === '') return '';
                 var num = Number(v);
                 if (isNaN(num)) return v;
@@ -381,6 +385,10 @@ window.DynamicFormEngine = (function () {
                   : (typeof UIControls !== 'undefined' && typeof UIControls.docSoTienVN === 'function' ? UIControls.docSoTienVN(num) : '');
                 if (words) {
                   words = words.charAt(0).toUpperCase() + words.slice(1);
+                  // Bỏ chữ "đồng" nếu là số thường (rule === 'n')
+                  if (rule === 'n' && words.endsWith(' đồng')) {
+                    words = words.substring(0, words.length - 5);
+                  }
                   return '<span title="' + words + '">' + formatted + '</span>';
                 }
                 return '<span>' + formatted + '</span>';
@@ -407,6 +415,7 @@ window.DynamicFormEngine = (function () {
               }
               return v;
             };
+            globalRenderers[item.name].renderRule = outerRule;
           }
 
           // Xây Schema cho Form (Lưu toàn bộ để lấy Khóa chính)

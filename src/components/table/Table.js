@@ -495,6 +495,24 @@ var UITable = (function () {
               // Ignore and fallback
             }
           }
+          var keyLower = key.toLowerCase();
+          var strVal = String(v).trim();
+          var isNumeric = (strVal !== '' && !isNaN(Number(strVal)) && !/^0\d{9,11}$/.test(strVal) && strVal.length < 15);
+          
+          if (isNumeric) {
+            var num = Number(strVal);
+            var formatted = typeof FormatUtils !== 'undefined' ? FormatUtils.number(num) : num.toLocaleString('vi-VN');
+            var words = typeof FormatUtils !== 'undefined' && typeof FormatUtils.docSoTienVN === 'function' ? FormatUtils.docSoTienVN(num) : '';
+            if (words) {
+              words = words.charAt(0).toUpperCase() + words.slice(1);
+              if (words.endsWith(' đồng')) {
+                words = words.substring(0, words.length - 5);
+              }
+              return '<span title="' + words + '">' + formatted + '</span>';
+            }
+            return '<span>' + formatted + '</span>';
+          }
+
           var safeVal = String(v).replace(/"/g, '&quot;');
           return '<span title="' + safeVal + '">' + safeVal + '</span>'; 
         };
@@ -518,16 +536,37 @@ var UITable = (function () {
           header.align = 'center';
           col.align = 'center';
           col.render = function(v) { return typeof FormatUtils !== 'undefined' ? FormatUtils.date(v) : v; };
+        } else {
+          var isNumericCol = data && data.some(function(row) {
+            var val = row[key];
+            if (val === null || val === undefined || val === '') return false;
+            var str = String(val).trim();
+            return (str !== '' && !isNaN(Number(str)) && !/^0\d{9,11}$/.test(str) && str.length < 15);
+          });
+          if (isNumericCol) {
+            header.align = 'right';
+            col.align = 'right';
+          }
         }
 
-        // Custom renderer (nếu truyền vào)
-        if (options.actionRenderers && options.actionRenderers[key]) {
-          var customRender = options.actionRenderers[key];
-          col.render = function(v) { return customRender(v, key); };
+        // Custom renderer (nếu truyền vào) - Hỗ trợ không phân biệt hoa thường để khớp với cột SQL in hoa
+        var matchedRenderer = null;
+        if (options.actionRenderers) {
+          var targetKey = Object.keys(options.actionRenderers).find(function(rk) {
+            return rk.toLowerCase() === keyLower;
+          });
+          if (targetKey) matchedRenderer = options.actionRenderers[targetKey];
+        }
+
+        if (matchedRenderer) {
+          col.render = function (v) { return matchedRenderer(v, key); };
+          if (matchedRenderer.renderRule === 'mn' || matchedRenderer.renderRule === 'nm' || matchedRenderer.renderRule === 'n') {
+            header.align = 'right';
+            col.align = 'right';
+          }
         } else if (options.actionRenderers && options.actionRenderers[headerLabel]) {
-          // Hoặc kiểm tra theo label tiếng Việt nếu dev truyền key là label
           var customRenderLabel = options.actionRenderers[headerLabel];
-          col.render = function(v) { return customRenderLabel(v, key); };
+          col.render = function (v) { return customRenderLabel(v, key); };
         }
 
         dynamicHeaders.push(header);
