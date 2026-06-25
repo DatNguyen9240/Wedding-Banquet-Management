@@ -358,6 +358,22 @@ window.DynamicFormEngine = (function () {
                   : '<span style="color:var(--color-text-tertiary);">-</span>';
               }
 
+              // Định dạng tiền Việt Nam (dấu chấm phân tách, hover hiện chữ tiếng Việt)
+              if (rule === 'mn') {
+                if (v === null || v === undefined || v === '') return '';
+                var num = Number(v);
+                if (isNaN(num)) return v;
+                var formatted = typeof FormatUtils !== 'undefined' ? FormatUtils.number(num) : num.toLocaleString('vi-VN');
+                var words = typeof FormatUtils !== 'undefined' && typeof FormatUtils.docSoTienVN === 'function'
+                  ? FormatUtils.docSoTienVN(num)
+                  : (typeof UIControls !== 'undefined' && typeof UIControls.docSoTienVN === 'function' ? UIControls.docSoTienVN(num) : '');
+                if (words) {
+                  words = words.charAt(0).toUpperCase() + words.slice(1);
+                  return '<span title="' + words + '">' + formatted + '</span>';
+                }
+                return '<span>' + formatted + '</span>';
+              }
+
               if (!v || v === '0' || v === 0) return (rule.indexOf('badge:') === 0 || rule === 'bg' || rule === 'br' || rule === 'bw') ? '-' : v;
 
               // Phím tắt 2 ký tự cho FormatID (varchar 2)
