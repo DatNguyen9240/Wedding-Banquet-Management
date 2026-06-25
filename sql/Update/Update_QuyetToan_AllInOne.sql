@@ -1293,6 +1293,14 @@ BEGIN
         INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, ShowInFilter, DataSource)
         VALUES ('frmQuyetToan', 'Sohopdong', N'Số Hợp Đồng', 'sr', '6', 0, 10, 1, 1, 0, 1, 1, '/api/API_Gateway_Router?List=API_DanhSachHopDong&Func=View');
     END
+    -- Đảm bảo có từ điển để dịch cột Sobiennhan và Makh trên popup chọn Hợp đồng cho frmQuyetToan
+    IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmQuyetToan' AND FieldName = 'Sobiennhan')
+        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID, ShowInGrid)
+        VALUES ('frmQuyetToan', 'Sobiennhan', N'Số Biên Nhận', 0, 0, 0, 0, 99, '6', 't', 0);
+
+    IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmQuyetToan' AND FieldName = 'Makh')
+        INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID, ShowInGrid)
+        VALUES ('frmQuyetToan', 'Makh', N'Mã Khách Hàng', 0, 0, 0, 0, 100, '6', 't', 0);
 END
 GO
 

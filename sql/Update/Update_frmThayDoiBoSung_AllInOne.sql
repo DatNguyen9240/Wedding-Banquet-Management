@@ -1495,7 +1495,7 @@ SET CaptionVN = N'Bên A - Chức Vụ Người Ký', FormatID = 't', ShowInAdd 
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'BenAChucVuDaiDien';
 
 UPDATE ff
-SET CaptionVN = N'Trạng Thái Phụ Lục', FormatID = 'sl', DataSource = N'STATIC:DRAFT|Bản nháp,SIGNED|Đã ký (Đang chờ duyệt),APPROVED|Đã duyệt (Sync hợp đồng),CANCELLED|Đã hủy', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 21
+SET CaptionVN = N'Trạng Thái Phụ Lục', FormatID = 'sl', DataSource = N'STATIC:DRAFT|Đơn nháp,SIGNED|Đã ký (Đang chờ duyệt),APPROVED|Đã duyệt (Sync hợp đồng),CANCELLED|Đã hủy', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 21
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Status';
 
 UPDATE ff
@@ -1522,6 +1522,15 @@ FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f
 INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID)
 SELECT f.FormName, 'JsonPhatSinh', N'Phát sinh', 1, 1, 0, 0, 203, '6', 't'
 FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f.FormName AND FieldName = 'JsonPhatSinh');
+
+-- Đảm bảo có từ điển để dịch cột Sobiennhan và Makh trên popup chọn Hợp đồng
+INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID, ShowInGrid)
+SELECT f.FormName, 'Sobiennhan', N'Số Biên Nhận', 0, 0, 0, 0, 99, '6', 't', 0
+FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f.FormName AND FieldName = 'Sobiennhan');
+
+INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID, ShowInGrid)
+SELECT f.FormName, 'Makh', N'Mã Khách Hàng', 0, 0, 0, 0, 100, '6', 't', 0
+FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f.FormName AND FieldName = 'Makh');
 GO
 
 
