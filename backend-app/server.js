@@ -162,6 +162,7 @@ async function fetchFromSQLAPI(listName, keyword, authToken) {
 
 app.get('/api/documents', (req, res) => {
     try {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         const files = fs.readdirSync(UPLOADS_DIR);
         const fileList = files
             .filter(file => file.endsWith('.docx') || file.endsWith('.xlsx') || file.endsWith('.doc'))
@@ -183,6 +184,7 @@ app.get('/api/documents', (req, res) => {
 
 app.get('/api/documents/templates', (req, res) => {
     try {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         let results = [];
         const scanDir = (dir) => {
             if (!fs.existsSync(dir)) return;
