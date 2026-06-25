@@ -63,31 +63,31 @@ window.API_CONFIG = {
             get BASE_API() {
                 var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
                 return isHttps
-                    ? ENV_VARS.API_BASE + '/docserver/api/documents'
+                    ? '/docserver/api/documents'
                     : 'http://' + ENV_VARS.BACKEND_HOST + ':8081/api/documents';
             },
             get ONLYOFFICE_API() {
                 var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
                 return isHttps
-                    ? ENV_VARS.API_BASE + '/onlyoffice/web-apps/apps/api/documents/api.js'
+                    ? '/onlyoffice/web-apps/apps/api/documents/api.js'
                     : 'http://' + ENV_VARS.ONLYOFFICE_HOST + '/web-apps/apps/api/documents/api.js';
             },
             get UPLOADS_URL() {
                 var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
                 return isHttps
-                    ? ENV_VARS.API_BASE + '/docserver/uploads/'
+                    ? '/docserver/uploads/'
                     : 'http://' + ENV_VARS.BACKEND_HOST + ':8081/uploads/';
             },
             get SAMPLES_URL() {
                 var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
                 return isHttps
-                    ? ENV_VARS.API_BASE + '/docserver/samples/'
+                    ? '/docserver/samples/'
                     : 'http://' + ENV_VARS.BACKEND_HOST + ':8081/samples/';
             },
             get UPLOAD_LOGO_API() {
                 var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
                 return isHttps
-                    ? ENV_VARS.API_BASE + '/docserver/api/upload-logo'
+                    ? '/docserver/api/upload-logo'
                     : 'http://' + ENV_VARS.BACKEND_HOST + ':8081/api/upload-logo';
             }
         },
