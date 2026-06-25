@@ -36,13 +36,13 @@ const ENV_VARS = {
             if (!isLocal) {
                 return '103.190.38.46';
             }
-            return hostname || '192.168.68.118';
+            return hostname || '10.10.10.254';
         }
         return '103.190.38.46';
     },
 
     get ONLYOFFICE_HOST() {
-        return this.BACKEND_HOST;
+        return this.BACKEND_HOST + ':8000';
     }
 };
 
