@@ -13,7 +13,7 @@ const ENV_VARS = {
     get BACKEND_HOST() {
         if (typeof window !== 'undefined' && window.location) {
             // Nếu chạy trên HTTPS (production), dùng IP máy chủ
-            if (window.location.protocol === 'https:') return '171.248.150.196';
+            if (window.location.protocol === 'https:') return '103.232.122.205';
 
             var hostname = window.location.hostname;
             // Kiểm tra xem có phải chạy local hay không (localhost, 127.0.0.1, 192.168.x.x, 10.x.x.x, 172.16-31.x.x, hoặc mở trực tiếp file://)
@@ -34,11 +34,11 @@ const ENV_VARS = {
             }
             // Nếu không phải chạy local (ví dụ chạy qua domain kyhoa.bms7.net), dùng IP máy chủ thực tế
             if (!isLocal) {
-                return '171.248.150.196';
+                return '103.232.122.205';
             }
             return hostname || '10.10.10.254';
         }
-        return '171.248.150.196';
+        return '103.232.122.205';
     },
 
     get ONLYOFFICE_HOST() {
