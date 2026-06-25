@@ -14,14 +14,15 @@ const ENV_VARS = {
         if (typeof window !== 'undefined' && window.location) {
             // Nếu chạy trên HTTPS (production), dùng IP máy chủ
             if (window.location.protocol === 'https:') return '103.190.38.46';
-            
+
             var hostname = window.location.hostname;
-            // Kiểm tra xem có phải chạy local hay không (localhost, 127.0.0.1, 192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-            var isLocal = hostname === 'localhost' || 
-                          hostname === '127.0.0.1' || 
-                          hostname === '::1' || 
-                          hostname.startsWith('192.168.') || 
-                          hostname.startsWith('10.');
+            // Kiểm tra xem có phải chạy local hay không (localhost, 127.0.0.1, 192.168.x.x, 10.x.x.x, 172.16-31.x.x, hoặc mở trực tiếp file://)
+            var isLocal = hostname === 'localhost' ||
+                hostname === '127.0.0.1' ||
+                hostname === '::1' ||
+                hostname === '' ||
+                hostname.startsWith('192.168.') ||
+                hostname.startsWith('10.');
             if (hostname.startsWith('172.')) {
                 var parts = hostname.split('.');
                 if (parts.length >= 2) {
@@ -35,7 +36,7 @@ const ENV_VARS = {
             if (!isLocal) {
                 return '103.190.38.46';
             }
-            return hostname;
+            return hostname || '192.168.68.118';
         }
         return '103.190.38.46';
     },
@@ -61,7 +62,7 @@ window.API_CONFIG = {
             NODE_IP: ENV_VARS.BACKEND_HOST,
             get BASE_API() {
                 var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
-                return isHttps 
+                return isHttps
                     ? ENV_VARS.API_BASE + '/docserver/api/documents'
                     : 'http://' + ENV_VARS.BACKEND_HOST + ':8081/api/documents';
             },
@@ -69,7 +70,7 @@ window.API_CONFIG = {
                 var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
                 return isHttps
                     ? ENV_VARS.API_BASE + '/onlyoffice/web-apps/apps/api/documents/api.js'
-                    : 'http://' + ENV_VARS.ONLYOFFICE_HOST + ':8082/web-apps/apps/api/documents/api.js';
+                    : 'http://' + ENV_VARS.ONLYOFFICE_HOST + '/web-apps/apps/api/documents/api.js';
             },
             get UPLOADS_URL() {
                 var isHttps = typeof window !== 'undefined' && window.location && window.location.protocol === 'https:';
