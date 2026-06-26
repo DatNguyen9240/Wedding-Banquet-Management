@@ -146,8 +146,9 @@ var WorkflowTransferPlugin = (function () {
                 if (lowerData[lowerName] !== undefined && lowerData[lowerName] !== null && String(lowerData[lowerName]).trim() !== '') {
                     var val = lowerData[lowerName];
 
-                    // Nếu phần tử là input date, định dạng lại thành YYYY-MM-DD
-                    if (el.type === 'date' && val) {
+                    // Nếu phần tử là input date hoặc trường ngày tháng ẩn, định dạng lại thành YYYY-MM-DD
+                    var dateFieldNames = ['ngaytochuc', 'ngayhopdong', 'tungaysetup', 'ngaytrasanhdv', 'hanthanhtoandot2', 'hanthanhtoandot2td', 'ngaytochuctd', 'ngaylappl', 'documentdate', 'ngaythaydoi'];
+                    if ((el.type === 'date' || dateFieldNames.includes(lowerName)) && val) {
                         var rawVal = String(val).trim();
                         if (rawVal.indexOf('T') !== -1) {
                             val = rawVal.split('T')[0];

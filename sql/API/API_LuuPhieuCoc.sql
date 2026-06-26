@@ -72,6 +72,7 @@ BEGIN
         IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 103); -- dd/mm/yyyy
         IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 105); -- dd-mm-yyyy
         IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 120); -- yyyy-mm-dd
+        IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 23);  -- yyyy-mm-dd
         IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 111); -- yyyy/mm/dd
         IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 101); -- mm/dd/yyyy
     END
@@ -84,6 +85,7 @@ BEGIN
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 103);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 105);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 120);
+        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 23);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 111);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 101);
     END

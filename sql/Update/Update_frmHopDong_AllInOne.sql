@@ -226,6 +226,7 @@ BEGIN
         IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 103);
         IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 105);
         IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 120);
+        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 23);
         IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 111);
         IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 101);
     END
@@ -235,6 +236,7 @@ BEGIN
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 103);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 105);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 120);
+        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 23);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 111);
         IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 101);
     END
@@ -244,6 +246,7 @@ BEGIN
     BEGIN
         SET @TuNgaySetupParsed = TRY_CAST(@TuNgaySetup AS DATETIME);
         IF (@TuNgaySetupParsed IS NULL) SET @TuNgaySetupParsed = TRY_CONVERT(DATETIME, @TuNgaySetup, 103);
+        IF (@TuNgaySetupParsed IS NULL) SET @TuNgaySetupParsed = TRY_CONVERT(DATETIME, @TuNgaySetup, 23);
     END
     
     DECLARE @NgayTraSanhDVParsed DATETIME = NULL;
@@ -251,6 +254,7 @@ BEGIN
     BEGIN
         SET @NgayTraSanhDVParsed = TRY_CAST(@NgayTraSanhDV AS DATETIME);
         IF (@NgayTraSanhDVParsed IS NULL) SET @NgayTraSanhDVParsed = TRY_CONVERT(DATETIME, @NgayTraSanhDV, 103);
+        IF (@NgayTraSanhDVParsed IS NULL) SET @NgayTraSanhDVParsed = TRY_CONVERT(DATETIME, @NgayTraSanhDV, 23);
     END
 
 

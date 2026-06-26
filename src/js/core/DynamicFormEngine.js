@@ -2688,8 +2688,15 @@ window.DynamicFormEngine = (function () {
         var val = el.value.trim();
         if (fieldName) {
           var field = globalFormSchema.find(function (f) { return f.name === fieldName; });
-          if (field && (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn')) {
-            val = val.replace(/\D/g, '');
+          if (field) {
+            var rule = (field.renderRule || '').toLowerCase().trim();
+            if (rule === 'money' || rule === 'm' || rule === 'mn') {
+              val = val.replace(/\D/g, '');
+            } else if (rule === 'dt' || rule === 'date') {
+              val = (typeof FormatUtils !== 'undefined' && typeof FormatUtils.formatISO === 'function')
+                ? FormatUtils.formatISO(val)
+                : ((/^\d{4}-\d{2}-\d{2}$/.test(val)) ? val + 'T00:00:00' : val);
+            }
           }
           payload[fieldName] = val;
           if (val && fieldName !== MODULE_CONFIG.PrimaryKey && fieldName !== 'OrderNo') {
@@ -2755,7 +2762,6 @@ window.DynamicFormEngine = (function () {
       Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertApiMissing);
       return;
     }
-
     // 1. Quét Form: Thu thập các giá trị người dùng vừa gõ vào
     var formInputData = {};
     var inputs = body.querySelectorAll('input, select, textarea');
@@ -2763,8 +2769,15 @@ window.DynamicFormEngine = (function () {
       if (el.name) {
         var val = el.value.trim();
         var field = globalFormSchema.find(function (f) { return f.name === el.name; });
-        if (field && (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn')) {
-          val = val.replace(/\D/g, '');
+        if (field) {
+          var rule = (field.renderRule || '').toLowerCase().trim();
+          if (rule === 'money' || rule === 'm' || rule === 'mn') {
+            val = val.replace(/\D/g, '');
+          } else if (rule === 'dt' || rule === 'date') {
+            val = (typeof FormatUtils !== 'undefined' && typeof FormatUtils.formatISO === 'function')
+              ? FormatUtils.formatISO(val)
+              : ((/^\d{4}-\d{2}-\d{2}$/.test(val)) ? val + 'T00:00:00' : val);
+          }
         }
         formInputData[el.name] = val;
       }
@@ -3074,6 +3087,10 @@ window.DynamicFormEngine = (function () {
             var field = formSchema.find(function (f) { return f.name === el.name; });
             if (field && (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn')) {
               val = val.replace(/\D/g, '');
+            } else if (field && (field.renderRule === 'dt' || field.renderRule === 'date')) {
+              if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                val = val + 'T00:00:00';
+              }
             }
             payload[el.name] = val;
           }

@@ -798,26 +798,30 @@ var PhuLucPlugin = (function () {
         } catch (err) { }
         var currentUserName = userObj.Username || userObj.UserName || userObj.username || 'system';
 
+        var formatISO = function (val) {
+          return typeof FormatUtils !== 'undefined' ? FormatUtils.formatISO(val) : val;
+        };
+
         // Payload khớp với API_LuuPhuLucHopDong:
         var payload = {
           List: 'frmPhuLucHopDong',
           Func: 'Save',
           Sothaydoi: soPhuLuc,
           Sohopdong: sohopdong,
-          Ngaythaydoi: ngayLapPL,
+          Ngaythaydoi: formatISO(ngayLapPL),
           Ghichu: thoathuan,
           Status: 'DRAFT',
           UserName: currentUserName,
           JsonData: JSON.stringify({
             Sothaydoi: soPhuLuc,
             Sohopdong: sohopdong,
-            Ngaythaydoi: ngayLapPL,
+            Ngaythaydoi: formatISO(ngayLapPL),
             Ghichu: thoathuan,
             Status: 'DRAFT',
             UserName: currentUserName,
 
             SoPhuLuc: soPhuLuc,
-            NgayLapPL: ngayLapPL,
+            NgayLapPL: formatISO(ngayLapPL),
             NgayLapPLDay: nNgay,
             ThangLapPL: nThang,
             NamLapPL: nNam,
@@ -838,13 +842,13 @@ var PhuLucPlugin = (function () {
             ThanhToanDot2SoTienTD: soTienDot2Val,
             HinhThucThanhToanDot2: hinhThuc,
             HinhThucThanhToanDot2TD: hinhThucVal,
-            HanThanhToanDot2: hanThanhToan,
-            HanThanhToanDot2TD: hanThanhToanVal,
+            HanThanhToanDot2: formatISO(hanThanhToan),
+            HanThanhToanDot2TD: formatISO(hanThanhToanVal),
 
             BenAChucVuDaiDien: chucVu,
             BenAChucVuDaiDienTD: chucVuVal,
-            NgayToChuc: ngayToChuc,
-            NgayToChucTD: ngayToChucTDVal,
+            NgayToChuc: formatISO(ngayToChuc),
+            NgayToChucTD: formatISO(ngayToChucTDVal),
             NhamNgay: nhamNgay,
             NhamNgayTD: (ngayToChucTDVal === ngayToChuc) ? nhamNgay : '',
 

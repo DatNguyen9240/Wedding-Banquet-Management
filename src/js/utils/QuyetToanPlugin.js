@@ -663,9 +663,13 @@ var QuyetToanPlugin = (function () {
       try { userObj = JSON.parse(localStorage.getItem('pmql_user') || '{}'); } catch (err) { }
       var currentUserName = userObj.Username || userObj.UserName || userObj.username || 'system';
 
+      var formatISO = function (val) {
+        return typeof FormatUtils !== 'undefined' ? FormatUtils.formatISO(val) : val;
+      };
+
       var payload = {
         DocumentID: docId,
-        DocumentDate: ngayLap,
+        DocumentDate: formatISO(ngayLap),
         Sohopdong: sohopdong,
         Nguoinop: nguoinop,
         Tongtiencoc: tongtiencoc,

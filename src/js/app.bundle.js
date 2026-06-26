@@ -1068,8 +1068,9 @@ var WorkflowTransferPlugin = (function () {
                 if (lowerData[lowerName] !== undefined && lowerData[lowerName] !== null && String(lowerData[lowerName]).trim() !== '') {
                     var val = lowerData[lowerName];
 
-                    // Nếu phần tử là input date, định dạng lại thành YYYY-MM-DD
-                    if (el.type === 'date' && val) {
+                    // Nếu phần tử là input date hoặc trường ngày tháng ẩn, định dạng lại thành YYYY-MM-DD
+                    var dateFieldNames = ['ngaytochuc', 'ngayhopdong', 'tungaysetup', 'ngaytrasanhdv', 'hanthanhtoandot2', 'hanthanhtoandot2td', 'ngaytochuctd', 'ngaylappl', 'documentdate', 'ngaythaydoi'];
+                    if ((el.type === 'date' || dateFieldNames.includes(lowerName)) && val) {
                         var rawVal = String(val).trim();
                         if (rawVal.indexOf('T') !== -1) {
                             val = rawVal.split('T')[0];
@@ -6431,26 +6432,30 @@ var PhuLucPlugin = (function () {
         } catch (err) { }
         var currentUserName = userObj.Username || userObj.UserName || userObj.username || 'system';
 
+        var formatISO = function (val) {
+          return typeof FormatUtils !== 'undefined' ? FormatUtils.formatISO(val) : val;
+        };
+
         // Payload khớp với API_LuuPhuLucHopDong:
         var payload = {
           List: 'frmPhuLucHopDong',
           Func: 'Save',
           Sothaydoi: soPhuLuc,
           Sohopdong: sohopdong,
-          Ngaythaydoi: ngayLapPL,
+          Ngaythaydoi: formatISO(ngayLapPL),
           Ghichu: thoathuan,
           Status: 'DRAFT',
           UserName: currentUserName,
           JsonData: JSON.stringify({
             Sothaydoi: soPhuLuc,
             Sohopdong: sohopdong,
-            Ngaythaydoi: ngayLapPL,
+            Ngaythaydoi: formatISO(ngayLapPL),
             Ghichu: thoathuan,
             Status: 'DRAFT',
             UserName: currentUserName,
 
             SoPhuLuc: soPhuLuc,
-            NgayLapPL: ngayLapPL,
+            NgayLapPL: formatISO(ngayLapPL),
             NgayLapPLDay: nNgay,
             ThangLapPL: nThang,
             NamLapPL: nNam,
@@ -6471,13 +6476,13 @@ var PhuLucPlugin = (function () {
             ThanhToanDot2SoTienTD: soTienDot2Val,
             HinhThucThanhToanDot2: hinhThuc,
             HinhThucThanhToanDot2TD: hinhThucVal,
-            HanThanhToanDot2: hanThanhToan,
-            HanThanhToanDot2TD: hanThanhToanVal,
+            HanThanhToanDot2: formatISO(hanThanhToan),
+            HanThanhToanDot2TD: formatISO(hanThanhToanVal),
 
             BenAChucVuDaiDien: chucVu,
             BenAChucVuDaiDienTD: chucVuVal,
-            NgayToChuc: ngayToChuc,
-            NgayToChucTD: ngayToChucTDVal,
+            NgayToChuc: formatISO(ngayToChuc),
+            NgayToChucTD: formatISO(ngayToChucTDVal),
             NhamNgay: nhamNgay,
             NhamNgayTD: (ngayToChucTDVal === ngayToChuc) ? nhamNgay : '',
 
@@ -7270,9 +7275,13 @@ var QuyetToanPlugin = (function () {
       try { userObj = JSON.parse(localStorage.getItem('pmql_user') || '{}'); } catch (err) { }
       var currentUserName = userObj.Username || userObj.UserName || userObj.username || 'system';
 
+      var formatISO = function (val) {
+        return typeof FormatUtils !== 'undefined' ? FormatUtils.formatISO(val) : val;
+      };
+
       var payload = {
         DocumentID: docId,
-        DocumentDate: ngayLap,
+        DocumentDate: formatISO(ngayLap),
         Sohopdong: sohopdong,
         Nguoinop: nguoinop,
         Tongtiencoc: tongtiencoc,
@@ -7595,11 +7604,22 @@ var FormatUtils = (function () {
     return prefix + result.trim() + ' đồng';
   }
 
+  /**
+   * Định dạng chuỗi ngày YYYY-MM-DD sang định dạng ISO YYYY-MM-DDT00:00:00
+   */
+  function formatISO(val) {
+    if (val && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) {
+      return val.trim() + 'T00:00:00';
+    }
+    return val;
+  }
+
   return {
     currency: currency,
     number: number,
     date: date,
-    docSoTienVN: docSoTienVN
+    docSoTienVN: docSoTienVN,
+    formatISO: formatISO
   };
 })();
 

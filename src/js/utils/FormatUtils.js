@@ -79,10 +79,21 @@ var FormatUtils = (function () {
     return prefix + result.trim() + ' đồng';
   }
 
+  /**
+   * Định dạng chuỗi ngày YYYY-MM-DD sang định dạng ISO YYYY-MM-DDT00:00:00
+   */
+  function formatISO(val) {
+    if (val && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) {
+      return val.trim() + 'T00:00:00';
+    }
+    return val;
+  }
+
   return {
     currency: currency,
     number: number,
     date: date,
-    docSoTienVN: docSoTienVN
+    docSoTienVN: docSoTienVN,
+    formatISO: formatISO
   };
 })();
