@@ -374,9 +374,54 @@ app.post('/api/documents/generate', async (req, res) => {
             const docXmlFile = zip.file("word/document.xml");
             if (docXmlFile) {
                 let xmlContent = docXmlFile.asText();
+                // Bước 1: Xóa XML tags lẫn trong placeholders (Word split tags)
                 xmlContent = xmlContent.replace(/\{[^{}]*?\}/g, (match) => {
                     return match.replace(/<[^>]+>/g, "");
                 });
+
+                // Bước 2: Tự động đóng unclosed loop tags {#tag} / {/tag}
+                // Scan tất cả {#tag} và {/tag} để phát hiện mismatch
+                const openTags  = [...xmlContent.matchAll(/\{#([^}]+)\}/g)].map(m => m[1]);
+                const closeTags = [...xmlContent.matchAll(/\{\/([^}]+)\}/g)].map(m => m[1]);
+                const openSet   = new Set(openTags);
+                const closeSet  = new Set(closeTags);
+
+                // Tìm {#tag} không có {/tag} tương ứng
+                for (const tag of openSet) {
+                    if (!closeSet.has(tag)) {
+                        console.warn(`[XML-FIX] Loop chưa đóng: {#${tag}} -> Tự động thêm {/${tag}}`);
+                        // Tìm vị trí </w:p> ngay sau {#tag} và thêm paragraph đóng
+                        const openMarker = `{#${tag}}`;
+                        const closeMarker = `{/${tag}}`;
+                        const idx = xmlContent.indexOf(openMarker);
+                        if (idx >= 0) {
+                            const paraEnd = xmlContent.indexOf('</w:p>', idx);
+                            if (paraEnd >= 0) {
+                                const insertAt = paraEnd + '</w:p>'.length;
+                                const closePara = `<w:p><w:r><w:t xml:space="preserve">${closeMarker}</w:t></w:r></w:p>`;
+                                xmlContent = xmlContent.substring(0, insertAt) + closePara + xmlContent.substring(insertAt);
+                            }
+                        }
+                    }
+                }
+
+                // Tìm {/tag} không có {#tag} tương ứng
+                for (const tag of closeSet) {
+                    if (!openSet.has(tag)) {
+                        console.warn(`[XML-FIX] Loop chưa mở: {/${tag}} -> Tự động thêm {#${tag}}`);
+                        const closeMarker = `{/${tag}}`;
+                        const openMarker  = `{#${tag}}`;
+                        const idx = xmlContent.indexOf(closeMarker);
+                        if (idx >= 0) {
+                            const paraStart = xmlContent.lastIndexOf('<w:p', idx);
+                            if (paraStart >= 0) {
+                                const openPara = `<w:p><w:r><w:t xml:space="preserve">${openMarker}</w:t></w:r></w:p>`;
+                                xmlContent = xmlContent.substring(0, paraStart) + openPara + xmlContent.substring(paraStart);
+                            }
+                        }
+                    }
+                }
+
                 zip.file("word/document.xml", xmlContent);
             }
         } catch (cleanErr) {
