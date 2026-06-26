@@ -17139,7 +17139,14 @@ var UIToast = (function () {
    * @param {string} type - 'success', 'error', 'warning', 'info'
    */
   function show(msg, type) {
-    if (!container) return; // Fallback
+    if (!container) {
+      container = document.getElementById('toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+      }
+    }
 
     var toast = document.createElement('div');
     toast.className = 'ui-toast ' + (type || 'success');
