@@ -437,6 +437,16 @@ app.post('/api/documents/generate', async (req, res) => {
                     }
                 }
 
+                // Tự động làm sạch các ngoặc đơn rỗng "()" hoặc " ()" phát sinh khi trường Ghi chú trống
+                // Để làm triệt để nhất, ta sửa trực tiếp các pattern "( {GhiChu} )" hoặc similar thành dạng điều kiện {#GhiChu}({GhiChu}){/GhiChu}
+                // Điều này giúp docxtemplater tự động ẩn dấu ngoặc đi nếu GhiChu rỗng
+                xmlContent = xmlContent.replace(/\(\s*\{GhiChu\}\s*\)/gi, '{#GhiChu}({GhiChu}){/GhiChu}');
+                xmlContent = xmlContent.replace(/\(\s*\{GhiChuPhuLuc\}\s*\)/gi, '{#GhiChuPhuLuc}({GhiChuPhuLuc}){/GhiChuPhuLuc}');
+                
+                // Tự động tiêm placeholder {STT} vào ngay sau loop mở nếu cột đầu thiếu STT
+                xmlContent = xmlContent.replace(/\{#MenuTiec\}(?!\s*\{STT\})/gi, '{#MenuTiec}{STT}');
+                xmlContent = xmlContent.replace(/\{#DanhSachChiPhi\}(?!\s*\{STT\})/gi, '{#DanhSachChiPhi}{STT}');
+
                 zip.file("word/document.xml", xmlContent);
             }
         } catch (cleanErr) {
@@ -480,6 +490,14 @@ app.post('/api/documents/generate', async (req, res) => {
         try {
             doc.render(dataMap);
             console.log('[GENERATE] ✅ Render dữ liệu vào template thành công');
+            
+            // Hậu xử lý: Dọn dẹp các ngoặc đơn rỗng "()" hoặc " ()" phát sinh sau khi render các biến rỗng
+            const docZip = doc.getZip();
+            if (docZip) {
+                let xmlContent = docZip.file("word/document.xml").asText();
+                xmlContent = xmlContent.replace(/\s*\(\s*\)/g, '');
+                docZip.file("word/document.xml", xmlContent);
+            }
         } catch (renderErr) {
             console.error('[GENERATE] ❌ Lỗi render:', renderErr.message);
             if (renderErr.properties && renderErr.properties.errors) {
