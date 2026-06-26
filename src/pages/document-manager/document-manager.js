@@ -456,7 +456,7 @@ var DocumentManagerPage = (function () {
             }
             _loadDocuments();
             if (typeof UIToast !== 'undefined') {
-              UIToast.show('Đã xóa tài liệu!', 'success');
+              UIToast.show('Đã xóa tài liệu "' + fileName + '"!', 'success');
             }
           } else {
             if (typeof UIToast !== 'undefined') {
