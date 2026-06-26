@@ -459,12 +459,13 @@ SELECT
                 END AS [GhiChu]
             FROM (
                 -- XML split tương thích SQL Server 2008+ (không cần STRING_SPLIT)
-                SELECT LTRIM(RTRIM(x.value('.', 'NVARCHAR(MAX)'))) AS v
+                -- REPLACE(CHAR(13),'') để loại \r từ CRLF (Windows textarea)
+                SELECT LTRIM(RTRIM(REPLACE(x.value('.', 'NVARCHAR(MAX)'), CHAR(13), ''))) AS v
                 FROM (
                     SELECT CAST('<i>' +
                         REPLACE(
                             REPLACE(
-                                ISNULL(td.DichVuTinhPhiPhuLucTD, td.DichVuTinhPhiPhuLuc),
+                                CASE WHEN td.DichVuTinhPhiPhuLucTD IS NOT NULL THEN td.DichVuTinhPhiPhuLucTD ELSE td.DichVuTinhPhiPhuLuc END,
                                 '&', '&amp;'
                             ),
                             CHAR(10), '</i><i>'

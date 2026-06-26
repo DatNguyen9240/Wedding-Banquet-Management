@@ -509,7 +509,7 @@ var PhuLucPlugin = (function () {
           inpNgayTCVisible.placeholder = ngayToChuc ? 'Hiện tại: ' + _formatDateVN(ngayToChuc) : 'Chọn ngày tổ chức...';
         }
 
-        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').placeholder = dvTinhPhi ? 'Hiện tại:\n' + dvTinhPhi : 'Nhập dịch vụ tính phí...';
+        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').placeholder = 'Mỗi dòng 1 dịch vụ, cách bằng ";":\nVí dụ: MC tiệc; 2000000; Ghi chú\nMàn hình LED; 5000000;' + (dvTinhPhi ? '\n\n[Hợp đồng gốc: ' + dvTinhPhi + ']' : '');
         modalContent.querySelector('#inpThoaThuanPhuLucKhac').placeholder = uuDai ? 'Hiện tại:\n' + uuDai : 'Nhập dịch vụ ưu đãi...';
         modalContent.querySelector('#inpThoathuan').placeholder = lyDo ? 'Hiện tại:\n' + lyDo : 'Nhập nội dung thỏa thuận...';
       }
@@ -648,7 +648,9 @@ var PhuLucPlugin = (function () {
           inpNgayTC.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = dvTinhPhi;
+        // Khi tạo MỚI: để trống để user chủ động nhập, không auto-fill từ HĐ gốc
+        // (tránh junk text cũ như 'Dịch Vụ Tính Phí' bị gửi lên DB)
+        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = '';
         modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = uuDai;
         modalContent.querySelector('#inpThoathuan').value = '';
 

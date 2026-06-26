@@ -121,16 +121,18 @@ BEGIN
                          THEN LTRIM(RTRIM(LEFT(v, CHARINDEX(';', v) - 1)))
                          ELSE v
                     END AS [TenDichVu],
-                    CASE WHEN CHARINDEX(';', v) > 0
-                              AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
-                         THEN LTRIM(RTRIM(SUBSTRING(v,
-                                  CHARINDEX(';', v) + 1,
-                                  CHARINDEX(';', v, CHARINDEX(';', v) + 1)
-                                  - CHARINDEX(';', v) - 1)))
-                         WHEN CHARINDEX(';', v) > 0
-                         THEN LTRIM(RTRIM(SUBSTRING(v, CHARINDEX(';', v) + 1, LEN(v))))
-                         ELSE ''
-                    END AS [DonGia],
+                    ISNULL(NULLIF(
+                        CASE WHEN CHARINDEX(';', v) > 0
+                                  AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
+                             THEN LTRIM(RTRIM(SUBSTRING(v,
+                                      CHARINDEX(';', v) + 1,
+                                      CHARINDEX(';', v, CHARINDEX(';', v) + 1)
+                                      - CHARINDEX(';', v) - 1)))
+                             WHEN CHARINDEX(';', v) > 0
+                             THEN LTRIM(RTRIM(SUBSTRING(v, CHARINDEX(';', v) + 1, LEN(v))))
+                             ELSE ''
+                        END
+                    , ''), '0') AS [DonGia],
                     CASE WHEN CHARINDEX(';', v) > 0
                               AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
                          THEN LTRIM(RTRIM(SUBSTRING(v,
@@ -140,12 +142,13 @@ BEGIN
                     END AS [GhiChu]
                 FROM (
                     -- XML split tương thích SQL Server 2008+ (không cần STRING_SPLIT)
-                    SELECT LTRIM(RTRIM(x.value('.', 'NVARCHAR(MAX)'))) AS v
+                    -- REPLACE(CHAR(13),'') để loại \r từ CRLF (Windows textarea)
+                    SELECT LTRIM(RTRIM(REPLACE(x.value('.', 'NVARCHAR(MAX)'), CHAR(13), ''))) AS v
                     FROM (
                         SELECT CAST('<i>' +
                             REPLACE(
                                 REPLACE(
-                                    ISNULL(pl.DichVuTinhPhiPhuLucTD, pl.DichVuTinhPhiPhuLuc),
+                                    CASE WHEN pl.DichVuTinhPhiPhuLucTD IS NOT NULL THEN pl.DichVuTinhPhiPhuLucTD ELSE pl.DichVuTinhPhiPhuLuc END,
                                     '&', '&amp;'
                                 ),
                                 CHAR(10), '</i><i>'
