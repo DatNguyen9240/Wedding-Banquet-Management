@@ -12,7 +12,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF @Sothaydoi = '' OR @Sothaydoi = 'NULL' SET @Sothaydoi = NULL;
+    IF @Sothaydoi = '' OR @Sothaydoi = 'NULL' OR @Sothaydoi = '{Sothaydoi}' SET @Sothaydoi = NULL;
     DECLARE @SearchStr VARCHAR(50) = COALESCE(@Sothaydoi, @Keyword);
 
     SELECT 

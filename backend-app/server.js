@@ -46,37 +46,41 @@ app.use((err, req, res, next) => {
     next();
 });
 
-let SQL_API_BASE;
-const SQL_API_USER = 'admin';
+let SQL_API_BASE = process.env.SQL_API_BASE || process.env.API_BASE;
+const SQL_API_USER = process.env.SQL_API_USER || 'admin';
 
-// Load env.js config
-try {
-    const possiblePaths = [
-        path.join(__dirname, '../env.js'),
-        path.join(__dirname, 'env.js'),
-        '/env.js',
-        '/app/env.js'
-    ];
-    let envJsPath = null;
-    for (const p of possiblePaths) {
-        if (fs.existsSync(p)) {
-            envJsPath = p;
-            break;
+if (SQL_API_BASE) {
+    console.log(`[CONFIG] Đã tải SQL_API_BASE từ biến môi trường (process.env): ${SQL_API_BASE}`);
+} else {
+    // Load env.js config
+    try {
+        const possiblePaths = [
+            path.join(__dirname, '../env.js'),
+            path.join(__dirname, 'env.js'),
+            '/env.js',
+            '/app/env.js'
+        ];
+        let envJsPath = null;
+        for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+                envJsPath = p;
+                break;
+            }
         }
+        if (!envJsPath) {
+            throw new Error(`Không tìm thấy file env.js ở bất kỳ đường dẫn nào: ${possiblePaths.join(', ')}`);
+        }
+        const envContent = fs.readFileSync(envJsPath, 'utf8');
+        const matchBase = envContent.match(/API_BASE\s*:\s*['"`](.*?)['"`]/);
+        if (!matchBase || !matchBase[1]) {
+            throw new Error('Không tìm thấy API_BASE trong file env.js!');
+        }
+        SQL_API_BASE = matchBase[1].trim();
+        console.log(`[CONFIG] Đã tải SQL_API_BASE từ env.js (${envJsPath}): ${SQL_API_BASE}`);
+    } catch (err) {
+        console.error('[CRITICAL] Không thể chạy server vì thiếu cấu hình env.js:', err.message);
+        process.exit(1);
     }
-    if (!envJsPath) {
-        throw new Error(`Không tìm thấy file env.js ở bất kỳ đường dẫn nào: ${possiblePaths.join(', ')}`);
-    }
-    const envContent = fs.readFileSync(envJsPath, 'utf8');
-    const matchBase = envContent.match(/API_BASE\s*:\s*['"`](.*?)['"`]/);
-    if (!matchBase || !matchBase[1]) {
-        throw new Error('Không tìm thấy API_BASE trong file env.js!');
-    }
-    SQL_API_BASE = matchBase[1].trim();
-    console.log(`[CONFIG] Đã tải SQL_API_BASE từ env.js (${envJsPath}): ${SQL_API_BASE}`);
-} catch (err) {
-    console.error('[CRITICAL] Không thể chạy server vì thiếu cấu hình env.js:', err.message);
-    process.exit(1);
 }
 
 function extractUserName(req) {
@@ -139,10 +143,11 @@ async function fetchSetupInfo(authToken) {
     }
 }
 
-async function fetchFromSQLAPI(listName, keyword, authToken, funcName = 'View') {
+async function fetchFromSQLAPI(listName, keyword, authToken, funcName = 'View', extraParams = null) {
     const payload = {
         List: listName, Func: funcName, UserName: SQL_API_USER,
-        Keyword: keyword || '', Page: 1, Limit: 1
+        Keyword: keyword || '', Page: 1, Limit: 1,
+        ...(extraParams || {})
     };
     const url = `${SQL_API_BASE}/api/API_Gateway_Router`;
     console.log(`[SQL API] Gọi: ${listName} | Func: ${funcName} | Keyword: ${keyword}`);
@@ -293,7 +298,7 @@ app.post('/api/documents/generate', async (req, res) => {
         if (customerId) {
             try {
                 // Thử lấy qua Func GetDetails trước để lấy dữ liệu chi tiết và format đầy đủ
-                dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization, 'GetDetails');
+                dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization, 'GetDetails', { Sothaydoi: customerId });
                 if (dbRow && dbRow.code !== -1 && dbRow.error === undefined) {
                     console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API (GetDetails) thành công');
                 } else {
@@ -306,7 +311,11 @@ app.post('/api/documents/generate', async (req, res) => {
             if (!dbRow) {
                 try {
                     dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization, 'View');
-                    console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API (View) thành công');
+                    if (dbRow) {
+                        console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API (View) thành công');
+                    } else {
+                        console.log('[GENERATE] ❌ Lấy dữ liệu chi tiết từ SQL API (View) trả về rỗng/thất bại');
+                    }
                 } catch (e) {
                     console.error('[GENERATE] Lỗi SQL API (View):', e.message);
                 }
