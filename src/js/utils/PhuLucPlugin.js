@@ -144,6 +144,16 @@ var PhuLucPlugin = (function () {
     }
   }
 
+  function _getProp(obj, key) {
+    if (!obj) return undefined;
+    if (obj[key] !== undefined) return obj[key];
+    var lower = key.toLowerCase();
+    for (var k in obj) {
+      if (k.toLowerCase() === lower) return obj[k];
+    }
+    return undefined;
+  }
+
   function _generateDocument(sothaydoi) {
     var DOC_API_BASE = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER) ? window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API : 'http://localhost:3000/api/document';
     var config = {
@@ -239,19 +249,21 @@ var PhuLucPlugin = (function () {
         historyHtml = '<tr><td colspan="5" class="text-center text-muted">Chưa có phụ lục / thay đổi nào.</td></tr>';
       } else {
         historyRecords.forEach(function (rec, index) {
-          var ngay = rec.Ngaythaydoi || rec.NgayLapPL || '';
+          var id = _getProp(rec, 'SoPhuLuc') || _getProp(rec, 'Sothaydoi') || '';
+          var ngay = _getProp(rec, 'Ngaythaydoi') || _getProp(rec, 'NgayLapPL') || _getProp(rec, 'NgayLap') || '';
           if (ngay && ngay.indexOf('T') !== -1) ngay = ngay.split('T')[0];
+          var lydo = _getProp(rec, 'LyDoDieuChinh') || _getProp(rec, 'GhiChu') || _getProp(rec, 'Ghichu') || '';
           historyHtml += `
             <tr>
               <td class="text-center">${index + 1}</td>
-              <td><a href="javascript:void(0)" class="btn-edit-pl" style="font-weight: 600; color: var(--color-primary); text-decoration: none;" data-idx="${index}">${rec.SoPhuLuc || rec.Sothaydoi || ''}</a></td>
+              <td><a href="javascript:void(0)" class="btn-edit-pl" style="font-weight: 600; color: var(--color-primary); text-decoration: none;" data-idx="${index}">${id}</a></td>
               <td>${ngay}</td>
-              <td class="phuluc-content-col">${rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || ''}</td>
+              <td class="phuluc-content-col">${lydo}</td>
               <td class="text-center">
                 <button type="button" class="btn btn-sm btn-link btn-edit-pl" data-idx="${index}" title="Sửa" style="padding: 2px 4px; border: none; background: transparent; cursor: pointer; color: var(--color-primary);">
                   <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-link text-danger btn-delete-pl" data-id="${rec.SoPhuLuc || rec.Sothaydoi || ''}" title="Xóa" style="padding: 2px 4px; border: none; background: transparent; cursor: pointer; color: var(--color-danger);">
+                <button type="button" class="btn btn-sm btn-link text-danger btn-delete-pl" data-id="${id}" title="Xóa" style="padding: 2px 4px; border: none; background: transparent; cursor: pointer; color: var(--color-danger);">
                   <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">delete</span>
                 </button>
               </td>
@@ -510,41 +522,48 @@ var PhuLucPlugin = (function () {
           rowElement.classList.add('active-row');
         }
 
+        var id = _getProp(rec, 'SoPhuLuc') || _getProp(rec, 'Sothaydoi') || '';
+
         modalContent.querySelector('#form-title').innerHTML = `
           <span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">edit_document</span> 
           <span style="vertical-align: middle;">Cập Nhật Phụ Lục</span>
-          <span class="badge-mode badge-mode-edit">ĐANG SỬA BẢN GHI: ${rec.SoPhuLuc || rec.Sothaydoi || ''}</span>
+          <span class="badge-mode badge-mode-edit">ĐANG SỬA BẢN GHI: ${id}</span>
         `;
         modalContent.querySelector('#btnCancelEdit').style.display = 'block';
 
-        modalContent.querySelector('#inpSothaydoi').value = rec.SoPhuLuc || rec.Sothaydoi || '';
+        modalContent.querySelector('#inpSothaydoi').value = id;
         modalContent.querySelector('#inpSothaydoi').disabled = true;
 
-        var ngayLap = rec.Ngaythaydoi || rec.NgayLapPL || rec.NgayLap || '';
+        var ngayLap = _getProp(rec, 'Ngaythaydoi') || _getProp(rec, 'NgayLapPL') || _getProp(rec, 'NgayLap') || '';
         if (ngayLap && ngayLap.indexOf('T') !== -1) ngayLap = ngayLap.split('T')[0];
         modalContent.querySelector('#inpNgayLapPL').value = ngayLap;
 
-        modalContent.querySelector('#inpQuyMoBanTu').value = (rec.QuyMoBanTu !== null && rec.QuyMoBanTu !== undefined) ? rec.QuyMoBanTu : '';
-        modalContent.querySelector('#inpQuyMoBanDen').value = (rec.QuyMoBanDen !== null && rec.QuyMoBanDen !== undefined) ? rec.QuyMoBanDen : '';
+        var qmTu = _getProp(rec, 'QuyMoBanTu');
+        modalContent.querySelector('#inpQuyMoBanTu').value = (qmTu !== null && qmTu !== undefined) ? qmTu : '';
+        var qmDen = _getProp(rec, 'QuyMoBanDen');
+        modalContent.querySelector('#inpQuyMoBanDen').value = (qmDen !== null && qmDen !== undefined) ? qmDen : '';
 
         var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
         if (inpDonGiaEl) {
-          inpDonGiaEl.value = (rec.DonGiaBanTiec !== null && rec.DonGiaBanTiec !== undefined) ? rec.DonGiaBanTiec : '';
+          var dg = _getProp(rec, 'DonGiaBanTiec');
+          inpDonGiaEl.value = (dg !== null && dg !== undefined) ? dg : '';
           inpDonGiaEl.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpSoKhachTrenBan').value = (rec.SoKhachTrenBan !== null && rec.SoKhachTrenBan !== undefined) ? rec.SoKhachTrenBan : '';
+        var sk = _getProp(rec, 'SoKhachTrenBan');
+        modalContent.querySelector('#inpSoKhachTrenBan').value = (sk !== null && sk !== undefined) ? sk : '';
 
-        modalContent.querySelector('#inpTenDotThanhToan').value = rec.TenDotThanhToan || '';
+        modalContent.querySelector('#inpTenDotThanhToan').value = _getProp(rec, 'TenDotThanhToan') || '';
 
         var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
         if (inpThanhToanDot2El) {
-          inpThanhToanDot2El.value = (rec.ThanhToanDot2SoTien !== null && rec.ThanhToanDot2SoTien !== undefined) ? rec.ThanhToanDot2SoTien : '';
+          var tt = _getProp(rec, 'ThanhToanDot2SoTien');
+          inpThanhToanDot2El.value = (tt !== null && tt !== undefined) ? tt : '';
           inpThanhToanDot2El.dispatchEvent(new Event('change'));
         }
-        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = rec.HinhThucThanhToanDot2 || '';
+        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = _getProp(rec, 'HinhThucThanhToanDot2') || '';
 
-        var hanTT = rec.HanThanhToanDot2 || '';
+        var hanTT = _getProp(rec, 'HanThanhToanDot2') || '';
         if (hanTT && hanTT.indexOf('T') !== -1) hanTT = hanTT.split('T')[0];
         var inpHanTTEl = modalContent.querySelector('#inpHanThanhToanDot2');
         if (inpHanTTEl) {
@@ -552,9 +571,9 @@ var PhuLucPlugin = (function () {
           inpHanTTEl.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpBenAChucVuDaiDien').value = rec.BenAChucVuDaiDien || '';
+        modalContent.querySelector('#inpBenAChucVuDaiDien').value = _getProp(rec, 'BenAChucVuDaiDien') || '';
 
-        var ngayTCTD = rec.NgayToChuc || '';
+        var ngayTCTD = _getProp(rec, 'NgayToChuc') || '';
         if (ngayTCTD && ngayTCTD.indexOf('T') !== -1) ngayTCTD = ngayTCTD.split('T')[0];
         var inpNgayTCTDEl = modalContent.querySelector('#inpNgayToChucTD');
         if (inpNgayTCTDEl) {
@@ -562,24 +581,14 @@ var PhuLucPlugin = (function () {
           inpNgayTCTDEl.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = rec.DichVuTinhPhiPhuLuc || '';
-        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = rec.ThoaThuanPhuLucKhac || '';
-        modalContent.querySelector('#inpThoathuan').value = rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || '';
+        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = _getProp(rec, 'DichVuTinhPhiPhuLuc') || '';
+        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = _getProp(rec, 'ThoaThuanPhuLucKhac') || '';
+        modalContent.querySelector('#inpThoathuan').value = _getProp(rec, 'LyDoDieuChinh') || _getProp(rec, 'GhiChu') || _getProp(rec, 'Ghichu') || '';
 
-        var getVal = function (obj, key) {
-          if (!obj) return undefined;
-          if (obj[key] !== undefined) return obj[key];
-          var lower = key.toLowerCase();
-          for (var k in obj) {
-            if (k.toLowerCase() === lower) return obj[k];
-          }
-          return undefined;
-        };
-
-        modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(getVal(rec, 'JsonBanTiec'));
-        modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(getVal(rec, 'JsonThucUong'));
-        modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(getVal(rec, 'JsonDichVu'));
-        modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(getVal(rec, 'JsonPhatSinh'));
+        modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(_getProp(rec, 'JsonBanTiec'));
+        modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(_getProp(rec, 'JsonThucUong'));
+        modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(_getProp(rec, 'JsonDichVu'));
+        modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(_getProp(rec, 'JsonPhatSinh'));
         if (typeof FoodSelectionPlugin !== 'undefined' && typeof FoodSelectionPlugin.reloadForm === 'function') {
           FoodSelectionPlugin.reloadForm(modalContent);
         }
