@@ -579,14 +579,40 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @Now DATETIME = GETDATE();
     
+    DECLARE @HanThanhToanDot2Parsed DATETIME = NULL;
+    DECLARE @HanThanhToanDot2TDParsed DATETIME = NULL;
+
     -- Giải nén các tham số từ JsonData nếu có
     IF (@JsonData IS NOT NULL AND @JsonData <> '' AND ISJSON(@JsonData) = 1)
     BEGIN
         SET @Sothaydoi = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Sothaydoi'), ''), NULLIF(JSON_VALUE(@JsonData, '$.SoPhuLuc'), ''), @Sothaydoi);
         SET @Sohopdong = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Sohopdong'), ''), @Sohopdong);
-        SET @Ngaythaydoi = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.Ngaythaydoi') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayLap') AS DATETIME), @Ngaythaydoi);
+        
+        DECLARE @NgaythaydoiStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.Ngaythaydoi'), JSON_VALUE(@JsonData, '$.NgayLap'));
+        IF (@NgaythaydoiStr IS NOT NULL AND LTRIM(RTRIM(@NgaythaydoiStr)) <> '')
+        BEGIN
+            SET @Ngaythaydoi = COALESCE(
+                TRY_CAST(@NgaythaydoiStr AS DATETIME),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 126),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 120),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 23),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 103),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 105),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 111),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 101)
+            );
+        END
+
         SET @Ghichu = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Ghichu'), ''), NULLIF(JSON_VALUE(@JsonData, '$.LyDoDieuChinh'), ''), @Ghichu);
         SET @Status = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Status'), ''), NULLIF(JSON_VALUE(@JsonData, '$.TrangThai'), ''), @Status);
+
+        DECLARE @HanThanhToanDot2Str NVARCHAR(100) = JSON_VALUE(@JsonData, '$.HanThanhToanDot2');
+        IF (@HanThanhToanDot2Str IS NOT NULL AND LTRIM(RTRIM(@HanThanhToanDot2Str)) <> '')
+            SET @HanThanhToanDot2Parsed = COALESCE(TRY_CAST(@HanThanhToanDot2Str AS DATETIME), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 126), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 120), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 23), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 103), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 105), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 111), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 101));
+
+        DECLARE @HanThanhToanDot2TDStr NVARCHAR(100) = JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD');
+        IF (@HanThanhToanDot2TDStr IS NOT NULL AND LTRIM(RTRIM(@HanThanhToanDot2TDStr)) <> '')
+            SET @HanThanhToanDot2TDParsed = COALESCE(TRY_CAST(@HanThanhToanDot2TDStr AS DATETIME), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 126), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 120), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 23), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 103), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 105), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 111), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 101));
     END
 
     IF @Sohopdong IS NULL OR @Sohopdong = ''
@@ -649,8 +675,8 @@ BEGIN
                 
                 JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2'),
                 JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2TD'),
-                TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2') AS DATETIME),
-                TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD') AS DATETIME),
+                @HanThanhToanDot2Parsed,
+                @HanThanhToanDot2TDParsed,
                 
                 JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLuc'),
                 JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLucTD'),
@@ -699,8 +725,8 @@ BEGIN
                 
                 HinhThucThanhToanDot2 = COALESCE(JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2'), HinhThucThanhToanDot2),
                 HinhThucThanhToanDot2TD = COALESCE(JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2TD'), HinhThucThanhToanDot2TD),
-                HanThanhToanDot2 = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2') AS DATETIME), HanThanhToanDot2),
-                HanThanhToanDot2TD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD') AS DATETIME), HanThanhToanDot2TD),
+                HanThanhToanDot2 = COALESCE(@HanThanhToanDot2Parsed, HanThanhToanDot2),
+                HanThanhToanDot2TD = COALESCE(@HanThanhToanDot2TDParsed, HanThanhToanDot2TD),
                 
                 DichVuTinhPhiPhuLuc = COALESCE(JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLuc'), DichVuTinhPhiPhuLuc),
                 DichVuTinhPhiPhuLucTD = COALESCE(JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLucTD'), DichVuTinhPhiPhuLucTD),

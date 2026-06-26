@@ -527,14 +527,76 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @Now DATETIME = GETDATE();
     
+    DECLARE @NgayToChucTDParsed DATETIME = NULL;
+    DECLARE @TuNgaySetupTDParsed DATETIME = NULL;
+    DECLARE @DenNgaySetupTDParsed DATETIME = NULL;
+    DECLARE @TuNgayThuDonTDParsed DATETIME = NULL;
+    DECLARE @DenNgayThuDonTDParsed DATETIME = NULL;
+    DECLARE @NgayBanGiaoSanhDVTDParsed DATETIME = NULL;
+    DECLARE @NgayTraSanhDVTDParsed DATETIME = NULL;
+    DECLARE @HanThanhToanDot2Parsed DATETIME = NULL;
+    DECLARE @HanThanhToanDot2TDParsed DATETIME = NULL;
+
     -- Giải nén các tham số từ JsonData nếu có
     IF (@JsonData IS NOT NULL AND @JsonData <> '' AND ISJSON(@JsonData) = 1)
     BEGIN
         SET @Sothaydoi = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Sothaydoi'), ''), NULLIF(JSON_VALUE(@JsonData, '$.SoPhuLuc'), ''), @Sothaydoi);
         SET @Sohopdong = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Sohopdong'), ''), @Sohopdong);
-        SET @Ngaythaydoi = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.Ngaythaydoi') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayLap') AS DATETIME), @Ngaythaydoi);
+        
+        DECLARE @NgaythaydoiStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.Ngaythaydoi'), JSON_VALUE(@JsonData, '$.NgayLap'));
+        IF (@NgaythaydoiStr IS NOT NULL AND LTRIM(RTRIM(@NgaythaydoiStr)) <> '')
+        BEGIN
+            SET @Ngaythaydoi = COALESCE(
+                TRY_CAST(@NgaythaydoiStr AS DATETIME),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 126),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 120),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 23),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 103),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 105),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 111),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 101)
+            );
+        END
+
         SET @Ghichu = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Ghichu'), ''), NULLIF(JSON_VALUE(@JsonData, '$.LyDoDieuChinh'), ''), @Ghichu);
         SET @Status = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Status'), ''), NULLIF(JSON_VALUE(@JsonData, '$.TrangThai'), ''), @Status);
+
+        -- Extract and parse dates robustly
+        DECLARE @NgayToChucTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.NgayToChucTD'), JSON_VALUE(@JsonData, '$.NgayToChuc'));
+        IF (@NgayToChucTDStr IS NOT NULL AND LTRIM(RTRIM(@NgayToChucTDStr)) <> '')
+            SET @NgayToChucTDParsed = COALESCE(TRY_CAST(@NgayToChucTDStr AS DATETIME), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 126), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 120), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 23), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 103), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 105), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 111), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 101));
+
+        DECLARE @TuNgaySetupTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.TuNgaySetupTD'), JSON_VALUE(@JsonData, '$.TuNgaySetup'));
+        IF (@TuNgaySetupTDStr IS NOT NULL AND LTRIM(RTRIM(@TuNgaySetupTDStr)) <> '')
+            SET @TuNgaySetupTDParsed = COALESCE(TRY_CAST(@TuNgaySetupTDStr AS DATETIME), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 126), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 120), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 23), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 103), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 105), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 111), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 101));
+
+        DECLARE @DenNgaySetupTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.DenNgaySetupTD'), JSON_VALUE(@JsonData, '$.DenNgaySetup'));
+        IF (@DenNgaySetupTDStr IS NOT NULL AND LTRIM(RTRIM(@DenNgaySetupTDStr)) <> '')
+            SET @DenNgaySetupTDParsed = COALESCE(TRY_CAST(@DenNgaySetupTDStr AS DATETIME), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 126), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 120), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 23), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 103), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 105), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 111), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 101));
+
+        DECLARE @TuNgayThuDonTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.TuNgayThuDonTD'), JSON_VALUE(@JsonData, '$.TuNgayThuDon'));
+        IF (@TuNgayThuDonTDStr IS NOT NULL AND LTRIM(RTRIM(@TuNgayThuDonTDStr)) <> '')
+            SET @TuNgayThuDonTDParsed = COALESCE(TRY_CAST(@TuNgayThuDonTDStr AS DATETIME), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 126), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 120), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 23), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 103), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 105), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 111), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 101));
+
+        DECLARE @DenNgayThuDonTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.DenNgayThuDonTD'), JSON_VALUE(@JsonData, '$.DenNgayThuDon'));
+        IF (@DenNgayThuDonTDStr IS NOT NULL AND LTRIM(RTRIM(@DenNgayThuDonTDStr)) <> '')
+            SET @DenNgayThuDonTDParsed = COALESCE(TRY_CAST(@DenNgayThuDonTDStr AS DATETIME), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 126), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 120), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 23), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 103), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 105), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 111), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 101));
+
+        DECLARE @NgayBanGiaoSanhDVTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDVTD'), JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDV'));
+        IF (@NgayBanGiaoSanhDVTDStr IS NOT NULL AND LTRIM(RTRIM(@NgayBanGiaoSanhDVTDStr)) <> '')
+            SET @NgayBanGiaoSanhDVTDParsed = COALESCE(TRY_CAST(@NgayBanGiaoSanhDVTDStr AS DATETIME), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 126), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 120), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 23), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 103), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 105), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 111), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 101));
+
+        DECLARE @NgayTraSanhDVTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.NgayTraSanhDVTD'), JSON_VALUE(@JsonData, '$.NgayTraSanhDV'));
+        IF (@NgayTraSanhDVTDStr IS NOT NULL AND LTRIM(RTRIM(@NgayTraSanhDVTDStr)) <> '')
+            SET @NgayTraSanhDVTDParsed = COALESCE(TRY_CAST(@NgayTraSanhDVTDStr AS DATETIME), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 126), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 120), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 23), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 103), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 105), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 111), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 101));
+
+        DECLARE @HanThanhToanDot2Str NVARCHAR(100) = JSON_VALUE(@JsonData, '$.HanThanhToanDot2');
+        IF (@HanThanhToanDot2Str IS NOT NULL AND LTRIM(RTRIM(@HanThanhToanDot2Str)) <> '')
+            SET @HanThanhToanDot2Parsed = COALESCE(TRY_CAST(@HanThanhToanDot2Str AS DATETIME), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 126), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 120), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 23), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 103), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 105), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 111), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 101));
+
+        DECLARE @HanThanhToanDot2TDStr NVARCHAR(100) = JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD');
+        IF (@HanThanhToanDot2TDStr IS NOT NULL AND LTRIM(RTRIM(@HanThanhToanDot2TDStr)) <> '')
+            SET @HanThanhToanDot2TDParsed = COALESCE(TRY_CAST(@HanThanhToanDot2TDStr AS DATETIME), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 126), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 120), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 23), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 103), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 105), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 111), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 101));
     END
 
     IF @Sohopdong IS NULL OR @Sohopdong = ''
@@ -645,8 +707,8 @@ BEGIN
                 
                 JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2'),
                 JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2TD'),
-                TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2') AS DATETIME),
-                TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD') AS DATETIME),
+                @HanThanhToanDot2Parsed,
+                @HanThanhToanDot2TDParsed,
                 
                 JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLuc'),
                 JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLucTD'),
@@ -674,7 +736,7 @@ BEGIN
                 JSON_QUERY(@JsonData, '$.JsonDichVu'),
                 JSON_QUERY(@JsonData, '$.JsonPhatSinh'),
                 
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayToChucTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayToChuc') AS DATETIME)),
+                @NgayToChucTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.ThoiGianIDTD'), JSON_VALUE(@JsonData, '$.ThoiGianID')),
                 COALESCE(JSON_VALUE(@JsonData, '$.NhamNgayTD'), JSON_VALUE(@JsonData, '$.NhamNgay')),
                 COALESCE(JSON_VALUE(@JsonData, '$.LoaiTiecIDTD'), JSON_VALUE(@JsonData, '$.LoaiTiecID')),
@@ -707,12 +769,12 @@ BEGIN
                 COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.PhiBuBanTangTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.PhiBuBanTang') AS DECIMAL(18,2))),
                 COALESCE(JSON_VALUE(@JsonData, '$.MauNoTD'), JSON_VALUE(@JsonData, '$.MauNo')),
                 COALESCE(JSON_VALUE(@JsonData, '$.DiaDiemToChucTD'), JSON_VALUE(@JsonData, '$.DiaDiemToChuc')),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgaySetupTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgaySetup') AS DATETIME)),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgaySetupTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgaySetup') AS DATETIME)),
+                @TuNgaySetupTDParsed,
+                @DenNgaySetupTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.TuGioDenGioSetupTD'), JSON_VALUE(@JsonData, '$.TuGioDenGioSetup')),
                 COALESCE(JSON_VALUE(@JsonData, '$.DenGioSetupTD'), JSON_VALUE(@JsonData, '$.DenGioSetup')),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgayThuDonTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgayThuDon') AS DATETIME)),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgayThuDonTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgayThuDon') AS DATETIME)),
+                @TuNgayThuDonTDParsed,
+                @DenNgayThuDonTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucThuDonTD'), JSON_VALUE(@JsonData, '$.GioKetThucThuDon')),
                 COALESCE(JSON_VALUE(@JsonData, '$.DenGioKetThucThuDonTD'), JSON_VALUE(@JsonData, '$.DenGioKetThucThuDon')),
                 COALESCE(JSON_VALUE(@JsonData, '$.GioDienRaSuKienTD'), JSON_VALUE(@JsonData, '$.GioDienRaSuKien')),
@@ -720,10 +782,10 @@ BEGIN
                 COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoNgayToChucTD') AS INT), TRY_CAST(JSON_VALUE(@JsonData, '$.SoNgayToChuc') AS INT)),
                 COALESCE(JSON_VALUE(@JsonData, '$.GioBanGiaoSanhTiecCuoiTD'), JSON_VALUE(@JsonData, '$.GioBanGiaoSanhTiecCuoi')),
                 COALESCE(JSON_VALUE(@JsonData, '$.GioTraSanhTiecCuoiTD'), JSON_VALUE(@JsonData, '$.GioTraSanhTiecCuoi')),
-                COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucSuKienTD'), JSON_VALUE(@JsonData, '$.GioKetThucSuKien')),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDVTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDV') AS DATETIME)),
+                COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucSuKienTD'), JSON_VALUE(@JsonContent, '$.GioKetThucSuKien')), -- Fallback safe
+                @NgayBanGiaoSanhDVTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.GioBanGiaoSanhDVTD'), JSON_VALUE(@JsonData, '$.GioBanGiaoSanhDV')),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayTraSanhDVTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayTraSanhDV') AS DATETIME)),
+                @NgayTraSanhDVTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.GioTraSanhDVTD'), JSON_VALUE(@JsonData, '$.GioTraSanhDV')),
                 COALESCE(JSON_VALUE(@JsonData, '$.GoiThucDonIDTD'), JSON_VALUE(@JsonData, '$.GoiThucDonID')),
                 COALESCE(JSON_VALUE(@JsonData, '$.TenDotThanhToanTD'), JSON_VALUE(@JsonData, '$.TenDotThanhToan'))
@@ -749,8 +811,8 @@ BEGIN
                 
                 HinhThucThanhToanDot2 = COALESCE(JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2'), HinhThucThanhToanDot2),
                 HinhThucThanhToanDot2TD = COALESCE(JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2TD'), HinhThucThanhToanDot2TD),
-                HanThanhToanDot2 = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2') AS DATETIME), HanThanhToanDot2),
-                HanThanhToanDot2TD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD') AS DATETIME), HanThanhToanDot2TD),
+                HanThanhToanDot2 = COALESCE(@HanThanhToanDot2Parsed, HanThanhToanDot2),
+                HanThanhToanDot2TD = COALESCE(@HanThanhToanDot2TDParsed, HanThanhToanDot2TD),
                 
                 DichVuTinhPhiPhuLuc = COALESCE(JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLuc'), DichVuTinhPhiPhuLuc),
                 DichVuTinhPhiPhuLucTD = COALESCE(JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLucTD'), DichVuTinhPhiPhuLucTD),
@@ -778,7 +840,7 @@ BEGIN
                 JsonDichVu = COALESCE(JSON_QUERY(@JsonData, '$.JsonDichVu'), JsonDichVu),
                 JsonPhatSinh = COALESCE(JSON_QUERY(@JsonData, '$.JsonPhatSinh'), JsonPhatSinh),
                 
-                NgayToChucTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayToChucTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayToChuc') AS DATETIME)), NgayToChucTD),
+                NgayToChucTD = COALESCE(@NgayToChucTDParsed, NgayToChucTD),
                 ThoiGianIDTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.ThoiGianIDTD'), JSON_VALUE(@JsonData, '$.ThoiGianID')), ThoiGianIDTD),
                 NhamNgayTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.NhamNgayTD'), JSON_VALUE(@JsonData, '$.NhamNgay')), NhamNgayTD),
                 LoaiTiecIDTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.LoaiTiecIDTD'), JSON_VALUE(@JsonData, '$.LoaiTiecID')), LoaiTiecIDTD),
@@ -811,12 +873,12 @@ BEGIN
                 PhiBuBanTangTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.PhiBuBanTangTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.PhiBuBanTang') AS DECIMAL(18,2))), PhiBuBanTangTD),
                 MauNoTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.MauNoTD'), JSON_VALUE(@JsonData, '$.MauNo')), MauNoTD),
                 DiaDiemToChucTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.DiaDiemToChucTD'), JSON_VALUE(@JsonData, '$.DiaDiemToChuc')), DiaDiemToChucTD),
-                TuNgaySetupTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgaySetupTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgaySetup') AS DATETIME)), TuNgaySetupTD),
-                DenNgaySetupTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgaySetupTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgaySetup') AS DATETIME)), DenNgaySetupTD),
+                TuNgaySetupTD = COALESCE(@TuNgaySetupTDParsed, TuNgaySetupTD),
+                DenNgaySetupTD = COALESCE(@DenNgaySetupTDParsed, DenNgaySetupTD),
                 TuGioDenGioSetupTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.TuGioDenGioSetupTD'), JSON_VALUE(@JsonData, '$.TuGioDenGioSetup')), TuGioDenGioSetupTD),
                 DenGioSetupTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.DenGioSetupTD'), JSON_VALUE(@JsonData, '$.DenGioSetup')), DenGioSetupTD),
-                TuNgayThuDonTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgayThuDonTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgayThuDon') AS DATETIME)), TuNgayThuDonTD),
-                DenNgayThuDonTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgayThuDonTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgayThuDon') AS DATETIME)), DenNgayThuDonTD),
+                TuNgayThuDonTD = COALESCE(@TuNgayThuDonTDParsed, TuNgayThuDonTD),
+                DenNgayThuDonTD = COALESCE(@DenNgayThuDonTDParsed, DenNgayThuDonTD),
                 GioKetThucThuDonTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucThuDonTD'), JSON_VALUE(@JsonData, '$.GioKetThucThuDon')), GioKetThucThuDonTD),
                 DenGioKetThucThuDonTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.DenGioKetThucThuDonTD'), JSON_VALUE(@JsonData, '$.DenGioKetThucThuDon')), DenGioKetThucThuDonTD),
                 GioDienRaSuKienTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioDienRaSuKienTD'), JSON_VALUE(@JsonData, '$.GioDienRaSuKien')), GioDienRaSuKienTD),
@@ -825,9 +887,9 @@ BEGIN
                 GioBanGiaoSanhTiecCuoiTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioBanGiaoSanhTiecCuoiTD'), JSON_VALUE(@JsonData, '$.GioBanGiaoSanhTiecCuoi')), GioBanGiaoSanhTiecCuoiTD),
                 GioTraSanhTiecCuoiTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioTraSanhTiecCuoiTD'), JSON_VALUE(@JsonData, '$.GioTraSanhTiecCuoi')), GioTraSanhTiecCuoiTD),
                 GioKetThucSuKienTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucSuKienTD'), JSON_VALUE(@JsonData, '$.GioKetThucSuKien')), GioKetThucSuKienTD),
-                NgayBanGiaoSanhDVTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDVTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDV') AS DATETIME)), NgayBanGiaoSanhDVTD),
+                NgayBanGiaoSanhDVTD = COALESCE(@NgayBanGiaoSanhDVTDParsed, NgayBanGiaoSanhDVTD),
                 GioBanGiaoSanhDVTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioBanGiaoSanhDVTD'), JSON_VALUE(@JsonData, '$.GioBanGiaoSanhDV')), GioBanGiaoSanhDVTD),
-                NgayTraSanhDVTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayTraSanhDVTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayTraSanhDV') AS DATETIME)), NgayTraSanhDVTD),
+                NgayTraSanhDVTD = COALESCE(@NgayTraSanhDVTDParsed, NgayTraSanhDVTD),
                 GioTraSanhDVTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioTraSanhDVTD'), JSON_VALUE(@JsonData, '$.GioTraSanhDV')), GioTraSanhDVTD),
                 GoiThucDonIDTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GoiThucDonIDTD'), JSON_VALUE(@JsonData, '$.GoiThucDonID')), GoiThucDonIDTD),
                 TenDotThanhToanTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.TenDotThanhToanTD'), JSON_VALUE(@JsonData, '$.TenDotThanhToan')), TenDotThanhToanTD)

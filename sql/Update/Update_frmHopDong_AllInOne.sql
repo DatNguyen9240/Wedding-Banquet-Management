@@ -222,39 +222,59 @@ BEGIN
 
     IF (@Ngayhopdong IS NOT NULL)
     BEGIN
-        SET @NgayHopDongParsed = TRY_CAST(@Ngayhopdong AS DATETIME);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 103);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 105);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 120);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 23);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 111);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 101);
+        SET @NgayHopDongParsed = COALESCE(
+            TRY_CAST(@Ngayhopdong AS DATETIME),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 126),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 120),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 23),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 103),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 105),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 111),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 101)
+        );
     END
     IF (@Ngaytochuc IS NOT NULL)
     BEGIN
-        SET @NgayToChucParsed = TRY_CAST(@Ngaytochuc AS DATETIME);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 103);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 105);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 120);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 23);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 111);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 101);
+        SET @NgayToChucParsed = COALESCE(
+            TRY_CAST(@Ngaytochuc AS DATETIME),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 126),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 120),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 23),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 103),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 105),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 111),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 101)
+        );
     END
     
     DECLARE @TuNgaySetupParsed DATETIME = NULL;
     IF (@TuNgaySetup IS NOT NULL)
     BEGIN
-        SET @TuNgaySetupParsed = TRY_CAST(@TuNgaySetup AS DATETIME);
-        IF (@TuNgaySetupParsed IS NULL) SET @TuNgaySetupParsed = TRY_CONVERT(DATETIME, @TuNgaySetup, 103);
-        IF (@TuNgaySetupParsed IS NULL) SET @TuNgaySetupParsed = TRY_CONVERT(DATETIME, @TuNgaySetup, 23);
+        SET @TuNgaySetupParsed = COALESCE(
+            TRY_CAST(@TuNgaySetup AS DATETIME),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 126),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 120),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 23),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 103),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 105),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 111),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 101)
+        );
     END
     
     DECLARE @NgayTraSanhDVParsed DATETIME = NULL;
     IF (@NgayTraSanhDV IS NOT NULL)
     BEGIN
-        SET @NgayTraSanhDVParsed = TRY_CAST(@NgayTraSanhDV AS DATETIME);
-        IF (@NgayTraSanhDVParsed IS NULL) SET @NgayTraSanhDVParsed = TRY_CONVERT(DATETIME, @NgayTraSanhDV, 103);
-        IF (@NgayTraSanhDVParsed IS NULL) SET @NgayTraSanhDVParsed = TRY_CONVERT(DATETIME, @NgayTraSanhDV, 23);
+        SET @NgayTraSanhDVParsed = COALESCE(
+            TRY_CAST(@NgayTraSanhDV AS DATETIME),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 126),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 120),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 23),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 103),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 105),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 111),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 101)
+        );
     END
 
 
