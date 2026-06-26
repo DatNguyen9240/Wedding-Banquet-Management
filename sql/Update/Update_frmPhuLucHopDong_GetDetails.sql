@@ -121,7 +121,7 @@ BEGIN
             (
                 SELECT 
                     h.Tenhang AS [TenMonAn]
-                FROM dmHangHoa h
+                FROM dmHangHoa h WITH (NOLOCK)
                 WHERE h.GoiThucDonID = hd.GoiThucDonID AND ISNULL(h.IsNgungSuDung, 0) = 0
                 FOR JSON PATH
             )
@@ -169,11 +169,11 @@ BEGIN
             '[]'
         ) AS [DanhSachChiPhi]
 
-    FROM tbmk_Thaydoi pl
-    INNER JOIN tbmk_Hopdong hd ON pl.Sohopdong = hd.Sohopdong
-    LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
-    LEFT JOIN dmNhanvienView nv ON hd.Manv = nv.Manv
-    WHERE (pl.Sohopdong = @SearchStr OR pl.Sothaydoi = @SearchStr)
+    FROM tbmk_Thaydoi pl WITH (NOLOCK)
+    INNER JOIN tbmk_Hopdong hd WITH (NOLOCK) ON pl.Sohopdong = hd.Sohopdong
+    LEFT JOIN dmkhachhang kh WITH (NOLOCK) ON hd.Makh = kh.Makh
+    LEFT JOIN dmNhanvienView nv WITH (NOLOCK) ON hd.Manv = nv.Manv
+    WHERE (pl.Sothaydoi = @SearchStr OR pl.Sohopdong = @SearchStr)
       AND ISNULL(pl.IsDeleted, 0) = 0;
 END;
 GO

@@ -153,10 +153,9 @@ async function fetchFromSQLAPI(listName, keyword, authToken, funcName = 'View') 
         const resp = await axios.post(url, payload, { headers, timeout: 10000 });
         const json = resp.data;
         console.log(`[SQL API RESPONSE] ${JSON.stringify(json).substring(0, 1000)}`);
-        if (json && json.records) {
-            return json.records.length > 0 ? json.records[0] : null;
+        if (json && json.records && json.records.length > 0) {
+            return json.records[0];
         }
-        if (json && json.code === 0) return json;
     } catch (err) {
         console.error(`[SQL API] Lỗi khi gọi ${listName} (${funcName}):`, err.message);
     }
