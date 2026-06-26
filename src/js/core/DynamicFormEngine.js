@@ -238,6 +238,11 @@ window.DynamicFormEngine = (function () {
     MODULE_CONFIG = config;
     currentFormName = config.FormName;
 
+    // Hiển thị skeleton loader ban đầu trong lúc tải cấu hình form (metadata)
+    container.innerHTML = typeof UISkeleton !== 'undefined'
+      ? UISkeleton.createHTML({ type: 'table', rows: 8, cols: 5 })
+      : '<div class="p-4 text-center" style="color:var(--color-text-secondary);">Đang tải dữ liệu...</div>';
+
     // 2. Khôi phục state của module mới (nếu đã từng vào trước đó)
     var savedState = moduleStates[currentFormName];
     if (savedState) {
@@ -336,7 +341,9 @@ window.DynamicFormEngine = (function () {
             AlertSaveFailed: 'Lưu dữ liệu thất bại',
             AlertDeleteFailed: 'Xóa dữ liệu thất bại',
             AlertNetworkError: 'Lỗi kết nối mạng',
-            ModalWidth: '850px'
+            ModalWidth: '850px',
+            TextLoading: 'Đang tải dữ liệu...',
+            TextLoadingError: 'Lỗi tải dữ liệu: '
           });
         }
 
@@ -713,7 +720,28 @@ window.DynamicFormEngine = (function () {
       savedScrollY = window.scrollY;
       existingTable.showLoading(MODULE_CONFIG.TextLoading);
     } else if (gridContainer) {
-      gridContainer.innerHTML = '<div class="p-4 text-center" style="color:var(--color-text-secondary);">' + MODULE_CONFIG.TextLoading + '</div>';
+      if (typeof UISkeleton !== 'undefined') {
+        var skeletonCols = [];
+        if (Array.isArray(globalFormSchema) && globalFormSchema.length > 0) {
+          globalFormSchema.forEach(function (f) {
+            var pos = String(f.position || '').trim();
+            var isGridPos = (pos === 'grid' || (!isNaN(pos) && pos !== ''));
+            if (isGridPos && f.showInGrid !== false && String(f.showInGrid) !== '0' && pos !== 'hidden') {
+              skeletonCols.push({ width: '60px' });
+            }
+          });
+        }
+        if (skeletonCols.length === 0) {
+          skeletonCols = 5;
+        }
+        gridContainer.innerHTML = UISkeleton.createTableHTML({
+          rows: 8,
+          cols: skeletonCols,
+          hasHeader: true
+        });
+      } else {
+        gridContainer.innerHTML = '<div class="p-4 text-center" style="color:var(--color-text-secondary);">' + MODULE_CONFIG.TextLoading + '</div>';
+      }
     }
 
     if (MODULE_CONFIG.ApiSearch) {
