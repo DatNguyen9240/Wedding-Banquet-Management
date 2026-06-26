@@ -219,28 +219,28 @@ var PhuLucPlugin = (function () {
     defaultJsonDichVu = _stringifyJson(defaultJsonDichVu);
     defaultJsonPhatSinh = _stringifyJson(defaultJsonPhatSinh);
 
-    var sohopdong = contractRow.Sohopdong || contractRow.sohopdong || contractRow.SoHopDong;
-    var khachhang = contractRow.Khachhang || contractRow.Daidiendat || contractRow.TenKhachHang || '';
+    var sohopdong = _getProp(contractRow, 'Sohopdong') || _getProp(contractRow, 'sohopdong') || _getProp(contractRow, 'SoHopDong');
+    var khachhang = _getProp(contractRow, 'Khachhang') || _getProp(contractRow, 'Daidiendat') || _getProp(contractRow, 'TenKhachHang') || '';
 
     // Khai báo sẵn các trường mặc định từ hợp đồng gốc
-    var qmTu = contractRow.SanhQuyMoMin || contractRow.QuyMoBanTu || contractRow.quymobantu || contractRow.QuyMoBanTuTD || '';
-    var qmDen = contractRow.SanhQuyMoMax || contractRow.QuyMoBanDen || contractRow.quymobanden || contractRow.QuyMoBanDenTD || '';
-    var donGia = contractRow.Giabanman || contractRow.giabanman || contractRow.DonGiaBanTiec || '';
-    var soKhach = contractRow.TiecSoKhach1Ban || contractRow.SoNguoiTrenBan || contractRow.SoKhachTrenBan || 10;
-    var tenDot = contractRow.TenDotThanhToan || 'Đợt 2';
-    var soTienDot2 = contractRow.Sotiencochopdong || contractRow.ThanhToanDot2SoTien || '';
-    var hinhThuc = contractRow.Dot2HinhThuc || contractRow.HinhThucThanhToanDot2 || 'Chuyển khoản';
-    var hanThanhToan = contractRow.Ngayhopdong || contractRow.NgayHopDong || contractRow.HanThanhToanDot2 || '';
+    var qmTu = _getProp(contractRow, 'SanhQuyMoMin') || _getProp(contractRow, 'QuyMoBanTu') || _getProp(contractRow, 'quymobantu') || _getProp(contractRow, 'QuyMoBanTuTD') || '';
+    var qmDen = _getProp(contractRow, 'SanhQuyMoMax') || _getProp(contractRow, 'QuyMoBanDen') || _getProp(contractRow, 'quymobanden') || _getProp(contractRow, 'QuyMoBanDenTD') || '';
+    var donGia = _getProp(contractRow, 'Giabanman') || _getProp(contractRow, 'giabanman') || _getProp(contractRow, 'DonGiaBanTiec') || '';
+    var soKhach = _getProp(contractRow, 'TiecSoKhach1Ban') || _getProp(contractRow, 'SoNguoiTrenBan') || _getProp(contractRow, 'SoKhachTrenBan') || 10;
+    var tenDot = _getProp(contractRow, 'TenDotThanhToan') || 'Đợt 2';
+    var soTienDot2 = _getProp(contractRow, 'Sotiencochopdong') || _getProp(contractRow, 'ThanhToanDot2SoTien') || '';
+    var hinhThuc = _getProp(contractRow, 'Dot2HinhThuc') || _getProp(contractRow, 'HinhThucThanhToanDot2') || 'Chuyển khoản';
+    var hanThanhToan = _getProp(contractRow, 'Ngayhopdong') || _getProp(contractRow, 'NgayHopDong') || _getProp(contractRow, 'HanThanhToanDot2') || '';
     if (hanThanhToan && hanThanhToan.indexOf('T') !== -1) hanThanhToan = hanThanhToan.split('T')[0];
 
-    var chucVu = contractRow.BenAChucVu || contractRow.BenAChucVuDaiDien || '';
-    var ngayToChuc = contractRow.NgayToChuc || contractRow.Ngaytochuc || '';
+    var chucVu = _getProp(contractRow, 'BenAChucVu') || _getProp(contractRow, 'BenAChucVuDaiDien') || '';
+    var ngayToChuc = _getProp(contractRow, 'NgayToChuc') || _getProp(contractRow, 'Ngaytochuc') || '';
     if (ngayToChuc && ngayToChuc.indexOf('T') !== -1) ngayToChuc = ngayToChuc.split('T')[0];
 
-    var nhamNgay = contractRow.Nhamngay || contractRow.NhamNgay || '';
-    var dvTinhPhi = contractRow.DichVuTinhPhiPhuLuc || '';
-    var uuDai = contractRow.DSKhuyenMai || contractRow.Noidunguudai || contractRow.ThoaThuanPhuLucKhac || '';
-    var lyDo = contractRow.Ghichu || contractRow.LyDoDieuChinh || '';
+    var nhamNgay = _getProp(contractRow, 'Nhamngay') || _getProp(contractRow, 'NhamNgay') || '';
+    var dvTinhPhi = _getProp(contractRow, 'DichVuTinhPhiPhuLuc') || '';
+    var uuDai = _getProp(contractRow, 'DSKhuyenMai') || _getProp(contractRow, 'Noidunguudai') || _getProp(contractRow, 'ThoaThuanPhuLucKhac') || '';
+    var lyDo = _getProp(contractRow, 'Ghichu') || _getProp(contractRow, 'LyDoDieuChinh') || '';
 
     // Lấy lịch sử phụ lục
     ContractService.getPhuLucHistory(sohopdong).then(function (historyRecords) {
@@ -615,41 +615,41 @@ var PhuLucPlugin = (function () {
         var dd = String(today.getDate()).padStart(2, '0');
         modalContent.querySelector('#inpNgayLapPL').value = yyyy + '-' + mm + '-' + dd;
 
-        modalContent.querySelector('#inpQuyMoBanTu').value = '';
-        modalContent.querySelector('#inpQuyMoBanDen').value = '';
+        modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
+        modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
 
         var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
         if (inpDonGiaEl) {
-          inpDonGiaEl.value = '';
+          inpDonGiaEl.value = donGia;
           inpDonGiaEl.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpSoKhachTrenBan').value = '';
-        modalContent.querySelector('#inpTenDotThanhToan').value = '';
+        modalContent.querySelector('#inpSoKhachTrenBan').value = soKhach;
+        modalContent.querySelector('#inpTenDotThanhToan').value = tenDot;
 
         var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
         if (inpThanhToanDot2El) {
-          inpThanhToanDot2El.value = '';
+          inpThanhToanDot2El.value = soTienDot2;
           inpThanhToanDot2El.dispatchEvent(new Event('change'));
         }
-        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = '';
+        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = hinhThuc;
 
         var inpHan = modalContent.querySelector('#inpHanThanhToanDot2');
         if (inpHan) {
-          inpHan.value = '';
+          inpHan.value = hanThanhToan;
           inpHan.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpBenAChucVuDaiDien').value = '';
+        modalContent.querySelector('#inpBenAChucVuDaiDien').value = chucVu;
 
         var inpNgayTC = modalContent.querySelector('#inpNgayToChucTD');
         if (inpNgayTC) {
-          inpNgayTC.value = '';
+          inpNgayTC.value = ngayToChuc;
           inpNgayTC.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = '';
-        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = '';
+        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = dvTinhPhi;
+        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = uuDai;
         modalContent.querySelector('#inpThoathuan').value = '';
 
         modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(defaultJsonBanTiec);
