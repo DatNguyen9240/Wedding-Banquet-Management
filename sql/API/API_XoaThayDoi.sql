@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -25,11 +25,16 @@ BEGIN
             RETURN;
         END
 
+        -- Tách @Ids thành bảng thông qua XML (tương thích SQL Server 2008+, không cần STRING_SPLIT)
+        DECLARE @XmlIds XML = CAST('<i>' + REPLACE(@Ids, ',', '</i><i>') + '</i>' AS XML);
+
         -- Kiểm tra xem có phiếu thay đổi nào đã chốt hoặc đã ký duyệt không
         IF EXISTS (
             SELECT 1 
             FROM tbmk_Thaydoi
-            WHERE Sothaydoi IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, ','))
+            WHERE Sothaydoi IN (
+                SELECT LTRIM(RTRIM(n.value('.', 'NVARCHAR(100)'))) FROM @XmlIds.nodes('/i') AS T(n)
+            )
               AND (Status IN ('SIGNED', 'APPROVED') OR IsKetthuc = 1)
         )
         BEGIN
@@ -44,7 +49,9 @@ BEGIN
         SET IsDeleted = 1,
             DeletedAt = GETDATE(),
             DeletedBy = ISNULL(@UserName, 'System')
-        WHERE Sothaydoi IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, ','));
+        WHERE Sothaydoi IN (
+            SELECT LTRIM(RTRIM(n.value('.', 'NVARCHAR(100)'))) FROM @XmlIds.nodes('/i') AS T(n)
+        );
 
         DECLARE @RowsAffected INT = @@ROWCOUNT;
 

@@ -329,7 +329,7 @@ app.post('/api/documents/generate', async (req, res) => {
             dataMap = { ...dataMap, ...dbRow };
         }
 
-        // Tự động parse JSON từ CSDL
+        // Tự động parse JSON từ CSDL — SQL đã trả JSON array sẵn, server không cần biết tên field
         dataMap = deepParseJsonStrings(dataMap);
 
         console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));

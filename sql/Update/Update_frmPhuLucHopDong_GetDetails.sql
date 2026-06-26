@@ -71,10 +71,19 @@ BEGIN
         kh.Dienthoai AS [BenBDienThoai],
         ISNULL(kh.Tenchure, '') + N' & ' + ISNULL(kh.Tencodau, '') AS [BenBTenChuTiec],
 
+        -- Công ty Bên A (từ bảng SY_Setup)
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT') AS [BenASDT],
+        COALESCE(
+            (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien'),
+            (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenADaiDien')
+        ) AS [BenADaiDien],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
+
         -- Nhân viên Bên A
         ISNULL(nv.Tennv, hd.Manv) AS [BenANhanVienPhuTrach],
         nv.DIENTHOAI AS [BenASDTNhanVien],
-        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
 
         -- Quy mô bàn & Đơn giá
         ISNULL(pl.QuyMoBanTuTD, pl.QuyMoBanTu) AS [QuyMoBanTu],
@@ -89,10 +98,13 @@ BEGIN
         ISNULL(NULLIF(pl.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
         ISNULL(ISNULL(pl.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
 
-        -- Aliases for backward compatibility
+        -- Aliases khớp chính xác với biến template Word
         ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
         ISNULL(NULLIF(pl.SobanManduphong, 0), hd.SobanManduphong) AS [SoBanManDuPhong],
         ISNULL(ISNULL(pl.SoBanTang, hd.SoBanTang), 0) AS [BanTang],
+        -- Alias {SoBanChinhThuc} và {SoBanDuPhong} cho template
+        ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SoBanChinhThuc],
+        ISNULL(NULLIF(pl.SobanManduphong, 0), hd.SobanManduphong) AS [SoBanDuPhong],
 
         -- Đợt thanh toán 2
         ISNULL(pl.TenDotThanhToanTD, pl.TenDotThanhToan) AS [TenDotThanhToan],
@@ -100,8 +112,53 @@ BEGIN
         ISNULL(pl.HinhThucThanhToanDot2TD, pl.HinhThucThanhToanDot2) AS [HinhThucThanhToanDot2],
         CONVERT(VARCHAR(10), ISNULL(pl.HanThanhToanDot2TD, pl.HanThanhToanDot2), 103) AS [HanThanhToanDot2],
 
-        -- Dịch vụ dạng văn bản
-        ISNULL(pl.DichVuTinhPhiPhuLucTD, pl.DichVuTinhPhiPhuLuc) AS [DichVuTinhPhiPhuLuc],
+        -- Dịch vụ tính phí: trả về JSON array [{TenDichVu, DonGia, GhiChu}] để server tự parse
+        -- Mỗi dòng là 1 dịch vụ, phân cách bằng ";": "Tên dịch vụ; Đơn giá; Ghi chú"
+        COALESCE(
+            (
+                SELECT
+                    CASE WHEN CHARINDEX(';', v) > 0
+                         THEN LTRIM(RTRIM(LEFT(v, CHARINDEX(';', v) - 1)))
+                         ELSE v
+                    END AS [TenDichVu],
+                    CASE WHEN CHARINDEX(';', v) > 0
+                              AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
+                         THEN LTRIM(RTRIM(SUBSTRING(v,
+                                  CHARINDEX(';', v) + 1,
+                                  CHARINDEX(';', v, CHARINDEX(';', v) + 1)
+                                  - CHARINDEX(';', v) - 1)))
+                         WHEN CHARINDEX(';', v) > 0
+                         THEN LTRIM(RTRIM(SUBSTRING(v, CHARINDEX(';', v) + 1, LEN(v))))
+                         ELSE ''
+                    END AS [DonGia],
+                    CASE WHEN CHARINDEX(';', v) > 0
+                              AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
+                         THEN LTRIM(RTRIM(SUBSTRING(v,
+                                  CHARINDEX(';', v, CHARINDEX(';', v) + 1) + 1,
+                                  LEN(v))))
+                         ELSE ''
+                    END AS [GhiChu]
+                FROM (
+                    -- XML split tương thích SQL Server 2008+ (không cần STRING_SPLIT)
+                    SELECT LTRIM(RTRIM(x.value('.', 'NVARCHAR(MAX)'))) AS v
+                    FROM (
+                        SELECT CAST('<i>' +
+                            REPLACE(
+                                REPLACE(
+                                    ISNULL(pl.DichVuTinhPhiPhuLucTD, pl.DichVuTinhPhiPhuLuc),
+                                    '&', '&amp;'
+                                ),
+                                CHAR(10), '</i><i>'
+                            )
+                        + '</i>' AS XML) AS xmlSplit
+                    ) xmlConv
+                    CROSS APPLY xmlConv.xmlSplit.nodes('/i') AS T(x)
+                ) splitResult
+                WHERE v <> ''
+                FOR JSON PATH
+            ),
+            '[]'
+        ) AS [DichVuTinhPhiPhuLuc],
         ISNULL(pl.ThoaThuanPhuLucKhacTD, pl.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
         ISNULL(pl.BenAChucVuDaiDienTD, pl.BenAChucVuDaiDien) AS [BenAChucVuDaiDien],
 

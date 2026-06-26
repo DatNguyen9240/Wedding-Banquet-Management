@@ -427,12 +427,57 @@ SELECT
     END AS [DanhSachChiPhi],
     
     -- Các đợt thanh toán
-    ISNULL(td.ThanhToanDot2SoTienTD, td.ThanhToanDot2SoTien) AS [ThanhToanDot2SoTien],
+    FORMAT(TRY_CAST(ISNULL(td.ThanhToanDot2SoTienTD, td.ThanhToanDot2SoTien) AS DECIMAL(18,0)), 'N0', 'vi-VN') AS [ThanhToanDot2SoTien],
     ISNULL(td.HinhThucThanhToanDot2TD, td.HinhThucThanhToanDot2) AS [HinhThucThanhToanDot2],
     FORMAT(ISNULL(td.HanThanhToanDot2TD, td.HanThanhToanDot2), 'dd/MM/yyyy') AS [HanThanhToanDot2],
     
-    -- Thỏa thuận khác {@ThoaThuanPhuLucKhac}
-    ISNULL(td.DichVuTinhPhiPhuLucTD, td.DichVuTinhPhiPhuLuc) AS [DichVuTinhPhiPhuLuc],
+    -- Dịch vụ tính phí: trả JSON array [{TenDichVu,DonGia,GhiChu}] giống GetDetails
+    -- Mỗi dòng = 1 dịch vụ, phân cách bằng ";": "Tên dịch vụ; Đơn giá; Ghi chú"
+    COALESCE(
+        (
+            SELECT
+                CASE WHEN CHARINDEX(';', v) > 0
+                     THEN LTRIM(RTRIM(LEFT(v, CHARINDEX(';', v) - 1)))
+                     ELSE v
+                END AS [TenDichVu],
+                CASE WHEN CHARINDEX(';', v) > 0
+                          AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
+                     THEN LTRIM(RTRIM(SUBSTRING(v,
+                              CHARINDEX(';', v) + 1,
+                              CHARINDEX(';', v, CHARINDEX(';', v) + 1)
+                              - CHARINDEX(';', v) - 1)))
+                     WHEN CHARINDEX(';', v) > 0
+                     THEN LTRIM(RTRIM(SUBSTRING(v, CHARINDEX(';', v) + 1, LEN(v))))
+                     ELSE ''
+                END AS [DonGia],
+                CASE WHEN CHARINDEX(';', v) > 0
+                          AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
+                     THEN LTRIM(RTRIM(SUBSTRING(v,
+                              CHARINDEX(';', v, CHARINDEX(';', v) + 1) + 1,
+                              LEN(v))))
+                     ELSE ''
+                END AS [GhiChu]
+            FROM (
+                -- XML split tương thích SQL Server 2008+ (không cần STRING_SPLIT)
+                SELECT LTRIM(RTRIM(x.value('.', 'NVARCHAR(MAX)'))) AS v
+                FROM (
+                    SELECT CAST('<i>' +
+                        REPLACE(
+                            REPLACE(
+                                ISNULL(td.DichVuTinhPhiPhuLucTD, td.DichVuTinhPhiPhuLuc),
+                                '&', '&amp;'
+                            ),
+                            CHAR(10), '</i><i>'
+                        )
+                    + '</i>' AS XML) AS xmlSplit
+                ) xmlConv
+                CROSS APPLY xmlConv.xmlSplit.nodes('/i') AS T(x)
+            ) splitResult
+            WHERE v <> ''
+            FOR JSON PATH
+        ),
+        '[]'
+    ) AS [DichVuTinhPhiPhuLuc],
     ISNULL(td.ThoaThuanPhuLucKhacTD, td.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
     
     FORMAT(ISNULL(td.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
@@ -501,11 +546,6 @@ FROM tbmk_Thaydoi td WITH (NOLOCK)
 INNER JOIN tbmk_Hopdong hd WITH (NOLOCK) ON td.Sohopdong = hd.Sohopdong
 LEFT JOIN dmkhachhang kh WITH (NOLOCK) ON hd.Makh = kh.Makh
 LEFT JOIN dmNhanvienView nv WITH (NOLOCK) ON ISNULL(td.Manv, hd.Manv) = nv.Manv
-WHERE ISNULL(td.IsDeleted, 0) = 0;hucVuDaiDienTD AS [BenAChucVuDaiDien]
-FROM tbmk_Thaydoi td
-INNER JOIN tbmk_Hopdong hd ON td.Sohopdong = hd.Sohopdong
-LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
-LEFT JOIN dmNhanvienView nv ON ISNULL(td.Manv, hd.Manv) = nv.Manv
 WHERE ISNULL(td.IsDeleted, 0) = 0;
 GO
 
@@ -787,7 +827,7 @@ BEGIN
                 COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoNgayToChucTD') AS INT), TRY_CAST(JSON_VALUE(@JsonData, '$.SoNgayToChuc') AS INT)),
                 COALESCE(JSON_VALUE(@JsonData, '$.GioBanGiaoSanhTiecCuoiTD'), JSON_VALUE(@JsonData, '$.GioBanGiaoSanhTiecCuoi')),
                 COALESCE(JSON_VALUE(@JsonData, '$.GioTraSanhTiecCuoiTD'), JSON_VALUE(@JsonData, '$.GioTraSanhTiecCuoi')),
-                COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucSuKienTD'), JSON_VALUE(@JsonContent, '$.GioKetThucSuKien')), -- Fallback safe
+                COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucSuKienTD'), JSON_VALUE(@JsonData, '$.GioKetThucSuKien')), -- Fallback safe
                 @NgayBanGiaoSanhDVTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.GioBanGiaoSanhDVTD'), JSON_VALUE(@JsonData, '$.GioBanGiaoSanhDV')),
                 @NgayTraSanhDVTDParsed,
@@ -979,10 +1019,15 @@ BEGIN
         END
 
         -- Không cho xóa phụ lục đã duyệt/đã ký
+        -- Tách @Ids thành bảng tạm (tương thích SQL Server 2008+, không cần STRING_SPLIT)
+        DECLARE @XmlIds XML = CAST('<i>' + REPLACE(@Ids, ',', '</i><i>') + '</i>' AS XML);
+
         IF EXISTS (
             SELECT 1 
             FROM tbmk_Thaydoi
-            WHERE Sothaydoi IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, ','))
+            WHERE Sothaydoi IN (
+                SELECT LTRIM(RTRIM(n.value('.', 'NVARCHAR(100)'))) FROM @XmlIds.nodes('/i') AS T(n)
+            )
               AND (Status IN ('SIGNED', 'APPROVED') OR IsKetthuc = 1)
         )
         BEGIN
@@ -996,7 +1041,9 @@ BEGIN
         SET IsDeleted = 1,
             DeletedAt = GETDATE(),
             DeletedBy = ISNULL(@UserName, 'System')
-        WHERE Sothaydoi IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, ','));
+        WHERE Sothaydoi IN (
+            SELECT LTRIM(RTRIM(n.value('.', 'NVARCHAR(100)'))) FROM @XmlIds.nodes('/i') AS T(n)
+        );
 
         DECLARE @RowsAffected INT = @@ROWCOUNT;
 
