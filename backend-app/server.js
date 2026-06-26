@@ -332,7 +332,22 @@ app.post('/api/documents/generate', async (req, res) => {
         // Tự động parse JSON từ CSDL — SQL đã trả JSON array sẵn, server không cần biết tên field
         dataMap = deepParseJsonStrings(dataMap);
 
-        console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
+        // Inject STT vào các mảng loop: nếu SQL đã cung cấp STT thì giữ nguyên, nếu không thì tự đánh idx+1
+        const _injectSTT = (arr) => {
+            if (!Array.isArray(arr) || arr.length === 0) return arr;
+            return arr.map((item, idx) => {
+                const existingSTT = item.STT !== undefined && item.STT !== null && item.STT !== '' ? item.STT : null;
+                return { ...item, STT: existingSTT !== null ? existingSTT : (idx + 1) };
+            });
+        };
+        // Áp dụng cho tất cả field là array trong dataMap
+        for (const key of Object.keys(dataMap)) {
+            if (Array.isArray(dataMap[key])) {
+                dataMap[key] = _injectSTT(dataMap[key]);
+            }
+        }
+
+
 
         const docxTemplatePath = findTemplatePath(SAMPLES_DIR, templateType);
         if (!docxTemplatePath) {

@@ -89,7 +89,11 @@ BEGIN
         ISNULL(pl.QuyMoBanTuTD, pl.QuyMoBanTu) AS [QuyMoBanTu],
         ISNULL(pl.QuyMoBanDenTD, pl.QuyMoBanDen) AS [QuyMoBanDen],
         ISNULL(pl.SoKhachTrenBanTD, pl.SoKhachTrenBan) AS [SoKhachTrenBan],
-        FORMAT(ISNULL(pl.DonGiaBanTiecTD, pl.DonGiaBanTiec), 'N0', 'vi-VN') AS [DonGiaBanTiec],
+        -- Đơn giá bàn: trả '' khi = 0 để không hiện '0VNĐ/bàn' trong template
+        CASE WHEN ISNULL(ISNULL(pl.DonGiaBanTiecTD, pl.DonGiaBanTiec), 0) > 0
+             THEN FORMAT(ISNULL(pl.DonGiaBanTiecTD, pl.DonGiaBanTiec), 'N0', 'vi-VN')
+             ELSE ''
+        END AS [DonGiaBanTiec],
 
         -- Bàn tiệc
         ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SobanManchinhthuc],
@@ -112,8 +116,8 @@ BEGIN
         ISNULL(pl.HinhThucThanhToanDot2TD, pl.HinhThucThanhToanDot2) AS [HinhThucThanhToanDot2],
         CONVERT(VARCHAR(10), ISNULL(pl.HanThanhToanDot2TD, pl.HanThanhToanDot2), 103) AS [HanThanhToanDot2],
 
-        -- Dịch vụ tính phí: trả về JSON array [{TenDichVu, DonGia, GhiChu}] để server tự parse
-        -- Ưu tiên: (1) text field thủ công → (2) JsonDichVu (tab dịch vụ form) → (3) []
+        -- Dịch vụ tính phí: trả về JSON array [{TenDichVu, DonGia, GhiChu}]
+        -- Ưu tiên: (1) text field thủ công → (2) DanhSachChiPhiTD → (3) JsonDichVu → (4) []
         COALESCE(
             (
                 SELECT
@@ -141,8 +145,6 @@ BEGIN
                          ELSE ''
                     END AS [GhiChu]
                 FROM (
-                    -- XML split tương thích SQL Server 2008+ (không cần STRING_SPLIT)
-                    -- REPLACE(CHAR(13),'') để loại \r từ CRLF (Windows textarea)
                     SELECT LTRIM(RTRIM(REPLACE(x.value('.', 'NVARCHAR(MAX)'), CHAR(13), ''))) AS v
                     FROM (
                         SELECT CAST('<i>' +
@@ -160,11 +162,27 @@ BEGIN
                 WHERE v <> ''
                 FOR JSON PATH
             ),
-            -- Fallback: Lấy từ JsonDichVu (tab "Dịch vụ" trong form) khi text field trống
+            -- Level 2: DanhSachChiPhiTD (cùng nguồn với section 2.5 - đã computed khi lưu)
+            (
+                SELECT
+                    JSON_VALUE(value, '$.NoiDung') AS [TenDichVu],
+                    ISNULL(NULLIF(JSON_VALUE(value, '$.DonGia'), ''), '0') AS [DonGia],
+                    '' AS [GhiChu]
+                FROM OPENJSON(pl.DanhSachChiPhiTD)
+                WHERE pl.DanhSachChiPhiTD IS NOT NULL
+                  AND pl.DanhSachChiPhiTD <> ''
+                  AND pl.DanhSachChiPhiTD <> '[]'
+                  AND ISNULL(JSON_VALUE(value, '$.NoiDung'), '') <> ''
+                FOR JSON PATH
+            ),
+            -- Level 3: JsonDichVu (tab dịch vụ raw form)
             (
                 SELECT
                     ISNULL(JSON_VALUE(value, '$.TenHang'), JSON_VALUE(value, '$.Mahang')) AS [TenDichVu],
-                    ISNULL(NULLIF(JSON_VALUE(value, '$.Dongia'), ''), '0') AS [DonGia],
+                    FORMAT(
+                        ISNULL(CAST(NULLIF(JSON_VALUE(value, '$.Dongia'), '') AS DECIMAL(18,2)), 0),
+                        'N0', 'vi-VN'
+                    ) AS [DonGia],
                     '' AS [GhiChu]
                 FROM OPENJSON(pl.JsonDichVu)
                 WHERE pl.JsonDichVu IS NOT NULL
@@ -175,6 +193,7 @@ BEGIN
             '[]'
         ) AS [DichVuTinhPhiPhuLuc],
 
+
         ISNULL(pl.ThoaThuanPhuLucKhacTD, pl.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
         ISNULL(pl.BenAChucVuDaiDienTD, pl.BenAChucVuDaiDien) AS [BenAChucVuDaiDien],
 
@@ -182,18 +201,22 @@ BEGIN
         FORMAT(ISNULL(pl.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
         FORMAT(ISNULL(pl.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [MenuTongCong],
 
-        -- VÒNG LẶP MENU TIỆC (Bơm array [{TenMonAn: ...}] từ JsonBanTiec)
+        -- VÒNG LẶP MENU TIỆC (Bơm array [{STT, TenMonAn, DonGia}])
         COALESCE(
             (
                 SELECT 
-                    JSON_VALUE(value, '$.TenHang') AS [TenMonAn]
+                    ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [STT],
+                    JSON_VALUE(value, '$.TenHang') AS [TenMonAn],
+                    FORMAT(ISNULL(CAST(NULLIF(JSON_VALUE(value, '$.Dongia'),'') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [DonGia]
                 FROM OPENJSON(pl.JsonBanTiec)
                 WHERE pl.JsonBanTiec IS NOT NULL
                 FOR JSON PATH
             ),
             (
                 SELECT 
-                    h.Tenhang AS [TenMonAn]
+                    ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [STT],
+                    h.Tenhang AS [TenMonAn],
+                    '' AS [DonGia]
                 FROM dmHangHoa h WITH (NOLOCK)
                 WHERE h.GoiThucDonID = hd.GoiThucDonID AND ISNULL(h.IsNgungSuDung, 0) = 0
                 FOR JSON PATH
@@ -204,6 +227,7 @@ BEGIN
         COALESCE(
             (
                 SELECT 
+                    ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [STT],
                     JSON_VALUE(value, '$.NoiDung') AS [NoiDung],
                     JSON_VALUE(value, '$.DVT') AS [DVT],
                     JSON_VALUE(value, '$.SoLuong') AS [SoLuong],
@@ -215,6 +239,7 @@ BEGIN
             ),
             (
                 SELECT 
+                    ROW_NUMBER() OVER (ORDER BY items.SortOrder) AS [STT],
                     items.NoiDung, items.DVT, items.SoLuong, items.DonGia, items.ThanhTien
                 FROM (
                     SELECT 
