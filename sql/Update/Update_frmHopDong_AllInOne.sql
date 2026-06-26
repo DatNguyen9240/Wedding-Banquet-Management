@@ -590,18 +590,20 @@ BEGIN
         BEGIN
             SET @CalcChuaVAT = @RawSubTotal * (1 + @PhiPhucVuVal / 100.0);
             SET @CalcPhiPhucVu = @RawSubTotal * (@PhiPhucVuVal / 100.0);
+            SET @CalcTienThueVAT = @CalcChuaVAT * (@PTThueVATVal / 100.0);
+            SET @TongtienhopdongVal = @CalcChuaVAT + @CalcTienThueVAT;
         END
         ELSE
         BEGIN
             SET @CalcChuaVAT = @TongtienhopdongVal / (1 + @PTThueVATVal / 100.0);
             SET @CalcPhiPhucVu = @CalcChuaVAT * (@PhiPhucVuVal / (100.0 + @PhiPhucVuVal));
+            SET @CalcTienThueVAT = @TongtienhopdongVal - @CalcChuaVAT;
         END
-
-        SET @CalcTienThueVAT = @TongtienhopdongVal - @CalcChuaVAT;
 
         -- 3. Cập nhật vào tbmk_Hopdong
         UPDATE tbmk_Hopdong 
         SET 
+            Tongtienhopdong = @TongtienhopdongVal,
             TongTienHopDongChuaVAT = @CalcChuaVAT,
             TongTienPhiPhucVu = @CalcPhiPhucVu,
             TienThueVAT = @CalcTienThueVAT
@@ -1118,15 +1120,15 @@ CROSS APPLY (
 ) c_raw
 CROSS APPLY (
     SELECT CASE 
-        WHEN c_db.DbChuaVAT > 0 THEN c_db.DbChuaVAT
         WHEN c_raw.RawSubTotal > 0 THEN c_raw.RawSubTotal * (1 + ISNULL(h.PhiPhucVu, 0) / 100.0)
+        WHEN c_db.DbChuaVAT > 0 THEN c_db.DbChuaVAT
         ELSE h.Tongtienhopdong / (1 + ISNULL(h.PTThueVAT, 0) / 100.0)
     END AS CalcChuaVAT
 ) c_chuavat
 CROSS APPLY (
     SELECT CASE 
-        WHEN c_db.DbChuaVAT > 0 THEN ISNULL(h.TongTienPhiPhucVu, 0)
         WHEN c_raw.RawSubTotal > 0 THEN c_raw.RawSubTotal * (ISNULL(h.PhiPhucVu, 0) / 100.0)
+        WHEN c_db.DbChuaVAT > 0 THEN ISNULL(h.TongTienPhiPhucVu, 0)
         ELSE (h.Tongtienhopdong / (1 + ISNULL(h.PTThueVAT, 0) / 100.0)) * (ISNULL(h.PhiPhucVu, 0) / (100.0 + ISNULL(h.PhiPhucVu, 0)))
     END AS CalcPhiPhucVu
 ) c_phiphucvu
