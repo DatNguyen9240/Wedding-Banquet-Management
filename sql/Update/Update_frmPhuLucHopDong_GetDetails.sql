@@ -113,7 +113,7 @@ BEGIN
         CONVERT(VARCHAR(10), ISNULL(pl.HanThanhToanDot2TD, pl.HanThanhToanDot2), 103) AS [HanThanhToanDot2],
 
         -- Dịch vụ tính phí: trả về JSON array [{TenDichVu, DonGia, GhiChu}] để server tự parse
-        -- Mỗi dòng là 1 dịch vụ, phân cách bằng ";": "Tên dịch vụ; Đơn giá; Ghi chú"
+        -- Ưu tiên: (1) text field thủ công → (2) JsonDichVu (tab dịch vụ form) → (3) []
         COALESCE(
             (
                 SELECT
@@ -160,8 +160,21 @@ BEGIN
                 WHERE v <> ''
                 FOR JSON PATH
             ),
+            -- Fallback: Lấy từ JsonDichVu (tab "Dịch vụ" trong form) khi text field trống
+            (
+                SELECT
+                    ISNULL(JSON_VALUE(value, '$.TenHang'), JSON_VALUE(value, '$.Mahang')) AS [TenDichVu],
+                    ISNULL(NULLIF(JSON_VALUE(value, '$.Dongia'), ''), '0') AS [DonGia],
+                    '' AS [GhiChu]
+                FROM OPENJSON(pl.JsonDichVu)
+                WHERE pl.JsonDichVu IS NOT NULL
+                  AND pl.JsonDichVu <> ''
+                  AND pl.JsonDichVu <> '[]'
+                FOR JSON PATH
+            ),
             '[]'
         ) AS [DichVuTinhPhiPhuLuc],
+
         ISNULL(pl.ThoaThuanPhuLucKhacTD, pl.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
         ISNULL(pl.BenAChucVuDaiDienTD, pl.BenAChucVuDaiDien) AS [BenAChucVuDaiDien],
 

@@ -6285,7 +6285,8 @@ var PhuLucPlugin = (function () {
         // Khi tạo MỚI: để trống để user chủ động nhập, không auto-fill từ HĐ gốc
         modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = '';
         modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = uuDai;
-        modalContent.querySelector('#inpThoathuan').value = '';
+        // Khi tạo MỚI: thoathuan giữ nguyên giá trị cũ để người dùng tham khảo
+        modalContent.querySelector('#inpThoathuan').value = lyDo || '';
 
         modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(defaultJsonBanTiec);
         modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(defaultJsonThucUong);

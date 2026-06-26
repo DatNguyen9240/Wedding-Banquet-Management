@@ -652,7 +652,8 @@ var PhuLucPlugin = (function () {
         // (tránh junk text cũ như 'Dịch Vụ Tính Phí' bị gửi lên DB)
         modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = '';
         modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = uuDai;
-        modalContent.querySelector('#inpThoathuan').value = '';
+        // Khi tạo MỚI: thoathuan giữ nguyên giá trị cũ để người dùng tham khảo
+        modalContent.querySelector('#inpThoathuan').value = lyDo || '';
 
         modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(defaultJsonBanTiec);
         modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(defaultJsonThucUong);
