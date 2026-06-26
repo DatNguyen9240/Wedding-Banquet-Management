@@ -144,15 +144,18 @@ async function fetchFromSQLAPI(listName, keyword, authToken, funcName = 'View') 
         List: listName, Func: funcName, UserName: SQL_API_USER,
         Keyword: keyword || '', Page: 1, Limit: 1
     };
-    const qs = encodeURIComponent(JSON.stringify(payload));
-    const url = `${SQL_API_BASE}/api/API_Gateway_Router?q=${qs}`;
+    const url = `${SQL_API_BASE}/api/API_Gateway_Router`;
     console.log(`[SQL API] Gọi: ${listName} | Func: ${funcName} | Keyword: ${keyword}`);
-    const headers = {};
+    console.log(`[SQL API URL] POST ${url}`);
+    const headers = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = authToken;
     try {
-        const resp = await axiosGetWithRetry(url, { headers, timeout: 10000 }, 3, 1000);
+        const resp = await axios.post(url, payload, { headers, timeout: 10000 });
         const json = resp.data;
-        if (json && json.records && json.records.length > 0) return json.records[0];
+        console.log(`[SQL API RESPONSE] ${JSON.stringify(json).substring(0, 1000)}`);
+        if (json && json.records) {
+            return json.records.length > 0 ? json.records[0] : null;
+        }
         if (json && json.code === 0) return json;
     } catch (err) {
         console.error(`[SQL API] Lỗi khi gọi ${listName} (${funcName}):`, err.message);
