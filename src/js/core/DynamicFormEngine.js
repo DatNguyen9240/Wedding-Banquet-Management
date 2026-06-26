@@ -240,7 +240,7 @@ window.DynamicFormEngine = (function () {
 
     // Hiển thị skeleton loader ban đầu trong lúc tải cấu hình form (metadata)
     container.innerHTML = typeof UISkeleton !== 'undefined'
-      ? UISkeleton.createHTML({ type: 'table', rows: 8, cols: 5 })
+      ? UISkeleton.createHTML({ type: 'table', rows: 8, cols: 8 })
       : '<div class="p-4 text-center" style="color:var(--color-text-secondary);">Đang tải dữ liệu...</div>';
 
     // 2. Khôi phục state của module mới (nếu đã từng vào trước đó)
@@ -731,8 +731,10 @@ window.DynamicFormEngine = (function () {
             }
           });
         }
-        if (skeletonCols.length === 0) {
-          skeletonCols = 5;
+        if (skeletonCols.length > 8) {
+          skeletonCols = skeletonCols.slice(0, 8);
+        } else if (skeletonCols.length === 0) {
+          skeletonCols = 8;
         }
         gridContainer.innerHTML = UISkeleton.createTableHTML({
           rows: 8,
