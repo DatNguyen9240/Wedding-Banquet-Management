@@ -33,13 +33,7 @@ IF NOT EXISTS (SELECT 1 FROM dmThoigian WHERE Thoigianid = 'CA01')
 IF NOT EXISTS (SELECT 1 FROM dmThoigian WHERE Thoigianid = 'CA02')
     INSERT INTO dmThoigian (Thoigianid, Thoigian) VALUES ('CA02', N'Ca Tối (17:30 - 21:30)');
 
--- Loại hình tiệc
-IF NOT EXISTS (SELECT 1 FROM dmLoaihinhtiec WHERE Loaitiecid = 'LT01')
-    INSERT INTO dmLoaihinhtiec (Loaitiecid, Tenloaitiec) VALUES ('LT01', N'Tiệc cưới');
-IF NOT EXISTS (SELECT 1 FROM dmLoaihinhtiec WHERE Loaitiecid = 'LT02')
-    INSERT INTO dmLoaihinhtiec (Loaitiecid, Tenloaitiec) VALUES ('LT02', N'Hội nghị');
-IF NOT EXISTS (SELECT 1 FROM dmLoaihinhtiec WHERE Loaitiecid = 'LT03')
-    INSERT INTO dmLoaihinhtiec (Loaitiecid, Tenloaitiec) VALUES ('LT03', N'Sinh nhật');
+-- Loại hình tiệc (Đã được định nghĩa chuẩn bằng BLT000001 -> BLT000005)
 
 -- Gói thực đơn
 IF NOT EXISTS (SELECT 1 FROM dmGoiThucDon WHERE GoiThucDonID = 'TD01')
@@ -61,50 +55,50 @@ PRINT N'3. Chèn các hợp đồng tiệc giả lập...';
 -- A. Các tiệc diễn ra HÔM NAY (Hôm nay là GETDATE())
 -- Tiệc 1: Đã tổ chức xong (IsKetthuc = 1)
 INSERT INTO tbmk_Hopdong (Sohopdong, Ngayhopdong, Makh, Thoigianid, Ngaytochuc, Loaitiecid, GoiThucDonID, Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongsoban, Soluongkhach, IsHuy, IsKetthuc, UserCreate)
-VALUES ('HD_FAKE_01', GETDATE(), 'KH001', 'CA01', GETDATE(), 'LT01', 'TD01', 120000000, 20000000, 20000000, 30, 300, 0, 1, 'admin');
+VALUES ('HD_FAKE_01', GETDATE(), 'KH001', 'CA01', GETDATE(), 'BLT000001', 'TD01', 120000000, 20000000, 20000000, 30, 300, 0, 1, 'admin');
 
 -- Tiệc 2: Đang diễn ra (IsKetthuc = 0)
 INSERT INTO tbmk_Hopdong (Sohopdong, Ngayhopdong, Makh, Thoigianid, Ngaytochuc, Loaitiecid, GoiThucDonID, Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongsoban, Soluongkhach, IsHuy, IsKetthuc, GioDienRaSuKien, UserCreate)
-VALUES ('HD_FAKE_02', GETDATE(), 'KH002', 'CA02', GETDATE(), 'LT01', 'TD01', 150000000, 30000000, 30000000, 40, 400, 0, 0, '18:00', 'admin');
+VALUES ('HD_FAKE_02', GETDATE(), 'KH002', 'CA02', GETDATE(), 'BLT000001', 'TD01', 150000000, 30000000, 30000000, 40, 400, 0, 0, '18:00', 'admin');
 
 -- Tiệc 3: Sắp diễn ra hôm nay (IsKetthuc = 0)
 INSERT INTO tbmk_Hopdong (Sohopdong, Ngayhopdong, Makh, Thoigianid, Ngaytochuc, Loaitiecid, GoiThucDonID, Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongsoban, Soluongkhach, IsHuy, IsKetthuc, GioDienRaSuKien, UserCreate)
-VALUES ('HD_FAKE_03', GETDATE(), 'KH003', 'CA02', GETDATE(), 'LT02', 'TD01', 80000000, 15000000, 15000000, 20, 200, 0, 0, '19:30', 'admin');
+VALUES ('HD_FAKE_03', GETDATE(), 'KH003', 'CA02', GETDATE(), 'BLT000005', 'TD01', 80000000, 15000000, 15000000, 20, 200, 0, 0, '19:30', 'admin');
 
 
 -- B. Các tiệc diễn ra trong TUẦN NÀY (nhưng khác hôm nay)
 -- Tiệc 4: Ngày mai
 INSERT INTO tbmk_Hopdong (Sohopdong, Ngayhopdong, Makh, Thoigianid, Ngaytochuc, Loaitiecid, GoiThucDonID, Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongsoban, Soluongkhach, IsHuy, IsKetthuc, UserCreate)
-VALUES ('HD_FAKE_04', GETDATE(), 'KH001', 'CA01', DATEADD(day, 1, GETDATE()), 'LT01', 'TD01', 160000000, 30000000, 30000000, 35, 350, 0, 0, 'admin');
+VALUES ('HD_FAKE_04', GETDATE(), 'KH001', 'CA01', DATEADD(day, 1, GETDATE()), 'BLT000001', 'TD01', 160000000, 30000000, 30000000, 35, 350, 0, 0, 'admin');
 
 -- Tiệc 5: Ngày kia
 INSERT INTO tbmk_Hopdong (Sohopdong, Ngayhopdong, Makh, Thoigianid, Ngaytochuc, Loaitiecid, GoiThucDonID, Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongsoban, Soluongkhach, IsHuy, IsKetthuc, UserCreate)
-VALUES ('HD_FAKE_05', GETDATE(), 'KH002', 'CA02', DATEADD(day, 2, GETDATE()), 'LT03', 'TD01', 45000000, 10000000, 10000000, 10, 100, 0, 0, 'admin');
+VALUES ('HD_FAKE_05', GETDATE(), 'KH002', 'CA02', DATEADD(day, 2, GETDATE()), 'BLT000004', 'TD01', 45000000, 10000000, 10000000, 10, 100, 0, 0, 'admin');
 
 
 -- C. Các tiệc diễn ra trong THÁNG NÀY (nhưng tuần sau)
 -- Tiệc 6: Sau 7 ngày
 INSERT INTO tbmk_Hopdong (Sohopdong, Ngayhopdong, Makh, Thoigianid, Ngaytochuc, Loaitiecid, GoiThucDonID, Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongsoban, Soluongkhach, IsHuy, IsKetthuc, UserCreate)
-VALUES ('HD_FAKE_06', GETDATE(), 'KH003', 'CA01', DATEADD(day, 7, GETDATE()), 'LT01', 'TD01', 110000000, 20000000, 20000000, 25, 250, 0, 0, 'admin');
+VALUES ('HD_FAKE_06', GETDATE(), 'KH003', 'CA01', DATEADD(day, 7, GETDATE()), 'BLT000001', 'TD01', 110000000, 20000000, 20000000, 25, 250, 0, 0, 'admin');
 
 -- Tiệc 7: Sau 12 ngày
 INSERT INTO tbmk_Hopdong (Sohopdong, Ngayhopdong, Makh, Thoigianid, Ngaytochuc, Loaitiecid, GoiThucDonID, Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongsoban, Soluongkhach, IsHuy, IsKetthuc, UserCreate)
-VALUES ('HD_FAKE_07', GETDATE(), 'KH001', 'CA02', DATEADD(day, 12, GETDATE()), 'LT02', 'TD01', 95000000, 20000000, 20000000, 25, 250, 0, 0, 'admin');
+VALUES ('HD_FAKE_07', GETDATE(), 'KH001', 'CA02', DATEADD(day, 12, GETDATE()), 'BLT000005', 'TD01', 95000000, 20000000, 20000000, 25, 250, 0, 0, 'admin');
 
 
 -- D. Các tiệc diễn ra trong THÁNG TRƯỚC (để test so sánh tăng trưởng doanh thu)
 -- Tiệc 8: Cách đây 30 ngày (đã hoàn thành)
 INSERT INTO tbmk_Hopdong (Sohopdong, Ngayhopdong, Makh, Thoigianid, Ngaytochuc, Loaitiecid, GoiThucDonID, Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongsoban, Soluongkhach, IsHuy, IsKetthuc, UserCreate)
-VALUES ('HD_FAKE_08', DATEADD(day, -40, GETDATE()), 'KH002', 'CA01', DATEADD(day, -30, GETDATE()), 'LT01', 'TD01', 130000000, 20000000, 20000000, 30, 300, 0, 1, 'admin');
+VALUES ('HD_FAKE_08', DATEADD(day, -40, GETDATE()), 'KH002', 'CA01', DATEADD(day, -30, GETDATE()), 'BLT000001', 'TD01', 130000000, 20000000, 20000000, 30, 300, 0, 1, 'admin');
 
 -- Tiệc 9: Cách đây 25 ngày (đã hoàn thành)
 INSERT INTO tbmk_Hopdong (Sohopdong, Ngayhopdong, Makh, Thoigianid, Ngaytochuc, Loaitiecid, GoiThucDonID, Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongsoban, Soluongkhach, IsHuy, IsKetthuc, UserCreate)
-VALUES ('HD_FAKE_09', DATEADD(day, -35, GETDATE()), 'KH003', 'CA02', DATEADD(day, -25, GETDATE()), 'LT03', 'TD01', 50000000, 10000000, 10000000, 12, 120, 0, 1, 'admin');
+VALUES ('HD_FAKE_09', DATEADD(day, -35, GETDATE()), 'KH003', 'CA02', DATEADD(day, -25, GETDATE()), 'BLT000004', 'TD01', 50000000, 10000000, 10000000, 12, 120, 0, 1, 'admin');
 
 
 -- E. Hợp đồng bị hủy hôm nay
 INSERT INTO tbmk_Hopdong (Sohopdong, Ngayhopdong, Makh, Thoigianid, Ngaytochuc, Loaitiecid, GoiThucDonID, Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongsoban, Soluongkhach, IsHuy, Lydohuy, Ngayhuy, IsKetthuc, UserCreate)
-VALUES ('HD_FAKE_10', GETDATE(), 'KH001', 'CA01', DATEADD(day, 5, GETDATE()), 'LT01', 'TD01', 140000000, 20000000, 20000000, 30, 300, 1, N'Khách đổi địa điểm', GETDATE(), 0, 'admin');
+VALUES ('HD_FAKE_10', GETDATE(), 'KH001', 'CA01', DATEADD(day, 5, GETDATE()), 'BLT000001', 'TD01', 140000000, 20000000, 20000000, 30, 300, 1, N'Khách đổi địa điểm', GETDATE(), 0, 'admin');
 
 GO
 

@@ -139,14 +139,14 @@ async function fetchSetupInfo(authToken) {
     }
 }
 
-async function fetchFromSQLAPI(listName, keyword, authToken) {
+async function fetchFromSQLAPI(listName, keyword, authToken, funcName = 'View') {
     const payload = {
-        List: listName, Func: 'View', UserName: SQL_API_USER,
+        List: listName, Func: funcName, UserName: SQL_API_USER,
         Keyword: keyword || '', Page: 1, Limit: 1
     };
     const qs = encodeURIComponent(JSON.stringify(payload));
     const url = `${SQL_API_BASE}/api/API_Gateway_Router?q=${qs}`;
-    console.log(`[SQL API] Gọi: ${listName} | Keyword: ${keyword}`);
+    console.log(`[SQL API] Gọi: ${listName} | Func: ${funcName} | Keyword: ${keyword}`);
     const headers = {};
     if (authToken) headers['Authorization'] = authToken;
     try {
@@ -155,7 +155,7 @@ async function fetchFromSQLAPI(listName, keyword, authToken) {
         if (json && json.records && json.records.length > 0) return json.records[0];
         if (json && json.code === 0) return json;
     } catch (err) {
-        console.error(`[SQL API] Lỗi khi gọi ${listName}:`, err.message);
+        console.error(`[SQL API] Lỗi khi gọi ${listName} (${funcName}):`, err.message);
     }
     return null;
 }
@@ -290,10 +290,24 @@ app.post('/api/documents/generate', async (req, res) => {
         let dbRow = null;
         if (customerId) {
             try {
-                dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization);
-                console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API thành công');
+                // Thử lấy qua Func GetDetails trước để lấy dữ liệu chi tiết và format đầy đủ
+                dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization, 'GetDetails');
+                if (dbRow && dbRow.code !== -1 && dbRow.error === undefined) {
+                    console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API (GetDetails) thành công');
+                } else {
+                    dbRow = null;
+                }
             } catch (e) {
-                console.error('[GENERATE] Lỗi SQL API:', e.message);
+                dbRow = null;
+            }
+
+            if (!dbRow) {
+                try {
+                    dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization, 'View');
+                    console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API (View) thành công');
+                } catch (e) {
+                    console.error('[GENERATE] Lỗi SQL API (View):', e.message);
+                }
             }
         }
 
