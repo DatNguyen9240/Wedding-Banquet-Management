@@ -1,3 +1,7 @@
+Domain: https://kyhoa.bms7.net
+Username: admin
+Password: 123456
+
 HƯỚNG DẪN SỬ DỤNG PHẦN MỀM QUẢN LÝ TIỆC CƯỚI
 I/ Giới thiệu chung các tính năng cơ bản : tất cả các form điều có các nút “Thêm, Sửa, Xóa, Lọc, In, Đóng” chức năng từng nút
 -Thêm : Thêm mới dữ liệu
