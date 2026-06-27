@@ -425,7 +425,7 @@ var DocumentManagerPage = (function () {
         var placeholder = _qs('#docmgr-oo-placeholder');
         if (placeholder) {
           _docEditor = new DocsAPI.DocEditor('docmgr-oo-placeholder', config);
-          if (typeof Toast !== 'undefined') Toast.show({ message: 'Đang mở trình chỉnh sửa Template...', type: 'info' });
+          if (typeof UIToast !== 'undefined') UIToast.show('Đang mở trình chỉnh sửa Template...', 'info');
 
           // Inject Floating UI cho Drag & Drop Field
           _injectDragDropUI(fileName, area);
@@ -455,20 +455,20 @@ var DocumentManagerPage = (function () {
               if (empty) empty.style.display = '';
             }
             _loadDocuments();
-            if (typeof Toast !== 'undefined') {
-              Toast.show({ message: 'Đã xóa tài liệu!', type: 'success' });
+            if (typeof UIToast !== 'undefined') {
+              UIToast.show('Đã xóa tài liệu "' + fileName + '"!', 'success');
             }
           } else {
-            if (typeof Toast !== 'undefined') {
-              Toast.show({ message: 'Lỗi: ' + (json.message || ''), type: 'error' });
+            if (typeof UIToast !== 'undefined') {
+              UIToast.show('Lỗi: ' + (json.message || ''), 'error');
             } else {
               alert('Lỗi: ' + json.message);
             }
           }
         })
         .catch(function () {
-          if (typeof Toast !== 'undefined') {
-            Toast.show({ message: 'Lỗi kết nối!', type: 'error' });
+          if (typeof UIToast !== 'undefined') {
+            UIToast.show('Lỗi kết nối!', 'error');
           } else {
             alert('Lỗi kết nối!');
           }

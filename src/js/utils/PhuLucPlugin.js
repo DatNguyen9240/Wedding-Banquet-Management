@@ -144,6 +144,16 @@ var PhuLucPlugin = (function () {
     }
   }
 
+  function _getProp(obj, key) {
+    if (!obj) return undefined;
+    if (obj[key] !== undefined) return obj[key];
+    var lower = key.toLowerCase();
+    for (var k in obj) {
+      if (k.toLowerCase() === lower) return obj[k];
+    }
+    return undefined;
+  }
+
   function _generateDocument(sothaydoi) {
     var DOC_API_BASE = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER) ? window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API : 'http://localhost:3000/api/document';
     var config = {
@@ -209,28 +219,28 @@ var PhuLucPlugin = (function () {
     defaultJsonDichVu = _stringifyJson(defaultJsonDichVu);
     defaultJsonPhatSinh = _stringifyJson(defaultJsonPhatSinh);
 
-    var sohopdong = contractRow.Sohopdong || contractRow.sohopdong || contractRow.SoHopDong;
-    var khachhang = contractRow.Khachhang || contractRow.Daidiendat || contractRow.TenKhachHang || '';
+    var sohopdong = _getProp(contractRow, 'Sohopdong') || _getProp(contractRow, 'sohopdong') || _getProp(contractRow, 'SoHopDong');
+    var khachhang = _getProp(contractRow, 'Khachhang') || _getProp(contractRow, 'Daidiendat') || _getProp(contractRow, 'TenKhachHang') || '';
 
     // Khai báo sẵn các trường mặc định từ hợp đồng gốc
-    var qmTu = contractRow.SanhQuyMoMin || contractRow.QuyMoBanTu || contractRow.quymobantu || contractRow.QuyMoBanTuTD || '';
-    var qmDen = contractRow.SanhQuyMoMax || contractRow.QuyMoBanDen || contractRow.quymobanden || contractRow.QuyMoBanDenTD || '';
-    var donGia = contractRow.Giabanman || contractRow.giabanman || contractRow.DonGiaBanTiec || '';
-    var soKhach = contractRow.TiecSoKhach1Ban || contractRow.SoNguoiTrenBan || contractRow.SoKhachTrenBan || 10;
-    var tenDot = contractRow.TenDotThanhToan || 'Đợt 2';
-    var soTienDot2 = contractRow.Sotiencochopdong || contractRow.ThanhToanDot2SoTien || '';
-    var hinhThuc = contractRow.Dot2HinhThuc || contractRow.HinhThucThanhToanDot2 || 'Chuyển khoản';
-    var hanThanhToan = contractRow.Ngayhopdong || contractRow.NgayHopDong || contractRow.HanThanhToanDot2 || '';
+    var qmTu = _getProp(contractRow, 'SanhQuyMoMin') || _getProp(contractRow, 'QuyMoBanTu') || _getProp(contractRow, 'quymobantu') || _getProp(contractRow, 'QuyMoBanTuTD') || '';
+    var qmDen = _getProp(contractRow, 'SanhQuyMoMax') || _getProp(contractRow, 'QuyMoBanDen') || _getProp(contractRow, 'quymobanden') || _getProp(contractRow, 'QuyMoBanDenTD') || '';
+    var donGia = _getProp(contractRow, 'Giabanman') || _getProp(contractRow, 'giabanman') || _getProp(contractRow, 'DonGiaBanTiec') || '';
+    var soKhach = _getProp(contractRow, 'TiecSoKhach1Ban') || _getProp(contractRow, 'SoNguoiTrenBan') || _getProp(contractRow, 'SoKhachTrenBan') || 10;
+    var tenDot = _getProp(contractRow, 'TenDotThanhToan') || 'Đợt 2';
+    var soTienDot2 = _getProp(contractRow, 'Sotiencochopdong') || _getProp(contractRow, 'ThanhToanDot2SoTien') || '';
+    var hinhThuc = _getProp(contractRow, 'Dot2HinhThuc') || _getProp(contractRow, 'HinhThucThanhToanDot2') || 'Chuyển khoản';
+    var hanThanhToan = _getProp(contractRow, 'Ngayhopdong') || _getProp(contractRow, 'NgayHopDong') || _getProp(contractRow, 'HanThanhToanDot2') || '';
     if (hanThanhToan && hanThanhToan.indexOf('T') !== -1) hanThanhToan = hanThanhToan.split('T')[0];
 
-    var chucVu = contractRow.BenAChucVu || contractRow.BenAChucVuDaiDien || '';
-    var ngayToChuc = contractRow.NgayToChuc || contractRow.Ngaytochuc || '';
+    var chucVu = _getProp(contractRow, 'BenAChucVu') || _getProp(contractRow, 'BenAChucVuDaiDien') || '';
+    var ngayToChuc = _getProp(contractRow, 'NgayToChuc') || _getProp(contractRow, 'Ngaytochuc') || '';
     if (ngayToChuc && ngayToChuc.indexOf('T') !== -1) ngayToChuc = ngayToChuc.split('T')[0];
 
-    var nhamNgay = contractRow.Nhamngay || contractRow.NhamNgay || '';
-    var dvTinhPhi = contractRow.DichVuTinhPhiPhuLuc || '';
-    var uuDai = contractRow.DSKhuyenMai || contractRow.Noidunguudai || contractRow.ThoaThuanPhuLucKhac || '';
-    var lyDo = contractRow.Ghichu || contractRow.LyDoDieuChinh || '';
+    var nhamNgay = _getProp(contractRow, 'Nhamngay') || _getProp(contractRow, 'NhamNgay') || '';
+    var dvTinhPhi = _getProp(contractRow, 'DichVuTinhPhiPhuLuc') || '';
+    var uuDai = _getProp(contractRow, 'DSKhuyenMai') || _getProp(contractRow, 'Noidunguudai') || _getProp(contractRow, 'ThoaThuanPhuLucKhac') || '';
+    var lyDo = _getProp(contractRow, 'Ghichu') || _getProp(contractRow, 'LyDoDieuChinh') || '';
 
     // Lấy lịch sử phụ lục
     ContractService.getPhuLucHistory(sohopdong).then(function (historyRecords) {
@@ -239,19 +249,21 @@ var PhuLucPlugin = (function () {
         historyHtml = '<tr><td colspan="5" class="text-center text-muted">Chưa có phụ lục / thay đổi nào.</td></tr>';
       } else {
         historyRecords.forEach(function (rec, index) {
-          var ngay = rec.Ngaythaydoi || rec.NgayLapPL || '';
+          var id = _getProp(rec, 'SoPhuLuc') || _getProp(rec, 'Sothaydoi') || '';
+          var ngay = _getProp(rec, 'Ngaythaydoi') || _getProp(rec, 'NgayLapPL') || _getProp(rec, 'NgayLap') || '';
           if (ngay && ngay.indexOf('T') !== -1) ngay = ngay.split('T')[0];
+          var lydo = _getProp(rec, 'LyDoDieuChinh') || _getProp(rec, 'GhiChu') || _getProp(rec, 'Ghichu') || '';
           historyHtml += `
             <tr>
               <td class="text-center">${index + 1}</td>
-              <td><a href="javascript:void(0)" class="btn-edit-pl" style="font-weight: 600; color: var(--color-primary); text-decoration: none;" data-idx="${index}">${rec.SoPhuLuc || rec.Sothaydoi || ''}</a></td>
+              <td><a href="javascript:void(0)" class="btn-edit-pl" style="font-weight: 600; color: var(--color-primary); text-decoration: none;" data-idx="${index}">${id}</a></td>
               <td>${ngay}</td>
-              <td class="phuluc-content-col">${rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || ''}</td>
+              <td class="phuluc-content-col">${lydo}</td>
               <td class="text-center">
                 <button type="button" class="btn btn-sm btn-link btn-edit-pl" data-idx="${index}" title="Sửa" style="padding: 2px 4px; border: none; background: transparent; cursor: pointer; color: var(--color-primary);">
                   <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">edit</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-link text-danger btn-delete-pl" data-id="${rec.SoPhuLuc || rec.Sothaydoi || ''}" title="Xóa" style="padding: 2px 4px; border: none; background: transparent; cursor: pointer; color: var(--color-danger);">
+                <button type="button" class="btn btn-sm btn-link text-danger btn-delete-pl" data-id="${id}" title="Xóa" style="padding: 2px 4px; border: none; background: transparent; cursor: pointer; color: var(--color-danger);">
                   <span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">delete</span>
                 </button>
               </td>
@@ -497,7 +509,7 @@ var PhuLucPlugin = (function () {
           inpNgayTCVisible.placeholder = ngayToChuc ? 'Hiện tại: ' + _formatDateVN(ngayToChuc) : 'Chọn ngày tổ chức...';
         }
 
-        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').placeholder = dvTinhPhi ? 'Hiện tại:\n' + dvTinhPhi : 'Nhập dịch vụ tính phí...';
+        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').placeholder = 'Mỗi dòng 1 dịch vụ, cách bằng ";":\nVí dụ: MC tiệc; 2000000; Ghi chú\nMàn hình LED; 5000000;' + (dvTinhPhi ? '\n\n[Hợp đồng gốc: ' + dvTinhPhi + ']' : '');
         modalContent.querySelector('#inpThoaThuanPhuLucKhac').placeholder = uuDai ? 'Hiện tại:\n' + uuDai : 'Nhập dịch vụ ưu đãi...';
         modalContent.querySelector('#inpThoathuan').placeholder = lyDo ? 'Hiện tại:\n' + lyDo : 'Nhập nội dung thỏa thuận...';
       }
@@ -510,41 +522,48 @@ var PhuLucPlugin = (function () {
           rowElement.classList.add('active-row');
         }
 
+        var id = _getProp(rec, 'SoPhuLuc') || _getProp(rec, 'Sothaydoi') || '';
+
         modalContent.querySelector('#form-title').innerHTML = `
           <span class="material-symbols-outlined" style="font-size: 20px; vertical-align: middle;">edit_document</span> 
           <span style="vertical-align: middle;">Cập Nhật Phụ Lục</span>
-          <span class="badge-mode badge-mode-edit">ĐANG SỬA BẢN GHI: ${rec.SoPhuLuc || rec.Sothaydoi || ''}</span>
+          <span class="badge-mode badge-mode-edit">ĐANG SỬA BẢN GHI: ${id}</span>
         `;
         modalContent.querySelector('#btnCancelEdit').style.display = 'block';
 
-        modalContent.querySelector('#inpSothaydoi').value = rec.SoPhuLuc || rec.Sothaydoi || '';
+        modalContent.querySelector('#inpSothaydoi').value = id;
         modalContent.querySelector('#inpSothaydoi').disabled = true;
 
-        var ngayLap = rec.Ngaythaydoi || rec.NgayLapPL || rec.NgayLap || '';
+        var ngayLap = _getProp(rec, 'Ngaythaydoi') || _getProp(rec, 'NgayLapPL') || _getProp(rec, 'NgayLap') || '';
         if (ngayLap && ngayLap.indexOf('T') !== -1) ngayLap = ngayLap.split('T')[0];
         modalContent.querySelector('#inpNgayLapPL').value = ngayLap;
 
-        modalContent.querySelector('#inpQuyMoBanTu').value = (rec.QuyMoBanTu !== null && rec.QuyMoBanTu !== undefined) ? rec.QuyMoBanTu : '';
-        modalContent.querySelector('#inpQuyMoBanDen').value = (rec.QuyMoBanDen !== null && rec.QuyMoBanDen !== undefined) ? rec.QuyMoBanDen : '';
+        var qmTu = _getProp(rec, 'QuyMoBanTu');
+        modalContent.querySelector('#inpQuyMoBanTu').value = (qmTu !== null && qmTu !== undefined) ? qmTu : '';
+        var qmDen = _getProp(rec, 'QuyMoBanDen');
+        modalContent.querySelector('#inpQuyMoBanDen').value = (qmDen !== null && qmDen !== undefined) ? qmDen : '';
 
         var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
         if (inpDonGiaEl) {
-          inpDonGiaEl.value = (rec.DonGiaBanTiec !== null && rec.DonGiaBanTiec !== undefined) ? rec.DonGiaBanTiec : '';
+          var dg = _getProp(rec, 'DonGiaBanTiec');
+          inpDonGiaEl.value = (dg !== null && dg !== undefined) ? dg : '';
           inpDonGiaEl.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpSoKhachTrenBan').value = (rec.SoKhachTrenBan !== null && rec.SoKhachTrenBan !== undefined) ? rec.SoKhachTrenBan : '';
+        var sk = _getProp(rec, 'SoKhachTrenBan');
+        modalContent.querySelector('#inpSoKhachTrenBan').value = (sk !== null && sk !== undefined) ? sk : '';
 
-        modalContent.querySelector('#inpTenDotThanhToan').value = rec.TenDotThanhToan || '';
+        modalContent.querySelector('#inpTenDotThanhToan').value = _getProp(rec, 'TenDotThanhToan') || '';
 
         var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
         if (inpThanhToanDot2El) {
-          inpThanhToanDot2El.value = (rec.ThanhToanDot2SoTien !== null && rec.ThanhToanDot2SoTien !== undefined) ? rec.ThanhToanDot2SoTien : '';
+          var tt = _getProp(rec, 'ThanhToanDot2SoTien');
+          inpThanhToanDot2El.value = (tt !== null && tt !== undefined) ? tt : '';
           inpThanhToanDot2El.dispatchEvent(new Event('change'));
         }
-        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = rec.HinhThucThanhToanDot2 || '';
+        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = _getProp(rec, 'HinhThucThanhToanDot2') || '';
 
-        var hanTT = rec.HanThanhToanDot2 || '';
+        var hanTT = _getProp(rec, 'HanThanhToanDot2') || '';
         if (hanTT && hanTT.indexOf('T') !== -1) hanTT = hanTT.split('T')[0];
         var inpHanTTEl = modalContent.querySelector('#inpHanThanhToanDot2');
         if (inpHanTTEl) {
@@ -552,9 +571,9 @@ var PhuLucPlugin = (function () {
           inpHanTTEl.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpBenAChucVuDaiDien').value = rec.BenAChucVuDaiDien || '';
+        modalContent.querySelector('#inpBenAChucVuDaiDien').value = _getProp(rec, 'BenAChucVuDaiDien') || '';
 
-        var ngayTCTD = rec.NgayToChuc || '';
+        var ngayTCTD = _getProp(rec, 'NgayToChuc') || '';
         if (ngayTCTD && ngayTCTD.indexOf('T') !== -1) ngayTCTD = ngayTCTD.split('T')[0];
         var inpNgayTCTDEl = modalContent.querySelector('#inpNgayToChucTD');
         if (inpNgayTCTDEl) {
@@ -562,24 +581,14 @@ var PhuLucPlugin = (function () {
           inpNgayTCTDEl.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = rec.DichVuTinhPhiPhuLuc || '';
-        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = rec.ThoaThuanPhuLucKhac || '';
-        modalContent.querySelector('#inpThoathuan').value = rec.LyDoDieuChinh || rec.GhiChu || rec.Ghichu || '';
+        modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = _getProp(rec, 'DichVuTinhPhiPhuLuc') || '';
+        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = _getProp(rec, 'ThoaThuanPhuLucKhac') || '';
+        modalContent.querySelector('#inpThoathuan').value = _getProp(rec, 'LyDoDieuChinh') || _getProp(rec, 'GhiChu') || _getProp(rec, 'Ghichu') || '';
 
-        var getVal = function (obj, key) {
-          if (!obj) return undefined;
-          if (obj[key] !== undefined) return obj[key];
-          var lower = key.toLowerCase();
-          for (var k in obj) {
-            if (k.toLowerCase() === lower) return obj[k];
-          }
-          return undefined;
-        };
-
-        modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(getVal(rec, 'JsonBanTiec'));
-        modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(getVal(rec, 'JsonThucUong'));
-        modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(getVal(rec, 'JsonDichVu'));
-        modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(getVal(rec, 'JsonPhatSinh'));
+        modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(_getProp(rec, 'JsonBanTiec'));
+        modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(_getProp(rec, 'JsonThucUong'));
+        modalContent.querySelector('#inpJsonDichVu').value = _stringifyJson(_getProp(rec, 'JsonDichVu'));
+        modalContent.querySelector('#inpJsonPhatSinh').value = _stringifyJson(_getProp(rec, 'JsonPhatSinh'));
         if (typeof FoodSelectionPlugin !== 'undefined' && typeof FoodSelectionPlugin.reloadForm === 'function') {
           FoodSelectionPlugin.reloadForm(modalContent);
         }
@@ -606,42 +615,45 @@ var PhuLucPlugin = (function () {
         var dd = String(today.getDate()).padStart(2, '0');
         modalContent.querySelector('#inpNgayLapPL').value = yyyy + '-' + mm + '-' + dd;
 
-        modalContent.querySelector('#inpQuyMoBanTu').value = '';
-        modalContent.querySelector('#inpQuyMoBanDen').value = '';
+        modalContent.querySelector('#inpQuyMoBanTu').value = qmTu;
+        modalContent.querySelector('#inpQuyMoBanDen').value = qmDen;
 
         var inpDonGiaEl = modalContent.querySelector('#inpDonGiaBanTiec');
         if (inpDonGiaEl) {
-          inpDonGiaEl.value = '';
+          inpDonGiaEl.value = donGia;
           inpDonGiaEl.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpSoKhachTrenBan').value = '';
-        modalContent.querySelector('#inpTenDotThanhToan').value = '';
+        modalContent.querySelector('#inpSoKhachTrenBan').value = soKhach;
+        modalContent.querySelector('#inpTenDotThanhToan').value = tenDot;
 
         var inpThanhToanDot2El = modalContent.querySelector('#inpThanhToanDot2SoTien');
         if (inpThanhToanDot2El) {
-          inpThanhToanDot2El.value = '';
+          inpThanhToanDot2El.value = soTienDot2;
           inpThanhToanDot2El.dispatchEvent(new Event('change'));
         }
-        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = '';
+        modalContent.querySelector('#inpHinhThucThanhToanDot2').value = hinhThuc;
 
         var inpHan = modalContent.querySelector('#inpHanThanhToanDot2');
         if (inpHan) {
-          inpHan.value = '';
+          inpHan.value = hanThanhToan;
           inpHan.dispatchEvent(new Event('change'));
         }
 
-        modalContent.querySelector('#inpBenAChucVuDaiDien').value = '';
+        modalContent.querySelector('#inpBenAChucVuDaiDien').value = chucVu;
 
         var inpNgayTC = modalContent.querySelector('#inpNgayToChucTD');
         if (inpNgayTC) {
-          inpNgayTC.value = '';
+          inpNgayTC.value = ngayToChuc;
           inpNgayTC.dispatchEvent(new Event('change'));
         }
 
+        // Khi tạo MỚI: để trống để user chủ động nhập, không auto-fill từ HĐ gốc
+        // (tránh junk text cũ như 'Dịch Vụ Tính Phí' bị gửi lên DB)
         modalContent.querySelector('#inpDichVuTinhPhiPhuLuc').value = '';
-        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = '';
-        modalContent.querySelector('#inpThoathuan').value = '';
+        modalContent.querySelector('#inpThoaThuanPhuLucKhac').value = uuDai;
+        // Khi tạo MỚI: thoathuan giữ nguyên giá trị cũ để người dùng tham khảo
+        modalContent.querySelector('#inpThoathuan').value = lyDo || '';
 
         modalContent.querySelector('#inpJsonBanTiec').value = _stringifyJson(defaultJsonBanTiec);
         modalContent.querySelector('#inpJsonThucUong').value = _stringifyJson(defaultJsonThucUong);
@@ -798,26 +810,30 @@ var PhuLucPlugin = (function () {
         } catch (err) { }
         var currentUserName = userObj.Username || userObj.UserName || userObj.username || 'system';
 
+        var formatISO = function (val) {
+          return typeof FormatUtils !== 'undefined' ? FormatUtils.formatISO(val) : val;
+        };
+
         // Payload khớp với API_LuuPhuLucHopDong:
         var payload = {
           List: 'frmPhuLucHopDong',
           Func: 'Save',
           Sothaydoi: soPhuLuc,
           Sohopdong: sohopdong,
-          Ngaythaydoi: ngayLapPL,
+          Ngaythaydoi: formatISO(ngayLapPL),
           Ghichu: thoathuan,
           Status: 'DRAFT',
           UserName: currentUserName,
           JsonData: JSON.stringify({
             Sothaydoi: soPhuLuc,
             Sohopdong: sohopdong,
-            Ngaythaydoi: ngayLapPL,
+            Ngaythaydoi: formatISO(ngayLapPL),
             Ghichu: thoathuan,
             Status: 'DRAFT',
             UserName: currentUserName,
 
             SoPhuLuc: soPhuLuc,
-            NgayLapPL: ngayLapPL,
+            NgayLapPL: formatISO(ngayLapPL),
             NgayLapPLDay: nNgay,
             ThangLapPL: nThang,
             NamLapPL: nNam,
@@ -838,13 +854,13 @@ var PhuLucPlugin = (function () {
             ThanhToanDot2SoTienTD: soTienDot2Val,
             HinhThucThanhToanDot2: hinhThuc,
             HinhThucThanhToanDot2TD: hinhThucVal,
-            HanThanhToanDot2: hanThanhToan,
-            HanThanhToanDot2TD: hanThanhToanVal,
+            HanThanhToanDot2: formatISO(hanThanhToan),
+            HanThanhToanDot2TD: formatISO(hanThanhToanVal),
 
             BenAChucVuDaiDien: chucVu,
             BenAChucVuDaiDienTD: chucVuVal,
-            NgayToChuc: ngayToChuc,
-            NgayToChucTD: ngayToChucTDVal,
+            NgayToChuc: formatISO(ngayToChuc),
+            NgayToChucTD: formatISO(ngayToChucTDVal),
             NhamNgay: nhamNgay,
             NhamNgayTD: (ngayToChucTDVal === ngayToChuc) ? nhamNgay : '',
 

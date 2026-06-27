@@ -258,28 +258,28 @@ SELECT
     kh.CMNDDaiDien AS [BenBCCCD],
     
     -- Bên A (Thông tin nhà hàng)
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT') AS [BenASDT],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'BenASDT') AS [BenASDT],
 
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenADaiDien],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'HNNguoiDaiDien') AS [BenADaiDien],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
     ISNULL(
         nv.Tennv, 
         ISNULL(
-            (SELECT TOP 1 Name.Tennv FROM dmNhanvienView Name WHERE Name.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)), 
+            (SELECT TOP 1 Name.Tennv FROM dmNhanvienView Name WITH (NOLOCK) WHERE Name.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)), 
             ISNULL(td.Manv, ISNULL(hd.Manv, ISNULL(td.UserCreate, hd.UserCreate)))
         )
     ) AS [BenANhanVienPhuTrach],
     ISNULL(
         nv.Dienthoai, 
         ISNULL(
-            (SELECT TOP 1 Phone.DIENTHOAI FROM dmNhanvienView Phone WHERE Phone.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)),
+            (SELECT TOP 1 Phone.DIENTHOAI FROM dmNhanvienView Phone WITH (NOLOCK) WHERE Phone.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)),
             ISNULL(
-                (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com3'),
+                (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'Com3'),
                 ISNULL(
-                    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT'),
+                    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'BenASDT'),
                     ''
                 )
             )
@@ -302,9 +302,9 @@ SELECT
     CAST(YEAR(hd.Ngayhopdong) AS VARCHAR) AS [NamLapHD],
 
     -- Loại hình sự kiện & Sảnh & Ca
-    ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)), N'') AS [LoaiHinhSuKien],
-    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = td.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [TenSanhTiec],
-    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = td.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [Sanh],
+    ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WITH (NOLOCK) WHERE lt.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)), N'') AS [LoaiHinhSuKien],
+    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs WITH (NOLOCK) INNER JOIN dmSanhtiec s WITH (NOLOCK) ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = td.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [TenSanhTiec],
+    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs WITH (NOLOCK) INNER JOIN dmSanhtiec s WITH (NOLOCK) ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = td.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [Sanh],
     FORMAT(ISNULL(td.NgayToChucTD, hd.Ngaytochuc), 'HH:mm') AS [TiecGioBatDau],
     
     -- Ngày tổ chức Dương lịch & Âm lịch
@@ -337,7 +337,7 @@ SELECT
     
     -- Loại tiệc & Ca
     ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid) AS [LoaiTiecID],
-    (SELECT TOP 1 tm.TemplateFile FROM tbmk_LoaitiecAddfile tm WHERE tm.FormName = 'frmPhuLucHopDong' AND tm.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)) AS [TemplateFile],
+    (SELECT TOP 1 tm.TemplateFile FROM tbmk_LoaitiecAddfile tm WITH (NOLOCK) WHERE tm.FormName = 'frmPhuLucHopDong' AND tm.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)) AS [TemplateFile],
     ISNULL(td.ThoiGianIDTD, hd.Thoigianid) AS [ThoiGianID],
     
     -- Quy mô bàn & Đơn giá
@@ -361,11 +361,11 @@ SELECT
             SELECT ISNULL(hh.Tenhang, t.Mahang) AS [TenMonAn],
                    FORMAT(ISNULL(t.Dongia, 0), 'N0', 'vi-VN') AS [DonGia]
             FROM (
-                SELECT Mahang, Dongia, STTmon, 1 AS Loai FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi
+                SELECT Mahang, Dongia, STTmon, 1 AS Loai FROM tbmk_Thaydoithucdonman WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
                 UNION ALL
-                SELECT Mahang, Dongia, STTmon, 2 AS Loai FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi
+                SELECT Mahang, Dongia, STTmon, 2 AS Loai FROM tbmk_Thaydoithucdonchay WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
             ) t
-            LEFT JOIN dmHanghoa hh ON t.Mahang = hh.Mahang
+            LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON t.Mahang = hh.Mahang
             ORDER BY t.Loai, t.STTmon, t.Mahang
             FOR JSON PATH
         ),
@@ -381,7 +381,7 @@ SELECT
             SELECT 
                 h.Tenhang AS [TenMonAn],
                 N'0' AS [DonGia]
-            FROM dmHangHoa h
+            FROM dmHangHoa h WITH (NOLOCK)
             WHERE h.GoiThucDonID = hd.GoiThucDonID AND ISNULL(h.IsNgungSuDung, 0) = 0
             FOR JSON PATH
         ),
@@ -391,9 +391,9 @@ SELECT
     FORMAT(
         ISNULL((
             SELECT SUM(ISNULL(Dongia, 0)) FROM (
-                SELECT Dongia FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi
+                SELECT Dongia FROM tbmk_Thaydoithucdonman WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
                 UNION ALL
-                SELECT Dongia FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi
+                SELECT Dongia FROM tbmk_Thaydoithucdonchay WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
             ) t
         ), 0), 'N0', 'vi-VN'
     ) + N' VNĐ' AS [MenuTongCong],
@@ -405,8 +405,8 @@ SELECT
              AND ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) <> ''
              AND ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) <> '[]'
             THEN ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi)
-        WHEN EXISTS (SELECT 1 FROM tbmk_Thaydoidichvu WHERE Sothaydoi = td.Sothaydoi) 
-             OR EXISTS (SELECT 1 FROM tbmk_Thaydoithucuong WHERE Sothaydoi = td.Sothaydoi)
+        WHEN EXISTS (SELECT 1 FROM tbmk_Thaydoidichvu WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi) 
+             OR EXISTS (SELECT 1 FROM tbmk_Thaydoithucuong WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi)
             THEN ISNULL((
                 SELECT 
                     ROW_NUMBER() OVER (ORDER BY t.SortOrder, t.STT, t.Mahang) AS [STT],
@@ -419,8 +419,8 @@ SELECT
                         ISNULL(TRY_CAST(tm.Soluong AS INT), 1) AS [SoLuong],
                         FORMAT(ISNULL(tm.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
                         FORMAT(ISNULL(tm.Dongia, 0) * ISNULL(tm.Soluong, 1), 'N0', 'vi-VN') AS [ThanhTien]
-                    FROM tbmk_Thaydoidichvu tm
-                    LEFT JOIN dmHanghoa hh ON tm.Mahang = hh.Mahang
+                    FROM tbmk_Thaydoidichvu tm WITH (NOLOCK)
+                    LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON tm.Mahang = hh.Mahang
                     WHERE tm.Sothaydoi = td.Sothaydoi
                     UNION ALL
                     SELECT 
@@ -430,8 +430,8 @@ SELECT
                         ISNULL(TRY_CAST(tu.Soluong AS INT), 0) AS [SoLuong],
                         FORMAT(ISNULL(tu.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
                         FORMAT(ISNULL(tu.Dongia, 0) * ISNULL(tu.Soluong, 0), 'N0', 'vi-VN') AS [ThanhTien]
-                    FROM tbmk_Thaydoithucuong tu
-                    LEFT JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang
+                    FROM tbmk_Thaydoithucuong tu WITH (NOLOCK)
+                    LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON tu.Mahang = hh.Mahang
                     WHERE tu.Sothaydoi = td.Sothaydoi
                 ) t
                 FOR JSON PATH
@@ -508,15 +508,15 @@ SELECT
             SELECT tm.Mahang, ISNULL(hh.Tenhang, tm.Mahang) AS TenHang, ISNULL(hh.DVTID, N'Đĩa') AS DvtID,
                    CAST(1 AS DECIMAL(18,2)) AS Soluong, ISNULL(tm.Dongia, 0) AS Dongia,
                    CAST(0 AS BIT) AS IsChay, ISNULL(tm.STTmon, 0) AS SortOrder, 1 AS TableType
-            FROM tbmk_Thaydoithucdonman tm
-            LEFT JOIN dmHanghoa hh ON tm.Mahang = hh.Mahang
+            FROM tbmk_Thaydoithucdonman tm WITH (NOLOCK)
+            LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON tm.Mahang = hh.Mahang
             WHERE tm.Sothaydoi = td.Sothaydoi
             UNION ALL
             SELECT tc.Mahang, ISNULL(hh.Tenhang, tc.Mahang), ISNULL(hh.DVTID, N'Đĩa'),
                    CAST(1 AS DECIMAL(18,2)), ISNULL(tc.Dongia, 0),
                    CAST(1 AS BIT), ISNULL(tc.STTmon, 0), 2
-            FROM tbmk_Thaydoithucdonchay tc
-            LEFT JOIN dmHanghoa hh ON tc.Mahang = hh.Mahang
+            FROM tbmk_Thaydoithucdonchay tc WITH (NOLOCK)
+            LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON tc.Mahang = hh.Mahang
             WHERE tc.Sothaydoi = td.Sothaydoi
         ) items
         ORDER BY items.TableType, items.SortOrder, items.Mahang
@@ -528,8 +528,8 @@ SELECT
                ISNULL(tu.IsKhuyenmai, 0) AS IsKhuyenmai, ISNULL(tu.Soluong, 0) AS Soluong,
                ISNULL(tu.Dongia, 0) AS Dongia, CAST(0 AS DECIMAL(18,2)) AS Soluongle,
                CAST(0 AS DECIMAL(18,2)) AS Dongiale, ISNULL(tu.Ghichuthucuong, N'') AS Ghichuthucuong
-        FROM tbmk_Thaydoithucuong tu
-        LEFT JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang
+        FROM tbmk_Thaydoithucuong tu WITH (NOLOCK)
+        LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON tu.Mahang = hh.Mahang
         WHERE tu.Sothaydoi = td.Sothaydoi
         ORDER BY tu.STT, tu.Mahang
         FOR JSON PATH
@@ -539,8 +539,8 @@ SELECT
         SELECT dv.Mahang, ISNULL(hh.Tenhang, dv.Mahang) AS TenHang, ISNULL(hh.DVTID, N'') AS DvtID,
                ISNULL(dv.Soluong, 0) AS Soluong, ISNULL(dv.Dongia, 0) AS Dongia,
                ISNULL(dv.Ghichudichvu, N'') AS Ghichudichvu
-        FROM tbmk_Thaydoidichvu dv
-        LEFT JOIN dmHanghoa hh ON dv.Mahang = hh.Mahang
+        FROM tbmk_Thaydoidichvu dv WITH (NOLOCK)
+        LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON dv.Mahang = hh.Mahang
         WHERE dv.Sothaydoi = td.Sothaydoi
         ORDER BY dv.STT, dv.Mahang
         FOR JSON PATH
@@ -548,10 +548,10 @@ SELECT
 
     COALESCE(td.JsonPhatSinh, '[]') AS [JsonPhatSinh],
     td.BenAChucVuDaiDienTD AS [BenAChucVuDaiDien]
-FROM tbmk_Thaydoi td
-INNER JOIN tbmk_Hopdong hd ON td.Sohopdong = hd.Sohopdong
-LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
-LEFT JOIN dmNhanvienView nv ON ISNULL(td.Manv, hd.Manv) = nv.Manv
+FROM tbmk_Thaydoi td WITH (NOLOCK)
+INNER JOIN tbmk_Hopdong hd WITH (NOLOCK) ON td.Sohopdong = hd.Sohopdong
+LEFT JOIN dmkhachhang kh WITH (NOLOCK) ON hd.Makh = kh.Makh
+LEFT JOIN dmNhanvienView nv WITH (NOLOCK) ON ISNULL(td.Manv, hd.Manv) = nv.Manv
 WHERE ISNULL(td.IsDeleted, 0) = 0;
 GO
 
@@ -579,14 +579,40 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @Now DATETIME = GETDATE();
     
+    DECLARE @HanThanhToanDot2Parsed DATETIME = NULL;
+    DECLARE @HanThanhToanDot2TDParsed DATETIME = NULL;
+
     -- Giải nén các tham số từ JsonData nếu có
     IF (@JsonData IS NOT NULL AND @JsonData <> '' AND ISJSON(@JsonData) = 1)
     BEGIN
         SET @Sothaydoi = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Sothaydoi'), ''), NULLIF(JSON_VALUE(@JsonData, '$.SoPhuLuc'), ''), @Sothaydoi);
         SET @Sohopdong = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Sohopdong'), ''), @Sohopdong);
-        SET @Ngaythaydoi = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.Ngaythaydoi') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayLap') AS DATETIME), @Ngaythaydoi);
+        
+        DECLARE @NgaythaydoiStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.Ngaythaydoi'), JSON_VALUE(@JsonData, '$.NgayLap'));
+        IF (@NgaythaydoiStr IS NOT NULL AND LTRIM(RTRIM(@NgaythaydoiStr)) <> '')
+        BEGIN
+            SET @Ngaythaydoi = COALESCE(
+                TRY_CAST(@NgaythaydoiStr AS DATETIME),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 126),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 120),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 23),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 103),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 105),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 111),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 101)
+            );
+        END
+
         SET @Ghichu = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Ghichu'), ''), NULLIF(JSON_VALUE(@JsonData, '$.LyDoDieuChinh'), ''), @Ghichu);
         SET @Status = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Status'), ''), NULLIF(JSON_VALUE(@JsonData, '$.TrangThai'), ''), @Status);
+
+        DECLARE @HanThanhToanDot2Str NVARCHAR(100) = JSON_VALUE(@JsonData, '$.HanThanhToanDot2');
+        IF (@HanThanhToanDot2Str IS NOT NULL AND LTRIM(RTRIM(@HanThanhToanDot2Str)) <> '')
+            SET @HanThanhToanDot2Parsed = COALESCE(TRY_CAST(@HanThanhToanDot2Str AS DATETIME), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 126), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 120), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 23), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 103), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 105), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 111), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 101));
+
+        DECLARE @HanThanhToanDot2TDStr NVARCHAR(100) = JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD');
+        IF (@HanThanhToanDot2TDStr IS NOT NULL AND LTRIM(RTRIM(@HanThanhToanDot2TDStr)) <> '')
+            SET @HanThanhToanDot2TDParsed = COALESCE(TRY_CAST(@HanThanhToanDot2TDStr AS DATETIME), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 126), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 120), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 23), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 103), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 105), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 111), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 101));
     END
 
     IF @Sohopdong IS NULL OR @Sohopdong = ''
@@ -649,8 +675,8 @@ BEGIN
                 
                 JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2'),
                 JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2TD'),
-                TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2') AS DATETIME),
-                TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD') AS DATETIME),
+                @HanThanhToanDot2Parsed,
+                @HanThanhToanDot2TDParsed,
                 
                 JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLuc'),
                 JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLucTD'),
@@ -699,8 +725,8 @@ BEGIN
                 
                 HinhThucThanhToanDot2 = COALESCE(JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2'), HinhThucThanhToanDot2),
                 HinhThucThanhToanDot2TD = COALESCE(JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2TD'), HinhThucThanhToanDot2TD),
-                HanThanhToanDot2 = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2') AS DATETIME), HanThanhToanDot2),
-                HanThanhToanDot2TD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD') AS DATETIME), HanThanhToanDot2TD),
+                HanThanhToanDot2 = COALESCE(@HanThanhToanDot2Parsed, HanThanhToanDot2),
+                HanThanhToanDot2TD = COALESCE(@HanThanhToanDot2TDParsed, HanThanhToanDot2TD),
                 
                 DichVuTinhPhiPhuLuc = COALESCE(JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLuc'), DichVuTinhPhiPhuLuc),
                 DichVuTinhPhiPhuLucTD = COALESCE(JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLucTD'), DichVuTinhPhiPhuLucTD),
@@ -1158,11 +1184,11 @@ FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff
 
 -- 7. Khác & Ghi chú
 UPDATE ff
-SET CaptionVN = N'Bên A - Chức Vụ Người Ký', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 20
+SET CaptionVN = N'Bên A - Chức Vụ Người Ký', FormatID = 't', ShowInAdd = 0, ShowInEdit = 0, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 20
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'BenAChucVuDaiDien';
 
 UPDATE ff
-SET CaptionVN = N'Trạng Thái Phụ Lục', FormatID = 'sl', DataSource = N'STATIC:DRAFT|Bản nháp,SIGNED|Đã ký (Đang chờ duyệt),APPROVED|Đã duyệt (Sync hợp đồng),CANCELLED|Đã hủy', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 21
+SET CaptionVN = N'Trạng Thái Phụ Lục', FormatID = 'sl', DataSource = N'STATIC:DRAFT|Đơn nháp,SIGNED|Đã ký (Đang chờ duyệt),APPROVED|Đã duyệt (Sync hợp đồng),CANCELLED|Đã hủy', ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 21
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Status';
 
 UPDATE ff
@@ -1187,6 +1213,15 @@ FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f
 INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID)
 SELECT f.FormName, 'JsonPhatSinh', N'Phát sinh', 1, 1, 0, 0, 203, '6', 't'
 FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f.FormName AND FieldName = 'JsonPhatSinh');
+
+-- Đảm bảo có từ điển để dịch cột Sobiennhan và Makh trên popup chọn Hợp đồng
+INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID, ShowInGrid)
+SELECT f.FormName, 'Sobiennhan', N'Số Biên Nhận', 0, 0, 0, 0, 99, '6', 't', 0
+FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f.FormName AND FieldName = 'Sobiennhan');
+
+INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID, ShowInGrid)
+SELECT f.FormName, 'Makh', N'Mã Khách Hàng', 0, 0, 0, 0, 100, '6', 't', 0
+FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f.FormName AND FieldName = 'Makh');
 GO
 
 PRINT N'=== HOÀN THÀNH CẬP NHẬT CẤU TRÚC PHỤ LỤC HỢP ĐỒNG (ALL-IN-ONE) ===';

@@ -102,6 +102,7 @@ $jsFiles = @(
   "components\grid-dropdown\GridDropdown.js",
   "components\loading-spinner\LoadingSpinner.js",
   "components\loading-bar\LoadingBar.js",
+  "components\skeleton\Skeleton.js",
   "components\alert\Alert.js",
   "components\confirm-modal\ConfirmModal.js",
   "components\modal\Modal.js",

@@ -17,10 +17,10 @@ VALUES
 ('frmQuyetToan', 'DocumentDate', N'Ngày Quyết Toán', 'dt', '6', 0, 8, 1, 1, 0, 0, 1),
 ('frmQuyetToan', 'Tenkh', N'Khách Hàng', 't', '6', 0, 15, 0, 0, 1, 1, 1),
 ('frmQuyetToan', 'Nguoinop', N'Người Nộp Tiền', 't', '6', 0, 20, 1, 1, 0, 0, 1),
-('frmQuyetToan', 'Tongtiencoc', N'Tổng Tiền Cọc', 'nm', '6', 0, 25, 1, 1, 1, 1, 0),
-('frmQuyetToan', 'TongtienHoaDon', N'Tổng Hóa Đơn', 'nm', '6', 0, 30, 1, 1, 1, 1, 0),
-('frmQuyetToan', 'Thanhtoan', N'Khách Thanh Toán', 'nm', '6', 0, 35, 1, 1, 0, 0, 0),
-('frmQuyetToan', 'Conlai', N'Còn Lại', 'nm', '6', 0, 40, 1, 1, 1, 1, 0);
+('frmQuyetToan', 'Tongtiencoc', N'Tổng Tiền Cọc', 'mn', '6', 0, 25, 1, 1, 1, 1, 0),
+('frmQuyetToan', 'TongtienHoaDon', N'Tổng Hóa Đơn', 'mn', '6', 0, 30, 1, 1, 1, 1, 0),
+('frmQuyetToan', 'Thanhtoan', N'Khách Thanh Toán', 'mn', '6', 0, 35, 1, 1, 0, 0, 0),
+('frmQuyetToan', 'Conlai', N'Còn Lại', 'mn', '6', 0, 40, 1, 1, 1, 1, 0);
 GO
 
 PRINT N'=== HOÀN TẤT CẬP NHẬT CẤU HÌNH CỘT LƯỚI CHO FRMQUYETTOAN ===';

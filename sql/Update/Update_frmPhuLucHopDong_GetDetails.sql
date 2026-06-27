@@ -12,7 +12,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF @Sothaydoi = '' OR @Sothaydoi = 'NULL' SET @Sothaydoi = NULL;
+    IF @Sothaydoi = '' OR @Sothaydoi = 'NULL' OR @Sothaydoi = '{Sothaydoi}' SET @Sothaydoi = NULL;
     DECLARE @SearchStr VARCHAR(50) = COALESCE(@Sothaydoi, @Keyword);
 
     SELECT 
@@ -71,16 +71,34 @@ BEGIN
         kh.Dienthoai AS [BenBDienThoai],
         ISNULL(kh.Tenchure, '') + N' & ' + ISNULL(kh.Tencodau, '') AS [BenBTenChuTiec],
 
-        -- Nhân viên Bên A
-        ISNULL(nv.Tennv, hd.Manv) AS [BenANhanVienPhuTrach],
-        nv.DIENTHOAI AS [BenASDTNhanVien],
+        -- Công ty Bên A (từ bảng SY_Setup)
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
+        (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT') AS [BenASDT],
+        COALESCE(
+            (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien'),
+            (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenADaiDien')
+        ) AS [BenADaiDien],
         (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
+
+        -- Nhân viên Bên A
+        COALESCE(nv.Tennv, nv_user.Tennv, pl.Manv, hd.Manv, pl.UserCreate, '') AS [BenANhanVienPhuTrach],
+        COALESCE(
+            NULLIF(nv.DIENTHOAI, ''), 
+            NULLIF(nv_user.DIENTHOAI, ''), 
+            (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT'),
+            ''
+        ) AS [BenASDTNhanVien],
 
         -- Quy mô bàn & Đơn giá
         ISNULL(pl.QuyMoBanTuTD, pl.QuyMoBanTu) AS [QuyMoBanTu],
         ISNULL(pl.QuyMoBanDenTD, pl.QuyMoBanDen) AS [QuyMoBanDen],
         ISNULL(pl.SoKhachTrenBanTD, pl.SoKhachTrenBan) AS [SoKhachTrenBan],
-        FORMAT(ISNULL(pl.DonGiaBanTiecTD, pl.DonGiaBanTiec), 'N0', 'vi-VN') AS [DonGiaBanTiec],
+        -- Đơn giá bàn: trả '' khi = 0 để không hiện '0VNĐ/bàn' trong template
+        CASE WHEN ISNULL(ISNULL(pl.DonGiaBanTiecTD, pl.DonGiaBanTiec), 0) > 0
+             THEN FORMAT(ISNULL(pl.DonGiaBanTiecTD, pl.DonGiaBanTiec), 'N0', 'vi-VN')
+             ELSE ''
+        END AS [DonGiaBanTiec],
 
         -- Bàn tiệc
         ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SobanManchinhthuc],
@@ -89,10 +107,13 @@ BEGIN
         ISNULL(NULLIF(pl.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
         ISNULL(ISNULL(pl.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
 
-        -- Aliases for backward compatibility
+        -- Aliases khớp chính xác với biến template Word
         ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
         ISNULL(NULLIF(pl.SobanManduphong, 0), hd.SobanManduphong) AS [SoBanManDuPhong],
         ISNULL(ISNULL(pl.SoBanTang, hd.SoBanTang), 0) AS [BanTang],
+        -- Alias {SoBanChinhThuc} và {SoBanDuPhong} cho template
+        ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SoBanChinhThuc],
+        ISNULL(NULLIF(pl.SobanManduphong, 0), hd.SobanManduphong) AS [SoBanDuPhong],
 
         -- Đợt thanh toán 2
         ISNULL(pl.TenDotThanhToanTD, pl.TenDotThanhToan) AS [TenDotThanhToan],
@@ -100,8 +121,84 @@ BEGIN
         ISNULL(pl.HinhThucThanhToanDot2TD, pl.HinhThucThanhToanDot2) AS [HinhThucThanhToanDot2],
         CONVERT(VARCHAR(10), ISNULL(pl.HanThanhToanDot2TD, pl.HanThanhToanDot2), 103) AS [HanThanhToanDot2],
 
-        -- Dịch vụ dạng văn bản
-        ISNULL(pl.DichVuTinhPhiPhuLucTD, pl.DichVuTinhPhiPhuLuc) AS [DichVuTinhPhiPhuLuc],
+        -- Dịch vụ tính phí: trả về JSON array [{TenDichVu, DonGia, GhiChu}]
+        -- Ưu tiên: (1) text field thủ công → (2) DanhSachChiPhiTD → (3) JsonDichVu → (4) []
+        COALESCE(
+            (
+                SELECT
+                    CASE WHEN CHARINDEX(';', v) > 0
+                         THEN LTRIM(RTRIM(LEFT(v, CHARINDEX(';', v) - 1)))
+                         ELSE v
+                    END AS [TenDichVu],
+                    ISNULL(NULLIF(
+                        CASE WHEN CHARINDEX(';', v) > 0
+                                  AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
+                             THEN LTRIM(RTRIM(SUBSTRING(v,
+                                      CHARINDEX(';', v) + 1,
+                                      CHARINDEX(';', v, CHARINDEX(';', v) + 1)
+                                      - CHARINDEX(';', v) - 1)))
+                             WHEN CHARINDEX(';', v) > 0
+                             THEN LTRIM(RTRIM(SUBSTRING(v, CHARINDEX(';', v) + 1, LEN(v))))
+                             ELSE ''
+                        END
+                    , ''), '0') AS [DonGia],
+                    CASE WHEN CHARINDEX(';', v) > 0
+                              AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
+                         THEN LTRIM(RTRIM(SUBSTRING(v,
+                                  CHARINDEX(';', v, CHARINDEX(';', v) + 1) + 1,
+                                  LEN(v))))
+                         ELSE ''
+                    END AS [GhiChu]
+                FROM (
+                    SELECT LTRIM(RTRIM(REPLACE(x.value('.', 'NVARCHAR(MAX)'), CHAR(13), ''))) AS v
+                    FROM (
+                        SELECT CAST('<i>' +
+                            REPLACE(
+                                REPLACE(
+                                    CASE WHEN pl.DichVuTinhPhiPhuLucTD IS NOT NULL THEN pl.DichVuTinhPhiPhuLucTD ELSE pl.DichVuTinhPhiPhuLuc END,
+                                    '&', '&amp;'
+                                ),
+                                CHAR(10), '</i><i>'
+                            )
+                        + '</i>' AS XML) AS xmlSplit
+                    ) xmlConv
+                    CROSS APPLY xmlConv.xmlSplit.nodes('/i') AS T(x)
+                ) splitResult
+                WHERE v <> ''
+                FOR JSON PATH
+            ),
+            -- Level 2: DanhSachChiPhiTD (cùng nguồn với section 2.5 - đã computed khi lưu)
+            (
+                SELECT
+                    JSON_VALUE(value, '$.NoiDung') AS [TenDichVu],
+                    ISNULL(NULLIF(JSON_VALUE(value, '$.DonGia'), ''), '0') AS [DonGia],
+                    '' AS [GhiChu]
+                FROM OPENJSON(pl.DanhSachChiPhiTD)
+                WHERE pl.DanhSachChiPhiTD IS NOT NULL
+                  AND pl.DanhSachChiPhiTD <> ''
+                  AND pl.DanhSachChiPhiTD <> '[]'
+                  AND ISNULL(JSON_VALUE(value, '$.NoiDung'), '') <> ''
+                FOR JSON PATH
+            ),
+            -- Level 3: JsonDichVu (tab dịch vụ raw form)
+            (
+                SELECT
+                    ISNULL(JSON_VALUE(value, '$.TenHang'), JSON_VALUE(value, '$.Mahang')) AS [TenDichVu],
+                    FORMAT(
+                        ISNULL(CAST(NULLIF(JSON_VALUE(value, '$.Dongia'), '') AS DECIMAL(18,2)), 0),
+                        'N0', 'vi-VN'
+                    ) AS [DonGia],
+                    '' AS [GhiChu]
+                FROM OPENJSON(pl.JsonDichVu)
+                WHERE pl.JsonDichVu IS NOT NULL
+                  AND pl.JsonDichVu <> ''
+                  AND pl.JsonDichVu <> '[]'
+                FOR JSON PATH
+            ),
+            '[]'
+        ) AS [DichVuTinhPhiPhuLuc],
+
+
         ISNULL(pl.ThoaThuanPhuLucKhacTD, pl.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
         ISNULL(pl.BenAChucVuDaiDienTD, pl.BenAChucVuDaiDien) AS [BenAChucVuDaiDien],
 
@@ -109,19 +206,23 @@ BEGIN
         FORMAT(ISNULL(pl.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
         FORMAT(ISNULL(pl.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [MenuTongCong],
 
-        -- VÒNG LẶP MENU TIỆC (Bơm array [{TenMonAn: ...}] từ JsonBanTiec)
+        -- VÒNG LẶP MENU TIỆC (Bơm array [{STT, TenMonAn, DonGia}])
         COALESCE(
             (
                 SELECT 
-                    JSON_VALUE(value, '$.TenHang') AS [TenMonAn]
+                    ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [STT],
+                    JSON_VALUE(value, '$.TenHang') AS [TenMonAn],
+                    FORMAT(ISNULL(CAST(NULLIF(JSON_VALUE(value, '$.Dongia'),'') AS DECIMAL(18,2)), 0), 'N0', 'vi-VN') AS [DonGia]
                 FROM OPENJSON(pl.JsonBanTiec)
                 WHERE pl.JsonBanTiec IS NOT NULL
                 FOR JSON PATH
             ),
             (
                 SELECT 
-                    h.Tenhang AS [TenMonAn]
-                FROM dmHangHoa h
+                    ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [STT],
+                    h.Tenhang AS [TenMonAn],
+                    '' AS [DonGia]
+                FROM dmHangHoa h WITH (NOLOCK)
                 WHERE h.GoiThucDonID = hd.GoiThucDonID AND ISNULL(h.IsNgungSuDung, 0) = 0
                 FOR JSON PATH
             )
@@ -131,6 +232,7 @@ BEGIN
         COALESCE(
             (
                 SELECT 
+                    ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS [STT],
                     JSON_VALUE(value, '$.NoiDung') AS [NoiDung],
                     JSON_VALUE(value, '$.DVT') AS [DVT],
                     JSON_VALUE(value, '$.SoLuong') AS [SoLuong],
@@ -142,6 +244,7 @@ BEGIN
             ),
             (
                 SELECT 
+                    ROW_NUMBER() OVER (ORDER BY items.SortOrder) AS [STT],
                     items.NoiDung, items.DVT, items.SoLuong, items.DonGia, items.ThanhTien
                 FROM (
                     SELECT 
@@ -169,11 +272,12 @@ BEGIN
             '[]'
         ) AS [DanhSachChiPhi]
 
-    FROM tbmk_Thaydoi pl
-    INNER JOIN tbmk_Hopdong hd ON pl.Sohopdong = hd.Sohopdong
-    LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
-    LEFT JOIN dmNhanvienView nv ON hd.Manv = nv.Manv
-    WHERE (pl.Sohopdong = @SearchStr OR pl.Sothaydoi = @SearchStr)
+    FROM tbmk_Thaydoi pl WITH (NOLOCK)
+    INNER JOIN tbmk_Hopdong hd WITH (NOLOCK) ON pl.Sohopdong = hd.Sohopdong
+    LEFT JOIN dmkhachhang kh WITH (NOLOCK) ON hd.Makh = kh.Makh
+    LEFT JOIN dmNhanvienView nv WITH (NOLOCK) ON nv.Manv = ISNULL(pl.Manv, hd.Manv)
+    LEFT JOIN dmNhanvienView nv_user WITH (NOLOCK) ON LOWER(nv_user.USERNAME) = LOWER(COALESCE(NULLIF(pl.UserCreate, ''), NULLIF(pl.UserUpdate, '')))
+    WHERE (pl.Sothaydoi = @SearchStr OR pl.Sohopdong = @SearchStr)
       AND ISNULL(pl.IsDeleted, 0) = 0;
 END;
 GO

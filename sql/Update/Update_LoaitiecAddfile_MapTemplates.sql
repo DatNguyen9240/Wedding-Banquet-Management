@@ -1,4 +1,4 @@
-﻿-- =========================================================================
+-- =========================================================================
 -- SCRIPT CHUẨN HÓA VÀ CẬP NHẬT TOÀN BỘ MAPPING FILE MẪU WORD (DOCX)
 -- =========================================================================
 
@@ -71,3 +71,41 @@ INSERT INTO tbmk_LoaitiecAddfile (FormName, Loaitiecid, TemplateFile, GhiChu) VA
 
 GO
 PRINT '>> Đã xóa dữ liệu cũ và cập nhật lại toàn bộ File Mẫu (Template) thành công!';
+GO
+
+-- =========================================================================
+-- 9. TẠO STORED PROCEDURE ĐỂ HỖ TRỢ TRUY VẤN DÂN DỤNG
+-- =========================================================================
+IF OBJECT_ID('[dbo].[API_tbmk_GetForm]', 'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[API_tbmk_GetForm];
+GO
+
+CREATE PROCEDURE [dbo].[API_tbmk_GetForm]
+    @Keyword NVARCHAR(250) = N''
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT TOP 1 FormName 
+    FROM dbo.tbmk_LoaitiecAddfile 
+    WHERE TemplateFile LIKE '%' + @Keyword + '%' 
+       OR @Keyword LIKE '%' + TemplateFile + '%';
+END
+GO
+
+PRINT '>> Đã tạo Stored Procedure API_tbmk_GetForm thành công!';
+GO
+
+-- =========================================================================
+-- 10. ĐĂNG KÝ ROUTING GATEWAY VÀO WA_API ĐỂ BACKEND TRUY VẤN
+-- =========================================================================
+DELETE FROM dbo.WA_API WHERE list IN ('tbmk_LoaitiecAddfile', 'tbmk_GetForm');
+GO
+
+INSERT INTO dbo.WA_API (list, func, [SQL], Para)
+VALUES 
+('tbmk_LoaitiecAddfile', 'View', 'API_TruyVanDong', '@List=N''tbmk_LoaitiecAddfile'', @Keyword=N''{Keyword}'', @SortColumn=N''{SortColumn}'', @SortDir=N''{SortDir}'', @Data=N''{JsonData}'''),
+('tbmk_GetForm', 'View', 'API_tbmk_GetForm', '@Keyword=N''{Keyword}''');
+GO
+
+PRINT '>> Đã đăng ký routing cho tbmk_LoaitiecAddfile và tbmk_GetForm vào WA_API thành công!';
+GO

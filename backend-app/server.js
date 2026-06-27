@@ -14,9 +14,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 8081;
 
-// ==========================================
-// THIẾT LẬP THƯ MỤC
-// ==========================================
+// Setup directories
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const SAMPLES_DIR = path.join(__dirname, 'samples');
 
@@ -24,10 +22,6 @@ const SAMPLES_DIR = path.join(__dirname, 'samples');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-// ==========================================
-// MIDDLEWARE
-// ==========================================
-// Sử dụng cors middleware của Express để luôn tự động thêm headers CORS đầy đủ
 app.use(cors({ origin: '*' }));
 
 app.use('/uploads', function (req, res, next) {
@@ -52,43 +46,43 @@ app.use((err, req, res, next) => {
     next();
 });
 
-// ==========================================
-// API GATEWAY CHÍNH (SQL Server)
-// ==========================================
-let SQL_API_BASE;
-const SQL_API_USER = 'admin';
+let SQL_API_BASE = process.env.SQL_API_BASE || process.env.API_BASE;
+const SQL_API_USER = process.env.SQL_API_USER || 'admin';
 
-// Tự động tải API_BASE từ env.js (Bắt buộc)
-try {
-    const possiblePaths = [
-        path.join(__dirname, '../env.js'),
-        path.join(__dirname, 'env.js'),
-        '/env.js',
-        '/app/env.js'
-    ];
-    let envJsPath = null;
-    for (const p of possiblePaths) {
-        if (fs.existsSync(p)) {
-            envJsPath = p;
-            break;
+if (SQL_API_BASE) {
+    console.log(`[CONFIG] Đã tải SQL_API_BASE từ biến môi trường (process.env): ${SQL_API_BASE}`);
+} else {
+    // Load env.js config
+    try {
+        const possiblePaths = [
+            path.join(__dirname, '../env.js'),
+            path.join(__dirname, 'env.js'),
+            '/env.js',
+            '/app/env.js'
+        ];
+        let envJsPath = null;
+        for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+                envJsPath = p;
+                break;
+            }
         }
+        if (!envJsPath) {
+            throw new Error(`Không tìm thấy file env.js ở bất kỳ đường dẫn nào: ${possiblePaths.join(', ')}`);
+        }
+        const envContent = fs.readFileSync(envJsPath, 'utf8');
+        const matchBase = envContent.match(/API_BASE\s*:\s*['"`](.*?)['"`]/);
+        if (!matchBase || !matchBase[1]) {
+            throw new Error('Không tìm thấy API_BASE trong file env.js!');
+        }
+        SQL_API_BASE = matchBase[1].trim();
+        console.log(`[CONFIG] Đã tải SQL_API_BASE từ env.js (${envJsPath}): ${SQL_API_BASE}`);
+    } catch (err) {
+        console.error('[CRITICAL] Không thể chạy server vì thiếu cấu hình env.js:', err.message);
+        process.exit(1);
     }
-    if (!envJsPath) {
-        throw new Error(`Không tìm thấy file env.js ở bất kỳ đường dẫn nào: ${possiblePaths.join(', ')}`);
-    }
-    const envContent = fs.readFileSync(envJsPath, 'utf8');
-    const matchBase = envContent.match(/API_BASE\s*:\s*['"`](.*?)['"`]/);
-    if (!matchBase || !matchBase[1]) {
-        throw new Error('Không tìm thấy API_BASE trong file env.js!');
-    }
-    SQL_API_BASE = matchBase[1].trim();
-    console.log(`[CONFIG] Đã tải SQL_API_BASE từ env.js (${envJsPath}): ${SQL_API_BASE}`);
-} catch (err) {
-    console.error('[CRITICAL] Không thể chạy server vì thiếu cấu hình env.js:', err.message);
-    process.exit(1);
 }
 
-/** Giải mã username từ token hoặc fallback */
 function extractUserName(req) {
     const authHeader = req.headers.authorization;
     if (authHeader) {
@@ -107,12 +101,10 @@ function extractUserName(req) {
     return req.body?.UserName || req.query?.UserName || req.headers?.username || 'system';
 }
 
-// Cache thông tin nhà hàng (tránh gọi API nhiều lần)
 let _setupCache = null;
 let _setupCacheTime = 0;
-const SETUP_CACHE_TTL = 5 * 60 * 1000; // 5 phút
+const SETUP_CACHE_TTL = 5 * 60 * 1000;
 
-/** Helper function to execute axios requests with retries */
 async function axiosGetWithRetry(url, config = {}, retries = 3, delay = 1000) {
     for (let i = 0; i < retries; i++) {
         try {
@@ -125,7 +117,6 @@ async function axiosGetWithRetry(url, config = {}, retries = 3, delay = 1000) {
     }
 }
 
-/** Lấy thông tin nhà hàng từ API_LayGiaTriSetup (có cache) */
 async function fetchSetupInfo(authToken) {
     const now = Date.now();
     if (_setupCache && (now - _setupCacheTime) < SETUP_CACHE_TTL) return _setupCache;
@@ -135,18 +126,16 @@ async function fetchSetupInfo(authToken) {
         if (authToken) headers['Authorization'] = authToken;
         const resp = await axiosGetWithRetry(url, { headers, timeout: 8000 }, 3, 1000);
         const json = resp.data;
-        // API_LayGiaTriSetup trả về rows có CodeID + CodeValue (xem SQL)
         const rows = json.records || (Array.isArray(json) ? json : []);
         const setup = {};
         rows.forEach(r => {
-            // Field name thực tế theo SQL: CodeID, CodeValue
             const key = r.CodeID || r.codeID || r.codeid || r.MaSetup;
             const val = r.CodeValue || r.codeValue || r.GiaTri || r.Value || '';
             if (key) setup[key] = val;
         });
         _setupCache = setup;
         _setupCacheTime = now;
-        console.log('[SETUP] Keys:', Object.keys(setup).join(', '), '| Raw setup:', JSON.stringify(setup));
+        console.log('[SETUP] Keys:', Object.keys(setup).join(', '));
         return setup;
     } catch (err) {
         console.error('[SETUP] Lỗi gọi API_LayGiaTriSetup:', err.message);
@@ -154,37 +143,33 @@ async function fetchSetupInfo(authToken) {
     }
 }
 
-/** Gọi API Gateway để lấy record theo List + Keyword */
-async function fetchFromSQLAPI(listName, keyword, authToken) {
+async function fetchFromSQLAPI(listName, keyword, authToken, funcName = 'View', extraParams = null) {
     const payload = {
-        List: listName, Func: 'View', UserName: SQL_API_USER,
-        Keyword: keyword || '', Page: 1, Limit: 1
+        List: listName, Func: funcName, UserName: SQL_API_USER,
+        Keyword: keyword || '', Page: 1, Limit: 1,
+        ...(extraParams || {})
     };
-    const qs = encodeURIComponent(JSON.stringify(payload));
-    const url = `${SQL_API_BASE}/api/API_Gateway_Router?q=${qs}`;
-    console.log(`[SQL API] Gọi: ${listName} | Keyword: ${keyword}`);
-    const headers = {};
+    const url = `${SQL_API_BASE}/api/API_Gateway_Router`;
+    console.log(`[SQL API] Gọi: ${listName} | Func: ${funcName} | Keyword: ${keyword}`);
+    console.log(`[SQL API URL] POST ${url}`);
+    const headers = { 'Content-Type': 'application/json' };
     if (authToken) headers['Authorization'] = authToken;
     try {
-        const resp = await axiosGetWithRetry(url, { headers, timeout: 10000 }, 3, 1000);
+        const resp = await axios.post(url, payload, { headers, timeout: 10000 });
         const json = resp.data;
-        if (json && json.records && json.records.length > 0) return json.records[0];
-        if (json && json.code === 0) return json;
+        console.log(`[SQL API RESPONSE] ${JSON.stringify(json).substring(0, 1000)}`);
+        if (json && json.records && json.records.length > 0) {
+            return json.records[0];
+        }
     } catch (err) {
-        console.error(`[SQL API] Lỗi khi gọi ${listName}:`, err.message);
+        console.error(`[SQL API] Lỗi khi gọi ${listName} (${funcName}):`, err.message);
     }
     return null;
 }
 
-// ==========================================
-// API: QUẢN LÝ TÀI LIỆU
-// ==========================================
-
-/**
- * 1. Lấy danh sách tài liệu
- */
 app.get('/api/documents', (req, res) => {
     try {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         const files = fs.readdirSync(UPLOADS_DIR);
         const fileList = files
             .filter(file => file.endsWith('.docx') || file.endsWith('.xlsx') || file.endsWith('.doc'))
@@ -204,11 +189,9 @@ app.get('/api/documents', (req, res) => {
     }
 });
 
-/**
- * Lấy danh sách Mẫu gốc (Templates)
- */
 app.get('/api/documents/templates', (req, res) => {
     try {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
         let results = [];
         const scanDir = (dir) => {
             if (!fs.existsSync(dir)) return;
@@ -219,7 +202,6 @@ app.get('/api/documents/templates', (req, res) => {
                 if (stat.isDirectory()) {
                     scanDir(fullPath);
                 } else if (file.endsWith('.docx') || file.endsWith('.html')) {
-                    // Trả về tên file và đường dẫn tương đối để dễ hiển thị
                     results.push({
                         fileName: file,
                         relPath: path.relative(SAMPLES_DIR, fullPath).replace(/\\/g, '/'),
@@ -237,68 +219,60 @@ app.get('/api/documents/templates', (req, res) => {
     }
 });
 
-/**
- * 1.5 Lấy danh sách các biến dữ liệu cho một loại mẫu
- */
 app.get('/api/documents/fields/:listName', async (req, res) => {
     try {
         const listName = req.params.listName;
-        const docConfig = getDocumentConfig();
-        const mappings = docConfig.formListMappings || {};
-
-        let sqlListName = 'frmHopDong'; // Mặc định là hợp đồng nếu không khớp từ khóa nào
-
-        const lowerListName = listName.toLowerCase();
-        for (const key in mappings) {
-            if (lowerListName.includes(key.toLowerCase())) {
-                sqlListName = mappings[key];
-                break;
+        let sqlListName = null;
+        try {
+            const formResult = await fetchFromSQLAPI('tbmk_GetForm', listName, req.headers.authorization);
+            if (formResult && (formResult.FormName || formResult.formname)) {
+                sqlListName = formResult.FormName || formResult.formname;
             }
+        } catch (e) {
+            console.log(`[FIELDS] Không lấy được FormName từ CSDL cho '${listName}':`, e.message);
+        }
+
+        if (!sqlListName) {
+            return res.status(404).json({
+                success: false,
+                message: `Không tìm thấy biểu mẫu (FormName) tương ứng với mẫu in '${listName}' trong CSDL.`
+            });
         }
 
         console.log(`[FIELDS] Ánh xạ file mẫu '${listName}' -> Bảng CSDL '${sqlListName}'`);
 
-        // 1. Lấy danh sách các trường được cấu hình trong SY_FormatFields cho form này
         let formFields = [];
         try {
             const fieldsUrl = `${SQL_API_BASE}/api/API_DanhSachTruongGiaoDien`;
-            const payload = {
-                FormName: sqlListName,
-                Username: 'admin',
-                Limit: 1000
-            };
+            const payload = { FormName: sqlListName, Username: 'admin', Limit: 1000 };
             const headers = {};
             if (req.headers.authorization) headers['Authorization'] = req.headers.authorization;
             const fieldsResp = await axios.post(fieldsUrl, payload, { headers, timeout: 5000 });
             if (fieldsResp.data && fieldsResp.data.records) {
                 formFields = fieldsResp.data.records.map(r => r.FieldName || r.fieldName || r.fieldname).filter(Boolean);
-                console.log(`[FIELDS] Lấy thành công ${formFields.length} trường từ SY_FormatFields cho ${sqlListName}`);
             }
         } catch (fieldsErr) {
             console.warn(`[FIELDS] Lỗi lấy trường từ API_DanhSachTruongGiaoDien cho '${sqlListName}':`, fieldsErr.message);
         }
 
-        // 2. Lấy 1 dòng dữ liệu mẫu từ SQL API làm dự phòng (fallback) để quét thêm cột nếu có
         let sampleRow = {};
         try {
             const sqlRow = await fetchFromSQLAPI(sqlListName, '', req.headers.authorization);
             if (sqlRow) sampleRow = sqlRow;
-        } catch (e) {
-            console.log(`[FIELDS] Không lấy được data mẫu từ DB cho '${sqlListName}', dùng object rỗng:`, e.message);
-        }
+        } catch (e) { }
 
-        // 3. Lấy thông tin cấu hình nhà hàng (setup)
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
 
-        // Gộp tất cả các trường từ 3 nguồn và loại bỏ trùng lặp
         const allFieldsSet = new Set([
             ...Object.keys(setup),
             ...formFields,
             ...Object.keys(sampleRow)
         ]);
 
-        // Loại bỏ các trường hệ thống dư thừa không dùng trong biểu mẫu .docx (đọc động từ cấu hình)
-        const excludeFields = (docConfig.excludeFields || []).map(f => f.toLowerCase());
+        const excludeFields = [
+            'id', 'code', 'msg', 'records', 'autoid', 'formname', 'fieldname',
+            'status', 'createdby', 'createdat', 'updatedby', 'updatedat'
+        ];
         const fields = Array.from(allFieldsSet).filter(f => !excludeFields.includes(f.toLowerCase()));
 
         const formattedFields = fields.map(f => `{${f}}`);
@@ -311,33 +285,43 @@ app.get('/api/documents/fields/:listName', async (req, res) => {
 
 app.post('/api/documents/generate', async (req, res) => {
     try {
-        let { outputFileName, templateType, customerId, rowData, convertFields, sqlListName, mergeColumns } = req.body;
+        let { outputFileName, templateType, customerId, rowData, sqlListName } = req.body;
         if (!templateType) return res.status(400).json({ success: false, message: 'Thiếu templateType.' });
         if (!sqlListName) return res.status(400).json({ success: false, message: 'Thiếu sqlListName để truy vấn.' });
         if (!outputFileName) outputFileName = 'Generated_' + templateType;
-        // Lọc bỏ tất cả ký tự đặc biệt, dấu ngoặc, dấu cộng để ONLYOFFICE không bị lỗi 400 Bad Request
         outputFileName = outputFileName.replace(/[\/\\:*?"<>|()+]/g, '_').replace(/\s+/g, '_');
 
-        // ── 0. Tải cấu hình tài liệu động ───────────────────────────
-        const docConfig = getDocumentConfig();
-
-        // ── 1. Lấy thông tin nhà hàng từ Setup API ──────────────────────────
         const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
-
-        // ── 2. Map data từ rowData (frontend) hoặc SQL API ─────────
         let dataMap = { ...setup };
 
         let dbRow = null;
         if (customerId) {
             try {
-                dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization);
-                console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API thành công');
+                // Thử lấy qua Func GetDetails trước để lấy dữ liệu chi tiết và format đầy đủ
+                dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization, 'GetDetails', { Sothaydoi: customerId });
+                if (dbRow && dbRow.code !== -1 && dbRow.error === undefined) {
+                    console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API (GetDetails) thành công');
+                } else {
+                    dbRow = null;
+                }
             } catch (e) {
-                console.error('[GENERATE] Lỗi SQL API:', e.message);
+                dbRow = null;
+            }
+
+            if (!dbRow) {
+                try {
+                    dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization, 'View');
+                    if (dbRow) {
+                        console.log('[GENERATE] ✅ Lấy dữ liệu chi tiết từ SQL API (View) thành công');
+                    } else {
+                        console.log('[GENERATE] ❌ Lấy dữ liệu chi tiết từ SQL API (View) trả về rỗng/thất bại');
+                    }
+                } catch (e) {
+                    console.error('[GENERATE] Lỗi SQL API (View):', e.message);
+                }
             }
         }
 
-        // Merge dữ liệu: setup -> rowData từ frontend -> dbRow từ SQL API (ưu tiên cao nhất)
         if (rowData && typeof rowData === 'object') {
             dataMap = { ...dataMap, ...rowData };
         }
@@ -345,24 +329,26 @@ app.post('/api/documents/generate', async (req, res) => {
             dataMap = { ...dataMap, ...dbRow };
         }
 
-        // Tự động parse JSON từ CSDL (kể cả JSON lồng nhau — menu/dịch vụ docx)
+        // Tự động parse JSON từ CSDL — SQL đã trả JSON array sẵn, server không cần biết tên field
         dataMap = deepParseJsonStrings(dataMap);
 
-        // Format array of services to text string for fields that are converted to XML
-        const arrayToStringFields = docConfig.arrayToStringFields || [];
-        arrayToStringFields.forEach(key => {
-            const foundKey = Object.keys(dataMap).find(k => k.toLowerCase() === key.toLowerCase());
-            if (foundKey && Array.isArray(dataMap[foundKey])) {
-                dataMap[foundKey] = dataMap[foundKey].map(item => formatArrayItem(item, docConfig)).filter(Boolean).join('\n');
+        // Inject STT vào các mảng loop: nếu SQL đã cung cấp STT thì giữ nguyên, nếu không thì tự đánh idx+1
+        const _injectSTT = (arr) => {
+            if (!Array.isArray(arr) || arr.length === 0) return arr;
+            return arr.map((item, idx) => {
+                const existingSTT = item.STT !== undefined && item.STT !== null && item.STT !== '' ? item.STT : null;
+                return { ...item, STT: existingSTT !== null ? existingSTT : (idx + 1) };
+            });
+        };
+        // Áp dụng cho tất cả field là array trong dataMap
+        for (const key of Object.keys(dataMap)) {
+            if (Array.isArray(dataMap[key])) {
+                dataMap[key] = _injectSTT(dataMap[key]);
             }
-        });
+        }
 
-        // Xác định danh sách các trường cần chuyển đổi thành XML Word (sẽ được tự động bổ sung khi quét template)
-        let fieldsToConvert = Array.isArray(convertFields) ? [...convertFields] : [];
 
-        console.log('[GENERATE] dataMap:', JSON.stringify(dataMap));
 
-        // ── 3. Đọc template DOCX (Tìm kiếm đệ quy) ───────────────────────────
         const docxTemplatePath = findTemplatePath(SAMPLES_DIR, templateType);
         if (!docxTemplatePath) {
             return res.status(404).json({
@@ -379,13 +365,9 @@ app.post('/api/documents/generate', async (req, res) => {
         }
 
         const content = fs.readFileSync(docxTemplatePath, "binary");
-
-        // ── 4. Khởi tạo docxtemplater và bơm dữ liệu ─────────────────────────
         const zip = new PizZip(content);
 
-        // --- CHUẨN HÓA ĐƯỜNG DẪN ZIP (HỖ TRỢ ĐƯỜNG DẪN WINDOWS) ---
-        // Một số file .docx được nén trên Windows sử dụng dấu gạch chéo ngược (\) thay vì (/)
-        // Làm docxtemplater và xml cleaner không tìm thấy các file như word/document.xml
+        // Chuẩn hóa đường dẫn ZIP
         try {
             const fileNames = Object.keys(zip.files);
             for (const name of fileNames) {
@@ -402,78 +384,74 @@ app.post('/api/documents/generate', async (req, res) => {
             console.warn('[GENERATE] ⚠️ Không thể chuẩn hóa đường dẫn trong ZIP:', normErr.message);
         }
 
-        // --- TỰ ĐỘNG LÀM SẠCH TAG TRONG WORD (XML CLEANER) ---
-        // Word thường tự chèn các thẻ <w:t> làm nát tag {Ten_Bien} thành {Te<w:t>n_Bi</w:t>en}
-        // Đoạn code này sẽ tìm và nối chúng lại trước khi Docxtemplater xử lý.
+        // Tự động làm sạch tag trong Word (XML CLEANER)
         try {
             const docXmlFile = zip.file("word/document.xml");
             if (docXmlFile) {
                 let xmlContent = docXmlFile.asText();
-                // Regex tìm các khối { ... } có chứa thẻ XML bên trong
-                // sau đó loại bỏ toàn bộ thẻ XML (<...>) nhưng giữ lại nội dung text
-                xmlContent = xmlContent.replace(/\{[^{}]*?<[^>]+>[^{}]*?\}/g, (match) => {
+                // Bước 1: Xóa XML tags lẫn trong placeholders (Word split tags)
+                xmlContent = xmlContent.replace(/\{[^{}]*?\}/g, (match) => {
                     return match.replace(/<[^>]+>/g, "");
                 });
+
+                // Bước 2: Tự động đóng unclosed loop tags {#tag} / {/tag}
+                // Scan tất cả {#tag} và {/tag} để phát hiện mismatch
+                const openTags  = [...xmlContent.matchAll(/\{#([^}]+)\}/g)].map(m => m[1]);
+                const closeTags = [...xmlContent.matchAll(/\{\/([^}]+)\}/g)].map(m => m[1]);
+                const openSet   = new Set(openTags);
+                const closeSet  = new Set(closeTags);
+
+                // Tìm {#tag} không có {/tag} tương ứng
+                for (const tag of openSet) {
+                    if (!closeSet.has(tag)) {
+                        console.warn(`[XML-FIX] Loop chưa đóng: {#${tag}} -> Tự động thêm {/${tag}}`);
+                        // Tìm vị trí </w:p> ngay sau {#tag} và thêm paragraph đóng
+                        const openMarker = `{#${tag}}`;
+                        const closeMarker = `{/${tag}}`;
+                        const idx = xmlContent.indexOf(openMarker);
+                        if (idx >= 0) {
+                            const paraEnd = xmlContent.indexOf('</w:p>', idx);
+                            if (paraEnd >= 0) {
+                                const insertAt = paraEnd + '</w:p>'.length;
+                                const closePara = `<w:p><w:r><w:t xml:space="preserve">${closeMarker}</w:t></w:r></w:p>`;
+                                xmlContent = xmlContent.substring(0, insertAt) + closePara + xmlContent.substring(insertAt);
+                            }
+                        }
+                    }
+                }
+
+                // Tìm {/tag} không có {#tag} tương ứng
+                for (const tag of closeSet) {
+                    if (!openSet.has(tag)) {
+                        console.warn(`[XML-FIX] Loop chưa mở: {/${tag}} -> Tự động thêm {#${tag}}`);
+                        const closeMarker = `{/${tag}}`;
+                        const openMarker  = `{#${tag}}`;
+                        const idx = xmlContent.indexOf(closeMarker);
+                        if (idx >= 0) {
+                            const paraStart = xmlContent.lastIndexOf('<w:p', idx);
+                            if (paraStart >= 0) {
+                                const openPara = `<w:p><w:r><w:t xml:space="preserve">${openMarker}</w:t></w:r></w:p>`;
+                                xmlContent = xmlContent.substring(0, paraStart) + openPara + xmlContent.substring(paraStart);
+                            }
+                        }
+                    }
+                }
+
+                // Tự động làm sạch các ngoặc đơn rỗng "()" hoặc " ()" phát sinh khi trường Ghi chú trống
+                // Để làm triệt để nhất, ta sửa trực tiếp các pattern "( {GhiChu} )" hoặc similar thành dạng điều kiện {#GhiChu}({GhiChu}){/GhiChu}
+                // Điều này giúp docxtemplater tự động ẩn dấu ngoặc đi nếu GhiChu rỗng
+                xmlContent = xmlContent.replace(/\(\s*\{GhiChu\}\s*\)/gi, '{#GhiChu}({GhiChu}){/GhiChu}');
+                xmlContent = xmlContent.replace(/\(\s*\{GhiChuPhuLuc\}\s*\)/gi, '{#GhiChuPhuLuc}({GhiChuPhuLuc}){/GhiChuPhuLuc}');
+                
+                // Tự động tiêm placeholder {STT} vào ngay sau loop mở nếu cột đầu thiếu STT
+                xmlContent = xmlContent.replace(/\{#MenuTiec\}(?!\s*\{STT\})/gi, '{#MenuTiec}{STT}');
+                xmlContent = xmlContent.replace(/\{#DanhSachChiPhi\}(?!\s*\{STT\})/gi, '{#DanhSachChiPhi}{STT}');
+
                 zip.file("word/document.xml", xmlContent);
             }
         } catch (cleanErr) {
             console.warn('[GENERATE] ⚠️ Không thể làm sạch XML tags:', cleanErr.message);
         }
-
-        // --- TỰ ĐỘNG PHÁT HIỆN VÀ CHUẨN HÓA CÁC TAG RAW XML TRONG TẤT CẢ FILE XML ---
-        try {
-            const fileNames = Object.keys(zip.files);
-            const rawTagsFound = new Set();
-            const rawTagRegex = /\{@\s*([a-zA-Z0-9_#]+)\s*\}/g;
-
-            for (const name of fileNames) {
-                if (name.endsWith('.xml')) {
-                    const xmlFile = zip.file(name);
-                    if (xmlFile) {
-                        const xmlContent = xmlFile.asText();
-                        let match;
-                        while ((match = rawTagRegex.exec(xmlContent)) !== null) {
-                            rawTagsFound.add(match[1]);
-                        }
-                    }
-                }
-            }
-
-            if (rawTagsFound.size > 0) {
-                console.log('[GENERATE] Phát hiện các tag raw XML trong template:', Array.from(rawTagsFound));
-                rawTagsFound.forEach(tag => {
-                    if (!fieldsToConvert.some(f => f.toLowerCase() === tag.toLowerCase())) {
-                        fieldsToConvert.push(tag);
-                    }
-                });
-            }
-        } catch (scanErr) {
-            console.warn('[GENERATE] ⚠️ Lỗi quét raw XML tags từ template:', scanErr.message);
-        }
-
-        // --- CHUYỂN ĐỔI CÁC TRƯỜNG CẦN THIẾT SANG WORD XML ---
-        fieldsToConvert.forEach(key => {
-            const foundKey = Object.keys(dataMap).find(k => k.toLowerCase() === key.toLowerCase());
-            if (foundKey) {
-                let value = dataMap[foundKey];
-                // Nếu giá trị là Array (chưa được format thành string ở trên), hãy format nó
-                if (Array.isArray(value)) {
-                    value = value.map(item => formatArrayItem(item, docConfig)).filter(Boolean).join('\n');
-                } else if (value && typeof value === 'object') {
-                    value = JSON.stringify(value);
-                }
-
-                // Đảm bảo kết quả là string và chuyển đổi sang Word XML
-                if (value !== undefined && value !== null) {
-                    dataMap[foundKey] = convertTextToWordXML(String(value), foundKey, docConfig);
-                } else {
-                    dataMap[foundKey] = "";
-                }
-            } else {
-                // Nếu không có trong dataMap, set giá trị mặc định là chuỗi rỗng để tránh lỗi undefined cho raw XML
-                dataMap[key] = "";
-            }
-        });
 
         const doc = new Docxtemplater(zip, {
             paragraphLoop: true,
@@ -497,11 +475,9 @@ app.post('/api/documents/generate', async (req, res) => {
                                 }
                             }
                         }
-                        // Trả về đối tượng/mảng nguyên bản cho các tag loop
                         if (val && typeof val === 'object') {
                             return val;
                         }
-                        // Tránh trả về null/undefined cho raw XML hoặc text tag
                         return val === null || val === undefined ? "" : String(val);
                     }
                 };
@@ -511,10 +487,17 @@ app.post('/api/documents/generate', async (req, res) => {
             }
         });
 
-        // Đổ toàn bộ dataMap vào template Word
         try {
             doc.render(dataMap);
             console.log('[GENERATE] ✅ Render dữ liệu vào template thành công');
+            
+            // Hậu xử lý: Dọn dẹp các ngoặc đơn rỗng "()" hoặc " ()" phát sinh sau khi render các biến rỗng
+            const docZip = doc.getZip();
+            if (docZip) {
+                let xmlContent = docZip.file("word/document.xml").asText();
+                xmlContent = xmlContent.replace(/\s*\(\s*\)/g, '');
+                docZip.file("word/document.xml", xmlContent);
+            }
         } catch (renderErr) {
             console.error('[GENERATE] ❌ Lỗi render:', renderErr.message);
             if (renderErr.properties && renderErr.properties.errors) {
@@ -538,19 +521,14 @@ app.post('/api/documents/generate', async (req, res) => {
             throw genErr;
         }
 
-        // ── 5. Lưu file .docx đã sinh ra ──────────────
         const finalFileName = `${outputFileName}_${Date.now()}.docx`;
         const outputPath = path.join(UPLOADS_DIR, finalFileName);
         fs.writeFileSync(outputPath, buf);
 
-        // ── 6. Ghi Log vào Tiec_Documents (Sổ lưu trữ) ───────────────────────
+        // Ghi Log vào Tiec_Documents
         try {
-            // Tính toán mã băm SHA-256 từ nội dung file vật lý
             const fileHash = crypto.createHash('sha256').update(buf).digest('hex');
-
-            // Tìm mã tiệc case-insensitive từ dataMap hoặc customerId làm fallback
             const tiecId = dataMap.Sohopdong || dataMap.SoHopDong || dataMap.sohopdong || customerId || '';
-
             const userName = extractUserName(req);
             const docData = {
                 TiecID: tiecId,
@@ -583,7 +561,6 @@ app.post('/api/documents/generate', async (req, res) => {
     } catch (error) {
         console.error('[API] Lỗi generate:', error);
         if (error.properties && error.properties.errors) {
-            console.error('[API] Chi tiết lỗi docxtemplater:', JSON.stringify(error.properties.errors));
             const details = error.properties.errors.map(e => e.message + (e.properties && e.properties.explanation ? ': ' + e.properties.explanation : '')).join('; ');
             return res.status(500).json({ success: false, message: 'Lỗi Docxtemplater: ' + details });
         }
@@ -591,20 +568,13 @@ app.post('/api/documents/generate', async (req, res) => {
     }
 });
 
-/**
- * 3. Xóa tài liệu
- */
 app.delete('/api/documents/:fileName', async (req, res) => {
     try {
         const fileName = req.params.fileName;
         const filePath = path.join(UPLOADS_DIR, fileName);
         if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath); // Xóa file vật lý (Hard delete)
-
-            // Cập nhật Bia mộ (Soft Delete) trong CSDL
+            fs.unlinkSync(filePath);
             try {
-                // Thử phân tách tên file để lấy TiecID và DocType phòng khi file chưa có trong CSDL
-                // Định dạng chuẩn: {DocType}_{TiecID}_{Timestamp}.docx
                 let parsedTiecID = 'UNKNOWN';
                 let parsedDocType = 'UNKNOWN';
 
@@ -621,10 +591,10 @@ app.delete('/api/documents/:fileName', async (req, res) => {
                 const userName = extractUserName(req);
                 const payload = {
                     List: 'Tiec_Documents',
-                    Func: 'Edit', // Cập nhật lại Status
+                    Func: 'Edit',
                     UserName: userName,
                     JsonData: JSON.stringify({
-                        FilePath: fileName, // Dùng FilePath làm khóa tìm kiếm
+                        FilePath: fileName,
                         TiecID: parsedTiecID,
                         DocType: parsedDocType,
                         Status: 'DELETED',
@@ -637,7 +607,6 @@ app.delete('/api/documents/:fileName', async (req, res) => {
             } catch (err) {
                 console.error(`[AUDIT] ❌ Lỗi cập nhật bia mộ:`, err.message);
             }
-
             res.json({ success: true, message: 'Xóa thành công!' });
         } else {
             res.status(404).json({ success: false, message: 'Không tìm thấy file để xóa!' });
@@ -648,15 +617,11 @@ app.delete('/api/documents/:fileName', async (req, res) => {
     }
 });
 
-/**
- * 4. Upload Logo
- */
 app.post('/api/upload-logo', (req, res) => {
     try {
         const { base64, fileName } = req.body;
         if (!base64) return res.status(400).json({ success: false, message: 'Thiếu dữ liệu base64' });
 
-        // base64 có dạng: "data:image/jpeg;base64,/9j/4AA..."
         const matches = base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
         let imageBuffer = null;
         if (matches && matches.length === 3) {
@@ -665,7 +630,6 @@ app.post('/api/upload-logo', (req, res) => {
             imageBuffer = Buffer.from(base64, 'base64');
         }
 
-        // Mô phỏng lưu vào thư mục Qplaza\Logo theo yêu cầu TODO.md
         const logoDir = path.join(__dirname, '..', 'Qplaza', 'Logo');
         if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
 
@@ -680,9 +644,6 @@ app.post('/api/upload-logo', (req, res) => {
     }
 });
 
-// ==========================================
-// API: ONLYOFFICE CALLBACK
-// ==========================================
 app.post('/api/documents/callback', async (req, res) => {
     const respondSuccess = () => res.json({ error: 0 });
     try {
@@ -698,7 +659,7 @@ app.post('/api/documents/callback', async (req, res) => {
 
         if (status === 2 || status === 6) {
             const downloadUri = data.url;
-            if (!downloadUri) { console.warn('[ONLYOFFICE] Không có URL tải file!'); return respondSuccess(); }
+            if (!downloadUri) return respondSuccess();
 
             console.log(`[ONLYOFFICE] Đang lưu file... (${status === 2 ? 'Save' : 'Forcesave'})`);
             const filePath = path.join(targetDir, fileName);
@@ -715,298 +676,6 @@ app.post('/api/documents/callback', async (req, res) => {
     }
 });
 
-
-// =========================================================================
-// HELPER: Tự động gộp các ô có giá trị trùng nhau liên tiếp theo chiều dọc
-// =========================================================================
-function getTableRanges(xml) {
-    const regex = /<w:tbl[\s>]|<\/w:tbl>/g;
-    const matches = [];
-    let match;
-    while ((match = regex.exec(xml)) !== null) {
-        matches.push({
-            index: match.index,
-            text: match[0],
-            length: match[0].length
-        });
-    }
-
-    const stack = [];
-    const tables = [];
-
-    for (const m of matches) {
-        if (m.text.startsWith('<w:tbl')) {
-            stack.push(m);
-        } else if (m.text === '<\/w:tbl>') {
-            if (stack.length > 0) {
-                const startMatch = stack.pop();
-                tables.push({
-                    start: startMatch.index,
-                    end: m.index + m.length,
-                    depth: stack.length
-                });
-            }
-        }
-    }
-    return tables;
-}
-
-function injectVMerge(cellXml, type) {
-    const vMergeTag = type === 'restart' ? '<w:vMerge w:val="restart"/>' : '<w:vMerge/>';
-    if (cellXml.match(/<w:tcPr>/)) {
-        if (cellXml.match(/<w:vMerge[^>]*>/)) return cellXml;
-        return cellXml.replace('<w:tcPr>', `<w:tcPr>${vMergeTag}`);
-    } else {
-        return cellXml.replace('<w:tc>', `<w:tc><w:tcPr>${vMergeTag}</w:tcPr>`);
-    }
-}
-
-function mergeFlatTable(tblXml, headerName) {
-    const rowRegex = /<w:tr(?:[^>]*)?>[\s\S]*?<\/w:tr>/g;
-    const rows = tblXml.match(rowRegex);
-    if (!rows || rows.length <= 1) return tblXml;
-
-    const headerRow = rows[0];
-    const cellsRegex = /<w:tc(?:[^>]*)?>[\s\S]*?<\/w:tc>/g;
-    const headerCells = headerRow.match(cellsRegex);
-    if (!headerCells) return tblXml;
-
-    let colIdx = -1;
-    for (let i = 0; i < headerCells.length; i++) {
-        const cellText = headerCells[i].replace(/<[^>]*>/g, '').trim();
-        if (cellText.toUpperCase() === headerName.toUpperCase()) {
-            colIdx = i;
-            break;
-        }
-    }
-
-    if (colIdx === -1) return tblXml;
-
-    let prevText = null;
-    let groupStartIdx = -1;
-    const rowCellsList = rows.map(row => row.match(cellsRegex) || []);
-
-    for (let r = 1; r < rows.length; r++) {
-        const cells = rowCellsList[r];
-        if (colIdx >= cells.length) continue;
-
-        const cellXml = cells[colIdx];
-        const cellText = cellXml.replace(/<[^>]*>/g, '').trim();
-
-        if (cells.length < headerCells.length || cellXml.includes('%%NESTED_TBL_')) {
-            prevText = null;
-            groupStartIdx = -1;
-            continue;
-        }
-
-        if (cellText && cellText === prevText) {
-            const startCells = rowCellsList[groupStartIdx];
-            let startCell = startCells[colIdx];
-            if (!startCell.includes('w:vMerge')) {
-                startCell = injectVMerge(startCell, 'restart');
-                startCells[colIdx] = startCell;
-            }
-
-            let currentCell = cellXml;
-            currentCell = injectVMerge(currentCell, 'continue');
-            cells[colIdx] = currentCell;
-        } else {
-            prevText = cellText;
-            groupStartIdx = r;
-        }
-    }
-
-    const updatedRows = rows.map((row, r) => {
-        const cells = rowCellsList[r];
-        let cIdx = 0;
-        return row.replace(/<w:tc(?:[^>]*)?>[\s\S]*?<\/w:tc>/g, () => {
-            return cells[cIdx++];
-        });
-    });
-
-    const tblPrefix = tblXml.match(/^<w:tbl(?:[^>]*)?>[\s\S]*?(?=<w:tr(?:[^>]*)?>)/)[0];
-    return tblPrefix + updatedRows.join('') + '</w:tbl>';
-}
-
-function processSingleTable(tblXml, headerName) {
-    const nestedRanges = getTableRanges(tblXml);
-    const children = nestedRanges.filter(r => r.depth === 1);
-
-    const placeholders = [];
-    children.sort((a, b) => b.start - a.start);
-    let flatTblXml = tblXml;
-    for (let i = 0; i < children.length; i++) {
-        const child = children[i];
-        const childXml = flatTblXml.substring(child.start, child.end);
-        const processedChildXml = processSingleTable(childXml, headerName);
-
-        const placeholder = `%%NESTED_TBL_${i}%%`;
-        placeholders.push({ placeholder, content: processedChildXml });
-
-        flatTblXml = flatTblXml.substring(0, child.start) + placeholder + flatTblXml.substring(child.end);
-    }
-
-    let mergedTblXml = mergeFlatTable(flatTblXml, headerName);
-
-    for (const p of placeholders) {
-        mergedTblXml = mergedTblXml.replace(p.placeholder, p.content);
-    }
-
-    return mergedTblXml;
-}
-
-function mergeTableColumn(xml, headerName) {
-    const tables = getTableRanges(xml);
-    const topLevelTables = tables.filter(t => t.depth === 0);
-
-    topLevelTables.sort((a, b) => b.start - a.start);
-
-    let resultXml = xml;
-    for (const t of topLevelTables) {
-        const tableXml = resultXml.substring(t.start, t.end);
-        const processedTableXml = processSingleTable(tableXml, headerName);
-        resultXml = resultXml.substring(0, t.start) + processedTableXml + resultXml.substring(t.end);
-    }
-    return resultXml;
-}
-
-const CONFIG_FILE_PATH = path.join(__dirname, 'document-config.json');
-
-function getDocumentConfig() {
-    try {
-        if (fs.existsSync(CONFIG_FILE_PATH)) {
-            const fileContent = fs.readFileSync(CONFIG_FILE_PATH, 'utf8');
-            return JSON.parse(fileContent);
-        }
-    } catch (err) {
-        console.warn('[CONFIG] ⚠️ Lỗi đọc file document-config.json:', err.message);
-    }
-    return {};
-}
-
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function formatArrayItem(item, docConfig) {
-    if (!item) return '';
-    if (typeof item !== 'object') return String(item);
-
-    const itemFieldNames = docConfig.itemFieldNames || [];
-    const itemPriceNames = docConfig.itemPriceNames || [];
-    const itemNoteNames = docConfig.itemNoteNames || [];
-    const currencySuffix = docConfig.currencySuffix || '';
-
-    let name = '';
-    for (const fName of itemFieldNames) {
-        const foundNameKey = Object.keys(item).find(k => k.toLowerCase() === fName.toLowerCase());
-        if (foundNameKey && item[foundNameKey]) {
-            name = item[foundNameKey];
-            break;
-        }
-    }
-    if (!name) {
-        // Fallback: nếu không cấu hình trường tên, dùng trường đầu tiên có giá trị chuỗi
-        const firstStringKey = Object.keys(item).find(k => typeof item[k] === 'string' && item[k]);
-        if (firstStringKey) name = item[firstStringKey];
-        else return String(item);
-    }
-
-    let price = '';
-    for (const pName of itemPriceNames) {
-        const foundPriceKey = Object.keys(item).find(k => k.toLowerCase() === pName.toLowerCase());
-        if (foundPriceKey && item[foundPriceKey]) {
-            price = item[foundPriceKey];
-            break;
-        }
-    }
-
-    if (price && currencySuffix) {
-        const cleanSuffix = currencySuffix.trim().toUpperCase();
-        if (!String(price).toUpperCase().endsWith(cleanSuffix) && !String(price).toUpperCase().endsWith('VND') && !String(price).toUpperCase().endsWith('VNĐ')) {
-            price = price + currencySuffix;
-        }
-    }
-
-    let note = '';
-    for (const nName of itemNoteNames) {
-        const foundNoteKey = Object.keys(item).find(k => k.toLowerCase() === nName.toLowerCase());
-        if (foundNoteKey && item[foundNoteKey]) {
-            note = item[foundNoteKey];
-            break;
-        }
-    }
-
-    return `- ${name}${price ? ': ' + price : ''}${note ? ' (' + note + ')' : ''}`;
-}
-
-function convertTextToWordXML(text, fieldName = '', docConfig = getDocumentConfig()) {
-    if (!text) return "";
-    const lines = text.split(/\r?\n/);
-    let xml = "";
-
-    const setupFieldName = docConfig.setupFieldName || '';
-    const isSetupField = fieldName && setupFieldName && fieldName === setupFieldName;
-
-    const headerKeywords = docConfig.headerKeywords || [];
-    const warningKeywords = docConfig.warningKeywords || [];
-
-    const xmlStyles = docConfig.xmlStyles || {};
-    const fontName = xmlStyles.fontFamily || 'Times New Roman';
-    const fontSize = xmlStyles.fontSize || 20;
-    const warningColor = xmlStyles.warningColor || 'FF0000';
-    const headerColor = xmlStyles.headerColor || 'FF0000';
-
-    const hasHeaderKeywords = headerKeywords.length > 0;
-    const headerRegex = hasHeaderKeywords ? new RegExp(headerKeywords.map(escapeRegExp).join('|'), 'i') : null;
-
-    const hasWarningKeywords = warningKeywords.length > 0;
-    const warningRegex = hasWarningKeywords ? new RegExp(warningKeywords.map(escapeRegExp).join('|'), 'i') : null;
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        let currentLine = line;
-        let isChanged = false;
-        if (currentLine.startsWith('__CHANGED__')) {
-            isChanged = true;
-            currentLine = currentLine.substring(11).trim(); // Remove '__CHANGED__' prefix
-        }
-
-        const isHeader = !/^[-\*\+\•\d]/.test(currentLine) && (currentLine.endsWith(':') || (headerRegex && headerRegex.test(currentLine)));
-
-        const escapedLine = currentLine
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&apos;");
-
-        const isWarningLine = warningRegex && warningRegex.test(currentLine);
-
-        if (isChanged) {
-            xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:u w:val="single"/><w:highlight w:val="yellow"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
-        } else if (isHeader) {
-            if (isSetupField) {
-                xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:b/><w:u w:val="single"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
-            } else {
-                xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:b/><w:u w:val="single"/><w:color w:val="${headerColor}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
-            }
-        } else if (isWarningLine) {
-            xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:u w:val="single"/><w:color w:val="${warningColor}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
-        } else {
-            xml += `<w:r><w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t>${escapedLine}</w:t></w:r>`;
-        }
-
-        if (i < lines.length - 1) {
-            xml += `<w:r><w:br/></w:r>`;
-        }
-    }
-    return `<w:p>${xml}</w:p>`;
-}
-
-/** Parse đệ quy mọi chuỗi JSON trong object/array (không hardcode field menu/dịch vụ). */
 function deepParseJsonStrings(value) {
     if (typeof value === 'string') {
         const val = value.trim();
@@ -1053,10 +722,6 @@ function findTemplatePath(baseDir, templateName) {
     return findRecursive(baseDir);
 }
 
-
-// ==========================================
-// ROOT
-// ==========================================
 app.get('/', (req, res) => {
     res.json({
         service: 'Wedding Banquet Document API',
@@ -1070,9 +735,6 @@ app.get('/', (req, res) => {
     });
 });
 
-// ==========================================
-// KHỞI ĐỘNG SERVER
-// ==========================================
 app.listen(PORT, '0.0.0.0', () => {
     console.log('=======================================================');
     console.log('       ✨ BACKEND SERVER - WEDDING BANQUET MANAGEMENT   ');

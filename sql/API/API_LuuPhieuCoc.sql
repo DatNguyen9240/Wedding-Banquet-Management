@@ -68,24 +68,32 @@ BEGIN
     -- Parse @DocumentDate từ các định dạng phổ biến
     IF (@DocumentDate IS NOT NULL AND LTRIM(RTRIM(@DocumentDate)) <> '')
     BEGIN
-        SET @DocumentDateParsed = TRY_CAST(@DocumentDate AS DATETIME);
-        IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 103); -- dd/mm/yyyy
-        IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 105); -- dd-mm-yyyy
-        IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 120); -- yyyy-mm-dd
-        IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 111); -- yyyy/mm/dd
-        IF (@DocumentDateParsed IS NULL) SET @DocumentDateParsed = TRY_CONVERT(DATETIME, @DocumentDate, 101); -- mm/dd/yyyy
+        SET @DocumentDateParsed = COALESCE(
+            TRY_CAST(@DocumentDate AS DATETIME),
+            TRY_CONVERT(DATETIME, @DocumentDate, 126),
+            TRY_CONVERT(DATETIME, @DocumentDate, 120),
+            TRY_CONVERT(DATETIME, @DocumentDate, 23),
+            TRY_CONVERT(DATETIME, @DocumentDate, 103),
+            TRY_CONVERT(DATETIME, @DocumentDate, 105),
+            TRY_CONVERT(DATETIME, @DocumentDate, 111),
+            TRY_CONVERT(DATETIME, @DocumentDate, 101)
+        );
     END
 
 
     -- Parse @Ngaytochuc từ các định dạng phổ biến
     IF (@Ngaytochuc IS NOT NULL AND LTRIM(RTRIM(@Ngaytochuc)) <> '')
     BEGIN
-        SET @NgayToChucParsed = TRY_CAST(@Ngaytochuc AS DATETIME);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 103);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 105);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 120);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 111);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 101);
+        SET @NgayToChucParsed = COALESCE(
+            TRY_CAST(@Ngaytochuc AS DATETIME),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 126),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 120),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 23),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 103),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 105),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 111),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 101)
+        );
     END
 
     BEGIN TRY

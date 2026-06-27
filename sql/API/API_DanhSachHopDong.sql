@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -14,7 +14,8 @@ GO
 CREATE PROCEDURE [dbo].[API_DanhSachHopDong]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
-    @Keyword NVARCHAR(100) = NULL
+    @Keyword NVARCHAR(100) = NULL,
+    @Sohopdong VARCHAR(50) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -27,6 +28,9 @@ BEGIN
         -- Bộ lọc theo Khoảng ngày (Dựa theo NgayToChuc)
         (@TuNgay IS NULL OR CAST(@TuNgay AS DATE) <= '1900-01-01' OR v.NgayToChuc >= @TuNgay)
         AND (@DenNgay IS NULL OR CAST(@DenNgay AS DATE) <= '1900-01-01' OR v.NgayToChuc <= @DenNgay)
+        
+        -- Bộ lọc theo Số hợp đồng
+        AND (@Sohopdong IS NULL OR @Sohopdong = '' OR v.Sohopdong = @Sohopdong)
         
         -- Bộ lọc Keyword tìm kiếm tương đối
         AND (

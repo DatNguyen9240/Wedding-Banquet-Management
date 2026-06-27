@@ -265,27 +265,27 @@ SELECT
     kh.CMNDDaiDien AS [BenBCCCD],
     
     -- Bên A (Thông tin nhà hàng)
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT') AS [BenASDT],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien') AS [BenADaiDien],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'BenATenCongTy') AS [BenATenCongTy],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'BenADiaChi') AS [BenADiaChi],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'BenASDT') AS [BenASDT],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'HNNguoiDaiDien') AS [BenADaiDien],
+    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
     ISNULL(
         nv.Tennv, 
         ISNULL(
-            (SELECT TOP 1 Name.Tennv FROM dmNhanvienView Name WHERE Name.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)), 
+            (SELECT TOP 1 Name.Tennv FROM dmNhanvienView Name WITH (NOLOCK) WHERE Name.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)), 
             ISNULL(td.Manv, ISNULL(hd.Manv, ISNULL(td.UserCreate, hd.UserCreate)))
         )
     ) AS [BenANhanVienPhuTrach], -- {BenANhanVienPhuTrach}
     ISNULL(
         nv.Dienthoai, 
         ISNULL(
-            (SELECT TOP 1 Phone.DIENTHOAI FROM dmNhanvienView Phone WHERE Phone.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)),
+            (SELECT TOP 1 Phone.DIENTHOAI FROM dmNhanvienView Phone WITH (NOLOCK) WHERE Phone.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)),
             ISNULL(
-                (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'Com3'),
+                (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'Com3'),
                 ISNULL(
-                    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT'),
+                    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'BenASDT'),
                     ''
                 )
             )
@@ -306,9 +306,9 @@ SELECT
     CAST(YEAR(hd.Ngayhopdong) AS VARCHAR) AS [NamLapHD],
 
     -- Loại hình sự kiện & Sảnh & Ca
-    ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)), N'') AS [LoaiHinhSuKien], -- {LoaiHinhSuKien}
-    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = td.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [TenSanhTiec],
-    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = td.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [Sanh], -- {Sanh}
+    ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WITH (NOLOCK) WHERE lt.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)), N'') AS [LoaiHinhSuKien], -- {LoaiHinhSuKien}
+    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs WITH (NOLOCK) INNER JOIN dmSanhtiec s WITH (NOLOCK) ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = td.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [TenSanhTiec],
+    (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs WITH (NOLOCK) INNER JOIN dmSanhtiec s WITH (NOLOCK) ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = td.Sohopdong ORDER BY hs.IsSanhchinh DESC) AS [Sanh], -- {Sanh}
     FORMAT(ISNULL(td.NgayToChucTD, hd.Ngaytochuc), 'HH:mm') AS [TiecGioBatDau],
     
     -- Ngày tổ chức Dương lịch
@@ -339,7 +339,7 @@ SELECT
     END AS [NamToChucAmLich],
     
     ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid) AS [LoaiTiecID],
-    (SELECT TOP 1 tm.TemplateFile FROM tbmk_LoaitiecAddfile tm WHERE tm.FormName = 'frmPhuLucHopDong' AND tm.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)) AS [TemplateFile],
+    (SELECT TOP 1 tm.TemplateFile FROM tbmk_LoaitiecAddfile tm WITH (NOLOCK) WHERE tm.FormName = 'frmPhuLucHopDong' AND tm.Loaitiecid = ISNULL(td.LoaiTiecIDTD, hd.Loaitiecid)) AS [TemplateFile],
     ISNULL(td.ThoiGianIDTD, hd.Thoigianid) AS [ThoiGianID],
     
     -- Quy mô bàn & Đơn giá
@@ -357,34 +357,34 @@ SELECT
     ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) + ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SoBanDuPhong], -- {SoBanDuPhong}
     ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [BanTang], -- {BanTang}
     ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
-
+ 
     -- Thực đơn {#MenuTiec}
     COALESCE(
         (
             SELECT ISNULL(hh.Tenhang, t.Mahang) AS [TenMonAn],
                    FORMAT(ISNULL(t.Dongia, 0), 'N0', 'vi-VN') AS [DonGia]
             FROM (
-                SELECT Mahang, Dongia, STTmon, 1 AS Loai FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi
+                SELECT Mahang, Dongia, STTmon, 1 AS Loai FROM tbmk_Thaydoithucdonman WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
                 UNION ALL
-                SELECT Mahang, Dongia, STTmon, 2 AS Loai FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi
+                SELECT Mahang, Dongia, STTmon, 2 AS Loai FROM tbmk_Thaydoithucdonchay WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
             ) t
-            LEFT JOIN dmHanghoa hh ON t.Mahang = hh.Mahang
+            LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON t.Mahang = hh.Mahang
             ORDER BY t.Loai, t.STTmon, t.Mahang
             FOR JSON PATH
         ),
         '[]'
     ) AS [MenuTiec],
-
+ 
     FORMAT(
         ISNULL((
             SELECT SUM(ISNULL(Dongia, 0)) FROM (
-                SELECT Dongia FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi
+                SELECT Dongia FROM tbmk_Thaydoithucdonman WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
                 UNION ALL
-                SELECT Dongia FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi
+                SELECT Dongia FROM tbmk_Thaydoithucdonchay WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
             ) t
         ), 0), 'N0', 'vi-VN'
     ) + N' VNĐ' AS [MenuTongCong],
-
+ 
     -- Danh sách chi phí {#DanhSachChiPhi}
     CASE
         WHEN ISNULL(td.DanhSachChiPhiTD, td.DanhSachChiPhi) IS NOT NULL
@@ -405,8 +405,8 @@ SELECT
                             ISNULL(TRY_CAST(tm.Soluong AS INT), 1) AS [SoLuong],
                             FORMAT(ISNULL(tm.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
                             FORMAT(ISNULL(tm.Dongia, 0) * ISNULL(tm.Soluong, 1), 'N0', 'vi-VN') AS [ThanhTien]
-                        FROM tbmk_Thaydoidichvu tm
-                        LEFT JOIN dmHanghoa hh ON tm.Mahang = hh.Mahang
+                        FROM tbmk_Thaydoidichvu tm WITH (NOLOCK)
+                        LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON tm.Mahang = hh.Mahang
                         WHERE tm.Sothaydoi = td.Sothaydoi
                         UNION ALL
                         SELECT 
@@ -416,8 +416,8 @@ SELECT
                             ISNULL(TRY_CAST(tu.Soluong AS INT), 0) AS [SoLuong],
                             FORMAT(ISNULL(tu.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
                             FORMAT(ISNULL(tu.Dongia, 0) * ISNULL(tu.Soluong, 0), 'N0', 'vi-VN') AS [ThanhTien]
-                        FROM tbmk_Thaydoithucuong tu
-                        LEFT JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang
+                        FROM tbmk_Thaydoithucuong tu WITH (NOLOCK)
+                        LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON tu.Mahang = hh.Mahang
                         WHERE tu.Sothaydoi = td.Sothaydoi
                     ) t
                     FOR JSON PATH
@@ -427,12 +427,58 @@ SELECT
     END AS [DanhSachChiPhi],
     
     -- Các đợt thanh toán
-    ISNULL(td.ThanhToanDot2SoTienTD, td.ThanhToanDot2SoTien) AS [ThanhToanDot2SoTien],
+    FORMAT(TRY_CAST(ISNULL(td.ThanhToanDot2SoTienTD, td.ThanhToanDot2SoTien) AS DECIMAL(18,0)), 'N0', 'vi-VN') AS [ThanhToanDot2SoTien],
     ISNULL(td.HinhThucThanhToanDot2TD, td.HinhThucThanhToanDot2) AS [HinhThucThanhToanDot2],
     FORMAT(ISNULL(td.HanThanhToanDot2TD, td.HanThanhToanDot2), 'dd/MM/yyyy') AS [HanThanhToanDot2],
     
-    -- Thỏa thuận khác {@ThoaThuanPhuLucKhac}
-    ISNULL(td.DichVuTinhPhiPhuLucTD, td.DichVuTinhPhiPhuLuc) AS [DichVuTinhPhiPhuLuc],
+    -- Dịch vụ tính phí: trả JSON array [{TenDichVu,DonGia,GhiChu}] giống GetDetails
+    -- Mỗi dòng = 1 dịch vụ, phân cách bằng ";": "Tên dịch vụ; Đơn giá; Ghi chú"
+    COALESCE(
+        (
+            SELECT
+                CASE WHEN CHARINDEX(';', v) > 0
+                     THEN LTRIM(RTRIM(LEFT(v, CHARINDEX(';', v) - 1)))
+                     ELSE v
+                END AS [TenDichVu],
+                CASE WHEN CHARINDEX(';', v) > 0
+                          AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
+                     THEN LTRIM(RTRIM(SUBSTRING(v,
+                              CHARINDEX(';', v) + 1,
+                              CHARINDEX(';', v, CHARINDEX(';', v) + 1)
+                              - CHARINDEX(';', v) - 1)))
+                     WHEN CHARINDEX(';', v) > 0
+                     THEN LTRIM(RTRIM(SUBSTRING(v, CHARINDEX(';', v) + 1, LEN(v))))
+                     ELSE ''
+                END AS [DonGia],
+                CASE WHEN CHARINDEX(';', v) > 0
+                          AND CHARINDEX(';', v, CHARINDEX(';', v) + 1) > 0
+                     THEN LTRIM(RTRIM(SUBSTRING(v,
+                              CHARINDEX(';', v, CHARINDEX(';', v) + 1) + 1,
+                              LEN(v))))
+                     ELSE ''
+                END AS [GhiChu]
+            FROM (
+                -- XML split tương thích SQL Server 2008+ (không cần STRING_SPLIT)
+                -- REPLACE(CHAR(13),'') để loại \r từ CRLF (Windows textarea)
+                SELECT LTRIM(RTRIM(REPLACE(x.value('.', 'NVARCHAR(MAX)'), CHAR(13), ''))) AS v
+                FROM (
+                    SELECT CAST('<i>' +
+                        REPLACE(
+                            REPLACE(
+                                CASE WHEN td.DichVuTinhPhiPhuLucTD IS NOT NULL THEN td.DichVuTinhPhiPhuLucTD ELSE td.DichVuTinhPhiPhuLuc END,
+                                '&', '&amp;'
+                            ),
+                            CHAR(10), '</i><i>'
+                        )
+                    + '</i>' AS XML) AS xmlSplit
+                ) xmlConv
+                CROSS APPLY xmlConv.xmlSplit.nodes('/i') AS T(x)
+            ) splitResult
+            WHERE v <> ''
+            FOR JSON PATH
+        ),
+        '[]'
+    ) AS [DichVuTinhPhiPhuLuc],
     ISNULL(td.ThoaThuanPhuLucKhacTD, td.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
     
     FORMAT(ISNULL(td.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
@@ -457,15 +503,15 @@ SELECT
             SELECT tm.Mahang, ISNULL(hh.Tenhang, tm.Mahang) AS TenHang, ISNULL(hh.DVTID, N'Đĩa') AS DvtID,
                    CAST(1 AS DECIMAL(18,2)) AS Soluong, ISNULL(tm.Dongia, 0) AS Dongia,
                    CAST(0 AS BIT) AS IsChay, ISNULL(tm.STTmon, 0) AS SortOrder, 1 AS TableType
-            FROM tbmk_Thaydoithucdonman tm
-            LEFT JOIN dmHanghoa hh ON tm.Mahang = hh.Mahang
+            FROM tbmk_Thaydoithucdonman tm WITH (NOLOCK)
+            LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON tm.Mahang = hh.Mahang
             WHERE tm.Sothaydoi = td.Sothaydoi
             UNION ALL
             SELECT tc.Mahang, ISNULL(hh.Tenhang, tc.Mahang), ISNULL(hh.DVTID, N'Đĩa'),
                    CAST(1 AS DECIMAL(18,2)), ISNULL(tc.Dongia, 0),
                    CAST(1 AS BIT), ISNULL(tc.STTmon, 0), 2
-            FROM tbmk_Thaydoithucdonchay tc
-            LEFT JOIN dmHanghoa hh ON tc.Mahang = hh.Mahang
+            FROM tbmk_Thaydoithucdonchay tc WITH (NOLOCK)
+            LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON tc.Mahang = hh.Mahang
             WHERE tc.Sothaydoi = td.Sothaydoi
         ) items
         ORDER BY items.TableType, items.SortOrder, items.Mahang
@@ -477,8 +523,8 @@ SELECT
                ISNULL(tu.IsKhuyenmai, 0) AS IsKhuyenmai, ISNULL(tu.Soluong, 0) AS Soluong,
                ISNULL(tu.Dongia, 0) AS Dongia, CAST(0 AS DECIMAL(18,2)) AS Soluongle,
                CAST(0 AS DECIMAL(18,2)) AS Dongiale, ISNULL(tu.Ghichuthucuong, N'') AS Ghichuthucuong
-        FROM tbmk_Thaydoithucuong tu
-        LEFT JOIN dmHanghoa hh ON tu.Mahang = hh.Mahang
+        FROM tbmk_Thaydoithucuong tu WITH (NOLOCK)
+        LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON tu.Mahang = hh.Mahang
         WHERE tu.Sothaydoi = td.Sothaydoi
         ORDER BY tu.STT, tu.Mahang
         FOR JSON PATH
@@ -488,8 +534,8 @@ SELECT
         SELECT dv.Mahang, ISNULL(hh.Tenhang, dv.Mahang) AS TenHang, ISNULL(hh.DVTID, N'') AS DvtID,
                ISNULL(dv.Soluong, 0) AS Soluong, ISNULL(dv.Dongia, 0) AS Dongia,
                ISNULL(dv.Ghichudichvu, N'') AS Ghichudichvu
-        FROM tbmk_Thaydoidichvu dv
-        LEFT JOIN dmHanghoa hh ON dv.Mahang = hh.Mahang
+        FROM tbmk_Thaydoidichvu dv WITH (NOLOCK)
+        LEFT JOIN dmHanghoa hh WITH (NOLOCK) ON dv.Mahang = hh.Mahang
         WHERE dv.Sothaydoi = td.Sothaydoi
         ORDER BY dv.STT, dv.Mahang
         FOR JSON PATH
@@ -497,10 +543,10 @@ SELECT
 
     COALESCE(td.JsonPhatSinh, '[]') AS [JsonPhatSinh],
     td.BenAChucVuDaiDienTD AS [BenAChucVuDaiDien]
-FROM tbmk_Thaydoi td
-INNER JOIN tbmk_Hopdong hd ON td.Sohopdong = hd.Sohopdong
-LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
-LEFT JOIN dmNhanvienView nv ON ISNULL(td.Manv, hd.Manv) = nv.Manv
+FROM tbmk_Thaydoi td WITH (NOLOCK)
+INNER JOIN tbmk_Hopdong hd WITH (NOLOCK) ON td.Sohopdong = hd.Sohopdong
+LEFT JOIN dmkhachhang kh WITH (NOLOCK) ON hd.Makh = kh.Makh
+LEFT JOIN dmNhanvienView nv WITH (NOLOCK) ON ISNULL(td.Manv, hd.Manv) = nv.Manv
 WHERE ISNULL(td.IsDeleted, 0) = 0;
 GO
 
@@ -527,14 +573,76 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @Now DATETIME = GETDATE();
     
+    DECLARE @NgayToChucTDParsed DATETIME = NULL;
+    DECLARE @TuNgaySetupTDParsed DATETIME = NULL;
+    DECLARE @DenNgaySetupTDParsed DATETIME = NULL;
+    DECLARE @TuNgayThuDonTDParsed DATETIME = NULL;
+    DECLARE @DenNgayThuDonTDParsed DATETIME = NULL;
+    DECLARE @NgayBanGiaoSanhDVTDParsed DATETIME = NULL;
+    DECLARE @NgayTraSanhDVTDParsed DATETIME = NULL;
+    DECLARE @HanThanhToanDot2Parsed DATETIME = NULL;
+    DECLARE @HanThanhToanDot2TDParsed DATETIME = NULL;
+
     -- Giải nén các tham số từ JsonData nếu có
     IF (@JsonData IS NOT NULL AND @JsonData <> '' AND ISJSON(@JsonData) = 1)
     BEGIN
         SET @Sothaydoi = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Sothaydoi'), ''), NULLIF(JSON_VALUE(@JsonData, '$.SoPhuLuc'), ''), @Sothaydoi);
         SET @Sohopdong = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Sohopdong'), ''), @Sohopdong);
-        SET @Ngaythaydoi = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.Ngaythaydoi') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayLap') AS DATETIME), @Ngaythaydoi);
+        
+        DECLARE @NgaythaydoiStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.Ngaythaydoi'), JSON_VALUE(@JsonData, '$.NgayLap'));
+        IF (@NgaythaydoiStr IS NOT NULL AND LTRIM(RTRIM(@NgaythaydoiStr)) <> '')
+        BEGIN
+            SET @Ngaythaydoi = COALESCE(
+                TRY_CAST(@NgaythaydoiStr AS DATETIME),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 126),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 120),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 23),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 103),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 105),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 111),
+                TRY_CONVERT(DATETIME, @NgaythaydoiStr, 101)
+            );
+        END
+
         SET @Ghichu = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Ghichu'), ''), NULLIF(JSON_VALUE(@JsonData, '$.LyDoDieuChinh'), ''), @Ghichu);
         SET @Status = COALESCE(NULLIF(JSON_VALUE(@JsonData, '$.Status'), ''), NULLIF(JSON_VALUE(@JsonData, '$.TrangThai'), ''), @Status);
+
+        -- Extract and parse dates robustly
+        DECLARE @NgayToChucTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.NgayToChucTD'), JSON_VALUE(@JsonData, '$.NgayToChuc'));
+        IF (@NgayToChucTDStr IS NOT NULL AND LTRIM(RTRIM(@NgayToChucTDStr)) <> '')
+            SET @NgayToChucTDParsed = COALESCE(TRY_CAST(@NgayToChucTDStr AS DATETIME), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 126), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 120), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 23), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 103), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 105), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 111), TRY_CONVERT(DATETIME, @NgayToChucTDStr, 101));
+
+        DECLARE @TuNgaySetupTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.TuNgaySetupTD'), JSON_VALUE(@JsonData, '$.TuNgaySetup'));
+        IF (@TuNgaySetupTDStr IS NOT NULL AND LTRIM(RTRIM(@TuNgaySetupTDStr)) <> '')
+            SET @TuNgaySetupTDParsed = COALESCE(TRY_CAST(@TuNgaySetupTDStr AS DATETIME), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 126), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 120), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 23), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 103), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 105), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 111), TRY_CONVERT(DATETIME, @TuNgaySetupTDStr, 101));
+
+        DECLARE @DenNgaySetupTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.DenNgaySetupTD'), JSON_VALUE(@JsonData, '$.DenNgaySetup'));
+        IF (@DenNgaySetupTDStr IS NOT NULL AND LTRIM(RTRIM(@DenNgaySetupTDStr)) <> '')
+            SET @DenNgaySetupTDParsed = COALESCE(TRY_CAST(@DenNgaySetupTDStr AS DATETIME), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 126), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 120), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 23), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 103), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 105), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 111), TRY_CONVERT(DATETIME, @DenNgaySetupTDStr, 101));
+
+        DECLARE @TuNgayThuDonTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.TuNgayThuDonTD'), JSON_VALUE(@JsonData, '$.TuNgayThuDon'));
+        IF (@TuNgayThuDonTDStr IS NOT NULL AND LTRIM(RTRIM(@TuNgayThuDonTDStr)) <> '')
+            SET @TuNgayThuDonTDParsed = COALESCE(TRY_CAST(@TuNgayThuDonTDStr AS DATETIME), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 126), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 120), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 23), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 103), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 105), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 111), TRY_CONVERT(DATETIME, @TuNgayThuDonTDStr, 101));
+
+        DECLARE @DenNgayThuDonTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.DenNgayThuDonTD'), JSON_VALUE(@JsonData, '$.DenNgayThuDon'));
+        IF (@DenNgayThuDonTDStr IS NOT NULL AND LTRIM(RTRIM(@DenNgayThuDonTDStr)) <> '')
+            SET @DenNgayThuDonTDParsed = COALESCE(TRY_CAST(@DenNgayThuDonTDStr AS DATETIME), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 126), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 120), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 23), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 103), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 105), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 111), TRY_CONVERT(DATETIME, @DenNgayThuDonTDStr, 101));
+
+        DECLARE @NgayBanGiaoSanhDVTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDVTD'), JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDV'));
+        IF (@NgayBanGiaoSanhDVTDStr IS NOT NULL AND LTRIM(RTRIM(@NgayBanGiaoSanhDVTDStr)) <> '')
+            SET @NgayBanGiaoSanhDVTDParsed = COALESCE(TRY_CAST(@NgayBanGiaoSanhDVTDStr AS DATETIME), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 126), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 120), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 23), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 103), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 105), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 111), TRY_CONVERT(DATETIME, @NgayBanGiaoSanhDVTDStr, 101));
+
+        DECLARE @NgayTraSanhDVTDStr NVARCHAR(100) = COALESCE(JSON_VALUE(@JsonData, '$.NgayTraSanhDVTD'), JSON_VALUE(@JsonData, '$.NgayTraSanhDV'));
+        IF (@NgayTraSanhDVTDStr IS NOT NULL AND LTRIM(RTRIM(@NgayTraSanhDVTDStr)) <> '')
+            SET @NgayTraSanhDVTDParsed = COALESCE(TRY_CAST(@NgayTraSanhDVTDStr AS DATETIME), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 126), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 120), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 23), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 103), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 105), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 111), TRY_CONVERT(DATETIME, @NgayTraSanhDVTDStr, 101));
+
+        DECLARE @HanThanhToanDot2Str NVARCHAR(100) = JSON_VALUE(@JsonData, '$.HanThanhToanDot2');
+        IF (@HanThanhToanDot2Str IS NOT NULL AND LTRIM(RTRIM(@HanThanhToanDot2Str)) <> '')
+            SET @HanThanhToanDot2Parsed = COALESCE(TRY_CAST(@HanThanhToanDot2Str AS DATETIME), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 126), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 120), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 23), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 103), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 105), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 111), TRY_CONVERT(DATETIME, @HanThanhToanDot2Str, 101));
+
+        DECLARE @HanThanhToanDot2TDStr NVARCHAR(100) = JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD');
+        IF (@HanThanhToanDot2TDStr IS NOT NULL AND LTRIM(RTRIM(@HanThanhToanDot2TDStr)) <> '')
+            SET @HanThanhToanDot2TDParsed = COALESCE(TRY_CAST(@HanThanhToanDot2TDStr AS DATETIME), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 126), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 120), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 23), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 103), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 105), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 111), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 101));
     END
 
     IF @Sohopdong IS NULL OR @Sohopdong = ''
@@ -645,8 +753,8 @@ BEGIN
                 
                 JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2'),
                 JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2TD'),
-                TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2') AS DATETIME),
-                TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD') AS DATETIME),
+                @HanThanhToanDot2Parsed,
+                @HanThanhToanDot2TDParsed,
                 
                 JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLuc'),
                 JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLucTD'),
@@ -674,7 +782,7 @@ BEGIN
                 JSON_QUERY(@JsonData, '$.JsonDichVu'),
                 JSON_QUERY(@JsonData, '$.JsonPhatSinh'),
                 
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayToChucTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayToChuc') AS DATETIME)),
+                @NgayToChucTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.ThoiGianIDTD'), JSON_VALUE(@JsonData, '$.ThoiGianID')),
                 COALESCE(JSON_VALUE(@JsonData, '$.NhamNgayTD'), JSON_VALUE(@JsonData, '$.NhamNgay')),
                 COALESCE(JSON_VALUE(@JsonData, '$.LoaiTiecIDTD'), JSON_VALUE(@JsonData, '$.LoaiTiecID')),
@@ -707,12 +815,12 @@ BEGIN
                 COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.PhiBuBanTangTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.PhiBuBanTang') AS DECIMAL(18,2))),
                 COALESCE(JSON_VALUE(@JsonData, '$.MauNoTD'), JSON_VALUE(@JsonData, '$.MauNo')),
                 COALESCE(JSON_VALUE(@JsonData, '$.DiaDiemToChucTD'), JSON_VALUE(@JsonData, '$.DiaDiemToChuc')),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgaySetupTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgaySetup') AS DATETIME)),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgaySetupTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgaySetup') AS DATETIME)),
+                @TuNgaySetupTDParsed,
+                @DenNgaySetupTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.TuGioDenGioSetupTD'), JSON_VALUE(@JsonData, '$.TuGioDenGioSetup')),
                 COALESCE(JSON_VALUE(@JsonData, '$.DenGioSetupTD'), JSON_VALUE(@JsonData, '$.DenGioSetup')),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgayThuDonTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgayThuDon') AS DATETIME)),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgayThuDonTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgayThuDon') AS DATETIME)),
+                @TuNgayThuDonTDParsed,
+                @DenNgayThuDonTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucThuDonTD'), JSON_VALUE(@JsonData, '$.GioKetThucThuDon')),
                 COALESCE(JSON_VALUE(@JsonData, '$.DenGioKetThucThuDonTD'), JSON_VALUE(@JsonData, '$.DenGioKetThucThuDon')),
                 COALESCE(JSON_VALUE(@JsonData, '$.GioDienRaSuKienTD'), JSON_VALUE(@JsonData, '$.GioDienRaSuKien')),
@@ -720,10 +828,10 @@ BEGIN
                 COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoNgayToChucTD') AS INT), TRY_CAST(JSON_VALUE(@JsonData, '$.SoNgayToChuc') AS INT)),
                 COALESCE(JSON_VALUE(@JsonData, '$.GioBanGiaoSanhTiecCuoiTD'), JSON_VALUE(@JsonData, '$.GioBanGiaoSanhTiecCuoi')),
                 COALESCE(JSON_VALUE(@JsonData, '$.GioTraSanhTiecCuoiTD'), JSON_VALUE(@JsonData, '$.GioTraSanhTiecCuoi')),
-                COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucSuKienTD'), JSON_VALUE(@JsonData, '$.GioKetThucSuKien')),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDVTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDV') AS DATETIME)),
+                COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucSuKienTD'), JSON_VALUE(@JsonData, '$.GioKetThucSuKien')), -- Fallback safe
+                @NgayBanGiaoSanhDVTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.GioBanGiaoSanhDVTD'), JSON_VALUE(@JsonData, '$.GioBanGiaoSanhDV')),
-                COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayTraSanhDVTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayTraSanhDV') AS DATETIME)),
+                @NgayTraSanhDVTDParsed,
                 COALESCE(JSON_VALUE(@JsonData, '$.GioTraSanhDVTD'), JSON_VALUE(@JsonData, '$.GioTraSanhDV')),
                 COALESCE(JSON_VALUE(@JsonData, '$.GoiThucDonIDTD'), JSON_VALUE(@JsonData, '$.GoiThucDonID')),
                 COALESCE(JSON_VALUE(@JsonData, '$.TenDotThanhToanTD'), JSON_VALUE(@JsonData, '$.TenDotThanhToan'))
@@ -749,8 +857,8 @@ BEGIN
                 
                 HinhThucThanhToanDot2 = COALESCE(JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2'), HinhThucThanhToanDot2),
                 HinhThucThanhToanDot2TD = COALESCE(JSON_VALUE(@JsonData, '$.HinhThucThanhToanDot2TD'), HinhThucThanhToanDot2TD),
-                HanThanhToanDot2 = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2') AS DATETIME), HanThanhToanDot2),
-                HanThanhToanDot2TD = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.HanThanhToanDot2TD') AS DATETIME), HanThanhToanDot2TD),
+                HanThanhToanDot2 = COALESCE(@HanThanhToanDot2Parsed, HanThanhToanDot2),
+                HanThanhToanDot2TD = COALESCE(@HanThanhToanDot2TDParsed, HanThanhToanDot2TD),
                 
                 DichVuTinhPhiPhuLuc = COALESCE(JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLuc'), DichVuTinhPhiPhuLuc),
                 DichVuTinhPhiPhuLucTD = COALESCE(JSON_VALUE(@JsonData, '$.DichVuTinhPhiPhuLucTD'), DichVuTinhPhiPhuLucTD),
@@ -778,7 +886,7 @@ BEGIN
                 JsonDichVu = COALESCE(JSON_QUERY(@JsonData, '$.JsonDichVu'), JsonDichVu),
                 JsonPhatSinh = COALESCE(JSON_QUERY(@JsonData, '$.JsonPhatSinh'), JsonPhatSinh),
                 
-                NgayToChucTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayToChucTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayToChuc') AS DATETIME)), NgayToChucTD),
+                NgayToChucTD = COALESCE(@NgayToChucTDParsed, NgayToChucTD),
                 ThoiGianIDTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.ThoiGianIDTD'), JSON_VALUE(@JsonData, '$.ThoiGianID')), ThoiGianIDTD),
                 NhamNgayTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.NhamNgayTD'), JSON_VALUE(@JsonData, '$.NhamNgay')), NhamNgayTD),
                 LoaiTiecIDTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.LoaiTiecIDTD'), JSON_VALUE(@JsonData, '$.LoaiTiecID')), LoaiTiecIDTD),
@@ -811,12 +919,12 @@ BEGIN
                 PhiBuBanTangTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.PhiBuBanTangTD') AS DECIMAL(18,2)), TRY_CAST(JSON_VALUE(@JsonData, '$.PhiBuBanTang') AS DECIMAL(18,2))), PhiBuBanTangTD),
                 MauNoTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.MauNoTD'), JSON_VALUE(@JsonData, '$.MauNo')), MauNoTD),
                 DiaDiemToChucTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.DiaDiemToChucTD'), JSON_VALUE(@JsonData, '$.DiaDiemToChuc')), DiaDiemToChucTD),
-                TuNgaySetupTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgaySetupTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgaySetup') AS DATETIME)), TuNgaySetupTD),
-                DenNgaySetupTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgaySetupTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgaySetup') AS DATETIME)), DenNgaySetupTD),
+                TuNgaySetupTD = COALESCE(@TuNgaySetupTDParsed, TuNgaySetupTD),
+                DenNgaySetupTD = COALESCE(@DenNgaySetupTDParsed, DenNgaySetupTD),
                 TuGioDenGioSetupTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.TuGioDenGioSetupTD'), JSON_VALUE(@JsonData, '$.TuGioDenGioSetup')), TuGioDenGioSetupTD),
                 DenGioSetupTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.DenGioSetupTD'), JSON_VALUE(@JsonData, '$.DenGioSetup')), DenGioSetupTD),
-                TuNgayThuDonTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgayThuDonTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.TuNgayThuDon') AS DATETIME)), TuNgayThuDonTD),
-                DenNgayThuDonTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgayThuDonTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.DenNgayThuDon') AS DATETIME)), DenNgayThuDonTD),
+                TuNgayThuDonTD = COALESCE(@TuNgayThuDonTDParsed, TuNgayThuDonTD),
+                DenNgayThuDonTD = COALESCE(@DenNgayThuDonTDParsed, DenNgayThuDonTD),
                 GioKetThucThuDonTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucThuDonTD'), JSON_VALUE(@JsonData, '$.GioKetThucThuDon')), GioKetThucThuDonTD),
                 DenGioKetThucThuDonTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.DenGioKetThucThuDonTD'), JSON_VALUE(@JsonData, '$.DenGioKetThucThuDon')), DenGioKetThucThuDonTD),
                 GioDienRaSuKienTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioDienRaSuKienTD'), JSON_VALUE(@JsonData, '$.GioDienRaSuKien')), GioDienRaSuKienTD),
@@ -825,9 +933,9 @@ BEGIN
                 GioBanGiaoSanhTiecCuoiTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioBanGiaoSanhTiecCuoiTD'), JSON_VALUE(@JsonData, '$.GioBanGiaoSanhTiecCuoi')), GioBanGiaoSanhTiecCuoiTD),
                 GioTraSanhTiecCuoiTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioTraSanhTiecCuoiTD'), JSON_VALUE(@JsonData, '$.GioTraSanhTiecCuoi')), GioTraSanhTiecCuoiTD),
                 GioKetThucSuKienTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioKetThucSuKienTD'), JSON_VALUE(@JsonData, '$.GioKetThucSuKien')), GioKetThucSuKienTD),
-                NgayBanGiaoSanhDVTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDVTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayBanGiaoSanhDV') AS DATETIME)), NgayBanGiaoSanhDVTD),
+                NgayBanGiaoSanhDVTD = COALESCE(@NgayBanGiaoSanhDVTDParsed, NgayBanGiaoSanhDVTD),
                 GioBanGiaoSanhDVTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioBanGiaoSanhDVTD'), JSON_VALUE(@JsonData, '$.GioBanGiaoSanhDV')), GioBanGiaoSanhDVTD),
-                NgayTraSanhDVTD = COALESCE(COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.NgayTraSanhDVTD') AS DATETIME), TRY_CAST(JSON_VALUE(@JsonData, '$.NgayTraSanhDV') AS DATETIME)), NgayTraSanhDVTD),
+                NgayTraSanhDVTD = COALESCE(@NgayTraSanhDVTDParsed, NgayTraSanhDVTD),
                 GioTraSanhDVTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GioTraSanhDVTD'), JSON_VALUE(@JsonData, '$.GioTraSanhDV')), GioTraSanhDVTD),
                 GoiThucDonIDTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.GoiThucDonIDTD'), JSON_VALUE(@JsonData, '$.GoiThucDonID')), GoiThucDonIDTD),
                 TenDotThanhToanTD = COALESCE(COALESCE(JSON_VALUE(@JsonData, '$.TenDotThanhToanTD'), JSON_VALUE(@JsonData, '$.TenDotThanhToan')), TenDotThanhToanTD)
@@ -912,10 +1020,15 @@ BEGIN
         END
 
         -- Không cho xóa phụ lục đã duyệt/đã ký
+        -- Tách @Ids thành bảng tạm (tương thích SQL Server 2008+, không cần STRING_SPLIT)
+        DECLARE @XmlIds XML = CAST('<i>' + REPLACE(@Ids, ',', '</i><i>') + '</i>' AS XML);
+
         IF EXISTS (
             SELECT 1 
             FROM tbmk_Thaydoi
-            WHERE Sothaydoi IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, ','))
+            WHERE Sothaydoi IN (
+                SELECT LTRIM(RTRIM(n.value('.', 'NVARCHAR(100)'))) FROM @XmlIds.nodes('/i') AS T(n)
+            )
               AND (Status IN ('SIGNED', 'APPROVED') OR IsKetthuc = 1)
         )
         BEGIN
@@ -929,7 +1042,9 @@ BEGIN
         SET IsDeleted = 1,
             DeletedAt = GETDATE(),
             DeletedBy = ISNULL(@UserName, 'System')
-        WHERE Sothaydoi IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@Ids, ','));
+        WHERE Sothaydoi IN (
+            SELECT LTRIM(RTRIM(n.value('.', 'NVARCHAR(100)'))) FROM @XmlIds.nodes('/i') AS T(n)
+        );
 
         DECLARE @RowsAffected INT = @@ROWCOUNT;
 
@@ -1149,7 +1264,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF @Sothaydoi = '' OR @Sothaydoi = 'NULL' SET @Sothaydoi = NULL;
+    IF @Sothaydoi = '' OR @Sothaydoi = 'NULL' OR @Sothaydoi = '{Sothaydoi}' SET @Sothaydoi = NULL;
     DECLARE @SearchStr VARCHAR(50) = COALESCE(@Sothaydoi, @Keyword);
 
     SELECT 
@@ -1491,11 +1606,11 @@ SET CaptionVN = N'Hạn Thanh Toán Đợt 2', FormatID = 'dt', ShowInAdd = 1, S
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'HanThanhToanDot2';
 
 UPDATE ff
-SET CaptionVN = N'Bên A - Chức Vụ Người Ký', FormatID = 't', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 0, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 20
+SET CaptionVN = N'Bên A - Chức Vụ Người Ký', FormatID = 't', ShowInAdd = 0, ShowInEdit = 0, ShowInGrid = 0, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 20
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'BenAChucVuDaiDien';
 
 UPDATE ff
-SET CaptionVN = N'Trạng Thái Phụ Lục', FormatID = 'sl', DataSource = N'STATIC:DRAFT|Bản nháp,SIGNED|Đã ký (Đang chờ duyệt),APPROVED|Đã duyệt (Sync hợp đồng),CANCELLED|Đã hủy', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 21
+SET CaptionVN = N'Trạng Thái Phụ Lục', FormatID = 'sl', DataSource = N'STATIC:DRAFT|Đơn nháp,SIGNED|Đã ký (Đang chờ duyệt),APPROVED|Đã duyệt (Sync hợp đồng),CANCELLED|Đã hủy', ShowInAdd = 1, ShowInEdit = 1, ShowInGrid = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormPosition = '6', OrderNo = 21
 FROM SY_FormatFields ff INNER JOIN @Forms f ON ff.FormName = f.FormName WHERE ff.FieldName = 'Status';
 
 UPDATE ff
@@ -1522,6 +1637,15 @@ FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f
 INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID)
 SELECT f.FormName, 'JsonPhatSinh', N'Phát sinh', 1, 1, 0, 0, 203, '6', 't'
 FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f.FormName AND FieldName = 'JsonPhatSinh');
+
+-- Đảm bảo có từ điển để dịch cột Sobiennhan và Makh trên popup chọn Hợp đồng
+INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID, ShowInGrid)
+SELECT f.FormName, 'Sobiennhan', N'Số Biên Nhận', 0, 0, 0, 0, 99, '6', 't', 0
+FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f.FormName AND FieldName = 'Sobiennhan');
+
+INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID, ShowInGrid)
+SELECT f.FormName, 'Makh', N'Mã Khách Hàng', 0, 0, 0, 0, 100, '6', 't', 0
+FROM @Forms f WHERE NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = f.FormName AND FieldName = 'Makh');
 GO
 
 

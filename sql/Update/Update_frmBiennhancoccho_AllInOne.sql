@@ -317,8 +317,8 @@ CREATE PROCEDURE [dbo].[API_LuuPhieuCoc]
     @DienThoaiDaiDien NVARCHAR(50) = NULL,
     @Mail NVARCHAR(100) = NULL,
     
-    @DocumentDate DATETIME = NULL,
-    @NgayToChuc DATETIME = NULL,
+    @DocumentDate NVARCHAR(100) = NULL,
+    @NgayToChuc NVARCHAR(100) = NULL,
     @Nhamngay NVARCHAR(100) = NULL,
     @Loaitiecid VARCHAR(50) = NULL,
     @Thoigianid VARCHAR(50) = NULL,
@@ -347,6 +347,38 @@ AS
 BEGIN
     SET NOCOUNT ON;
     
+    DECLARE @DocumentDateParsed DATETIME = NULL;
+    DECLARE @NgayToChucParsed DATETIME = NULL;
+
+    -- Parse @DocumentDate từ các định dạng phổ biến
+    IF (@DocumentDate IS NOT NULL AND LTRIM(RTRIM(@DocumentDate)) <> '')
+    BEGIN
+        SET @DocumentDateParsed = COALESCE(
+            TRY_CAST(@DocumentDate AS DATETIME),
+            TRY_CONVERT(DATETIME, @DocumentDate, 126),
+            TRY_CONVERT(DATETIME, @DocumentDate, 120),
+            TRY_CONVERT(DATETIME, @DocumentDate, 23),
+            TRY_CONVERT(DATETIME, @DocumentDate, 103),
+            TRY_CONVERT(DATETIME, @DocumentDate, 105),
+            TRY_CONVERT(DATETIME, @DocumentDate, 111),
+            TRY_CONVERT(DATETIME, @DocumentDate, 101)
+        );
+    END
+
+    -- Parse @Ngaytochuc từ các định dạng phổ biến
+    IF (@Ngaytochuc IS NOT NULL AND LTRIM(RTRIM(@Ngaytochuc)) <> '')
+    BEGIN
+        SET @NgayToChucParsed = COALESCE(
+            TRY_CAST(@Ngaytochuc AS DATETIME),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 126),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 120),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 23),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 103),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 105),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 111),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 101)
+        );
+    END
 
     
     BEGIN TRY
@@ -427,7 +459,7 @@ BEGIN
         -- ==========================================================
         
         -- Kiểm tra bắt buộc nhập các trường thông tin quan trọng
-        IF @Ngaytochuc IS NULL OR @Ngaytochuc <= '1900-01-01'
+        IF @NgayToChucParsed IS NULL OR @NgayToChucParsed <= '1900-01-01'
         BEGIN
             SELECT 0 AS [Success], N'Lỗi: Vui lòng chọn Ngày tổ chức tiệc!' AS [Message], NULL AS [DocumentID], NULL AS [Makh];
             RETURN;
@@ -467,7 +499,7 @@ BEGIN
                 SELECT 1 
                 FROM tbmk_Biennhancoccho
                 WHERE Makh = @CheckMakh
-                  AND Ngaytochuc = @Ngaytochuc
+                  AND Ngaytochuc = @NgayToChucParsed
                   AND ISNULL(IsHuy, 0) = 0
                   AND ISNULL(IsKetthuc, 0) = 0
                   AND DocumentID != ISNULL(@DocumentID, '')
@@ -487,7 +519,7 @@ BEGIN
                 FROM tbmk_Hopdong h
                 INNER JOIN tbmk_Hopdongsanhtiec hs ON h.Sohopdong = hs.Sohopdong
                 INNER JOIN OPENJSON(@JsonSanhTiec) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
-                WHERE h.Ngaytochuc = @Ngaytochuc 
+                WHERE h.Ngaytochuc = @NgayToChucParsed 
                   AND h.Thoigianid = @Thoigianid
                   AND ISNULL(h.IsHuy, 0) = 0
                   
@@ -498,7 +530,7 @@ BEGIN
                 FROM tbmk_Biennhancoccho b
                 INNER JOIN tbmk_Biennhancocchosanhtiec bs ON b.DocumentID = bs.DocumentID
                 INNER JOIN OPENJSON(@JsonSanhTiec) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
-                WHERE b.Ngaytochuc = @Ngaytochuc 
+                WHERE b.Ngaytochuc = @NgayToChucParsed 
                   AND b.Thoigianid = @Thoigianid
                   AND ISNULL(b.IsHuy, 0) = 0
                   AND ISNULL(b.IsKetthuc, 0) = 0
@@ -606,8 +638,8 @@ BEGIN
                 TaiKhoanNo, TaiKhoanCo, Kemtheo, Lydo, HinhThuc
             )
             VALUES (
-                @DocumentID, @SoBN, ISNULL(@DocumentDate, @Now), @Makh, @Solan, @Manv, @Loaitiecid,
-                @Ngaytochuc, @Nhamngay, @TongTienDecimal, @Tongsoban, @SobanManchinhthuc, @SobanManduphong, @SobanChaychinhthuc, @SobanChayduphong,
+                @DocumentID, @SoBN, ISNULL(@DocumentDateParsed, @Now), @Makh, @Solan, @Manv, @Loaitiecid,
+                @NgayToChucParsed, @Nhamngay, @TongTienDecimal, @Tongsoban, @SobanManchinhthuc, @SobanManduphong, @SobanChaychinhthuc, @SobanChayduphong,
                 @Thoigianid, @Ghichu, 0, 0, ISNULL(@GoiThucDonID, ''), @Now, @UserCreate,
                 @TaiKhoanNo, @TaiKhoanCo, @Kemtheo, @Lydo, @HinhThuc
             );
@@ -631,7 +663,7 @@ BEGIN
                 Makh = @Makh,
                 Solan = @Solan,
                 Loaitiecid = @Loaitiecid,
-                Ngaytochuc = @Ngaytochuc,
+                Ngaytochuc = @NgayToChucParsed,
                 Nhamngay = @Nhamngay,
                 Tongtien = @TongTienDecimal,
                 Tongsoban = @Tongsoban,

@@ -108,7 +108,8 @@ GO
 CREATE PROCEDURE [dbo].[API_DanhSachHopDong]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
-    @Keyword NVARCHAR(100) = NULL
+    @Keyword NVARCHAR(100) = NULL,
+    @Sohopdong VARCHAR(50) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -121,6 +122,9 @@ BEGIN
         -- Bộ lọc theo Khoảng ngày (Dựa theo NgayToChuc)
         (@TuNgay IS NULL OR CAST(@TuNgay AS DATE) <= '1900-01-01' OR v.NgayToChuc >= @TuNgay)
         AND (@DenNgay IS NULL OR CAST(@DenNgay AS DATE) <= '1900-01-01' OR v.NgayToChuc <= @DenNgay)
+        
+        -- Bộ lọc theo Số hợp đồng
+        AND (@Sohopdong IS NULL OR @Sohopdong = '' OR v.Sohopdong = @Sohopdong)
         
         -- Bộ lọc Keyword tìm kiếm tương đđi
         AND (
@@ -218,35 +222,59 @@ BEGIN
 
     IF (@Ngayhopdong IS NOT NULL)
     BEGIN
-        SET @NgayHopDongParsed = TRY_CAST(@Ngayhopdong AS DATETIME);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 103);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 105);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 120);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 111);
-        IF (@NgayHopDongParsed IS NULL) SET @NgayHopDongParsed = TRY_CONVERT(DATETIME, @Ngayhopdong, 101);
+        SET @NgayHopDongParsed = COALESCE(
+            TRY_CAST(@Ngayhopdong AS DATETIME),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 126),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 120),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 23),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 103),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 105),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 111),
+            TRY_CONVERT(DATETIME, @Ngayhopdong, 101)
+        );
     END
     IF (@Ngaytochuc IS NOT NULL)
     BEGIN
-        SET @NgayToChucParsed = TRY_CAST(@Ngaytochuc AS DATETIME);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 103);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 105);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 120);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 111);
-        IF (@NgayToChucParsed IS NULL) SET @NgayToChucParsed = TRY_CONVERT(DATETIME, @Ngaytochuc, 101);
+        SET @NgayToChucParsed = COALESCE(
+            TRY_CAST(@Ngaytochuc AS DATETIME),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 126),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 120),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 23),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 103),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 105),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 111),
+            TRY_CONVERT(DATETIME, @Ngaytochuc, 101)
+        );
     END
     
     DECLARE @TuNgaySetupParsed DATETIME = NULL;
     IF (@TuNgaySetup IS NOT NULL)
     BEGIN
-        SET @TuNgaySetupParsed = TRY_CAST(@TuNgaySetup AS DATETIME);
-        IF (@TuNgaySetupParsed IS NULL) SET @TuNgaySetupParsed = TRY_CONVERT(DATETIME, @TuNgaySetup, 103);
+        SET @TuNgaySetupParsed = COALESCE(
+            TRY_CAST(@TuNgaySetup AS DATETIME),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 126),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 120),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 23),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 103),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 105),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 111),
+            TRY_CONVERT(DATETIME, @TuNgaySetup, 101)
+        );
     END
     
     DECLARE @NgayTraSanhDVParsed DATETIME = NULL;
     IF (@NgayTraSanhDV IS NOT NULL)
     BEGIN
-        SET @NgayTraSanhDVParsed = TRY_CAST(@NgayTraSanhDV AS DATETIME);
-        IF (@NgayTraSanhDVParsed IS NULL) SET @NgayTraSanhDVParsed = TRY_CONVERT(DATETIME, @NgayTraSanhDV, 103);
+        SET @NgayTraSanhDVParsed = COALESCE(
+            TRY_CAST(@NgayTraSanhDV AS DATETIME),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 126),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 120),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 23),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 103),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 105),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 111),
+            TRY_CONVERT(DATETIME, @NgayTraSanhDV, 101)
+        );
     END
 
 
@@ -530,6 +558,56 @@ BEGIN
                 IsKhuyenmai BIT, Ghichudichvu NVARCHAR(500)
             ) j;
         END
+        -- Tự động tính toán và cập nhật các trường tổng tiền vào bảng mẹ tbmk_Hopdong
+        DECLARE @RawSubTotal DECIMAL(18,2) = 0;
+        DECLARE @CalcChuaVAT DECIMAL(18,2) = 0;
+        DECLARE @CalcPhiPhucVu DECIMAL(18,2) = 0;
+        DECLARE @CalcTienThueVAT DECIMAL(18,2) = 0;
+        DECLARE @PTThueVATVal INT = 0;
+        DECLARE @PhiPhucVuVal INT = 0;
+
+        SELECT 
+            @PTThueVATVal = CAST(ISNULL(PTThueVAT, 0) AS INT),
+            @PhiPhucVuVal = CAST(ISNULL(PhiPhucVu, 0) AS INT)
+        FROM tbmk_Hopdong 
+        WHERE Sohopdong = @Sohopdong;
+
+        -- 1. Tính tổng tiền trước phí & thuế từ các bảng chi tiết
+        SELECT @RawSubTotal = (
+            ISNULL((SELECT SUM(ISNULL(td.Dongia, 0)) FROM tbmk_Hopdongthucdonman td WHERE td.Sohopdong = @Sohopdong), 0) 
+            * (ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanManduphong, 0))
+            + ISNULL((SELECT SUM(ISNULL(td.Dongia, 0)) FROM tbmk_Hopdongthucdonchay td WHERE td.Sohopdong = @Sohopdong), 0) 
+            * (ISNULL(h.SobanChaychinhthuc, 0) + ISNULL(h.SobanChayduphong, 0))
+            + ISNULL((SELECT SUM(ISNULL(tu.Sotien, 0)) FROM tbmk_Hopdongthucuong tu WHERE tu.Sohopdong = @Sohopdong), 0)
+            + ISNULL((SELECT SUM(ISNULL(dv.Sotien, 0)) FROM tbmk_Hopdongdichvu dv WHERE dv.Sohopdong = @Sohopdong), 0)
+            + ISNULL((SELECT SUM(ISNULL(ps.Soluong * ps.Dongia, 0)) FROM tbmk_HopdongPhatSinh ps WHERE ps.Sohopdong = @Sohopdong), 0)
+        )
+        FROM tbmk_Hopdong h
+        WHERE h.Sohopdong = @Sohopdong;
+
+        -- 2. Tính toán phân bổ
+        IF @RawSubTotal > 0
+        BEGIN
+            SET @CalcChuaVAT = @RawSubTotal * (1 + @PhiPhucVuVal / 100.0);
+            SET @CalcPhiPhucVu = @RawSubTotal * (@PhiPhucVuVal / 100.0);
+            SET @CalcTienThueVAT = @CalcChuaVAT * (@PTThueVATVal / 100.0);
+            SET @TongtienhopdongVal = @CalcChuaVAT + @CalcTienThueVAT;
+        END
+        ELSE
+        BEGIN
+            SET @CalcChuaVAT = @TongtienhopdongVal / (1 + @PTThueVATVal / 100.0);
+            SET @CalcPhiPhucVu = @CalcChuaVAT * (@PhiPhucVuVal / (100.0 + @PhiPhucVuVal));
+            SET @CalcTienThueVAT = @TongtienhopdongVal - @CalcChuaVAT;
+        END
+
+        -- 3. Cập nhật vào tbmk_Hopdong
+        UPDATE tbmk_Hopdong 
+        SET 
+            Tongtienhopdong = @TongtienhopdongVal,
+            TongTienHopDongChuaVAT = @CalcChuaVAT,
+            TongTienPhiPhucVu = @CalcPhiPhucVu,
+            TienThueVAT = @CalcTienThueVAT
+        WHERE Sohopdong = @Sohopdong;
 
         COMMIT TRANSACTION;
         SELECT 1 AS [Success], N'Lưu Hợp đồng Tiệc Cưới thành công' AS [Message], @Sohopdong AS [Sohopdong], @Makh AS [Makh];
@@ -708,7 +786,7 @@ SELECT
     -- Thông tin Bên A (có _ cho hop_dong.docx cũ)
     ISNULL(NULLIF((SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien'), ''), N'Nguyễn Văn A') AS [BenANguoiDaiDien],
     ISNULL(NULLIF((SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNNguoiDaiDien'), ''), N'Nguyễn Văn A') AS [BenADaiDien],
-    ISNULL(NULLIF((SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien'), ''), N'Giám đốc') AS [BenAChucVu],
+    ISNULL(NULLIF(h.BenAChucVuDaiDien, ''), ISNULL((SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien'), N'Giám đốc')) AS [BenAChucVu],
     ISNULL(
         (SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv OR nv.USERNAME = h.Manv),
         ISNULL(
@@ -930,13 +1008,14 @@ SELECT
 
 
     -- Các biến tính tổng tiền
-    FORMAT(ISNULL(h.TongTienHopDongChuaVAT, 0) - ISNULL(h.TongTienPhiPhucVu, 0), 'N0', 'vi-VN') AS [TongThanhTien],
+    FORMAT(c_chuavat.CalcChuaVAT - c_phiphucvu.CalcPhiPhucVu, 'N0', 'vi-VN') AS [TongThanhTien],
     CAST(ISNULL(h.PhiPhucVu, 0) AS VARCHAR) + '%' AS [MucPhiPhucVu],
-    FORMAT(ISNULL(h.TongTienPhiPhucVu, 0), 'N0', 'vi-VN') AS [PhiPhucVu],
-    FORMAT(ISNULL(h.TongTienHopDongChuaVAT, 0), 'N0', 'vi-VN') AS [TongCongChuaVAT],
-    CASE WHEN h.PTThueVAT = 8 THEN FORMAT(ISNULL(h.TienThueVAT, 0), 'N0', 'vi-VN') ELSE '0' END AS [VAT8],
-    CASE WHEN h.PTThueVAT = 10 THEN FORMAT(ISNULL(h.TienThueVAT, 0), 'N0', 'vi-VN') ELSE '0' END AS [VAT10],
+    FORMAT(c_phiphucvu.CalcPhiPhucVu, 'N0', 'vi-VN') AS [PhiPhucVu],
+    FORMAT(c_chuavat.CalcChuaVAT, 'N0', 'vi-VN') AS [TongCongChuaVAT],
+    FORMAT(CASE WHEN ISNULL(h.PTThueVAT, 0) = 8 OR (ISNULL(h.PTThueVAT, 0) = 0 AND c_vat.CalcTienThueVAT > 0 AND ABS((c_vat.CalcTienThueVAT * 100.0 / NULLIF(c_chuavat.CalcChuaVAT, 0)) - 8) < 1.0) THEN c_vat.CalcTienThueVAT ELSE 0 END, 'N0', 'vi-VN') AS [VAT8],
+    FORMAT(CASE WHEN ISNULL(h.PTThueVAT, 0) = 10 OR (ISNULL(h.PTThueVAT, 0) = 0 AND c_vat.CalcTienThueVAT > 0 AND NOT (ABS((c_vat.CalcTienThueVAT * 100.0 / NULLIF(c_chuavat.CalcChuaVAT, 0)) - 8) < 1.0)) THEN c_vat.CalcTienThueVAT ELSE 0 END, 'N0', 'vi-VN') AS [VAT10],
     FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongTienFormat],
+
 
     ISNULL(h.DieuKhoanBoSung, N'- Áp dụng thực đơn tự chọn theo bảng giá lẻ (chưa bao gồm phí phục vụ).
 - Áp dụng chương trình đặt 10 bàn tặng 01 bàn (từ 20 bàn trở lên)
@@ -986,7 +1065,7 @@ Tất cả các chương trình khuyến mãi và ưu đãi trên không quy đ�
 
     -- Các biến tùy chỉnh ánh xạ trực tiếp đến các file Word mẫu (tránh lệch chữ hoa/thường hoặc thiếu trường)
     (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [TiecSanhTiec],
-    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVuDaiDien],
+    ISNULL(NULLIF(h.BenAChucVuDaiDien, ''), ISNULL((SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien'), N'Giám đốc')) AS [BenAChucVuDaiDien],
     k.Mail AS [BenBEmail],
     [dbo].[fn_DocTienBangChu](ISNULL(h.Sotiencoccho, 0)) AS [Dot1BangChu],
     ISNULL((SELECT TOP 1 s.SLBanMin * ISNULL(h.SoNguoiTrenBan, 10) FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong), 0) AS [KhachToiThieu],
@@ -1020,6 +1099,45 @@ Tất cả các chương trình khuyến mãi và ưu đãi trên không quy đ�
 
 FROM tbmk_Hopdong h
 LEFT JOIN dmkhachhang k ON h.Makh = k.Makh
+CROSS APPLY (
+    SELECT ISNULL(NULLIF(h.TongTienHopDongChuaVAT, 0), 0) AS DbChuaVAT
+) c_db
+CROSS APPLY (
+    SELECT (
+        -- Món mặn
+        ISNULL((SELECT SUM(ISNULL(td.Dongia, 0)) FROM tbmk_Hopdongthucdonman td WHERE td.Sohopdong = h.Sohopdong), 0) 
+        * (ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanManduphong, 0))
+        -- Món chay
+        + ISNULL((SELECT SUM(ISNULL(td.Dongia, 0)) FROM tbmk_Hopdongthucdonchay td WHERE td.Sohopdong = h.Sohopdong), 0) 
+        * (ISNULL(h.SobanChaychinhthuc, 0) + ISNULL(h.SobanChayduphong, 0))
+        -- Thức uống
+        + ISNULL((SELECT SUM(ISNULL(tu.Sotien, 0)) FROM tbmk_Hopdongthucuong tu WHERE tu.Sohopdong = h.Sohopdong), 0)
+        -- Dịch vụ
+        + ISNULL((SELECT SUM(ISNULL(dv.Sotien, 0)) FROM tbmk_Hopdongdichvu dv WHERE dv.Sohopdong = h.Sohopdong), 0)
+        -- Phát sinh
+        + ISNULL((SELECT SUM(ISNULL(ps.Soluong * ps.Dongia, 0)) FROM tbmk_HopdongPhatSinh ps WHERE ps.Sohopdong = h.Sohopdong), 0)
+    ) AS RawSubTotal
+) c_raw
+CROSS APPLY (
+    SELECT CASE 
+        WHEN c_raw.RawSubTotal > 0 THEN c_raw.RawSubTotal * (1 + ISNULL(h.PhiPhucVu, 0) / 100.0)
+        WHEN c_db.DbChuaVAT > 0 THEN c_db.DbChuaVAT
+        ELSE h.Tongtienhopdong / (1 + ISNULL(h.PTThueVAT, 0) / 100.0)
+    END AS CalcChuaVAT
+) c_chuavat
+CROSS APPLY (
+    SELECT CASE 
+        WHEN c_raw.RawSubTotal > 0 THEN c_raw.RawSubTotal * (ISNULL(h.PhiPhucVu, 0) / 100.0)
+        WHEN c_db.DbChuaVAT > 0 THEN ISNULL(h.TongTienPhiPhucVu, 0)
+        ELSE (h.Tongtienhopdong / (1 + ISNULL(h.PTThueVAT, 0) / 100.0)) * (ISNULL(h.PhiPhucVu, 0) / (100.0 + ISNULL(h.PhiPhucVu, 0)))
+    END AS CalcPhiPhucVu
+) c_phiphucvu
+CROSS APPLY (
+    SELECT CASE 
+        WHEN ISNULL(h.TienThueVAT, 0) > 0 THEN h.TienThueVAT
+        ELSE ISNULL(h.Tongtienhopdong, 0) - c_chuavat.CalcChuaVAT
+    END AS CalcTienThueVAT
+) c_vat
 WHERE ISNULL(h.IsDeleted, 0) = 0;
 GO
 

@@ -238,6 +238,11 @@ window.DynamicFormEngine = (function () {
     MODULE_CONFIG = config;
     currentFormName = config.FormName;
 
+    // Hiển thị skeleton loader ban đầu trong lúc tải cấu hình form (metadata)
+    container.innerHTML = typeof UISkeleton !== 'undefined'
+      ? UISkeleton.createHTML({ type: 'table', rows: 8, cols: 8 })
+      : '<div class="p-4 text-center" style="color:var(--color-text-secondary);">Đang tải dữ liệu...</div>';
+
     // 2. Khôi phục state của module mới (nếu đã từng vào trước đó)
     var savedState = moduleStates[currentFormName];
     if (savedState) {
@@ -336,7 +341,9 @@ window.DynamicFormEngine = (function () {
             AlertSaveFailed: 'Lưu dữ liệu thất bại',
             AlertDeleteFailed: 'Xóa dữ liệu thất bại',
             AlertNetworkError: 'Lỗi kết nối mạng',
-            ModalWidth: '850px'
+            ModalWidth: '850px',
+            TextLoading: 'Đang tải dữ liệu...',
+            TextLoadingError: 'Lỗi tải dữ liệu: '
           });
         }
 
@@ -347,8 +354,12 @@ window.DynamicFormEngine = (function () {
 
           // Xây dựng Custom Renderers Động từ cấu hình DB (tránh đè logic JSON của UITable)
           if (item.renderRule && item.renderRule.toLowerCase() !== 'js' && item.renderRule.toLowerCase() !== 'json') {
+            var outerRule = item.renderRule.toLowerCase();
+            var outerNameLower = (item.name || '').toLowerCase();
+
             globalRenderers[item.name] = function (v) {
-              var rule = item.renderRule.toLowerCase();
+              var rule = outerRule;
+              var nameLower = outerNameLower;
 
               // Các rule là boolean/switch
               if (rule === 'sw' || rule === 'boolean') {
@@ -356,6 +367,38 @@ window.DynamicFormEngine = (function () {
                 return isChecked
                   ? '<span style="color:var(--color-success);"><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle;">check_circle</span></span>'
                   : '<span style="color:var(--color-text-tertiary);">-</span>';
+              }
+
+              // Danh sách chọn tĩnh (STATIC) -> Hiển thị Tên thay vì Mã trên Grid
+              var ds = item.dataSource || item.DataSource || '';
+              if (rule === 'sl' && ds && ds.toUpperCase().startsWith('STATIC:')) {
+                var staticStr = ds.substring(7);
+                var staticData = staticStr.split(',').map(function (s) {
+                  var parts = s.split('|');
+                  return { value: parts[0], text: parts[1] || parts[0] };
+                });
+                var matched = staticData.find(function (x) { return String(x.value) === String(v); });
+                if (matched) return matched.text;
+              }
+
+              // Định dạng tiền / số Việt Nam (dấu chấm phân tách, hover hiện chữ tiếng Việt có dấu)
+              if (rule === 'mn' || rule === 'n') {
+                if (v === null || v === undefined || v === '') return '';
+                var num = Number(v);
+                if (isNaN(num)) return v;
+                var formatted = typeof FormatUtils !== 'undefined' ? FormatUtils.number(num) : num.toLocaleString('vi-VN');
+                var words = typeof FormatUtils !== 'undefined' && typeof FormatUtils.docSoTienVN === 'function'
+                  ? FormatUtils.docSoTienVN(num)
+                  : (typeof UIControls !== 'undefined' && typeof UIControls.docSoTienVN === 'function' ? UIControls.docSoTienVN(num) : '');
+                if (words) {
+                  words = words.charAt(0).toUpperCase() + words.slice(1);
+                  // Bỏ chữ "đồng" nếu là số thường (rule === 'n')
+                  if (rule === 'n' && words.endsWith(' đồng')) {
+                    words = words.substring(0, words.length - 5);
+                  }
+                  return '<span title="' + words + '">' + formatted + '</span>';
+                }
+                return '<span>' + formatted + '</span>';
               }
 
               if (!v || v === '0' || v === 0) return (rule.indexOf('badge:') === 0 || rule === 'bg' || rule === 'br' || rule === 'bw') ? '-' : v;
@@ -379,6 +422,7 @@ window.DynamicFormEngine = (function () {
               }
               return v;
             };
+            globalRenderers[item.name].renderRule = outerRule;
           }
 
           // Xây Schema cho Form (Lưu toàn bộ để lấy Khóa chính)
@@ -676,7 +720,30 @@ window.DynamicFormEngine = (function () {
       savedScrollY = window.scrollY;
       existingTable.showLoading(MODULE_CONFIG.TextLoading);
     } else if (gridContainer) {
-      gridContainer.innerHTML = '<div class="p-4 text-center" style="color:var(--color-text-secondary);">' + MODULE_CONFIG.TextLoading + '</div>';
+      if (typeof UISkeleton !== 'undefined') {
+        var skeletonCols = [];
+        if (Array.isArray(globalFormSchema) && globalFormSchema.length > 0) {
+          globalFormSchema.forEach(function (f) {
+            var pos = String(f.position || '').trim();
+            var isGridPos = (pos === 'grid' || (!isNaN(pos) && pos !== ''));
+            if (isGridPos && f.showInGrid !== false && String(f.showInGrid) !== '0' && pos !== 'hidden') {
+              skeletonCols.push({ width: '60px' });
+            }
+          });
+        }
+        if (skeletonCols.length > 8) {
+          skeletonCols = skeletonCols.slice(0, 8);
+        } else if (skeletonCols.length === 0) {
+          skeletonCols = 8;
+        }
+        gridContainer.innerHTML = UISkeleton.createTableHTML({
+          rows: 8,
+          cols: skeletonCols,
+          hasHeader: true
+        });
+      } else {
+        gridContainer.innerHTML = '<div class="p-4 text-center" style="color:var(--color-text-secondary);">' + MODULE_CONFIG.TextLoading + '</div>';
+      }
     }
 
     if (MODULE_CONFIG.ApiSearch) {
@@ -957,7 +1024,7 @@ window.DynamicFormEngine = (function () {
 
     var wrapper = actualToolbar.querySelector('.btn-scroll-wrapper');
 
-    var updateActionbarArrows = function() {
+    var updateActionbarArrows = function () {
       if (!wrapper) return;
       var scrollLeftBtn = actualToolbar.querySelector('.actionbar-scroll-left');
       var scrollRightBtn = actualToolbar.querySelector('.actionbar-scroll-right');
@@ -1491,7 +1558,7 @@ window.DynamicFormEngine = (function () {
                       if (listParam && !formIdParam) targetFormName = listParam;
                     }
                     if (formIdParam) targetFormName = formIdParam;
-                    
+
                     if (typeof window.openQuickAddModal === 'function') {
                       window.openQuickAddModal(targetFormName, function (newRecord) {
                         if (newRecord) {
@@ -1519,16 +1586,16 @@ window.DynamicFormEngine = (function () {
                               var labelRegex = /name|tên|ten|label|desc|title/i;
                               var displayKey = keys.find(function (k) { return labelRegex.test(k); });
                               var localFilterIdx = displayKey ? keys.indexOf(displayKey) : (keys.length > 1 ? 1 : 0);
-                              
+
                               dataList.forEach(function (d) {
                                 var rd = [];
                                 keys.forEach(function (k) { rd.push(d[k] !== null && d[k] !== undefined ? d[k] : ''); });
                                 updatedComboData.push(rd);
                               });
-                              
+
                               comboData.length = 0;
                               Array.prototype.push.apply(comboData, updatedComboData);
-                              
+
                               var newlyAddedKey = Object.keys(newRecord)[0];
                               var matched = comboData.find(function (r) { return String(r[0]) === String(newRecord[newlyAddedKey]); });
                               if (matched) {
@@ -2119,7 +2186,20 @@ window.DynamicFormEngine = (function () {
                     // Dùng từ điển hiện tại của form để dịch tiêu đề lưới (nếu có), CHỈ HIỆN MAX CỘT ĐƯỢC CHỈ ĐỊNH (mặc định 4)
                     var displayKeys = keys.slice(0, maxCols);
                     headers = displayKeys.map(function (k) {
-                      return (typeof currentDictionary !== 'undefined' && currentDictionary[k]) ? currentDictionary[k].CaptionVN : k;
+                      var keyLower = k.toLowerCase();
+                      if (typeof globalDictionary !== 'undefined') {
+                        var foundKey = Object.keys(globalDictionary).find(function(gk) {
+                          return gk.toLowerCase() === keyLower;
+                        });
+                        if (foundKey) {
+                          var lbl = globalDictionary[foundKey];
+                          if (lbl) {
+                            if (typeof lbl === 'object' && lbl.CaptionVN) return lbl.CaptionVN;
+                            if (typeof lbl === 'string') return lbl;
+                          }
+                        }
+                      }
+                      return k;
                     });
                     var labelRegex = /name|tên|ten|label|desc|title/i;
                     var displayKey = displayKeys.find(function (k) { return labelRegex.test(k); });
@@ -2159,7 +2239,7 @@ window.DynamicFormEngine = (function () {
                   if (listParam && !formIdParam) targetFormName = listParam;
                 }
                 if (formIdParam) targetFormName = formIdParam;
-                
+
                 if (typeof window.openQuickAddModal === 'function') {
                   window.openQuickAddModal(targetFormName, function (newRecord) {
                     if (newRecord) {
@@ -2608,8 +2688,15 @@ window.DynamicFormEngine = (function () {
         var val = el.value.trim();
         if (fieldName) {
           var field = globalFormSchema.find(function (f) { return f.name === fieldName; });
-          if (field && (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn')) {
-            val = val.replace(/\D/g, '');
+          if (field) {
+            var rule = (field.renderRule || '').toLowerCase().trim();
+            if (rule === 'money' || rule === 'm' || rule === 'mn') {
+              val = val.replace(/\D/g, '');
+            } else if (rule === 'dt' || rule === 'date') {
+              val = (typeof FormatUtils !== 'undefined' && typeof FormatUtils.formatISO === 'function')
+                ? FormatUtils.formatISO(val)
+                : ((/^\d{4}-\d{2}-\d{2}$/.test(val)) ? val + 'T00:00:00' : val);
+            }
           }
           payload[fieldName] = val;
           if (val && fieldName !== MODULE_CONFIG.PrimaryKey && fieldName !== 'OrderNo') {
@@ -2675,7 +2762,6 @@ window.DynamicFormEngine = (function () {
       Alert.error(MODULE_CONFIG.AlertTitleError, MODULE_CONFIG.AlertApiMissing);
       return;
     }
-
     // 1. Quét Form: Thu thập các giá trị người dùng vừa gõ vào
     var formInputData = {};
     var inputs = body.querySelectorAll('input, select, textarea');
@@ -2683,8 +2769,15 @@ window.DynamicFormEngine = (function () {
       if (el.name) {
         var val = el.value.trim();
         var field = globalFormSchema.find(function (f) { return f.name === el.name; });
-        if (field && (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn')) {
-          val = val.replace(/\D/g, '');
+        if (field) {
+          var rule = (field.renderRule || '').toLowerCase().trim();
+          if (rule === 'money' || rule === 'm' || rule === 'mn') {
+            val = val.replace(/\D/g, '');
+          } else if (rule === 'dt' || rule === 'date') {
+            val = (typeof FormatUtils !== 'undefined' && typeof FormatUtils.formatISO === 'function')
+              ? FormatUtils.formatISO(val)
+              : ((/^\d{4}-\d{2}-\d{2}$/.test(val)) ? val + 'T00:00:00' : val);
+          }
         }
         formInputData[el.name] = val;
       }
@@ -2844,29 +2937,29 @@ window.DynamicFormEngine = (function () {
   window.openQuickAddModal = function (formName, onSaved) {
     var dictionaryUrl = '/api/API_Gateway_Router';
     var detailUrl = '/api/API_LayCacTruongGiaoDien';
-    
+
     var dictPayload = { List: 'SY_FrmLstTbl', Func: 'View', UserName: 'Admin', Page: 1, Limit: 1000 };
     var schemaPayload = { FormName: formName };
-    
+
     Promise.all([
       ApiClient.post(dictionaryUrl, dictPayload).catch(function () { return { records: [] }; }),
       ApiClient.post(detailUrl, schemaPayload).catch(function () { return { list: [] }; })
     ]).then(function (results) {
       var dictRes = results[0];
       var schemaRes = results[1];
-      
+
       var dictionary = {};
       (dictRes.records || []).forEach(function (d) {
         dictionary[d.FieldName] = d;
       });
-      
+
       var rawSchema = schemaRes.list || schemaRes.records || [];
-      
+
       if (rawSchema.length === 0) {
         Alert.error('Lỗi', 'Không tìm thấy cấu hình trường cho form: ' + formName);
         return;
       }
-      
+
       var formSchema = rawSchema.map(function (f) {
         return {
           name: f.name || f.FieldName,
@@ -2881,22 +2974,22 @@ window.DynamicFormEngine = (function () {
           value: ''
         };
       });
-      
+
       formSchema.sort(function (a, b) { return (a.orderNo || 0) - (b.orderNo || 0); });
-      
+
       var body = document.createElement('div');
       body.style.display = 'flex';
       body.style.flexDirection = 'column';
       body.style.gap = '14px';
-      
+
       var grid = document.createElement('div');
       grid.style.display = 'flex';
       grid.style.flexWrap = 'wrap';
       grid.style.gap = '12px 10px';
       body.appendChild(grid);
-      
+
       var currentModalFormState = {};
-      
+
       formSchema.forEach(function (field) {
         if (!field.showInAdd) {
           var hiddenEl = document.createElement('input');
@@ -2906,7 +2999,7 @@ window.DynamicFormEngine = (function () {
           body.appendChild(hiddenEl);
           return;
         }
-        
+
         var inputEl;
         if (field.renderRule === 'sw' || field.renderRule === 'boolean') {
           inputEl = UIInput.createSwitch(field);
@@ -2926,7 +3019,7 @@ window.DynamicFormEngine = (function () {
           hiddenInput.type = 'hidden';
           hiddenInput.name = field.name;
           formGroupWrapper.appendChild(hiddenInput);
-          
+
           var staticCombo = UIControls.createDataComboBox({
             placeholder: '-- Chọn --',
             headers: ['Mã', 'Tên'],
@@ -2943,34 +3036,34 @@ window.DynamicFormEngine = (function () {
         } else {
           inputEl = UIInput.createText(field);
         }
-        
+
         var span = String(field.position || '6');
         if (!['12', '8', '6', '4', '3', '2'].includes(span)) span = '6';
-        
+
         var wrapper = document.createElement('div');
         wrapper.className = 'df-col-' + span;
         wrapper.appendChild(inputEl);
         grid.appendChild(wrapper);
-        
+
         currentModalFormState[field.name] = '';
       });
-      
+
       var footer = document.createElement('div');
       footer.style.display = 'flex';
       footer.style.gap = '10px';
-      
+
       var btnCancel = document.createElement('button');
       btnCancel.className = 'btn btn-outline';
       btnCancel.textContent = 'Hủy Bỏ';
-      
+
       var btnSave = document.createElement('button');
       btnSave.className = 'btn btn-primary';
       btnSave.textContent = 'Lưu Lại';
-      
+
       footer.appendChild(btnCancel);
       footer.appendChild(btnSave);
-      
-      var titleCaption = (dictRes.records && dictRes.records.find(function(d) {
+
+      var titleCaption = (dictRes.records && dictRes.records.find(function (d) {
         var id = d.FormID || d.Formid || d.formID || d.formid || d.FormName || d.formName || d.FieldName || d.fieldname;
         return id === formName;
       }))?.CaptionVN || formName;
@@ -2980,12 +3073,12 @@ window.DynamicFormEngine = (function () {
         content: body,
         footer: footer
       });
-      
+
       btnCancel.onclick = function () { modal.close(); };
       btnSave.onclick = function () {
         btnSave.disabled = true;
         btnSave.textContent = 'Đang lưu...';
-        
+
         var payload = {};
         var inputs = body.querySelectorAll('input, select, textarea');
         inputs.forEach(function (el) {
@@ -2994,11 +3087,15 @@ window.DynamicFormEngine = (function () {
             var field = formSchema.find(function (f) { return f.name === el.name; });
             if (field && (field.renderRule === 'money' || field.renderRule === 'm' || field.renderRule === 'mn')) {
               val = val.replace(/\D/g, '');
+            } else if (field && (field.renderRule === 'dt' || field.renderRule === 'date')) {
+              if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                val = val + 'T00:00:00';
+              }
             }
             payload[el.name] = val;
           }
         });
-        
+
         var isInvalid = false;
         for (var i = 0; i < formSchema.length; i++) {
           var field = formSchema[i];
@@ -3010,19 +3107,19 @@ window.DynamicFormEngine = (function () {
             break;
           }
         }
-        
+
         if (isInvalid) {
           btnSave.disabled = false;
           btnSave.textContent = 'Lưu Lại';
           return;
         }
-        
+
         var savePayload = {
           List: formName,
           Func: 'Save',
           JsonData: JSON.stringify(payload)
         };
-        
+
         ApiClient.post('/api/API_Gateway_Router', savePayload).then(function (saveRes) {
           if (saveRes && saveRes.code === 0) {
             var firstRec = saveRes.records && saveRes.records[0];
