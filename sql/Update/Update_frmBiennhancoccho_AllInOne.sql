@@ -879,7 +879,7 @@ BEGIN
     UPDATE SY_FormatFields SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View&FormID=dmGoiThucDon' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
 END
 
-UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', ShowInGrid = 0, DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View&FormID=dmSanhtiec' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', ShowInGrid = 0, DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View | dmSanhtiec' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
 
 -- Đảm bảo trường DaCocVND (Số tiền cọc) được hiển thị và cho phép nhập dạng số
 IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DaCocVND')

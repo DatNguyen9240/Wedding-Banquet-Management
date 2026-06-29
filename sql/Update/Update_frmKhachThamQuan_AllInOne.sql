@@ -260,7 +260,7 @@ WHERE FormName = 'frmKhachThamQuan' AND FieldName = 'SanhTiec';
 UPDATE SY_FormatFields SET 
     CaptionVN = N'Sảnh đặt', 
     FormatID = 'sl', 
-    DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View', 
+    DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View | dmSanhtiec', 
     FormPosition = '6', 
     OrderNo = 13, 
     ShowInAdd = 1, 
