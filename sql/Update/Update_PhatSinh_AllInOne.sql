@@ -43,7 +43,7 @@ SELECT
     kh.Tenkh AS [BenBTenDaiDien],
     kh.Dienthoai AS [BenBDienThoai],
     N'Khách hàng' AS [BenBChucVu],
-    ISNULL(nv.Tennv, hd.Manv) AS [BenANhanVienPhuTrach],
+    nv.Tennv AS [BenANhanVienPhuTrach],
     
     -- Thông tin tiệc
     hd.Loaitiecid AS [LoaiHinhSuKien],
@@ -117,7 +117,7 @@ SELECT
 FROM 
     dbo.tbmk_Hopdong hd
 LEFT JOIN dbo.dmkhachhang kh ON hd.Makh = kh.Makh
-LEFT JOIN dbo.dmNhanvienView nv ON hd.Manv = nv.Manv;
+LEFT JOIN dbo.dmNhanvienView nv ON nv.NHANVIENID = hd.Manv OR nv.Manv = hd.Manv;
 GO
 
 -- =========================================================================

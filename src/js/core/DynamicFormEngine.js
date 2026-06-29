@@ -3114,6 +3114,7 @@ window.DynamicFormEngine = (function () {
           return;
         }
 
+        payload.IsEdit = 0; // Quick Add is always add mode
         var savePayload = {
           List: formName,
           Func: 'Save',

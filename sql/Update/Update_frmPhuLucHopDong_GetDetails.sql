@@ -82,13 +82,8 @@ BEGIN
         (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
 
         -- Nhân viên Bên A
-        COALESCE(nv.Tennv, nv_user.Tennv, pl.Manv, hd.Manv, pl.UserCreate, '') AS [BenANhanVienPhuTrach],
-        COALESCE(
-            NULLIF(nv.DIENTHOAI, ''), 
-            NULLIF(nv_user.DIENTHOAI, ''), 
-            (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'BenASDT'),
-            ''
-        ) AS [BenASDTNhanVien],
+        nv.Tennv AS [BenANhanVienPhuTrach],
+        nv.DIENTHOAI AS [BenASDTNhanVien],
 
         -- Quy mô bàn & Đơn giá
         ISNULL(pl.QuyMoBanTuTD, pl.QuyMoBanTu) AS [QuyMoBanTu],
@@ -275,7 +270,7 @@ BEGIN
     FROM tbmk_Thaydoi pl WITH (NOLOCK)
     INNER JOIN tbmk_Hopdong hd WITH (NOLOCK) ON pl.Sohopdong = hd.Sohopdong
     LEFT JOIN dmkhachhang kh WITH (NOLOCK) ON hd.Makh = kh.Makh
-    LEFT JOIN dmNhanvienView nv WITH (NOLOCK) ON nv.Manv = ISNULL(pl.Manv, hd.Manv)
+    LEFT JOIN dmNhanvienView nv WITH (NOLOCK) ON nv.NHANVIENID = ISNULL(pl.Manv, hd.Manv) OR nv.Manv = ISNULL(pl.Manv, hd.Manv)
     LEFT JOIN dmNhanvienView nv_user WITH (NOLOCK) ON LOWER(nv_user.USERNAME) = LOWER(COALESCE(NULLIF(pl.UserCreate, ''), NULLIF(pl.UserUpdate, '')))
     WHERE (pl.Sothaydoi = @SearchStr OR pl.Sohopdong = @SearchStr)
       AND ISNULL(pl.IsDeleted, 0) = 0;

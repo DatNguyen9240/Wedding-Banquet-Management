@@ -271,26 +271,8 @@ SELECT
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'HNNguoiDaiDien') AS [BenANguoiDaiDien],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'HNNguoiDaiDien') AS [BenADaiDien],
     (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
-    ISNULL(
-        nv.Tennv, 
-        ISNULL(
-            (SELECT TOP 1 Name.Tennv FROM dmNhanvienView Name WITH (NOLOCK) WHERE Name.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)), 
-            ISNULL(td.Manv, ISNULL(hd.Manv, ISNULL(td.UserCreate, hd.UserCreate)))
-        )
-    ) AS [BenANhanVienPhuTrach], -- {BenANhanVienPhuTrach}
-    ISNULL(
-        nv.Dienthoai, 
-        ISNULL(
-            (SELECT TOP 1 Phone.DIENTHOAI FROM dmNhanvienView Phone WITH (NOLOCK) WHERE Phone.USERNAME = ISNULL(td.UserCreate, hd.UserCreate)),
-            ISNULL(
-                (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'Com3'),
-                ISNULL(
-                    (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WITH (NOLOCK) WHERE CodeID = 'BenASDT'),
-                    ''
-                )
-            )
-        )
-    ) AS [BenASDTNhanVien],
+    nv.Tennv AS [BenANhanVienPhuTrach], -- {BenANhanVienPhuTrach}
+    nv.Dienthoai AS [BenASDTNhanVien],
 
     -- Thông tin liên lạc Bên B
     kh.Tenkh AS [BenBTenDaiDien],
@@ -546,7 +528,7 @@ SELECT
 FROM tbmk_Thaydoi td WITH (NOLOCK)
 INNER JOIN tbmk_Hopdong hd WITH (NOLOCK) ON td.Sohopdong = hd.Sohopdong
 LEFT JOIN dmkhachhang kh WITH (NOLOCK) ON hd.Makh = kh.Makh
-LEFT JOIN dmNhanvienView nv WITH (NOLOCK) ON ISNULL(td.Manv, hd.Manv) = nv.Manv
+LEFT JOIN dmNhanvienView nv WITH (NOLOCK) ON nv.NHANVIENID = ISNULL(td.Manv, hd.Manv) OR nv.Manv = ISNULL(td.Manv, hd.Manv)
 WHERE ISNULL(td.IsDeleted, 0) = 0;
 GO
 
@@ -1354,7 +1336,7 @@ BEGIN
         ISNULL(kh.Tenchure, '') + N' & ' + ISNULL(kh.Tencodau, '') AS [BenBTenChuTiec],
 
         -- Nhân viên Bên A
-        ISNULL(nv.Tennv, hd.Manv) AS [BenANhanVienPhuTrach],
+        nv.Tennv AS [BenANhanVienPhuTrach],
         nv.DIENTHOAI AS [BenASDTNhanVien],
         (SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien') AS [BenAChucVu],
 
@@ -1447,7 +1429,7 @@ BEGIN
     FROM tbmk_Thaydoi pl
     INNER JOIN tbmk_Hopdong hd ON pl.Sohopdong = hd.Sohopdong
     LEFT JOIN dmkhachhang kh ON hd.Makh = kh.Makh
-    LEFT JOIN dmNhanvienView nv ON hd.Manv = nv.Manv
+    LEFT JOIN dmNhanvienView nv ON nv.NHANVIENID = hd.Manv OR nv.Manv = hd.Manv
     WHERE (pl.Sohopdong = @SearchStr OR pl.Sothaydoi = @SearchStr)
       AND ISNULL(pl.IsDeleted, 0) = 0;
 END;

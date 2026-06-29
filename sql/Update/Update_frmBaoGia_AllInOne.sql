@@ -115,8 +115,8 @@ BEGIN
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenASDT') AS [BenASDT],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAEmail') AS [BenAEmail],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAEmail') AS [BenAEmailNhanVien],
-        ISNULL((SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL(h.UserCreate, h.Manv)) AS [BenANhanVienPhuTrach],
-        ISNULL((SELECT TOP 1 nv.DIENTHOAI FROM dmNhanvienView nv WHERE nv.Manv = h.Manv), ISNULL((SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'Com3'), (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenASDT'))) AS [BenASDTNhanVien],
+        (SELECT TOP 1 nv.Tennv FROM dmNhanvienView nv WHERE nv.NHANVIENID = h.Manv OR nv.Manv = h.Manv) AS [BenANhanVienPhuTrach],
+        (SELECT TOP 1 nv.DIENTHOAI FROM dmNhanvienView nv WHERE nv.NHANVIENID = h.Manv OR nv.Manv = h.Manv) AS [BenASDTNhanVien],
 
         ISNULL(k.Dienthoai, ISNULL(k.DTchure, k.DTcodau)) AS [BenBDienThoai],
         ISNULL(k.Diachi, N'...') AS [BenBDiaChi],
