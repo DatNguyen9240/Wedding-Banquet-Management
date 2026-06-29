@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -86,7 +86,7 @@ GO
 -- Gán Label có dấu (CaptionVN)
 UPDATE SY_FormatFields SET CaptionVN = N'Mã ưu đãi' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'DocumentID';
 UPDATE SY_FormatFields SET CaptionVN = N'Tên ưu đãi' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Tenuudai';
-UPDATE SY_FormatFields SET CaptionVN = N'Loại hình tiệc', FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachLoaiHinhTiec&Func=View' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Loaitiecid';
+UPDATE SY_FormatFields SET CaptionVN = N'Loại hình tiệc', FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_DanhSachLoaiHinhTiec&Func=View | dmLoaihinhtiec' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Loaitiecid';
 UPDATE SY_FormatFields SET CaptionVN = N'Từ ngày', FormatID = 'dt' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Tungay';
 UPDATE SY_FormatFields SET CaptionVN = N'Đến ngày', FormatID = 'dt' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Denngay';
 UPDATE SY_FormatFields SET CaptionVN = N'Từ số bàn', FormatID = 'n' WHERE FormName = 'frmKhuyenMai' AND FieldName = 'Tusoluongban';

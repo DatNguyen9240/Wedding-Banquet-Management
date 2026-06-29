@@ -1345,7 +1345,7 @@ SET DataSource = '/api/API_Gateway_Router?List=API_DanhSachCaLam&Func=View'
 WHERE FormName = 'frmHopDong' AND FieldName = 'Thoigianid';
 
 UPDATE SY_FormatFields
-SET DataSource = '/api/API_Gateway_Router?List=API_DanhSachLoaiHinhTiec&Func=View'
+SET DataSource = '/api/API_Gateway_Router?List=API_DanhSachLoaiHinhTiec&Func=View | dmLoaihinhtiec'
 WHERE FormName = 'frmHopDong' AND FieldName = 'Loaitiecid';
 
 UPDATE SY_FormatFields

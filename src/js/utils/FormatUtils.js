@@ -80,11 +80,27 @@ var FormatUtils = (function () {
   }
 
   /**
-   * Định dạng chuỗi ngày YYYY-MM-DD sang định dạng ISO YYYY-MM-DDT00:00:00
+   * Định dạng chuỗi ngày sang định dạng ISO YYYY-MM-DDT00:00:00
    */
   function formatISO(val) {
-    if (val && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) {
-      return val.trim() + 'T00:00:00';
+    if (!val) return val;
+    var trimmed = val.trim();
+    // TH1: YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed + 'T00:00:00';
+    }
+    // TH2: DD/MM/YYYY
+    var matchDMY = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (matchDMY) {
+      return matchDMY[3] + '-' + matchDMY[2] + '-' + matchDMY[1] + 'T00:00:00';
+    }
+    // TH3: DD/MM/YYYY HH:mm or DD/MM/YYYY HH:mm:ss
+    var matchDMYTime = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+    if (matchDMYTime) {
+      var hour = matchDMYTime[4];
+      var min = matchDMYTime[5];
+      var sec = matchDMYTime[6] || '00';
+      return matchDMYTime[3] + '-' + matchDMYTime[2] + '-' + matchDMYTime[1] + 'T' + hour + ':' + min + ':' + sec;
     }
     return val;
   }

@@ -506,17 +506,29 @@ var CategoriesPage = (function () {
       `;
     }
 
-    if(html) {
-      Modal.show({
+    if (html) {
+      var footerNode = document.createElement('div');
+      footerNode.style.cssText = 'display: flex; gap: 12px;';
+      footerNode.innerHTML =
+        UIButton.createHTML({ text: 'Hủy bỏ', className: 'btn-close-modal-add', type: 'secondary' }) +
+        UIButton.createHTML({ text: 'Lưu lại', className: 'btn-save-modal-add', type: 'primary' });
+
+      var modalInstance = UIModal.show({
         title: 'Thêm mới dòng - ' + currentNode.text,
         content: html,
         width: '500px',
-        onConfirm: function(modalEl) {
-           UIToast.show('Thêm mới bản ghi vào danh mục thành công!', 'success');
-           if(saveCustom) saveCustom(modalEl);
-           return true; 
-        }
+        footer: footerNode
       });
+
+      footerNode.querySelector('.btn-close-modal-add').onclick = function () {
+        modalInstance.closeNow();
+      };
+
+      footerNode.querySelector('.btn-save-modal-add').onclick = function () {
+        UIToast.show('Thêm mới bản ghi vào danh mục thành công!', 'success');
+        if (saveCustom) saveCustom(modalInstance.node);
+        modalInstance.closeNow();
+      };
     }
   }
 
