@@ -134,5 +134,44 @@ WHERE FormName = 'frmFormBuilder' AND FieldName IN (
 UPDATE SY_FormatFields 
 SET FormPosition = '6' 
 WHERE FormPosition = 'grid';
+GO
 
+-- 7. ĐĂNG KÝ HỆ THỐNG MẪU BIỂU (SY_FrmLstTbl) CHO frmFormBuilder
+IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'frmFormBuilder')
+BEGIN
+    INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, TableName, SaveTableName, PrimaryKey)
+    VALUES ('frmFormBuilder', N'Thiết kế giao diện (Form Builder)', 'SY_FormatFields', 'SY_FormatFields', 'FieldName');
+END
+ELSE
+BEGIN
+    UPDATE SY_FrmLstTbl 
+    SET TableName = 'SY_FormatFields', SaveTableName = 'SY_FormatFields', PrimaryKey = 'FieldName'
+    WHERE FormID = 'frmFormBuilder';
+END
+GO
+
+-- 8. ĐĂNG KÝ ĐỊNH TUYẾN WA_API CHO frmFormBuilder (View & Save)
+DELETE FROM WA_API WHERE List = 'frmFormBuilder' AND Func IN ('View', 'Save');
+GO
+INSERT INTO WA_API (List, Func, [SQL], Para)
+VALUES 
+('frmFormBuilder', 'View', 'API_DanhSachTruongGiaoDien', '@Keyword=N''{Keyword}'''),
+('frmFormBuilder', 'Save', 'API_LuuDong', '@List=N''frmFormBuilder'', @Data=N''{JsonData}''');
+GO
+
+-- 9. ĐĂNG KÝ MENU HỆ THỐNG WA_Menu CHO frmFormBuilder
+IF EXISTS (SELECT 1 FROM WA_Menu WHERE FormName = 'frmFormBuilder' OR URLPara = '#/system/form-builder' OR MenuID = 'frmFormBuilder')
+BEGIN
+    UPDATE WA_Menu 
+    SET VN = N'Thiết kế Giao diện', 
+        FormName = 'frmFormBuilder',
+        URLPara = '#/system/form-builder',
+        IconClass = 'construction'
+    WHERE FormName = 'frmFormBuilder' OR URLPara = '#/system/form-builder' OR MenuID = 'frmFormBuilder';
+END
+ELSE
+BEGIN
+    INSERT INTO WA_Menu (MenuID, Parent, VN, FormName, URLPara, IconClass, isDisable) 
+    VALUES ('frmFormBuilder', '', N'Thiết kế Giao diện', 'frmFormBuilder', '#/system/form-builder', 'construction', 0);
+END
 GO

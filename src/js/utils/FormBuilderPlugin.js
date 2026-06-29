@@ -69,7 +69,7 @@ var FormBuilderPlugin = (function () {
       title: 'Đồng bộ cấu hình từ Database',
       width: '500px',
       content: body,
-      footer: UIButton.createHTML({ text: 'Hủy bỏ', className: 'btn-outline', onclick: 'this.closest(\'.modal-overlay\').remove()' }) +
+      footer: UIButton.createHTML({ text: 'Hủy bỏ', className: 'btn-outline', onClick: 'this.closest(\'.modal-overlay\').remove()' }) +
         UIButton.createHTML({ text: 'Chạy Đồng Bộ', type: 'primary', className: 'btn-run-sync', icon: 'play_arrow' })
     });
 
@@ -417,7 +417,7 @@ var FormBuilderPlugin = (function () {
         var finalPayload = payload;
         if (endpoint === '/api/API_Gateway_Router') {
           finalPayload = {
-            List: payload.FormName,
+            List: 'frmFormBuilder',
             Func: 'Save',
             JsonData: JSON.stringify(payload)
           };
