@@ -65,6 +65,20 @@ BEGIN
                     FROM dmThoigian
                     WHERE Thoigianid LIKE 'CA%';
                 END
+                ELSE IF @TableName = 'tbmk_Hopdong'
+                BEGIN
+                    SET @NextID = 'HD' + FORMAT(GETDATE(), 'yyMMddHHmmss');
+                END
+                ELSE IF @TableName = 'dmkhachhang'
+                BEGIN
+                    SET @NextID = 'KH' + FORMAT(GETDATE(), 'yyMMddHHmmss');
+                END
+                ELSE IF @TableName = 'dmLoaihinhtiec'
+                BEGIN
+                    SELECT @NextID = 'BLT' + RIGHT('000000' + CAST(ISNULL(MAX(TRY_CAST(SUBSTRING(Loaitiecid, 4, 10) AS INT)), 0) + 1 AS VARCHAR), 6)
+                    FROM dmLoaihinhtiec
+                    WHERE Loaitiecid LIKE 'BLT%';
+                END
                 ELSE
                 BEGIN
                     SET @NextID = NEWID();
