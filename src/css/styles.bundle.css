@@ -181,6 +181,10 @@ body.dark-theme ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
 }
 
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
 body.dark-theme ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.4);
 }
@@ -5911,12 +5915,14 @@ body.dark-theme {
   font-weight: 600;
   letter-spacing: 0.5px;
   border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
   white-space: nowrap;
 }
 
 .data-table td {
   padding: 16px 24px;
   border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
   font-size: var(--font-size-sm);
   color: var(--color-text);
   font-weight: 500;
@@ -5929,6 +5935,7 @@ body.dark-theme {
 .data-table th:last-child,
 .data-table td:last-child {
   padding-right: 32px;
+  border-right: none;
 }
 
 .data-table tbody tr {
