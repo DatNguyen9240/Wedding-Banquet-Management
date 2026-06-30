@@ -49,7 +49,20 @@ BEGIN
             DECLARE @ExistingPKVal NVARCHAR(MAX) = '';
             SELECT @ExistingPKVal = ColumnValue FROM #JsonData WHERE ColumnName = @PrimaryKey;
             
-            IF @ExistingPKVal IS NULL OR LTRIM(RTRIM(@ExistingPKVal)) = ''
+            -- Nếu là Insert nhưng khóa chính đã có giá trị, kiểm tra xem đã tồn tại trong DB chưa để tự động chuyển sang Update
+            IF @ExistingPKVal IS NOT NULL AND LTRIM(RTRIM(@ExistingPKVal)) <> ''
+            BEGIN
+                DECLARE @CheckSQL NVARCHAR(MAX) = 'IF EXISTS (SELECT 1 FROM ' + QUOTENAME(@TableName) + ' WHERE ' + QUOTENAME(@PrimaryKey) + ' = @PKVal) SET @Exists = 1;';
+                DECLARE @Exists BIT = 0;
+                EXEC sp_executesql @CheckSQL, N'@PKVal NVARCHAR(MAX), @Exists BIT OUTPUT', @PKVal = @ExistingPKVal, @Exists = @Exists OUTPUT;
+                
+                IF @Exists = 1
+                BEGIN
+                    SET @IsEdit = 1;
+                END
+            END
+            
+            IF @IsEdit = 0 AND (@ExistingPKVal IS NULL OR LTRIM(RTRIM(@ExistingPKVal)) = '')
             BEGIN
                 DECLARE @NextID NVARCHAR(50) = NULL;
                 

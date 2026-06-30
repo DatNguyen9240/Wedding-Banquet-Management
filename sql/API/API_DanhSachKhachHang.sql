@@ -30,7 +30,7 @@ BEGIN
     FROM dmkhachhang
     WHERE ISNULL(IsDeleted, 0) = 0
         -- 1. Lọc theo các trường Dynamic Filter (nếu Frontend có truyền xuống)
-        (@Makh IS NULL OR @Makh = '' OR Makh = @Makh)
+        AND (@Makh IS NULL OR @Makh = '' OR Makh = @Makh)
         AND (@Tenkh IS NULL OR @Tenkh = '' OR Tenkh LIKE N'%' + @Tenkh + '%')
         AND (@DTcodau IS NULL OR @DTcodau = '' OR DTcodau LIKE '%' + @DTcodau + '%')
         AND (@DienthoaiChung IS NULL OR @DienthoaiChung = '' OR ISNULL(NULLIF(Dienthoai, ''), ISNULL(DTchure, DTcodau)) LIKE '%' + @DienthoaiChung + '%')

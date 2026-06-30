@@ -43,7 +43,7 @@ VALUES (
     'frmKhachHang',
     'View',
     'API_DanhSachKhachHang',
-    '@Keyword=N''{Keyword}'''
+    '@Keyword=N''{Keyword}'', @Makh=N''{Makh}'', @Tenkh=N''{Tenkh}'', @DTcodau=N''{DTcodau}'', @DienthoaiChung=N''{DienthoaiChung}'', @CCCD=N''{CCCD}'''
 );
 
 INSERT INTO WA_API (List, Func, [SQL], Para)

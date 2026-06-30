@@ -366,6 +366,7 @@
   flex-direction: row;
   gap: 0;
   width: 100%;
+  height: calc(100vh - 220px);
   min-height: 300px;
 }
 
@@ -544,6 +545,9 @@
   min-width: 0;
   padding: 0 0 0 24px;
   position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
 }
 
 .ui-nested-tab-panel--v {

@@ -1650,6 +1650,7 @@ body.dark-theme .navbar-user:hover {
   padding: 0 var(--spacing-xl);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
   z-index: 99;
   flex-shrink: 0;
 }
@@ -6565,6 +6566,7 @@ body:has(.no-mobile-stack) .table-wrapper {
   flex-direction: row;
   gap: 0;
   width: 100%;
+  height: calc(100vh - 220px);
   min-height: 300px;
 }
 
@@ -6743,6 +6745,9 @@ body:has(.no-mobile-stack) .table-wrapper {
   min-width: 0;
   padding: 0 0 0 24px;
   position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
 }
 
 .ui-nested-tab-panel--v {
