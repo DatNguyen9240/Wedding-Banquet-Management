@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 IF OBJECT_ID('API_XoaDong', 'P') IS NOT NULL
@@ -40,6 +40,9 @@ BEGIN
     BEGIN TRY
         -- Kiểm tra xem bảng có chứa cột IsDeleted hay không để tự động áp dụng Soft Delete
         DECLARE @HasIsDeleted BIT = 0;
+        DECLARE @HasDeletedAt BIT = 0;
+        DECLARE @HasDeletedBy BIT = 0;
+
         IF EXISTS (
             SELECT 1 
             FROM sys.columns 
@@ -50,14 +53,40 @@ BEGIN
             SET @HasIsDeleted = 1;
         END
 
+        IF EXISTS (
+            SELECT 1 
+            FROM sys.columns 
+            WHERE object_id = OBJECT_ID(@TableName) 
+              AND name = 'DeletedAt'
+        )
+        BEGIN
+            SET @HasDeletedAt = 1;
+        END
+
+        IF EXISTS (
+            SELECT 1 
+            FROM sys.columns 
+            WHERE object_id = OBJECT_ID(@TableName) 
+              AND name = 'DeletedBy'
+        )
+        BEGIN
+            SET @HasDeletedBy = 1;
+        END
+
         DECLARE @sql NVARCHAR(MAX) = '';
 
         IF @HasIsDeleted = 1
         BEGIN
             -- Thực hiện Soft Delete động
-            SET @sql = 'UPDATE ' + QUOTENAME(@TableName) + 
-                       ' SET IsDeleted = 1, DeletedAt = GETDATE(), DeletedBy = @User ' +
-                       ' WHERE ' + QUOTENAME(@PrimaryKey) + ' IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@DeleteIds, '',''))';
+            SET @sql = 'UPDATE ' + QUOTENAME(@TableName) + ' SET IsDeleted = 1';
+            
+            IF @HasDeletedAt = 1
+                SET @sql = @sql + ', DeletedAt = GETDATE()';
+                
+            IF @HasDeletedBy = 1
+                SET @sql = @sql + ', DeletedBy = @User';
+                
+            SET @sql = @sql + ' WHERE ' + QUOTENAME(@PrimaryKey) + ' IN (SELECT LTRIM(RTRIM(value)) FROM string_split(@DeleteIds, '',''))';
                        
             EXEC sp_executesql @sql, N'@DeleteIds NVARCHAR(MAX), @User VARCHAR(50)', @DeleteIds = @Ids, @User = @UserName;
             

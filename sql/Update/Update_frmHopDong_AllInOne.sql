@@ -28,6 +28,20 @@ GO
 UPDATE tbmk_Hopdong SET IsDeleted = 0 WHERE IsDeleted IS NULL;
 GO
 
+-- Ensure DeletedBy column exists in tbmk_Hopdong for logging
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'DeletedBy')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD DeletedBy VARCHAR(50) NULL;
+END
+GO
+
+-- Ensure DeletedAt column exists in tbmk_Hopdong for logging
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'DeletedAt')
+BEGIN
+    ALTER TABLE tbmk_Hopdong ADD DeletedAt DATETIME NULL;
+END
+GO
+
 -- Ensure DieuKhoanBoSung column exists in tbmk_Hopdong
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[tbmk_Hopdong]') AND name = 'DieuKhoanBoSung')
 BEGIN

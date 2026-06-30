@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -71,11 +71,27 @@ BEGIN
     -- 3.2. Thay thế các biến Request từ Frontend
     SET @ParaTemplate = REPLACE(@ParaTemplate, '{List}', ISNULL(@List, ''));
     
-    -- BƯỚC ĐỘT PHÁ MỚI: ƯU TIÊN 1 - TỰ ĐỘNG MAP TẤT CẢ TỪ JSON
+    -- BƯỚC ĐỘT PHÁ MỚI: ƯU TIÊN 1 - TỰ ĐỘNG MAP TẤT CẢ TỪ JSON (Sử dụng CURSOR lặp để thay thế tuần tự chính xác 100%)
     IF ISNULL(@JsonData, '') <> '' AND ISJSON(@JsonData) = 1
     BEGIN
-        SELECT @ParaTemplate = REPLACE(@ParaTemplate, '{' + [key] + '}', REPLACE(ISNULL(CAST([value] AS NVARCHAR(MAX)), ''), '''', ''''''))
+        DECLARE @JsonKey NVARCHAR(100);
+        DECLARE @JsonVal NVARCHAR(MAX);
+        
+        DECLARE json_cursor CURSOR LOCAL FORWARD_ONLY STATIC READ_ONLY FOR
+        SELECT [key], CAST([value] AS NVARCHAR(MAX))
         FROM OPENJSON(@JsonData);
+        
+        OPEN json_cursor;
+        FETCH NEXT FROM json_cursor INTO @JsonKey, @JsonVal;
+        
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            SET @ParaTemplate = REPLACE(@ParaTemplate, '{' + @JsonKey + '}', REPLACE(ISNULL(@JsonVal, ''), '''', ''''''));
+            FETCH NEXT FROM json_cursor INTO @JsonKey, @JsonVal;
+        END
+        
+        CLOSE json_cursor;
+        DEALLOCATE json_cursor;
     END
     
     -- ƯU TIÊN 2: FALLBACK (DỰ PHÒNG CÁC BIẾN CỨNG TỪ C# NẾU CHƯA ĐƯỢC MAP BỞI JSON)
