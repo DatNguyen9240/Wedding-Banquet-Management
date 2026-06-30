@@ -1,4 +1,4 @@
-﻿IF COL_LENGTH('tbmk_Hopdongthucuong', 'Dvt') IS NULL
+IF COL_LENGTH('tbmk_Hopdongthucuong', 'Dvt') IS NULL
 BEGIN
     ALTER TABLE tbmk_Hopdongthucuong ADD Dvt NVARCHAR(50) NULL;
 END
@@ -13,18 +13,6 @@ CREATE PROCEDURE [dbo].[API_LayChiTietHopDong]
 AS
 BEGIN
     SET NOCOUNT ON;
-
-    IF @Sohopdong IS NULL OR @Sohopdong = ''
-    BEGIN
-        SELECT '[]' AS JsonBanTiec, '[]' AS JsonThucUong, '[]' AS JsonDichVu, '[]' AS JsonPhatSinh,
-               CAST(NULL AS INT) AS QuyMoBanTu, CAST(NULL AS INT) AS QuyMoBanDen,
-               CAST(NULL AS DECIMAL(18,2)) AS DonGiaBanTiec, CAST(NULL AS INT) AS SoKhachTrenBan,
-               CAST(NULL AS DECIMAL(18,2)) AS ThanhToanDot2SoTien, CAST(NULL AS NVARCHAR(100)) AS HinhThucThanhToanDot2,
-               CAST(NULL AS DATETIME) AS HanThanhToanDot2, CAST(NULL AS NVARCHAR(200)) AS BenAChucVu,
-               CAST(NULL AS DATETIME) AS NgayToChuc, CAST(NULL AS NVARCHAR(100)) AS Nhamngay,
-               CAST(NULL AS NVARCHAR(MAX)) AS DichVuTinhPhiPhuLuc, CAST(NULL AS NVARCHAR(MAX)) AS ThoaThuanPhuLucKhac;
-        RETURN;
-    END
 
     SELECT 
         -- 1. Thực đơn (Mặn + Chay)
@@ -87,12 +75,54 @@ BEGIN
         h.Sotiencochopdong AS ThanhToanDot2SoTien,
         h.HinhThucThanhToanDot2,
         h.HanThanhToanDot2,
-        h.BenAChucVuDaiDien AS BenAChucVu,
+        v.BenAChucVu AS BenAChucVu,
         h.Ngaytochuc AS NgayToChuc,
         h.Nhamngay,
         h.DichVuTinhPhiPhuLuc,
-        h.ThoaThuanPhuLucKhac
+        h.ThoaThuanPhuLucKhac,
+
+        -- Bổ sung đầy đủ thông tin phục vụ in ấn từ View v_DanhSachHopDong
+        v.BenANguoiDaiDien,
+        v.BenADaiDien,
+        v.BenANhanVienPhuTrach,
+        v.BenASDTNhanVien,
+        v.BenADiaChi,
+        v.BenAEmail,
+        v.BenATenCongTy,
+        v.BenASDT,
+        v.BenAMST,
+        v.BenBTenDaiDien,
+        v.BenBTenChuTiec,
+        v.BenBCCCD,
+        v.BenBDiaChi,
+        v.BenBDienThoai,
+        v.BenBChucVu,
+        v.SetupBatDau,
+        v.SetupKetThuc,
+        v.SetupNoiDung1,
+        v.SetupNoiDung2,
+        v.ToChucNoiDung,
+        v.OutNoiDung,
+        v.TiecGioBatDau,
+        v.TiecGioKetThuc,
+        v.SoKhachDiemDanh,
+        v.LichTrinhThanhToan,
+        v.DanhSachSanh,
+        v.TiecNgayDL,
+        v.TiecThangDL,
+        v.TiecNamDL,
+        v.TiecNgayAL,
+        v.TiecThangAL,
+        v.TiecNamAL,
+        v.TenSanhTiec,
+        v.SanhQuyMoMin,
+        v.SanhQuyMoMax,
+        v.TiecLoaiTiec,
+        v.NgayLapHD,
+        v.ThangLapHD,
+        v.NamLapHD
     FROM tbmk_Hopdong h
+    LEFT JOIN [dbo].[v_DanhSachHopDong] v ON h.Sohopdong = v.Sohopdong
     WHERE h.Sohopdong = @Sohopdong;
 END;
 GO
