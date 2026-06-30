@@ -378,7 +378,7 @@ Tất cả các chương trình khuyến mãi và ưu đãi trên không quy đ�
     ISNULL(NULLIF(h.Noidunguudai, ''), 
         ISNULL((
             SELECT STUFF((
-                SELECT CHAR(10) + CAST(ROW_NUMBER() OVER(ORDER BY ct.STT) AS VARCHAR(10)) + '. ' + ISNULL(hh.Tenhang, ct.Mahang) + 
+                SELECT CHAR(10) + ISNULL(hh.Tenhang, ct.Mahang) + 
                        CASE WHEN ISNULL(ct.Soluong, 1) > 1 THEN ' (SL: ' + CAST(CAST(ct.Soluong AS INT) AS VARCHAR(10)) + ')' ELSE '' END
                 FROM tbmk_Banuudaict ct
                 LEFT JOIN dmHanghoa hh ON ct.Mahang = hh.Mahang

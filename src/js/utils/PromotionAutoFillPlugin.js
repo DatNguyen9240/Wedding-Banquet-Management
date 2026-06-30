@@ -260,7 +260,7 @@ var PromotionAutoFillPlugin = (function () {
             }
           }
 
-          return (idx + 1) + '. ' + (name || 'Ưu đãi') + qtyStr;
+          return (name || 'Ưu đãi') + qtyStr;
         }).join('\n');
 
         var currentVal = fields.targetEl.value ? fields.targetEl.value.trim() : '';
