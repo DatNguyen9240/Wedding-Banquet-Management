@@ -516,7 +516,7 @@ window.DynamicFormEngine = (function () {
               }
 
               // Thực hiện xóa hàng loạt (Batch Delete) để tối ưu hiệu năng và khớp với API Gateway
-              var pkField = MODULE_CONFIG.primaryKey || 'DocumentID';
+              var pkField = MODULE_CONFIG.PrimaryKey || 'DocumentID';
               var pkValues = selectedRows.map(function (row) { return row[pkField]; }).filter(Boolean).join(',');
 
               var payload = {
