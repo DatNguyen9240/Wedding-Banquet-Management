@@ -1,47 +1,78 @@
 /* ═══════════════════════════════════════════
-   DATAGRID PAGER COMPONENT
+   DATAGRID PAGER COMPONENT (Clean Quartz Style & Sticky Bottom)
    ═══════════════════════════════════════════ */
 
 .datagrid-pager {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 8px 0;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  gap: 12px;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--color-surface, #ffffff);
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  gap: 16px;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #64748b);
+  font-family: var(--font-family, sans-serif);
+
+  /* Sticky to bottom of viewport */
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+}
+
+/* Dark theme support */
+body.dark-theme .datagrid-pager {
+  background: var(--color-surface, #1e293b);
+  border-color: var(--color-border, #334155);
+  color: var(--color-text-secondary, #94a3b8);
+}
+
+.pager-left-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .pager-separator {
   width: 1px;
-  height: 20px;
-  background: var(--color-border);
+  height: 16px;
+  background: var(--color-border, #e2e8f0);
   margin: 0 4px;
+}
+
+body.dark-theme .pager-separator {
+  background: var(--color-border, #334155);
 }
 
 /* 1. Size Selector */
 .pager-size-selector select {
   padding: 4px 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border, #cbd5e1);
   border-radius: 4px;
-  background: var(--color-surface);
-  color: var(--color-text);
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #1e293b);
   outline: none;
   cursor: pointer;
   font-size: 13px;
+  font-weight: 500;
+  transition: border-color 0.15s ease;
+}
+
+body.dark-theme .pager-size-selector select {
+  border-color: var(--color-border, #475569);
+  background: var(--color-surface, #1e293b);
+  color: var(--color-text, #f8fafc);
 }
 
 .pager-size-selector select:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-text-secondary, #64748b);
 }
 
 /* 2. Controls */
 .pager-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .pager-btn {
@@ -50,22 +81,30 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: 1px solid transparent;
+  border: none;
   background: transparent;
   border-radius: 4px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #64748b);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+body.dark-theme .pager-btn {
+  color: var(--color-text-secondary, #94a3b8);
 }
 
 .pager-btn:hover:not(:disabled) {
-  background: var(--color-background);
-  color: var(--color-primary);
-  border-color: var(--color-border);
+  background: var(--color-surface-elevated, #f1f5f9);
+  color: var(--color-text, #0f172a);
+}
+
+body.dark-theme .pager-btn:hover:not(:disabled) {
+  background: var(--color-surface-elevated, #334155);
+  color: var(--color-text, #f8fafc);
 }
 
 .pager-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -76,51 +115,88 @@
 .pager-input-wrapper {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin: 0 4px;
+  color: var(--color-text-secondary, #64748b);
+}
+
+body.dark-theme .pager-input-wrapper {
+  color: var(--color-text-secondary, #94a3b8);
 }
 
 .pager-input {
-  width: 45px;
-  height: 26px;
+  width: 40px;
+  height: 24px;
   text-align: center;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border, #cbd5e1);
   border-radius: 4px;
-  background: var(--color-surface);
-  color: var(--color-text);
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #1e293b);
   font-size: 13px;
+  font-weight: 500;
+  transition: border-color 0.15s ease;
+}
+
+body.dark-theme .pager-input {
+  border-color: var(--color-border, #475569);
+  background: var(--color-surface, #0f172a);
+  color: var(--color-text, #f8fafc);
 }
 
 .pager-input:focus {
-  border-color: var(--color-primary);
+  border-color: var(--color-text-secondary, #64748b);
   outline: none;
 }
 
 /* 3. Info */
 .pager-info {
-  margin-left: auto; /* Push info to the right */
+  font-weight: 400;
+  color: var(--color-text-secondary, #64748b);
+}
+
+body.dark-theme .pager-info {
+  color: var(--color-text-secondary, #94a3b8);
+}
+
+.pager-btn-capture {
+  color: var(--color-text-secondary, #64748b) !important;
+}
+
+body.dark-theme .pager-btn-capture {
+  color: var(--color-text-secondary, #94a3b8) !important;
+}
+
+.pager-btn-capture:hover:not(:disabled) {
+  color: var(--color-text, #0f172a) !important;
+}
+
+body.dark-theme .pager-btn-capture:hover:not(:disabled) {
+  color: var(--color-text, #f8fafc) !important;
 }
 
 /* --- RESPONSIVE PAGINATION --- */
 @media (max-width: 768px) {
   .datagrid-pager {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    padding: 8px 0;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
     gap: 8px;
+    position: static;
+    box-shadow: none;
+    border-top: 1px solid var(--color-border, #e2e8f0);
   }
-  
+
   .pager-separator {
     display: none;
   }
 
   .pager-btn-capture {
-    display: none; /* Ẩn nút chụp màn hình cho đỡ tốn diện tích */
+    display: none;
   }
 
   .pager-btn {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
   }
 
   .pager-btn .material-symbols-outlined {
@@ -128,21 +204,13 @@
   }
 
   .pager-input {
-    width: 35px;
-    height: 24px;
-    font-size: 12px;
+    width: 36px;
+    height: 22px;
   }
 
-  .pager-size-selector select {
-    padding: 2px 6px;
-    font-size: 12px;
-  }
-  
   .pager-info {
-    margin-left: 0;
     width: 100%;
     text-align: center;
-    margin-top: 6px;
     font-size: 12px;
   }
 }

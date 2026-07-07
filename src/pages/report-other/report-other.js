@@ -4,6 +4,7 @@
  */
 var ReportOtherPage = (function () {
   var $container;
+  var gridApi = null;
 
   function render(containerElement) {
     $container = containerElement;
@@ -44,8 +45,7 @@ var ReportOtherPage = (function () {
     var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS.REPORTS && window.API_CONFIG.ENDPOINTS.REPORTS.SALES_STATS) 
                     ? window.API_CONFIG.ENDPOINTS.REPORTS.SALES_STATS : '/api/API_Report_SalesStats';
     
-    var tbody = $container.querySelector('#table-sales-stats tbody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center">Đang tải dữ liệu...</td></tr>';
+    if (gridApi) gridApi.showLoadingOverlay();
 
     var payload = {};
     if (tuNgay) payload.TuNgay = tuNgay;
@@ -59,23 +59,48 @@ var ReportOtherPage = (function () {
     ApiClient.get(url)
       .then(function(res) {
         var records = res.records || res.data || res || [];
-        if (!tbody) return;
-        tbody.innerHTML = '';
-        if(records.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center">Không có dữ liệu</td></tr>';
-            return;
-        }
-        records.forEach(function(row) {
-            var tr = document.createElement('tr');
-            tr.innerHTML = '<td>' + (row.SalesName || 'Chưa rõ') + '</td>' +
-                           '<td class="text-center">' + FormatUtils.number(row.TotalTables) + '</td>' +
-                           '<td class="text-end fw-bold text-primary">' + FormatUtils.currency(row.EstimatedRevenue) + '</td>';
-            tbody.appendChild(tr);
-        });
+        _updateGridData(records);
       })
       .catch(function(err) {
-        if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>';
+        console.error(err);
       });
+  }
+
+  function _updateGridData(records) {
+    var container = document.getElementById('sales-stats-grid-container');
+    if (!container) return;
+
+    if (!gridApi) {
+      var gridOptions = {
+        pagination: false,
+        columnDefs: [
+          { field: 'SalesName', headerName: 'Nhân viên Sales', valueFormatter: p => p.value || 'Chưa rõ' },
+          { 
+            field: 'TotalTables', 
+            headerName: 'Số lượng Bàn', 
+            cellStyle: { textAlign: 'center' },
+            headerClass: 'text-center',
+            valueFormatter: p => (typeof FormatUtils !== 'undefined') ? FormatUtils.number(p.value) : p.value
+          },
+          { 
+            field: 'EstimatedRevenue', 
+            headerName: 'Doanh thu dự kiến', 
+            cellStyle: { textAlign: 'right', fontWeight: 'bold', color: 'var(--color-primary)' },
+            headerClass: 'text-end',
+            valueFormatter: p => (typeof FormatUtils !== 'undefined') ? FormatUtils.currency(p.value) : p.value
+          }
+        ],
+        rowData: records
+      };
+      gridApi = AppGrid.create(container, gridOptions);
+    } else {
+      gridApi.setGridOption('rowData', records);
+      if (records.length === 0) {
+        gridApi.showNoRowsOverlay();
+      } else {
+        gridApi.hideOverlay();
+      }
+    }
   }
 
   function _renderTabs() {
@@ -86,50 +111,11 @@ var ReportOtherPage = (function () {
     tabContent1.innerHTML = `
       <div class="card mb-4">
         <div class="card-header">Lũy kế nhận tiệc trong năm theo Sales</div>
-        <div class="table-wrapper">
-          <table class="data-table" id="table-sales-stats">
-            <thead>
-              <tr>
-                <th>Nhân viên Sales</th>
-                <th class="text-center">Số lượng Bàn</th>
-                <th class="text-end">Doanh thu dự kiến</th>
-              </tr>
-            </thead>
-            <tbody>
-               <tr><td colspan="3" class="text-center">Đang tải dữ liệu...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <div id="sales-stats-grid-container" style="height: 350px; width: 100%;"></div>
       </div>
     `;
 
-    // Load dynamic data
-    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS.REPORTS && window.API_CONFIG.ENDPOINTS.REPORTS.SALES_STATS) 
-                    ? window.API_CONFIG.ENDPOINTS.REPORTS.SALES_STATS : '/api/API_Report_SalesStats';
-    
-    ApiClient.get(endpoint)
-      .then(function(res) {
-        var records = res.records || res.data || res || [];
-        var tbody = tabContent1.querySelector('tbody');
-        tbody.innerHTML = '';
-        if(records.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center">Không có dữ liệu</td></tr>';
-            return;
-        }
-        records.forEach(function(row) {
-            var tr = document.createElement('tr');
-            tr.innerHTML = '<td>' + (row.SalesName || 'Chưa rõ') + '</td>' +
-                           '<td class="text-center">' + FormatUtils.number(row.TotalTables) + '</td>' +
-                           '<td class="text-end fw-bold text-primary">' + FormatUtils.currency(row.EstimatedRevenue) + '</td>';
-            tbody.appendChild(tr);
-        });
-      })
-      .catch(function(err) {
-        tabContent1.querySelector('tbody').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>';
-      });
-
     // ── Tab 2: Biểu đồ Khảo sát — dùng UIChart component ────────────────
-    // Lấy màu từ Design Tokens
     var rs = getComputedStyle(document.documentElement);
     var cPrimary = rs.getPropertyValue('--color-primary').trim() || '#4F46E5';
     var cSuccess = rs.getPropertyValue('--color-success').trim() || '#10B981';
@@ -161,11 +147,9 @@ var ReportOtherPage = (function () {
       var channelsData = [];
       
       if (records.length > 0) {
-        // Parse real data from backend
         factorsData = records.filter(r => r.Type === 'FACTOR').map(r => ({ label: r.Name, value: r.Count }));
         channelsData = records.filter(r => r.Type === 'CHANNEL').map(r => ({ label: r.Name, value: r.Count }));
       } else {
-        // Fallback or empty state
         factorsData = [{ label: 'Giá cả', value: 40 }, { label: 'Không gian', value: 30 }, { label: 'Thực đơn', value: 20 }, { label: 'Phục vụ', value: 10 }];
         channelsData = [{ label: 'Facebook', value: 50 }, { label: 'Người quen giới thiệu', value: 30 }, { label: 'Đi ngang thấy', value: 20 }];
       }

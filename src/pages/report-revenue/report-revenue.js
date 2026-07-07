@@ -6,6 +6,7 @@ var ReportRevenuePage = (function () {
   var $container;
   var revenueData = [];
   var charts = {};
+  var gridApi = null;
 
   function render(containerElement) {
     $container = containerElement;
@@ -195,32 +196,75 @@ var ReportRevenuePage = (function () {
     return new Chart(ctx, config);
   }
 
-  function _renderTable() {
-    var tbody = $container.querySelector('#revenue-table tbody');
-    tbody.innerHTML = '';
+  function _initGrid(data) {
+    var container = $container.querySelector('#revenue-grid-container');
+    if (!container) return;
 
+    var gridOptions = {
+      pagination: true,
+      paginationPageSize: 10,
+      paginationPageSizeSelector: [10, 20, 50],
+      columnDefs: [
+        { headerName: 'STT', valueGetter: 'node.rowIndex + 1', width: 80, cellStyle: { textAlign: 'center' }, headerClass: 'text-center' },
+        { field: 'id', headerName: 'Mã HĐ', cellStyle: { fontWeight: '600', color: 'var(--color-primary)' }, width: 140 },
+        { field: 'customer', headerName: 'Khách Hàng', minWidth: 180 },
+        { field: 'date', headerName: 'Ngày Tổ Chức', cellStyle: { textAlign: 'center' }, headerClass: 'text-center', width: 130 },
+        { 
+          field: 'hall', 
+          headerName: 'Sảnh Tiệc',
+          cellStyle: { textAlign: 'center' },
+          headerClass: 'text-center',
+          width: 140,
+          cellRenderer: function(params) {
+            var val = params.value || 'Chưa xếp sảnh';
+            return '<span class="badge" style="background:rgba(79, 70, 229, 0.1); color:var(--color-primary); padding:4px 8px; border-radius:6px;">' + val + '</span>';
+          }
+        },
+        { 
+          field: 'tables', 
+          headerName: 'Số Bàn', 
+          cellStyle: { textAlign: 'right' },
+          headerClass: 'text-end',
+          width: 120,
+          valueFormatter: function(params) {
+            return (params.value || 0) + ' bàn';
+          }
+        },
+        { 
+          field: 'revenue', 
+          headerName: 'Doanh Thu (VNĐ)',
+          cellStyle: { textAlign: 'right', fontWeight: '600', color: 'var(--color-danger)' },
+          headerClass: 'text-end',
+          valueFormatter: function(params) {
+            var val = params.value || 0;
+            return val.toLocaleString('vi-VN') + ' đ';
+          }
+        }
+      ],
+      rowData: data
+    };
+
+    gridApi = AppGrid.create(container, gridOptions);
+  }
+
+  function _renderTable() {
     var totalRev = 0;
     var totalCount = 0;
 
-    revenueData.forEach(function(item, idx) {
+    revenueData.forEach(function(item) {
       totalRev += (item.revenue || 0);
       totalCount += 1;
-
-      var tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="text-center">${idx + 1}</td>
-        <td class="fw-semibold" style="color: var(--color-primary);">${item.id}</td>
-        <td class="fw-medium">${item.customer}</td>
-        <td class="text-center">${item.date}</td>
-        <td class="text-center"><span class="badge" style="background:rgba(79, 70, 229, 0.1); color:var(--color-primary); padding:4px 8px; border-radius:6px;">${item.hall || 'Chưa xếp sảnh'}</span></td>
-        <td class="text-end">${item.tables || 0} bàn</td>
-        <td class="text-end fw-semibold" style="color: var(--color-danger);">${(item.revenue || 0).toLocaleString('vi-VN')} đ</td>
-      `;
-      tbody.appendChild(tr);
     });
 
+    if (!gridApi) {
+      _initGrid(revenueData);
+    } else {
+      gridApi.setGridOption('rowData', revenueData);
+    }
+
     var totalBarContainer = $container.querySelector('#total-bar-wrapper');
-    if (window.TotalBar) {
+    if (window.TotalBar && totalBarContainer) {
+      totalBarContainer.innerHTML = '';
       var totalBar = new TotalBar({ container: totalBarContainer });
       totalBar.addTotal('Tổng số tiệc', totalCount);
       totalBar.addTotal('TỔNG DOANH THU', totalRev.toLocaleString('vi-VN') + ' VNĐ', true);

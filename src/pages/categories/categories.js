@@ -4,6 +4,7 @@
  */
 var CategoriesPage = (function () {
   var $container;
+  var currentGridApi = null;
 
   // Dữ liệu giả lập Danh mục
   var treeData = [
@@ -52,8 +53,6 @@ var CategoriesPage = (function () {
 
   function toUnsigned(str) {
     if (!str) return "";
-    // Sử dụng chuẩn Unicode (NFD) để tách các dấu diacritic ra khỏi ký tự gốc
-    // sau đó xoá sạch các dấu diacritic đi.
     return str.normalize("NFD")
               .replace(/[\u0300-\u036f]/g, "")
               .replace(/đ/g, "d")
@@ -74,26 +73,10 @@ var CategoriesPage = (function () {
             icon: 'calendar_month',
             type: 'primary',
             className: 'btn-sm',
-            onClick: "CategoriesPage.openModal('sinhngay')"
+            onClick: "CategoriesPage.triggerModuleAction('generate')"
           })}
         </div>
-        <div class="table-wrapper" style="flex: 1; overflow-y: auto; padding: 0;">
-          <table class="data-table" id="time-solar-grid">
-            <thead>
-              <tr>
-                <th style="width: 50px; text-align:center;">STT</th>
-                <th>Ngày Dương</th>
-                <th>Thứ</th>
-                <th>Ngày Âm Lịch</th>
-                <th>Can Chi Âm Lịch</th>
-                <th style="width: 100px; text-align: center;">Nhuận</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="6" style="text-align: center; padding: 30px; color: #888;">Hãy chọn tháng và bấm <b>Sinh danh sách ngày</b></td></tr>
-            </tbody>
-          </table>
-        </div>
+        <div id="time-solar-grid-container" style="flex: 1; height: 400px; width: 100%;"></div>
       `;
     },
     generate: function() {
@@ -106,35 +89,66 @@ var CategoriesPage = (function () {
       var daysInMonth = new Date(year, month, 0).getDate();
       
       var daysOfWeek = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+      var rowData = [];
       
-      var html = '';
       for(var i=1; i<=daysInMonth; i++) {
         var date = new Date(year, month - 1, i);
         var dayName = daysOfWeek[date.getDay()];
-        
-        // Mock lunar date: (Dương + 15)
         var alDay = (i + 15) % 30; if (alDay===0) alDay = 30;
         var alMonth = month - 1; if(alMonth===0) { alMonth = 12; }
         
-        html += `
-          <tr tabindex="0" onclick="CategoriesPage.selectRow(this, '${i}')">
-            <td style="text-align: center;">${i}</td>
-            <td style="font-weight: 600;">${i.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}</td>
-            <td>${dayName}</td>
-            <td>
-              <input type="text" class="form-control" value="${alDay.toString().padStart(2, '0')}/${alMonth.toString().padStart(2, '0')}/${year}" style="width: 120px; padding: 4px;">
-            </td>
-            <td><input type="text" class="form-control" value="Năm dự kiến" style="width: 150px; padding: 4px;"></td>
-            <td style="text-align: center;">
-               <label class="custom-checkbox">
-                 <input type="checkbox" class="ui-checkbox">
-                 <span class="checkmark"></span>
-               </label>
-            </td>
-          </tr>
-        `;
+        rowData.push({
+          stt: i,
+          date_str: i.toString().padStart(2, '0') + '/' + month.toString().padStart(2, '0') + '/' + year,
+          day_name: dayName,
+          lunar_date: alDay.toString().padStart(2, '0') + '/' + alMonth.toString().padStart(2, '0') + '/' + year,
+          lunar_stem: 'Năm dự kiến',
+          is_leap: false
+        });
       }
-      document.querySelector('#time-solar-grid tbody').innerHTML = html;
+
+      var container = document.getElementById('time-solar-grid-container');
+      if (container) {
+        if (currentGridApi) {
+          currentGridApi.destroy();
+        }
+
+        var gridOptions = {
+          pagination: false,
+          columnDefs: [
+            { field: 'stt', headerName: 'STT', width: 80, cellStyle: { textAlign: 'center' }, headerClass: 'text-center' },
+            { field: 'date_str', headerName: 'Ngày Dương', cellStyle: { fontWeight: '600' } },
+            { field: 'day_name', headerName: 'Thứ' },
+            { 
+              field: 'lunar_date', 
+              headerName: 'Ngày Âm Lịch',
+              cellRenderer: function(params) {
+                return '<input type="text" class="form-control" value="' + params.value + '" style="width: 120px; padding: 4px;">';
+              }
+            },
+            { 
+              field: 'lunar_stem', 
+              headerName: 'Can Chi Âm Lịch',
+              cellRenderer: function(params) {
+                return '<input type="text" class="form-control" value="' + params.value + '" style="width: 150px; padding: 4px;">';
+              }
+            },
+            { 
+              field: 'is_leap', 
+              headerName: 'Nhuận',
+              cellStyle: { textAlign: 'center' },
+              headerClass: 'text-center',
+              cellRenderer: function(params) {
+                var checked = params.value ? 'checked' : '';
+                return '<label class="custom-checkbox" style="display:inline-flex;"><input type="checkbox" class="ui-checkbox" ' + checked + '><span class="checkmark"></span></label>';
+              }
+            }
+          ],
+          rowData: rowData
+        };
+
+        currentGridApi = AppGrid.create(container, gridOptions);
+      }
       UIToast.show('Đã tạo thành công lịch cho tháng ' + monthVal);
     }
   };
@@ -144,21 +158,7 @@ var CategoriesPage = (function () {
       $contentElement.innerHTML = `
         <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
           <!-- Khối lưới Master -->
-          <div class="table-wrapper" style="flex: 1; overflow-y: auto; padding: 0; min-height: 250px; border-bottom: 2px solid var(--color-border); box-shadow: 0 4px 6px -4px rgba(0,0,0,0.05); z-index: 1;">
-            <table class="data-table" id="goods-grid">
-              <thead style="position: sticky; top: 0; z-index: 2;">
-                <tr>
-                  <th style="width: 50px;">STT</th>
-                  <th>Mã Hàng</th>
-                  <th>Tên Hàng (có dấu)</th>
-                  <th>Tên Hàng (không dấu)</th>
-                  <th>Đơn Vị Tính</th>
-                </tr>
-              </thead>
-              <tbody id="goods-tbody">
-              </tbody>
-            </table>
-          </div>
+          <div id="goods-grid-container" style="height: 300px; width: 100%; border-bottom: 2px solid var(--color-border);"></div>
           
           <!-- Khối Tabs Detail -->
           <div style="flex: 1; display: flex; flex-direction: column; background: var(--color-surface); overflow: hidden; min-height: 0;">
@@ -191,22 +191,46 @@ var CategoriesPage = (function () {
       this.loadMockTable(node);
     },
     loadMockTable: function(node) {
-      var html = '';
       var cat = node.id.split('_')[1].toUpperCase(); // HH, DV, TU
+      var rowData = [];
       for(var i=1; i<=12; i++) {
         var tenCoDau = cat === 'HH' ? (`Súp bào ngư vi cá ${i}`) : (cat === 'DV' ? `Gói trang trí cơ bản ${i}` : `Bia Heineken lon ${i}`);
         var tenKhongDau = toUnsigned(tenCoDau).toLowerCase();
-        html += `
-          <tr tabindex="0" onclick="CategoriesPage.selectRow(this, '${cat}_${i}')">
-            <td style="text-align: center;">${i}</td>
-            <td style="font-weight: 500; color: var(--color-primary);">${cat}00${i}</td>
-            <td style="font-weight: 600;">${tenCoDau}</td>
-            <td style="color: #666; font-size: 13px;">${tenKhongDau}</td>
-            <td>${cat === 'TU' ? 'Lon' : 'Phần'}</td>
-          </tr>
-        `;
+        rowData.push({
+          id: cat + '_00' + i,
+          code: cat + '00' + i,
+          name: tenCoDau,
+          name_unsigned: tenKhongDau,
+          unit: cat === 'TU' ? 'Lon' : 'Phần'
+        });
       }
-      document.getElementById('goods-tbody').innerHTML = html;
+
+      setTimeout(function() {
+        var container = document.getElementById('goods-grid-container');
+        if (!container) return;
+
+        if (currentGridApi) {
+          currentGridApi.destroy();
+        }
+
+        var gridOptions = {
+          pagination: false,
+          columnDefs: [
+            { headerName: 'STT', valueGetter: 'node.rowIndex + 1', width: 80, cellStyle: { textAlign: 'center' }, headerClass: 'text-center' },
+            { field: 'code', headerName: 'Mã Hàng', cellStyle: { fontWeight: '500', color: 'var(--color-primary)' } },
+            { field: 'name', headerName: 'Tên Hàng (có dấu)', cellStyle: { fontWeight: '600' } },
+            { field: 'name_unsigned', headerName: 'Tên Hàng (không dấu)', cellStyle: { color: '#666', fontSize: '13px' } },
+            { field: 'unit', headerName: 'Đơn Vị Tính' }
+          ],
+          rowData: rowData,
+          onRowClicked: function(event) {
+            selectedRowId = event.data.id;
+            GoodsModule.onSelectRow(event.data.id);
+          }
+        };
+
+        currentGridApi = AppGrid.create(container, gridOptions);
+      }, 100);
     },
     onSelectRow: function(id) {
        var basePrice = Math.floor(Math.random() * 500) * 1000 + 50000;
@@ -226,36 +250,51 @@ var CategoriesPage = (function () {
   var SimpleModule = {
     render: function(node, $contentElement) {
       $contentElement.innerHTML = `
-        <div class="table-wrapper" style="flex: 1; overflow-y: auto; padding: 0;">
-          <table class="data-table" id="simple-grid">
-            <thead>
-              <tr>
-                <th style="width: 50px; text-align: center;">STT</th>
-                <th>Mã ${node.text}</th>
-                <th>Tên / Diễn giải</th>
-                <th>Trạng thái sử dụng</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${this.getMockRows(node)}
-            </tbody>
-          </table>
-        </div>
+        <div id="simple-grid-container" style="flex: 1; height: 500px; width: 100%;"></div>
       `;
+      this.loadMockTable(node);
     },
-    getMockRows: function(node) {
-      var html = '';
+    loadMockTable: function(node) {
+      var rowData = [];
       for(var i=1; i<=8; i++) {
-        html += `
-          <tr tabindex="0" onclick="CategoriesPage.selectRow(this, '${node.id}_${i}')">
-            <td style="text-align: center;">${i}</td>
-            <td style="font-weight: 500;">${node.id.toUpperCase()}_${i.toString().padStart(3, '0')}</td>
-            <td>Dữ liệu mô phỏng cho ${node.text} số ${i}</td>
-            <td>${UIBadge.createHTML('Kích hoạt', 'success')}</td>
-          </tr>
-        `;
+        rowData.push({
+          id: node.id + '_' + i,
+          code: node.id.toUpperCase() + '_' + i.toString().padStart(3, '0'),
+          name: 'Dữ liệu mô phỏng cho ' + node.text + ' số ' + i,
+          status: 'Kích hoạt'
+        });
       }
-      return html;
+
+      setTimeout(function() {
+        var container = document.getElementById('simple-grid-container');
+        if (!container) return;
+
+        if (currentGridApi) {
+          currentGridApi.destroy();
+        }
+
+        var gridOptions = {
+          pagination: false,
+          columnDefs: [
+            { headerName: 'STT', valueGetter: 'node.rowIndex + 1', width: 80, cellStyle: { textAlign: 'center' }, headerClass: 'text-center' },
+            { field: 'code', headerName: 'Mã ' + node.text, cellStyle: { fontWeight: '500' } },
+            { field: 'name', headerName: 'Tên / Diễn giải' },
+            { 
+              field: 'status', 
+              headerName: 'Trạng thái sử dụng',
+              cellRenderer: function(params) {
+                return UIBadge.createHTML(params.value, 'success');
+              }
+            }
+          ],
+          rowData: rowData,
+          onRowClicked: function(event) {
+            selectedRowId = event.data.id;
+          }
+        };
+
+        currentGridApi = AppGrid.create(container, gridOptions);
+      }, 100);
     }
   };
 
@@ -307,7 +346,6 @@ var CategoriesPage = (function () {
       });
       globalActions.appendChild(toolbar);
 
-      // Attach events to standard toolbar buttons
       var addBtn = globalActions.querySelector('.btn-tool-add');
       if (addBtn) addBtn.onclick = function() { CategoriesPage.add(); };
       
@@ -333,9 +371,6 @@ var CategoriesPage = (function () {
     var $treeContainer = document.getElementById('categories-tree-container');
     $treeContainer.innerHTML = '';
     $treeContainer.appendChild(_buildTreeRecursive(treeData));
-    
-    // Auto select first leaf node for convenience
-    // setTimeout(() => { document.querySelector('.ui-tree-node[data-id="time_solar"]').click(); }, 100);
   }
 
   function _buildTreeRecursive(nodes) {
@@ -390,14 +425,18 @@ var CategoriesPage = (function () {
 
   // --- ROUTING LOGIC TỚI MODULES ---
   function _loadCategoryData(node) {
+    if (currentGridApi) {
+      currentGridApi.destroy();
+      currentGridApi = null;
+    }
+
     currentNode = node;
     selectedRowId = null; 
     document.getElementById('current-category-title').innerText = node.text;
     var $content = document.getElementById('category-content-container');
 
-    // Nút Cha (Chứa con)
     if(node.children && node.children.length > 0) {
-      $content.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--color-text-secondary);">Thư mục góc. Vui lòng sổ mũi tên để chọn các danh mục con.</div>`;
+      $content.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--color-text-secondary);">Thư mục gốc. Vui lòng sổ mũi tên để chọn các danh mục con.</div>`;
       return;
     }
 
@@ -407,19 +446,6 @@ var CategoriesPage = (function () {
       GoodsModule.render(node, $content);
     } else {
       SimpleModule.render(node, $content);
-    }
-  }
-
-  function selectRow(tr, id) {
-    var allRows = tr.parentElement.querySelectorAll('tr');
-    allRows.forEach(r => { r.classList.remove('row-selected'); r.style.background = ''; });
-    
-    tr.style.background = 'var(--color-bg)';
-    tr.classList.add('row-selected');
-    selectedRowId = id;
-
-    if (currentNode && currentNode.id.startsWith('goods_')) {
-       GoodsModule.onSelectRow(id);
     }
   }
 
@@ -450,129 +476,48 @@ var CategoriesPage = (function () {
       UIToast.show('Vui lòng chọn cụ thể 1 danh mục lẻ ở cây bên trái', 'warning');
       return;
     }
-
-    var html = '';
-    var saveCustom = null;
-
-    if (currentNode.id.startsWith('goods_')) {
-      html = `
-        <div class="form-group mb-3">
-          <label>Nhóm Hàng Hoá</label>
-          <input type="text" class="form-control bg-light" value="${currentNode.text}" readonly>
-        </div>
-        <div class="form-group mb-3">
-          <label>Tên hàng (Có dấu) <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="modal-tenkh" placeholder="VD: Gà tiềm thảo mộc" onkeyup="CategoriesPage.updateSlug(this.value)">
-        </div>
-        <div class="form-group mb-3">
-          <label>Tên không dấu (Auto mapping)</label>
-          <input type="text" class="form-control bg-light" id="modal-tenkhongdau" readonly>
-        </div>
-        <div class="form-row d-flex gap-3">
-           <div class="flex-1">
-             <label>Đơn vị tính</label>
-             <select class="form-control"><option>Phần</option><option>Bàn</option><option>Khách</option><option>Lon</option><option>Chai</option></select>
-           </div>
-           <div class="flex-1">
-             <label>Giá áp dụng (VNĐ)</label>
-             <input type="number" class="form-control" value="0">
-           </div>
-        </div>
-        <div class="mt-3" style="font-size: 13px; color: var(--color-warning);">
-          ${UIIcon.createHTML('info', 'font-size: 16px; width: 16px; vertical-align: text-bottom;')} Định lượng NVL thiết lập trong mục Sửa sau.
-        </div>
-      `;
-    } else if (currentNode.id === 'time_solar') {
-      UIToast.show('Dùng nút [Sinh danh sách ngày] phía trên thay vì nút Thêm', 'info');
-      return;
-    } else {
-      var nextId = `${currentNode.id.toUpperCase()}_011`;
-      html = `
-        <div class="form-group mb-3">
-          <label>Mã Danh Mục <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" value="${nextId}">
-        </div>
-        <div class="form-group mb-3">
-          <label>Tên hiển thị <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" placeholder="Nhập tên...">
-        </div>
-        <div class="form-group mb-2">
-           <label class="custom-checkbox">
-             <input type="checkbox" class="ui-checkbox" checked>
-             <span class="checkmark"></span>
-             Kích hoạt sử dụng
-           </label>
-        </div>
-      `;
-    }
-
-    if (html) {
-      var footerNode = document.createElement('div');
-      footerNode.style.cssText = 'display: flex; gap: 12px;';
-      footerNode.innerHTML =
-        UIButton.createHTML({ text: 'Hủy bỏ', className: 'btn-close-modal-add', type: 'secondary' }) +
-        UIButton.createHTML({ text: 'Lưu lại', className: 'btn-save-modal-add', type: 'primary' });
-
-      var modalInstance = UIModal.show({
-        title: 'Thêm mới dòng - ' + currentNode.text,
-        content: html,
-        width: '500px',
-        footer: footerNode
-      });
-
-      footerNode.querySelector('.btn-close-modal-add').onclick = function () {
-        modalInstance.closeNow();
-      };
-
-      footerNode.querySelector('.btn-save-modal-add').onclick = function () {
-        UIToast.show('Thêm mới bản ghi vào danh mục thành công!', 'success');
-        if (saveCustom) saveCustom(modalInstance.node);
-        modalInstance.closeNow();
-      };
-    }
+    UIToast.show('Mở biểu mẫu thêm cho danh mục: ' + currentNode.text);
   }
 
   function edit() {
     if (!selectedRowId) {
-      ConfirmModal.show({ title: 'Chưa chọn dòng', message: 'Vui lòng chọn bấm chuột vào 1 dòng lưới phía dưới để tiến hành hiệu chỉnh!' });
+      UIToast.show('Vui lòng chọn 1 dòng dữ liệu trong bảng để chỉnh sửa!', 'warning');
       return;
     }
-    
-    // Giả lập form Edit là gọi lại hàm Add nhưng nhồi Data vào
-    add();
-    setTimeout(() => {
-      var modalTitle = document.querySelector('.modal-title');
-      if(modalTitle) modalTitle.innerText = 'Cập nhật dòng: ' + selectedRowId;
-    }, 100);
+    UIToast.show('Sửa phần tử ID: ' + selectedRowId + ' của danh mục ' + currentNode.text);
   }
 
   function remove() {
     if (!selectedRowId) {
-      ConfirmModal.show({ title: 'Xoá lỗi', message: 'Bạn chưa chọc mục nào trên Grid.' });
+      UIToast.show('Vui lòng chọn 1 dòng dữ liệu trong bảng để xóa!', 'warning');
       return;
     }
-    ConfirmModal.show({ 
-      title: 'Khẳng định Xóa dữ liệu', 
-      message: `Thao tác này sẽ xoá bản ghi với ID: <b>${selectedRowId}</b>. Các phiếu liên quan có thể sẽ mất refer. Bạn có chắn chắn?`,
-      onConfirm: function() { 
-        UIToast.show('Đã xoá ID: ' + selectedRowId, 'success'); 
-        selectedRowId = null;
+    ConfirmModal.show({
+      title: 'Xóa phần tử',
+      message: 'Bạn có chắc chắn muốn xóa phần tử <b>' + selectedRowId + '</b> này?',
+      confirmText: 'Xóa ngay',
+      confirmClass: 'btn-danger',
+      onConfirm: function() {
+        UIToast.show('Đã xóa thành công ID: ' + selectedRowId);
       }
     });
   }
 
-  function updateSlug(val) {
-     document.getElementById('modal-tenkhongdau').value = toUnsigned(val).replace(/\\s+/g, ' ').trim().toLowerCase();
-  }
-
   return {
     render: render,
-    selectRow: selectRow,
     switchTab: switchTab,
     triggerModuleAction: triggerModuleAction,
-    updateSlug: updateSlug,
     add: add,
     edit: edit,
-    remove: remove
+    remove: remove,
+    selectYear: function (el, year) {
+      if (!el) return;
+      var items = el.parentElement.querySelectorAll('.year-item');
+      items.forEach(function (item) { item.classList.remove('active'); });
+      el.classList.add('active');
+      UIToast.show('Đã chuyển sang xem Kỳ Kế Toán Năm ' + year);
+      var headerText = document.getElementById('period-header-year');
+      if (headerText) headerText.innerText = 'Tháng / Kỳ trong năm ' + year;
+    }
   };
 })();

@@ -117,10 +117,14 @@ var Pagination = (function () {
     info.innerText = `Hiển thị ${startItem} - ${endItem} / ${options.totalItems} dòng`;
 
     // Lắp ráp
-    wrapper.appendChild(sizeSelector);
-    wrapper.appendChild(createSeparator());
+    var leftGroup = document.createElement('div');
+    leftGroup.className = 'pager-left-group';
+    leftGroup.appendChild(sizeSelector);
+    leftGroup.appendChild(createSeparator());
+    leftGroup.appendChild(info);
+
+    wrapper.appendChild(leftGroup);
     wrapper.appendChild(controls);
-    wrapper.appendChild(info);
 
     return wrapper;
   }

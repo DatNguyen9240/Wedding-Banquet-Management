@@ -95,6 +95,7 @@ $jsFiles = @(
   "components\section-panel\SectionPanel.js",
   "components\report-filter\ReportFilterDialog.js",
   "components\ui-utils\UIUtils.js",
+  "components\app-grid\AppGrid.js",
   "components\navbar\Navbar.js",
   "components\checkbox\Checkbox.js",
   "components\radio\Radio.js",

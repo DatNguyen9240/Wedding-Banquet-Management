@@ -728,3 +728,16 @@ body.dark-theme .nav-item:hover span.icon {
 .btn-back-header span {
   font-size: 18px !important;
 }
+
+/* Fix badge overflow inside AG Grid cells */
+.ag-cell .badge,
+.ag-cell .status-badge {
+  padding: 2px 8px !important;
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  margin: 0 !important;
+}

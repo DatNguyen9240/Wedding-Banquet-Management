@@ -6,6 +6,7 @@ var ReportCostPage = (function () {
   var $container;
   var costData = [];
   var revenueDataCache = []; // Để tính lợi nhuận gộp
+  var gridApi = null;
 
   function render(containerElement) {
     $container = containerElement;
@@ -73,33 +74,80 @@ var ReportCostPage = (function () {
     filterContainer.appendChild(cardFilter);
   }
 
-  function _renderTable() {
-    var tbody = $container.querySelector('#cost-table tbody');
-    tbody.innerHTML = '';
+  function _initGrid(data) {
+    var container = $container.querySelector('#cost-grid-container');
+    if (!container) return;
 
+    var gridOptions = {
+      pagination: true,
+      paginationPageSize: 10,
+      paginationPageSizeSelector: [10, 20, 50],
+      columnDefs: [
+        { field: 'id', headerName: 'Mã HĐ', cellStyle: { fontWeight: '600', color: 'var(--color-primary)' }, width: 120 },
+        { field: 'customer', headerName: 'Khách hàng', minWidth: 180 },
+        { field: 'date', headerName: 'Ngày tổ chức', cellStyle: { textAlign: 'center' }, headerClass: 'text-center', width: 130 },
+        { 
+          field: 'foodCost', 
+          headerName: 'Chi phí Thực đơn',
+          cellStyle: { textAlign: 'right' },
+          headerClass: 'text-end',
+          valueFormatter: function(params) {
+            return (params.value || 0).toLocaleString('vi-VN');
+          }
+        },
+        { 
+          field: 'serviceCost', 
+          headerName: 'Chi phí Dịch vụ',
+          cellStyle: { textAlign: 'right' },
+          headerClass: 'text-end',
+          valueFormatter: function(params) {
+            return (params.value || 0).toLocaleString('vi-VN');
+          }
+        },
+        { 
+          field: 'staffCost', 
+          headerName: 'Chi phí Nhân sự',
+          cellStyle: { textAlign: 'right' },
+          headerClass: 'text-end',
+          valueFormatter: function(params) {
+            return (params.value || 0).toLocaleString('vi-VN');
+          }
+        },
+        { 
+          field: 'totalCost', 
+          headerName: 'Tổng Chi Phí',
+          cellStyle: { textAlign: 'right', fontWeight: '600', color: 'var(--color-danger)' },
+          headerClass: 'text-end',
+          valueFormatter: function(params) {
+            return (params.value || 0).toLocaleString('vi-VN');
+          }
+        }
+      ],
+      rowData: data
+    };
+
+    gridApi = AppGrid.create(container, gridOptions);
+  }
+
+  function _renderTable() {
     var sumFood = 0, sumService = 0, sumStaff = 0, sumTotal = 0;
 
     costData.forEach(function(item) {
-      sumFood += item.foodCost;
-      sumService += item.serviceCost;
-      sumStaff += item.staffCost;
-      sumTotal += item.totalCost;
-
-      var tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="fw-medium" style="color: var(--color-primary);">${item.id}</td>
-        <td>${item.customer}</td>
-        <td class="text-center">${item.date}</td>
-        <td class="text-end">${item.foodCost.toLocaleString('vi-VN')}</td>
-        <td class="text-end">${item.serviceCost.toLocaleString('vi-VN')}</td>
-        <td class="text-end">${item.staffCost.toLocaleString('vi-VN')}</td>
-        <td class="text-end fw-semibold" style="color: var(--color-danger);">${item.totalCost.toLocaleString('vi-VN')}</td>
-      `;
-      tbody.appendChild(tr);
+      sumFood += (item.foodCost || 0);
+      sumService += (item.serviceCost || 0);
+      sumStaff += (item.staffCost || 0);
+      sumTotal += (item.totalCost || 0);
     });
 
+    if (!gridApi) {
+      _initGrid(costData);
+    } else {
+      gridApi.setGridOption('rowData', costData);
+    }
+
     var totalBarContainer = $container.querySelector('#total-bar-wrapper-cost');
-    if (window.TotalBar) {
+    if (window.TotalBar && totalBarContainer) {
+      totalBarContainer.innerHTML = '';
       var totalBar = new TotalBar({ container: totalBarContainer });
       totalBar.addTotal('Số lượng HĐ', costData.length);
       totalBar.addTotal('TỔNG CHI PHÍ', sumTotal.toLocaleString('vi-VN') + ' VNĐ', true);

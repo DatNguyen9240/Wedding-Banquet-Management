@@ -7,6 +7,7 @@ window.DynamicFormEngine = (function () {
   var gridData = [];
   var selectedRows = [];
   var lastSelectedIdx = -1;
+  var activeGridApi = null;
 
   var currentKeyword = '';
   var currentSortCol = '';
@@ -463,10 +464,10 @@ window.DynamicFormEngine = (function () {
       // Tự động sinh mã HTML (Không cần file .html rời nữa)
       $container.innerHTML = `
         <div id="dynamic-btn-container" style="display:none;"></div>
-        <div class="card dynamic-grid-card" style="border: none; box-shadow: none; margin-bottom: 0; border-radius: var(--radius-sm); background: var(--color-surface); overflow: hidden;">
-          <div class="card-body" style="padding: 0;">
+        <div class="card dynamic-grid-card" style="display: flex; flex-direction: column; height: calc(100vh - 195px); border: none; box-shadow: none; margin-bottom: 0; border-radius: var(--radius-sm); background: var(--color-surface); overflow: hidden;">
+          <div class="card-body" style="padding: 0; display: flex; flex-direction: column; flex: 1; min-height: 0;">
             <div id="dynamic-filter-container" style="margin-bottom:16px;"></div>
-            <div id="dynamic-grid-container"></div>
+            <div id="dynamic-grid-container" style="display: flex; flex-direction: column; flex: 1; min-height: 0;"></div>
           </div>
         </div>
       `;
@@ -845,7 +846,21 @@ window.DynamicFormEngine = (function () {
   function _renderTable() {
     var gridContainer = $container.querySelector('#dynamic-grid-container');
     if (!gridContainer) return;
+
+    if (activeGridApi) {
+      if (activeGridApi._observer) activeGridApi._observer.disconnect();
+      activeGridApi.destroy();
+      activeGridApi = null;
+    }
+
     gridContainer.innerHTML = '';
+
+    var gridDiv = document.createElement('div');
+    gridDiv.style.flex = '1';
+    gridDiv.style.minHeight = '0';
+    gridDiv.style.width = '100%';
+    gridContainer.appendChild(gridDiv);
+
     lastSelectedIdx = -1;
 
     if (typeof UITable !== 'undefined') {
@@ -862,30 +877,118 @@ window.DynamicFormEngine = (function () {
         dictionary = globalDictionary;
       }
 
-      // Render các cột tùy chỉnh (Sinh ra tự động từ RenderRule trong DB)
-      var customRenderers = globalRenderers;
+      var columnDefs = [];
 
-      // Gọi UITable.createDynamic siêu cấp
-      var tableEl = UITable.createDynamic(gridData, dictionary, {
-        currentSort: { field: currentSortCol, dir: currentSortDir },
-        onSort: function (field, dir) {
-          currentSortCol = field;
-          currentSortDir = dir;
-          currentPage = 1;
-          selectedRows = [];
-          _updateSelectionCounter();
-          _loadData();
-        },
-        actionRenderers: customRenderers
+      Object.keys(dictionary).forEach(function (key) {
+        var colDef = {
+          field: key,
+          headerName: dictionary[key],
+          sortable: true,
+          filter: true,
+          resizable: true
+        };
+
+        // Heuristic Width for horizontal scrolling compatibility
+        var keyLower = key.toLowerCase();
+        var colWidth = 150; // default
+        if (keyLower.indexOf('dt') >= 0 || keyLower.indexOf('dienthoai') >= 0 || keyLower.indexOf('date') >= 0 || keyLower.indexOf('user') >= 0 || keyLower.indexOf('ma') === 0) {
+          colWidth = 130;
+        } else if (keyLower.indexOf('so') === 0 || keyLower.indexOf('sl') === 0 || keyLower.indexOf('số') === 0) {
+          colWidth = 100;
+        } else if (keyLower.indexOf('mail') >= 0) {
+          colWidth = 180;
+        } else if (keyLower.indexOf('diachi') >= 0 || keyLower.indexOf('địa chỉ') >= 0) {
+          colWidth = 220;
+        } else if (keyLower.indexOf('ten') >= 0 || keyLower.indexOf('tên') >= 0 || keyLower.indexOf('mota') >= 0 || keyLower.indexOf('noidung') >= 0) {
+          colWidth = 200;
+        }
+        colDef.width = colWidth;
+
+        // Custom Renderers
+        if (globalRenderers[key]) {
+          colDef.cellRenderer = function (params) {
+            var val = params.value;
+            return globalRenderers[key](val, key);
+          };
+
+          var rule = globalRenderers[key].renderRule;
+          if (rule === 'mn' || rule === 'nm' || rule === 'n') {
+            colDef.cellStyle = { textAlign: 'right' };
+            colDef.headerClass = 'text-end';
+          }
+        } else {
+          // Heuristic format: number
+          var isNumericCol = gridData && gridData.some(function (row) {
+            var val = row[key];
+            if (val === null || val === undefined || val === '') return false;
+            var str = String(val).trim();
+            return (str !== '' && !isNaN(Number(str)) && !/^0\d{9,11}$/.test(str) && str.length < 15);
+          });
+          if (isNumericCol) {
+            colDef.cellStyle = { textAlign: 'right' };
+            colDef.headerClass = 'text-end';
+            colDef.valueFormatter = function (params) {
+              var num = Number(params.value);
+              return isNaN(num) ? params.value : num.toLocaleString('vi-VN');
+            };
+          }
+
+          // Heuristic format: date
+          var keyLower = key.toLowerCase();
+          if ((keyLower.indexOf('date') >= 0 || keyLower.indexOf('ngày') >= 0 || keyLower.indexOf('ngay') >= 0) && keyLower.indexOf('songay') === -1 && keyLower.indexOf('so_ngay') === -1) {
+            colDef.cellStyle = { textAlign: 'center' };
+            colDef.headerClass = 'text-center';
+            colDef.valueFormatter = function (params) {
+              return typeof FormatUtils !== 'undefined' ? FormatUtils.date(params.value) : params.value;
+            };
+          }
+        }
+
+        columnDefs.push(colDef);
       });
 
-      var actualTable = tableEl.querySelector('table');
-      if (actualTable) actualTable.classList.add('no-mobile-stack');
+      var gridOptions = {
+        pagination: false,
+        defaultColDef: {
+          flex: 0
+        },
+        columnDefs: columnDefs,
+        rowData: gridData,
+        rowSelection: 'multiple',
+        suppressRowClickSelection: false,
+        onSelectionChanged: function (event) {
+          selectedRows = event.api.getSelectedRows();
+          _updateSelectionCounter();
+        },
+        onRowDoubleClicked: function (event) {
+          var rData = event.data;
+          if (!rData) return;
 
-      // Các tính năng nâng cao (Copy, Vuốt chọn) giờ đã được chuẩn hóa trong UITable
-      // (Sẽ gọi sau khi gán gridData và selectedRows)
+          if (typeof MODULE_CONFIG.onRowDblClick === 'function') {
+            MODULE_CONFIG.onRowDblClick(rData);
+            return;
+          }
 
-      gridContainer.appendChild(tableEl);
+          if (MODULE_CONFIG.HideEditBtn) return;
+
+          if (selectedRows.length > 1 && selectedRows.find(function (sr) { return sr.id === rData.id; })) {
+            _openBulkEditForm();
+          } else {
+            _openEditForm(rData);
+          }
+        }
+      };
+
+      activeGridApi = AppGrid.create(gridDiv, gridOptions);
+
+      // Restore selections
+      if (selectedRows.length > 0 && activeGridApi) {
+        activeGridApi.forEachNode(function (node) {
+          if (node.data && selectedRows.some(function (sr) { return sr.id === node.data.id; })) {
+            node.setSelected(true);
+          }
+        });
+      }
 
       // Thêm Pagination xuống dưới Table
       if (typeof Pagination !== 'undefined') {
@@ -912,100 +1015,9 @@ window.DynamicFormEngine = (function () {
             _loadData();
           }
         });
+        paginationEl.style.marginTop = 'auto';
+        paginationEl.style.paddingTop = '16px';
         gridContainer.appendChild(paginationEl);
-      }
-
-      // Phục hồi vị trí cuộn trang
-      if (savedScrollY > 0) {
-        setTimeout(function () { window.scrollTo(0, savedScrollY); }, 10);
-      }
-
-      var tbody = tableEl.querySelector('tbody');
-      if (tbody) {
-        // Phục hồi trạng thái Active cho các dòng đã chọn trước đó (Cross-page Selection)
-        var allTrs = Array.from(tbody.querySelectorAll('tr'));
-        allTrs.forEach(function (tr, idx) {
-          var rData = gridData[idx];
-          if (rData && selectedRows.find(function (sr) { return sr.id === rData.id; })) {
-            tr.classList.add('active');
-          }
-        });
-        // Lắng nghe sự kiện từ Global Drag Select (Trạm gác UITable)
-        tbody.addEventListener('rowSelectionToggled', function (e) {
-          var rData = gridData[e.detail.rowIndex];
-          if (!rData) return;
-          if (e.detail.action === 'add') {
-            if (!selectedRows.find(function (sr) { return sr.id === rData.id; })) selectedRows.push(rData);
-          } else {
-            selectedRows = selectedRows.filter(function (sr) { return sr.id !== rData.id; });
-          }
-          _updateSelectionCounter();
-        });
-
-        tbody.addEventListener('click', function (e) {
-          if (typeof tbody.isDragSelecting === 'function' && tbody.isDragSelecting()) return;
-          var tr = e.target.closest('tr');
-          if (!tr || tr.children.length === 1) return;
-          var idx = Array.from(tbody.children).indexOf(tr);
-          var allTrsList = Array.from(tbody.querySelectorAll('tr'));
-          var rData = gridData[idx];
-
-          if (e.shiftKey && lastSelectedIdx !== -1) {
-            // Shift + Click: Chọn một dải
-            document.getSelection().removeAllRanges(); // Tránh bôi đen text
-            var start = Math.min(idx, lastSelectedIdx);
-            var end = Math.max(idx, lastSelectedIdx);
-            for (var i = start; i <= end; i++) {
-              allTrsList[i].classList.add('active');
-              if (!selectedRows.find(function (sr) { return sr.id === gridData[i].id; })) {
-                selectedRows.push(gridData[i]);
-              }
-            }
-          } else if (e.ctrlKey || e.metaKey) {
-            // Ctrl + Click: Chọn thêm hoặc Bỏ chọn
-            tr.classList.toggle('active');
-            if (tr.classList.contains('active')) {
-              if (!selectedRows.find(function (sr) { return sr.id === rData.id; })) selectedRows.push(rData);
-            } else {
-              selectedRows = selectedRows.filter(function (sr) { return sr.id !== rData.id; });
-            }
-            lastSelectedIdx = idx;
-          } else {
-            // Click don: Chon 1 dong (clear dong cu), click lai de bo chon
-            var wasActive = tr.classList.contains('active');
-            allTrsList.forEach(function (r) { r.classList.remove('active'); });
-            selectedRows = [];
-            if (!wasActive) {
-              tr.classList.add('active');
-              selectedRows.push(rData);
-            }
-            lastSelectedIdx = wasActive ? -1 : idx;
-          }
-          _updateSelectionCounter();
-        });
-        tbody.addEventListener('dblclick', function (e) {
-          var tr = e.target.closest('tr');
-          if (!tr) return;
-
-          var idx = Array.from(tbody.children).indexOf(tr);
-          var rData = gridData[idx];
-          if (!rData) return;
-
-          if (typeof MODULE_CONFIG.onRowDblClick === 'function') {
-            MODULE_CONFIG.onRowDblClick(rData);
-            return;
-          }
-
-          if (MODULE_CONFIG.HideEditBtn) return;
-
-          // Nếu đang chọn nhiều dòng (và dòng được double click nằm trong số đó) thì mở sửa hàng loạt
-          if (selectedRows.length > 1 && selectedRows.find(function (sr) { return sr.id === rData.id; })) {
-            _openBulkEditForm();
-          } else {
-            // Mở form sửa cho dòng vừa được double click (bất kể trước đó có được bôi đen hay chưa)
-            _openEditForm(rData);
-          }
-        });
       }
 
       _updateSelectionCounter();
@@ -1100,6 +1112,7 @@ window.DynamicFormEngine = (function () {
         btnClear.onmouseout = function () { this.style.backgroundColor = 'transparent'; };
         btnClear.onclick = function () {
           selectedRows = [];
+          if (activeGridApi) activeGridApi.deselectAll();
           _updateSelectionCounter();
           // Bỏ check tất cả checkbox trên giao diện
           var checkboxes = $container.querySelectorAll('tbody .form-check-input');
@@ -2188,7 +2201,7 @@ window.DynamicFormEngine = (function () {
                     headers = displayKeys.map(function (k) {
                       var keyLower = k.toLowerCase();
                       if (typeof globalDictionary !== 'undefined') {
-                        var foundKey = Object.keys(globalDictionary).find(function(gk) {
+                        var foundKey = Object.keys(globalDictionary).find(function (gk) {
                           return gk.toLowerCase() === keyLower;
                         });
                         if (foundKey) {
