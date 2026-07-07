@@ -12948,16 +12948,20 @@ var Pagination = (function () {
       if (typeof ScreenCapture !== 'undefined') {
         ScreenCapture.start();
       } else {
-        if (typeof UIToast !== 'undefined') UIToast.show('Công cụ chụp ảnh chưa sẵn sàng!', 'warning');
+        if (typeof UIToast !== 'undefined') {
+          var toastMsg = (typeof t !== 'undefined') ? t('toast.screenshot_not_ready') : 'Công cụ chụp ảnh chưa sẵn sàng!';
+          UIToast.show(toastMsg, 'warning');
+        }
       }
     });
-    btnCapture.title = "Chụp vùng màn hình";
+    btnCapture.title = (typeof t !== 'undefined') ? t('btn.screenshot_title') : 'Chụp vùng màn hình';
     btnCapture.style.color = "var(--color-primary)";
     btnCapture.classList.add('pager-btn-capture');
 
     var pageInputWrapper = document.createElement('span');
     pageInputWrapper.className = 'pager-input-wrapper';
-    pageInputWrapper.innerHTML = 'Trang ';
+    var pageLabel = (typeof t !== 'undefined') ? t('pager.page') : 'Trang';
+    pageInputWrapper.innerHTML = pageLabel + ' ';
     var pageInput = document.createElement('input');
     pageInput.type = 'number';
     pageInput.className = 'pager-input';
@@ -12998,7 +13002,11 @@ var Pagination = (function () {
     // 3. Cụm Info
     var info = document.createElement('div');
     info.className = 'pager-info';
-    info.innerText = `Hiển thị ${startItem} - ${endItem} / ${options.totalItems} dòng`;
+    var infoTemplate = (typeof t !== 'undefined') ? t('pager.info') : 'Hiển thị {0} - {1} / {2} dòng';
+    info.innerText = infoTemplate
+      .replace('{0}', startItem)
+      .replace('{1}', endItem)
+      .replace('{2}', options.totalItems);
 
     // Lắp ráp
     var leftGroup = document.createElement('div');

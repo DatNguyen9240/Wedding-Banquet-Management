@@ -5349,11 +5349,11 @@ body[data-layout="vertical"] .page-loading-bar-container {
 .datagrid-pager {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 8px 16px;
   background: var(--color-surface, #ffffff);
   border-top: 1px solid var(--color-border, #e2e8f0);
-  gap: 16px;
+  gap: 32px;
   font-size: 13px;
   color: var(--color-text-secondary, #64748b);
   font-family: var(--font-family, sans-serif);
