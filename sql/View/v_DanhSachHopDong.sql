@@ -191,62 +191,44 @@ SELECT
     ISNULL(FORMAT(h.NgayTraSanhDV, 'HH:mm'), '') AS [TiecGioKetThuc],
     ISNULL(h.TongSoBan * 10, 0) AS [SoKhachDiemDanh],
 
-    -- Các trường lịch trình động phục vụ in ấn BEO mới (đã định dạng text sạch)
-    ISNULL(
-        STUFF(
-            (SELECT N' | ' + ISNULL(t.BatDau, '...') + N' - ' + ISNULL(t.KetThuc, '...') + 
-                    CASE WHEN ISNULL(t.Sanh, '') <> '' THEN N' (' + t.Sanh + N' - ' + ISNULL(t.NoiDung, '') + N')'
-                         ELSE N' (' + ISNULL(t.NoiDung, '') + N')' END
-             FROM OPENJSON(h.JsonLichTrinh) WITH (
-                 BatDau NVARCHAR(50) '$.BatDau',
-                 KetThuc NVARCHAR(50) '$.KetThuc',
-                 Sanh NVARCHAR(100) '$.Sanh',
-                 NoiDung NVARCHAR(500) '$.NoiDung'
-             ) t
-             FOR XML PATH(''), TYPE
-            ).value('.', 'NVARCHAR(MAX)'), 1, 3, N''
-        ), N''
-    ) AS [LichTrinh],
+    -- Các trường lịch trình động dạng JSON phục vụ in ấn BEO mới
+    ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [LichTrinh],
     
-    -- ĐỊNH DẠNG TEXT ĐẸP CHO LỊCH TRÌNH THANH TOÁN
-    ISNULL(
-        STUFF(
-            (SELECT N' | ' + CAST(t.STT AS NVARCHAR(5)) + N': ' + t.SoTien + N' (' + t.Ngay + N' - ' + t.NoiDung + N')'
-             FROM (
-                 SELECT 
-                     1 AS STT, 
-                     FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
-                     ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), '...') AS Ngay,
-                     N'Đặt cọc giữ chỗ' AS NoiDung
-                 WHERE ISNULL(h.Sotiencoccho, 0) > 0
+    (
+        SELECT t.STT, t.SoTien, t.Ngay, t.NoiDung
+        FROM (
+            SELECT 
+                1 AS STT, 
+                FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
+                ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), '...') AS Ngay,
+                N'Đặt cọc giữ chỗ' AS NoiDung
+            WHERE ISNULL(h.Sotiencoccho, 0) > 0
 
-                 UNION ALL
+            UNION ALL
 
-                 SELECT 
-                     2 AS STT, 
-                     FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
-                     ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), '...') AS Ngay,
-                     N'Đặt cọc ký hợp đồng' AS NoiDung
-                 WHERE ISNULL(h.Sotiencochopdong, 0) > 0
+            SELECT 
+                2 AS STT, 
+                FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
+                ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), '...') AS Ngay,
+                N'Đặt cọc ký hợp đồng' AS NoiDung
+            WHERE ISNULL(h.Sotiencochopdong, 0) > 0
 
-                 UNION ALL
+            UNION ALL
 
-                 SELECT 
-                     CASE WHEN ISNULL(h.Sotiencochopdong, 0) > 0 THEN 3 ELSE 2 END AS STT, 
-                     N'Thanh toán còn lại' AS SoTien, 
-                     ISNULL(CONVERT(VARCHAR(10), h.Ngaytochuc, 103), '...') AS Ngay,
-                     ISNULL(NULLIF(h.Ghichu, ''), 
-                         CASE 
-                             WHEN (SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid) LIKE N'%Hội Nghị%' 
-                                 THEN N'Thanh toán sau tiệc 07 ngày' 
-                                 ELSE N'Thanh toán cuối tiệc.' 
-                         END
-                     ) AS NoiDung
-             ) t
-             ORDER BY t.STT
-             FOR XML PATH(''), TYPE
-            ).value('.', 'NVARCHAR(MAX)'), 1, 3, N''
-        ), N''
+            SELECT 
+                CASE WHEN ISNULL(h.Sotiencochopdong, 0) > 0 THEN 3 ELSE 2 END AS STT, 
+                N'Thanh toán còn lại' AS SoTien, 
+                ISNULL(CONVERT(VARCHAR(10), h.Ngaytochuc, 103), '...') AS Ngay,
+                ISNULL(NULLIF(h.Ghichu, ''), 
+                    CASE 
+                        WHEN (SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid) LIKE N'%Hội Nghị%' 
+                            THEN N'Thanh toán sau tiệc 07 ngày' 
+                            ELSE N'Thanh toán cuối tiệc.' 
+                    END
+                ) AS NoiDung
+        ) t
+        ORDER BY t.STT
+        FOR JSON PATH
     ) AS [LichTrinhThanhToan],
     
     (

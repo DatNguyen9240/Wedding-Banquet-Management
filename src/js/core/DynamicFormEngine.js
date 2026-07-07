@@ -354,13 +354,36 @@ window.DynamicFormEngine = (function () {
 
 
           // Xây dựng Custom Renderers Động từ cấu hình DB (tránh đè logic JSON của UITable)
-          if (item.renderRule && item.renderRule.toLowerCase() !== 'js' && item.renderRule.toLowerCase() !== 'json') {
+          if (item.renderRule) {
             var outerRule = item.renderRule.toLowerCase();
             var outerNameLower = (item.name || '').toLowerCase();
 
             globalRenderers[item.name] = function (v) {
               var rule = outerRule;
               var nameLower = outerNameLower;
+
+              // Định dạng cho trường JSON để hiển thị text sạch đẹp trên Grid
+              if (rule === 'js') {
+                if (!v) return '';
+                try {
+                  var arr = typeof v === 'string' ? JSON.parse(v) : v;
+                  if (Array.isArray(arr)) {
+                    return arr.map(function (row) {
+                      if (row.STT !== undefined && row.SoTien !== undefined) {
+                        return row.STT + ': ' + row.SoTien + ' (' + (row.Ngay || '...') + ' - ' + (row.NoiDung || '') + ')';
+                      }
+                      if (row.BatDau !== undefined && row.KetThuc !== undefined) {
+                        var s = row.BatDau + ' - ' + row.KetThuc;
+                        if (row.Sanh) s += ' (' + row.Sanh + ' - ' + (row.NoiDung || '') + ')';
+                        else s += ' (' + (row.NoiDung || '') + ')';
+                        return s;
+                      }
+                      return Object.keys(row).map(function(k) { return row[k]; }).filter(Boolean).join(' - ');
+                    }).join(' | ');
+                  }
+                } catch (e) {}
+                return v;
+              }
 
               // Các rule là boolean/switch
               if (rule === 'sw' || rule === 'boolean') {
