@@ -832,8 +832,22 @@ SELECT
     ISNULL(FORMAT(h.NgayTraSanhDV, 'HH:mm'), '') AS [TiecGioKetThuc],
     ISNULL(h.TongSoBan * 10, 0) AS [SoKhachDiemDanh],
 
-    -- Các trường lịch trình động dạng JSON phục vụ in ấn BEO mới
-    ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [LichTrinh],
+    -- Các trường lịch trình động phục vụ in ấn BEO mới (đã định dạng text sạch)
+    ISNULL(
+        STUFF(
+            (SELECT N' | ' + ISNULL(t.BatDau, '...') + N' - ' + ISNULL(t.KetThuc, '...') + 
+                    CASE WHEN ISNULL(t.Sanh, '') <> '' THEN N' (' + t.Sanh + N' - ' + ISNULL(t.NoiDung, '') + N')'
+                         ELSE N' (' + ISNULL(t.NoiDung, '') + N')' END
+             FROM OPENJSON(h.JsonLichTrinh) WITH (
+                 BatDau NVARCHAR(50) '$.BatDau',
+                 KetThuc NVARCHAR(50) '$.KetThuc',
+                 Sanh NVARCHAR(100) '$.Sanh',
+                 NoiDung NVARCHAR(500) '$.NoiDung'
+             ) t
+             FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 3, N''
+        ), N''
+    ) AS [LichTrinh],
     
     -- ĐỊNH DẠNG TEXT ĐẸP CHO LỊCH TRÌNH THANH TOÁN
     ISNULL(

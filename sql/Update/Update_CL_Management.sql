@@ -309,9 +309,37 @@ BEGIN
         FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + N' VNĐ' AS [Dot1SoTien],
         ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), N'...') AS [Dot1Ngay],
 
-        -- ── Lịch trình & ghi chú nghiệp vụ ─────────────────────────────
-        ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [ChiTietLichTrinh],
-        ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [LichTrinh],
+        -- ── Lịch trình & ghi chú nghiệp vụ (định dạng text sạch) ──────────
+        ISNULL(
+            STUFF(
+                (SELECT N' | ' + ISNULL(t.BatDau, '...') + N' - ' + ISNULL(t.KetThuc, '...') + 
+                        CASE WHEN ISNULL(t.Sanh, '') <> '' THEN N' (' + t.Sanh + N' - ' + ISNULL(t.NoiDung, '') + N')'
+                             ELSE N' (' + ISNULL(t.NoiDung, '') + N')' END
+                 FROM OPENJSON(h.JsonLichTrinh) WITH (
+                     BatDau NVARCHAR(50) '$.BatDau',
+                     KetThuc NVARCHAR(50) '$.KetThuc',
+                     Sanh NVARCHAR(100) '$.Sanh',
+                     NoiDung NVARCHAR(500) '$.NoiDung'
+                 ) t
+                 FOR XML PATH(''), TYPE
+                ).value('.', 'NVARCHAR(MAX)'), 1, 3, N''
+            ), N''
+        ) AS [ChiTietLichTrinh],
+        ISNULL(
+            STUFF(
+                (SELECT N' | ' + ISNULL(t.BatDau, '...') + N' - ' + ISNULL(t.KetThuc, '...') + 
+                        CASE WHEN ISNULL(t.Sanh, '') <> '' THEN N' (' + t.Sanh + N' - ' + ISNULL(t.NoiDung, '') + N')'
+                             ELSE N' (' + ISNULL(t.NoiDung, '') + N')' END
+                 FROM OPENJSON(h.JsonLichTrinh) WITH (
+                     BatDau NVARCHAR(50) '$.BatDau',
+                     KetThuc NVARCHAR(50) '$.KetThuc',
+                     Sanh NVARCHAR(100) '$.Sanh',
+                     NoiDung NVARCHAR(500) '$.NoiDung'
+                 ) t
+                 FOR XML PATH(''), TYPE
+                ).value('.', 'NVARCHAR(MAX)'), 1, 3, N''
+            ), N''
+        ) AS [LichTrinh],
 
         -- Lịch trình thanh toán
         ISNULL(
