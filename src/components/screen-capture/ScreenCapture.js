@@ -341,6 +341,7 @@ var ScreenCapture = (function () {
         width: currentRect.width,
         height: currentRect.height,
         useCORS: true,
+        allowTaint: true,
         scale: 1,
         logging: false,
         backgroundColor: null
@@ -357,35 +358,51 @@ var ScreenCapture = (function () {
         }
 
         function fallbackDownload() {
-          var imgData = canvas.toDataURL('image/png');
-          var a = document.createElement('a');
-          a.href = imgData;
-          a.download = 'screenshot_' + new Date().getTime() + '.png';
-          a.click();
-          if (typeof UIToast !== 'undefined') UIToast.show('Đã lưu ảnh về máy!', 'success');
+          try {
+            var imgData = canvas.toDataURL('image/png');
+            var a = document.createElement('a');
+            a.href = imgData;
+            a.download = 'screenshot_' + new Date().getTime() + '.png';
+            a.click();
+            if (typeof UIToast !== 'undefined') UIToast.show('Đã lưu ảnh về máy!', 'success');
+          } catch (e) {
+            if (typeof UIToast !== 'undefined') {
+              UIToast.show('Không thể xuất ảnh: Lỗi bảo mật CORS trình duyệt!', 'error');
+            }
+          }
         }
 
-        canvas.toBlob(function(blob) {
-          if (!blob) return fallbackDownload();
-          if (navigator.clipboard && window.ClipboardItem) {
-            navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function() {
-              if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ảnh!', 'success');
-            }).catch(function() { fallbackDownload(); });
-          } else {
-            fallbackDownload();
-          }
-        });
-      }).catch(function() {
+        try {
+          canvas.toBlob(function(blob) {
+            if (!blob) return fallbackDownload();
+            if (navigator.clipboard && window.ClipboardItem) {
+              navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function() {
+                if (typeof UIToast !== 'undefined') UIToast.show('Đã copy ảnh!', 'success');
+              }).catch(function() { fallbackDownload(); });
+            } else {
+              fallbackDownload();
+            }
+          });
+        } catch (e) {
+          fallbackDownload();
+        }
+      }).catch(function(err) {
         if (isDone) return;
         isDone = true;
         clearTimeout(timeoutId);
         if (shapeContainer.parentNode) document.body.removeChild(shapeContainer);
+        if (typeof UIToast !== 'undefined') {
+          UIToast.show('Lỗi chụp hình: ' + ((err && err.message) || 'Lỗi bảo mật hoặc CORS'), 'error');
+        }
       });
     } catch(err) {
       if (isDone) return;
       isDone = true;
       clearTimeout(timeoutId);
       if (shapeContainer.parentNode) document.body.removeChild(shapeContainer);
+      if (typeof UIToast !== 'undefined') {
+        UIToast.show('Lỗi chụp hình: ' + ((err && err.message) || 'Lỗi hệ thống'), 'error');
+      }
     }
   }
 
