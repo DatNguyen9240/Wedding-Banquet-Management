@@ -277,25 +277,25 @@ BEGIN
         ISNULL(h.Tentiec, N'LỄ THÀNH HÔN') AS [TenLe],
         ISNULL(k.Diachi, N'...')         AS [BenBDiaChiTemplate],
 
-        -- NgayHopDong: ngày ký hợp đồng
+        -- NgayHopDong
         ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), N'...') AS [NgayHopDong],
 
-        -- NgaySetup: ngày trước ngày tổ chức 1 ngày
+        -- NgaySetup
         ISNULL(CONVERT(VARCHAR(10), DATEADD(DAY, -1, h.Ngaytochuc), 103), N'...') AS [NgaySetup],
 
-        -- DonViThiCong: đơn vị thi công
+        -- DonViThiCong
         ISNULL(NULLIF(h.DonViThiCong, ''), N'') AS [DonViThiCong],
 
-        -- TieuSuKhachHang: tiểu sử / ghi chú khách hàng  
+        -- TieuSuKhachHang
         ISNULL(NULLIF(h.TieuSuKhachHang, ''), N'') AS [TieuSuKhachHang],
 
-        -- DichVuKhuyenMai: dịch vụ ưu đãi tặng kèm
+        -- DichVuKhuyenMai
         ISNULL(NULLIF(h.DichVuKhuyenMai, ''), N'') AS [DoiTuongKhach],
         
-        -- LuuY: lưu ý chung
+        -- LuuY
         ISNULL(NULLIF(h.LuuY, ''), ISNULL(NULLIF(h.Ghichu, ''), N'')) AS [LuuY],
 
-        -- HDTenCty: tên công ty xuất hóa đơn
+        -- HDTenCty
         ISNULL(NULLIF(h.TenCtyHoaDon, ''), ISNULL(k.Tenkh, N'')) AS [HDTenCty],
 
         ISNULL(k.TinhTrangKhachHang, N'Fanpage') AS [KieuSetupBEO],
@@ -314,26 +314,38 @@ BEGIN
         ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [LichTrinh],
 
         -- Lịch trình thanh toán
-        (
-            SELECT STT, SoTien, Ngay, NoiDung
-            FROM (
-                SELECT 1 AS STT,
-                    FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien,
-                    ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), '...') AS Ngay,
-                    N'Đặt cọc giữ chỗ' AS NoiDung
-                WHERE ISNULL(h.Sotiencoccho, 0) > 0
-                UNION ALL
-                SELECT 2, FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ',
-                    ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), '...'),
-                    N'Đặt cọc ký hợp đồng'
-                WHERE ISNULL(h.Sotiencochopdong, 0) > 0
-                UNION ALL
-                SELECT CASE WHEN ISNULL(h.Sotiencochopdong, 0) > 0 THEN 3 ELSE 2 END,
-                    N'Thanh toán còn lại',
-                    ISNULL(CONVERT(VARCHAR(10), h.Ngaytochuc, 103), '...'),
-                    N'Thanh toán cuối tiệc.'
-            ) t
-            FOR JSON PATH
+        ISNULL(
+            STUFF(
+                (SELECT N' | ' + CAST(t.STT AS NVARCHAR(5)) + N': ' + t.SoTien + N' (' + t.Ngay + N' - ' + t.NoiDung + N')'
+                 FROM (
+                     SELECT 
+                         1 AS STT, 
+                         FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
+                         ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), '...') AS Ngay,
+                         N'Đặt cọc giữ chỗ' AS NoiDung
+                     WHERE ISNULL(h.Sotiencoccho, 0) > 0
+
+                     UNION ALL
+
+                     SELECT 
+                         2 AS STT, 
+                         FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
+                         ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), '...') AS Ngay,
+                         N'Đặt cọc ký hợp đồng' AS NoiDung
+                     WHERE ISNULL(h.Sotiencochopdong, 0) > 0
+
+                     UNION ALL
+
+                     SELECT 
+                         CASE WHEN ISNULL(h.Sotiencochopdong, 0) > 0 THEN 3 ELSE 2 END AS STT, 
+                         N'Thanh toán còn lại' AS SoTien, 
+                         ISNULL(CONVERT(VARCHAR(10), h.Ngaytochuc, 103), '...') AS Ngay,
+                         N'Thanh toán cuối tiệc.' AS NoiDung
+                 ) t
+                 ORDER BY t.STT
+                 FOR XML PATH(''), TYPE
+                ).value('.', 'NVARCHAR(MAX)'), 1, 3, N''
+            ), N''
         ) AS [LichTrinhThanhToan],
 
         -- ── Ghi chú cho các bộ phận ──────────────────────────────────────

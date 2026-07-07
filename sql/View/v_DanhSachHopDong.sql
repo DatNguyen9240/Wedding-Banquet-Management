@@ -151,7 +151,6 @@ SELECT
     -- CÁC CỘT DỮ LIỆU ĐƯỢC FORMAT SẴN CHO IN ẤN
     -- Dùng để binding vào file hop_dong.docx (docxtemplater)
     -- ==========================================
-    -- (Đã có sẵn h.Sohopdong ở trên nên không cần tạo SoHopDong nữa, trong Word sẽ dùng biến {Sohopdong})
     RIGHT('0' + CAST(DAY(h.Ngayhopdong) AS VARCHAR), 2) AS [NgayLapHD],
     RIGHT('0' + CAST(MONTH(h.Ngayhopdong) AS VARCHAR), 2) AS [ThangLapHD],
     CAST(YEAR(h.Ngayhopdong) AS VARCHAR) AS [NamLapHD],
@@ -193,48 +192,47 @@ SELECT
     ISNULL(h.TongSoBan * 10, 0) AS [SoKhachDiemDanh],
 
     -- Các trường lịch trình động dạng JSON phục vụ in ấn BEO mới
-    -- Nếu đã có JsonLichTrinh lưu trong DB thì ưu tiên lấy, ngược lại trả về mảng rỗng []
     ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [LichTrinh],
     
-    (
-        SELECT 
-            t.STT AS [STT],
-            t.SoTien AS [SoTien],
-            t.Ngay AS [Ngay],
-            t.NoiDung AS [NoiDung]
-        FROM (
-            SELECT 
-                1 AS STT, 
-                FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
-                ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), '...') AS Ngay,
-                N'Đặt cọc giữ chỗ' AS NoiDung
-            WHERE ISNULL(h.Sotiencoccho, 0) > 0
+    -- ĐỊNH DẠNG TEXT ĐẸP CHO LỊCH TRÌNH THANH TOÁN
+    ISNULL(
+        STUFF(
+            (SELECT N' | ' + CAST(t.STT AS NVARCHAR(5)) + N': ' + t.SoTien + N' (' + t.Ngay + N' - ' + t.NoiDung + N')'
+             FROM (
+                 SELECT 
+                     1 AS STT, 
+                     FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
+                     ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), '...') AS Ngay,
+                     N'Đặt cọc giữ chỗ' AS NoiDung
+                 WHERE ISNULL(h.Sotiencoccho, 0) > 0
 
-            UNION ALL
+                 UNION ALL
 
-            SELECT 
-                2 AS STT, 
-                FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
-                ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), '...') AS Ngay,
-                N'Đặt cọc ký hợp đồng' AS NoiDung
-            WHERE ISNULL(h.Sotiencochopdong, 0) > 0
+                 SELECT 
+                     2 AS STT, 
+                     FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
+                     ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), '...') AS Ngay,
+                     N'Đặt cọc ký hợp đồng' AS NoiDung
+                 WHERE ISNULL(h.Sotiencochopdong, 0) > 0
 
-            UNION ALL
+                 UNION ALL
 
-            SELECT 
-                CASE WHEN ISNULL(h.Sotiencochopdong, 0) > 0 THEN 3 ELSE 2 END AS STT, 
-                N'Thanh toán còn lại' AS SoTien, 
-                ISNULL(CONVERT(VARCHAR(10), h.Ngaytochuc, 103), '...') AS Ngay,
-                ISNULL(NULLIF(h.Ghichu, ''), 
-                    CASE 
-                        WHEN (SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid) LIKE N'%Hội Nghị%' 
-                            THEN N'Thanh toán sau tiệc 07 ngày' 
-                        ELSE N'Thanh toán cuối tiệc.' 
-                    END
-                ) AS NoiDung
-        ) t
-        ORDER BY t.STT
-        FOR JSON PATH
+                 SELECT 
+                     CASE WHEN ISNULL(h.Sotiencochopdong, 0) > 0 THEN 3 ELSE 2 END AS STT, 
+                     N'Thanh toán còn lại' AS SoTien, 
+                     ISNULL(CONVERT(VARCHAR(10), h.Ngaytochuc, 103), '...') AS Ngay,
+                     ISNULL(NULLIF(h.Ghichu, ''), 
+                         CASE 
+                             WHEN (SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid) LIKE N'%Hội Nghị%' 
+                                 THEN N'Thanh toán sau tiệc 07 ngày' 
+                                 ELSE N'Thanh toán cuối tiệc.' 
+                         END
+                     ) AS NoiDung
+             ) t
+             ORDER BY t.STT
+             FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 3, N''
+        ), N''
     ) AS [LichTrinhThanhToan],
     
     (
@@ -296,12 +294,12 @@ SELECT
     (SELECT TOP 1 s.SLBanMin FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [SanhQuyMoMin],
     (SELECT TOP 1 s.SLBanMax FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [SanhQuyMoMax],
     
-    -- Tên loại hình tiệc (computed từ dmLoaihinhtiec, dùng cho in ấn Word)
+    -- Tên loại hình tiệc
     ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid), '') AS [TiecLoaiTiec],
     ISNULL(h.LoaiHinhSuKien, ISNULL((
         SELECT 
             CASE 
-                -- Nếu có sảnh 2 và loại hình tiệc có 2 phần (dấu +)
+                -- Nếu có sảnh 2 và loại hình tiệc có 2 phần
                 WHEN ISNULL((SELECT s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY), '') <> '' 
                      AND CHARINDEX('+', lt.Tenloaitiec) > 0
                     THEN 
@@ -312,7 +310,6 @@ SELECT
                         + RTRIM(LTRIM(SUBSTRING(lt.Tenloaitiec, CHARINDEX('+', lt.Tenloaitiec) + 1, LEN(lt.Tenloaitiec)))) 
                         + ' ' 
                         + (SELECT s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong ORDER BY hs.IsSanhchinh DESC, hs.Sanhtiecid OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY)
-                -- Nếu chỉ có 1 sảnh
                 ELSE 
                     lt.Tenloaitiec 
                     + ' ' 
@@ -327,7 +324,7 @@ SELECT
     ISNULL(h.SobanManduphong, 0) + ISNULL(h.SobanChayduphong, 0) AS [TiecSoBanDuPhong],
     ISNULL(h.SoNguoiTrenBan, 10) AS [TiecSoKhach1Ban],
     
-    -- Thông tin Cá»c & Khuyến mãi
+    -- Thông tin Cọc & Khuyến mãi
     FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') AS [CocLan1SoTien],
     [dbo].[fn_DocTienBangChu](ISNULL(h.Sotiencoccho, 0)) AS [CocLan1BangChu],
     FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') AS [CocLan2SoTien],
@@ -360,8 +357,6 @@ SELECT
         END
     ) AS [DotCuoiGhiChu],
     
-
-
     -- Các biến tính tổng tiền
     FORMAT(c_chuavat.CalcChuaVAT - c_phiphucvu.CalcPhiPhucVu, 'N0', 'vi-VN') AS [TongThanhTien],
     CAST(ISNULL(h.PhiPhucVu, 0) AS VARCHAR) + '%' AS [MucPhiPhucVu],
@@ -370,7 +365,6 @@ SELECT
     FORMAT(CASE WHEN ISNULL(h.PTThueVAT, 0) = 8 OR (ISNULL(h.PTThueVAT, 0) = 0 AND c_vat.CalcTienThueVAT > 0 AND ABS((c_vat.CalcTienThueVAT * 100.0 / NULLIF(c_chuavat.CalcChuaVAT, 0)) - 8) < 1.0) THEN c_vat.CalcTienThueVAT ELSE 0 END, 'N0', 'vi-VN') AS [VAT8],
     FORMAT(CASE WHEN ISNULL(h.PTThueVAT, 0) = 10 OR (ISNULL(h.PTThueVAT, 0) = 0 AND c_vat.CalcTienThueVAT > 0 AND NOT (ABS((c_vat.CalcTienThueVAT * 100.0 / NULLIF(c_chuavat.CalcChuaVAT, 0)) - 8) < 1.0)) THEN c_vat.CalcTienThueVAT ELSE 0 END, 'N0', 'vi-VN') AS [VAT10],
     FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongTienFormat],
-
 
     ISNULL(h.DieuKhoanBoSung, N'- Áp dụng thực đơn tự chọn theo bảng giá lẻ (chưa bao gồm phí phục vụ).
 - Áp dụng chương trình đặt 10 bàn tặng 01 bàn (từ 20 bàn trở lên)
@@ -396,16 +390,11 @@ Tất cả các chương trình khuyến mãi và ưu đãi trên không quy đ�
         ), '')
     ) AS [DSKhuyenMai],
 
-    -- ==========================================
-    -- THÔNG TIN XUẤT HÓA ĐƠN GTGT (Điều 6)
-    -- ==========================================
-    -- Nếu chưa điền riêng thì tự lấy từ thông tin khách hàng
     ISNULL(NULLIF(h.TenCtyHoaDon, ''),    ISNULL(k.Tenkh,  N'...')) AS [HDTenCty],
     ISNULL(NULLIF(h.DiaChiCtyHoaDon, ''), ISNULL(k.Diachi, N'...')) AS [HDDiaChi],
     ISNULL(NULLIF(h.MaSoThueHoaDon, ''),  N'...') AS [HDMaSoThue],
     ISNULL(k.Mail, N'...') AS [Email],
 
-    -- Menu / dịch vụ cho docx (fn_DOCX_* — sql/Functions/fn_DOCX_MenuDichVu.sql)
     dbo.fn_DOCX_DanhSachMenu(h.Sohopdong)     AS [DanhSachMenu],
     dbo.fn_DOCX_DanhSachThucUong(h.Sohopdong) AS [DanhSachThucUong],
     dbo.fn_DOCX_MenuTiec(h.Sohopdong)         AS [MenuTiec],
@@ -414,11 +403,9 @@ Tất cả các chương trình khuyến mãi và ưu đãi trên không quy đ�
     dbo.fn_DOCX_DanhSachNgay(h.Sohopdong)     AS [DanhSachNgay],
     dbo.fn_DOCX_DanhSachDichVu(h.Sohopdong)   AS [DanhSachDichVu],
 
-    -- Tổng giá trị tạm tính bằng chữ
     [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0)) AS [TongGiaTriTamTinhBangChu],
     FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
 
-    -- Các biến tùy chỉnh ánh xạ trực tiếp đến các file Word mẫu (tránh lệch chữ hoa/thường hoặc thiếu trường)
     (SELECT TOP 1 s.Tensanhtiec FROM tbmk_Hopdongsanhtiec hs INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid WHERE hs.Sohopdong = h.Sohopdong) AS [TiecSanhTiec],
     ISNULL(NULLIF(h.BenAChucVuDaiDien, ''), ISNULL((SELECT TOP 1 CodeValue FROM [dbo].[SY_Setup] WHERE CodeID = 'HNChucVuNguoiDaiDien'), N'Giám đốc')) AS [BenAChucVuDaiDien],
     k.Mail AS [BenBEmail],
@@ -449,8 +436,6 @@ Tất cả các chương trình khuyến mãi và ưu đãi trên không quy đ�
     FORMAT(ISNULL(h.Sotiencoccho, 0) + ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') AS [SoTienDaDatCoc],
     FORMAT(ISNULL(h.Tongtienhopdong, 0), 'N0', 'vi-VN') AS [TongGiaTriQuyetToan],
     [dbo].[fn_DocTienBangChu](ISNULL(h.Tongtienhopdong, 0)) AS [TongGiaTriQuyetToanBangChu]
-
-    -- , AS [DanhSachDV], AS [GhiChuChiTiet], AS [KhungGio], AS [TenDichVu], AS [TenMonAn], AS [TenNhomNgay], AS [ThanhTien], AS [UuDai]
 
 FROM tbmk_Hopdong h
 LEFT JOIN dmkhachhang k ON h.Makh = k.Makh

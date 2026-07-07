@@ -169,7 +169,6 @@ BEGIN
 
         -- ── Loại hình & số lượng ─────────────────────────────────────────
         ISNULL((SELECT TOP 1 lt.Tenloaitiec FROM dmLoaihinhtiec lt WHERE lt.Loaitiecid = h.Loaitiecid), N'TIỆC CƯỚI') AS [LoaiHinhSuKien],
-        -- SoKhachChinhThuc: nhân viên nhập thủ công khi lập BEO, để NULL nếu chưa có
         h.SoKhachChinhThuc                                      AS [SoKhachChinhThuc],
         ISNULL(h.KieuSetup, N'Tiệc ngồi')                      AS [KieuSetup],
 
@@ -194,9 +193,6 @@ BEGIN
         (SELECT TOP 1 nv.DIENTHOAI FROM dmNhanvienView nv WHERE nv.NHANVIENID = h.Manv OR nv.Manv = h.Manv OR nv.USERNAME = h.Manv) AS [BenASDTNhanVien],
         (SELECT TOP 1 CodeValue FROM SY_Setup WHERE CodeID = 'BenAEmail')     AS [BenAEmailNhanVien],
 
-        -- DUMMY FOR AUDIT TOOL COMPATIBILITY
-        -- AS [DanhSachMon], AS [DanhSachMonUong], AS [TenMenu], AS [TenMon], AS [TenMonUong], AS [TenThucUong], AS [GhiChuMenu], AS [GhiChuThucUong],
-
         -- ── Thông tin Bên B (Khách hàng — từ dmkhachhang) ──────────────
         CASE 
             WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL AND k.Tenchure <> '' AND k.Tencodau <> ''
@@ -209,7 +205,6 @@ BEGIN
         ISNULL(k.Mail, N'...')           AS [BenBEmail],
 
         -- ── Thông tin bổ sung cho template BEO ──────────────────────────
-        -- BenBDaiDien: tên người giao dịch (alias của BenBTenDaiDien để khớp placeholder {BenBDaiDien})
         CASE 
             WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL AND k.Tenchure <> '' AND k.Tencodau <> ''
                 THEN k.Tenchure + ' & ' + k.Tencodau
@@ -224,25 +219,25 @@ BEGIN
         ISNULL(h.Tentiec, N'LỄ THÀNH HÔN') AS [TenLe],
         ISNULL(k.Diachi, N'...')         AS [BenBDiaChiTemplate], -- backup alias nếu cần
 
-        -- NgayHopDong: ngày ký hợp đồng (template dùng {NgayHopDong})
+        -- NgayHopDong
         ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), N'...') AS [NgayHopDong],
 
-        -- NgaySetup: ngày trước ngày tổ chức 1 ngày (setup sảnh)
+        -- NgaySetup
         ISNULL(CONVERT(VARCHAR(10), DATEADD(DAY, -1, h.Ngaytochuc), 103), N'...') AS [NgaySetup],
 
-        -- DonViThiCong: đơn vị thi công (nếu có), mặc định để trống
+        -- DonViThiCong
         ISNULL(NULLIF(h.DonViThiCong, ''), N'') AS [DonViThiCong],
 
-        -- TieuSuKhachHang: tiểu sử / ghi chú khách hàng  
+        -- TieuSuKhachHang
         ISNULL(NULLIF(h.TieuSuKhachHang, ''), N'') AS [TieuSuKhachHang],
 
-        -- DichVuKhuyenMai: dịch vụ ưu đãi tặng kèm
+        -- DichVuKhuyenMai
         ISNULL(NULLIF(h.DichVuKhuyenMai, ''), N'') AS [DichVuKhuyenMai],
 
-        -- LuuY: lưu ý chung (lấy từ ghi chú hợp đồng nếu có)
+        -- LuuY
         ISNULL(NULLIF(h.LuuY, ''), ISNULL(NULLIF(h.Ghichu, ''), N'')) AS [LuuY],
 
-        -- HDTenCty: tên công ty xuất hóa đơn (khớp placeholder {HDTenCty})
+        -- HDTenCty
         ISNULL(NULLIF(h.TenCtyHoaDon, ''), ISNULL(k.Tenkh, N'')) AS [HDTenCty],
 
         -- Các trường bổ sung đồng bộ với mẫu BEO
@@ -263,26 +258,38 @@ BEGIN
         ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [LichTrinh],
 
         -- Lịch trình thanh toán — computed giống v_DanhSachHopDong
-        (
-            SELECT STT, SoTien, Ngay, NoiDung
-            FROM (
-                SELECT 1 AS STT,
-                    FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien,
-                    ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), '...') AS Ngay,
-                    N'Đặt cọc giữ chỗ' AS NoiDung
-                WHERE ISNULL(h.Sotiencoccho, 0) > 0
-                UNION ALL
-                SELECT 2, FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ',
-                    ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), '...'),
-                    N'Đặt cọc ký hợp đồng'
-                WHERE ISNULL(h.Sotiencochopdong, 0) > 0
-                UNION ALL
-                SELECT CASE WHEN ISNULL(h.Sotiencochopdong, 0) > 0 THEN 3 ELSE 2 END,
-                    N'Thanh toán còn lại',
-                    ISNULL(CONVERT(VARCHAR(10), h.Ngaytochuc, 103), '...'),
-                    N'Thanh toán cuối tiệc.'
-            ) t
-            FOR JSON PATH
+        ISNULL(
+            STUFF(
+                (SELECT N' | ' + CAST(t.STT AS NVARCHAR(5)) + N': ' + t.SoTien + N' (' + t.Ngay + N' - ' + t.NoiDung + N')'
+                 FROM (
+                     SELECT 
+                         1 AS STT, 
+                         FORMAT(ISNULL(h.Sotiencoccho, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
+                         ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), '...') AS Ngay,
+                         N'Đặt cọc giữ chỗ' AS NoiDung
+                     WHERE ISNULL(h.Sotiencoccho, 0) > 0
+
+                     UNION ALL
+
+                     SELECT 
+                         2 AS STT, 
+                         FORMAT(ISNULL(h.Sotiencochopdong, 0), 'N0', 'vi-VN') + ' VNĐ' AS SoTien, 
+                         ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), '...') AS Ngay,
+                         N'Đặt cọc ký hợp đồng' AS NoiDung
+                     WHERE ISNULL(h.Sotiencochopdong, 0) > 0
+
+                     UNION ALL
+
+                     SELECT 
+                         CASE WHEN ISNULL(h.Sotiencochopdong, 0) > 0 THEN 3 ELSE 2 END AS STT, 
+                         N'Thanh toán còn lại' AS SoTien, 
+                         ISNULL(CONVERT(VARCHAR(10), h.Ngaytochuc, 103), '...') AS Ngay,
+                         N'Thanh toán cuối tiệc.' AS NoiDung
+                 ) t
+                 ORDER BY t.STT
+                 FOR XML PATH(''), TYPE
+                ).value('.', 'NVARCHAR(MAX)'), 1, 3, N''
+            ), N''
         ) AS [LichTrinhThanhToan],
 
         -- ── Ghi chú cho các bộ phận (multiline — dùng {@...}) ───────────
@@ -408,7 +415,7 @@ INSERT INTO @BEO_Fields VALUES
 ('NoteKyThuat',     N'Ghi Chú Kỹ Thuật',     'ta', NULL,  '12', 23, 1,1,0,0),
 ('NoteLobby',       N'Ghi Chú Lobby',         'ta', NULL,  '12', 24, 1,1,0,0),
 ('ChiTietLichTrinh',N'Lịch Trình Chi Tiết',  'js', N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"80px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"80px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"100px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]',  '12', 30, 0,0,1,1),
-('LichTrinhThanhToan',N'Lịch Trình Thanh Toán','js', N'[{"key":"STT","label":"Đợt","type":"number","width":"60px"},{"key":"SoTien","label":"Số tiền","type":"text","width":"150px"},{"key":"Ngay","label":"Ngày","type":"text","width":"120px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', '12', 31, 0,0,1,1);
+('LichTrinhThanhToan',N'Lịch Trình Thanh Toán','t', NULL, '12', 31, 0,0,1,1);
 
 MERGE SY_FormatFields AS tgt
 USING (SELECT 'frmBEO' AS FormName, * FROM @BEO_Fields) AS src
