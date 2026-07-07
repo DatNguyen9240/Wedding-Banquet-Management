@@ -14,10 +14,24 @@ var AppGrid = {
     // Set class ban dau cho container
     container.className = self.getThemeClass();
 
+    // Chen style de hien thi duong ngan cach cot (vertical borders)
+    if (!document.getElementById('ag-grid-borders-style')) {
+      var style = document.createElement('style');
+      style.id = 'ag-grid-borders-style';
+      style.innerHTML = 
+        '.ag-theme-quartz .ag-cell, .ag-theme-quartz-dark .ag-cell, ' +
+        '.ag-theme-quartz .ag-header-cell, .ag-theme-quartz-dark .ag-header-cell { ' +
+        '  border-right: 1px solid var(--ag-border-color, var(--color-border, #e2e8f0)) !important; ' +
+        '}';
+      document.head.appendChild(style);
+    }
+
     var defaultOptions = {
       pagination: true,
       rowSelection: 'single',
       rowMultiSelectWithClick: true,
+      enableCellTextSelection: true,
+      ensureDomOrder: true,
       paginationPageSize: 10,
       paginationPageSizeSelector: [10, 20, 50, 100],
       defaultColDef: {
@@ -99,11 +113,30 @@ var AppGrid = {
       }
     }
 
-    // Toggle row selection on click (click again to deselect)
+    // Toggle row selection on click (click again to deselect) + custom double-tap for mobile
     var lastSelectedNode = null;
+    var lastTapTime = 0;
+    var lastTapNode = null;
     var originalOnRowClicked = mergedOptions.onRowClicked;
+
     mergedOptions.onRowClicked = function (event) {
       var node = event.node;
+      var currentTime = Date.now();
+      var tapGap = currentTime - lastTapTime;
+
+      // Kich hoat double tap (duoi 300ms tren cung mot dong) de ho tro man hinh dien thoai/tablet
+      if (lastTapNode === node && tapGap < 300) {
+        if (typeof mergedOptions.onRowDoubleClicked === 'function') {
+          mergedOptions.onRowDoubleClicked(event);
+        }
+        lastTapTime = 0;
+        lastTapNode = null;
+        return;
+      }
+
+      lastTapTime = currentTime;
+      lastTapNode = node;
+
       if (lastSelectedNode === node) {
         node.setSelected(false);
         lastSelectedNode = null;
