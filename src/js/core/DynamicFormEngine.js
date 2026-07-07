@@ -369,19 +369,10 @@ window.DynamicFormEngine = (function () {
                   var arr = typeof v === 'string' ? JSON.parse(v) : v;
                   if (Array.isArray(arr)) {
                     return arr.map(function (row) {
-                      if (row.STT !== undefined && row.SoTien !== undefined) {
-                        return row.STT + ': ' + row.SoTien + ' (' + (row.Ngay || '...') + ' - ' + (row.NoiDung || '') + ')';
-                      }
-                      if (row.BatDau !== undefined && row.KetThuc !== undefined) {
-                        var s = row.BatDau + ' - ' + row.KetThuc;
-                        if (row.Sanh) s += ' (' + row.Sanh + ' - ' + (row.NoiDung || '') + ')';
-                        else s += ' (' + (row.NoiDung || '') + ')';
-                        return s;
-                      }
-                      return Object.keys(row).map(function(k) { return row[k]; }).filter(Boolean).join(' - ');
+                      return Object.keys(row).map(function (k) { return row[k]; }).filter(Boolean).join(' - ');
                     }).join(' | ');
                   }
-                } catch (e) {}
+                } catch (e) { }
                 return v;
               }
 
