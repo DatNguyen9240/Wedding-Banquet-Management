@@ -498,6 +498,11 @@ window.DynamicFormEngine = (function () {
 
         var toolbar = UIActionToolbar.create({
           onAdd: MODULE_CONFIG.HideAddBtn ? false : (_hasPermission('ADD') ? _openAddForm : 'DISABLED'),
+          onCopy: MODULE_CONFIG.HideAddBtn ? false : (_hasPermission('ADD') ? function () {
+            if (!selectedRows || selectedRows.length === 0) return typeof Alert !== 'undefined' ? Alert.warning(MODULE_CONFIG.AlertTitleWarning, 'Vui lòng chọn một dòng để sao chép!') : null;
+            if (selectedRows.length > 1) return typeof Alert !== 'undefined' ? Alert.warning(MODULE_CONFIG.AlertTitleWarning, 'Chỉ sao chép được một dòng cùng lúc!') : null;
+            _openModal(false, selectedRows[0]);
+          } : 'DISABLED'),
           onEdit: MODULE_CONFIG.HideEditBtn ? false : (_hasPermission('EDIT') ? function () {
             if (!selectedRows || selectedRows.length === 0) return Alert.warning(MODULE_CONFIG.AlertTitleWarning, MODULE_CONFIG.WarnSelectEdit);
 
@@ -1027,77 +1032,40 @@ window.DynamicFormEngine = (function () {
   function _updateSelectionCounter() {
     _saveSelectedRows();
 
-    var globalActions = document.getElementById('global-page-actions');
-    var btnContainer = globalActions || $container.querySelector('#dynamic-btn-container');
-    if (!btnContainer) return;
+    // Đính kèm thông tin Đã chọn vào Header Info (bên trái tiêu đề trang) để tránh chật thanh Actions
+    var headerInfo = document.querySelector('#global-header .page-title-info');
+    if (!headerInfo) {
+      var globalActions = document.getElementById('global-page-actions');
+      headerInfo = globalActions || $container.querySelector('#dynamic-btn-container');
+    }
+    if (!headerInfo) return;
 
-    var actualToolbar = btnContainer.firstElementChild; // .button-bar
-    if (!actualToolbar) return;
-
-    var wrapper = actualToolbar.querySelector('.btn-scroll-wrapper');
-
-    var updateActionbarArrows = function () {
-      if (!wrapper) return;
-      var scrollLeftBtn = actualToolbar.querySelector('.actionbar-scroll-left');
-      var scrollRightBtn = actualToolbar.querySelector('.actionbar-scroll-right');
-      if (!scrollLeftBtn || !scrollRightBtn) return;
-      var scrollable = wrapper.scrollWidth > wrapper.clientWidth + 15;
-      scrollLeftBtn.style.display = (scrollable && wrapper.scrollLeft > 10) ? 'flex' : 'none';
-      scrollRightBtn.style.display = (scrollable && wrapper.scrollLeft < wrapper.scrollWidth - wrapper.clientWidth - 10) ? 'flex' : 'none';
-    };
-
-    var counter = actualToolbar.querySelector('#selection-counter');
+    var counter = headerInfo.querySelector('#selection-counter');
     if (!counter) {
       if (!document.getElementById('selection-counter-style')) {
         var style = document.createElement('style');
         style.id = 'selection-counter-style';
         style.innerHTML = `
-          /* Toolbar gốc: Giữ cùng hàng */
-          #dynamic-btn-container .button-bar,
-          .page-title-actions .button-bar {
-            display: flex;
-            flex-wrap: nowrap;
+          #selection-counter {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-primary);
+            background: var(--color-primary-light, rgba(79, 70, 229, 0.1));
+            padding: 4px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+            display: inline-flex;
             align-items: center;
             gap: 6px;
-          }
-          @media (max-width: 768px) {
-            #dynamic-btn-container .button-bar,
-            .page-title-actions .button-bar {
-              flex-wrap: nowrap !important;
-            }
-          }
-          /* Badge Đã chọn */
-          #selection-counter {
-            margin-left: auto;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--color-primary);
-            background: var(--color-primary-light);
-            padding: 4px 8px 4px 12px;
-            border-radius: 20px;
-            white-space: nowrap;
-            flex-shrink: 0;
-            display: none;
-            align-items: center;
-            gap: 4px;
-          }
-          @media (max-width: 768px) {
-            #selection-counter {
-              margin-left: auto !important; /* Đẩy sát về bên phải */
-              margin-top: 0 !important;
-              width: auto !important;
-              flex: 0 0 auto !important;
-              font-size: 11px !important; /* Thu nhỏ cỡ chữ */
-              padding: 2px 6px 2px 10px !important; /* Thu gọn padding */
-              border-radius: 12px !important; /* Thu nhỏ bo góc */
-            }
+            margin-left: 12px;
+            align-self: center;
           }
         `;
         document.head.appendChild(style);
       }
       counter = document.createElement('div');
       counter.id = 'selection-counter';
-      actualToolbar.appendChild(counter);
+      headerInfo.appendChild(counter);
     }
 
     if (selectedRows.length > 0) {
@@ -1129,6 +1097,21 @@ window.DynamicFormEngine = (function () {
       counter.innerHTML = '';
     }
 
+    var globalActions = document.getElementById('global-page-actions');
+    var btnContainer = globalActions || $container.querySelector('#dynamic-btn-container');
+    if (!btnContainer) return;
+    var actualToolbar = btnContainer.firstElementChild; // .button-bar
+    if (!actualToolbar) return;
+    var wrapper = actualToolbar.querySelector('.btn-scroll-wrapper');
+    var updateActionbarArrows = function () {
+      if (!wrapper) return;
+      var scrollLeftBtn = actualToolbar.querySelector('.actionbar-scroll-left');
+      var scrollRightBtn = actualToolbar.querySelector('.actionbar-scroll-right');
+      if (!scrollLeftBtn || !scrollRightBtn) return;
+      var scrollable = wrapper.scrollWidth > wrapper.clientWidth + 15;
+      scrollLeftBtn.style.display = (scrollable && wrapper.scrollLeft > 10) ? 'flex' : 'none';
+      scrollRightBtn.style.display = (scrollable && wrapper.scrollLeft < wrapper.scrollWidth - wrapper.clientWidth - 10) ? 'flex' : 'none';
+    };
     if (typeof updateActionbarArrows === 'function') {
       setTimeout(updateActionbarArrows, 60);
     }
@@ -2039,8 +2022,12 @@ window.DynamicFormEngine = (function () {
         return;
       }
 
-      // Tự động gán giá trị cũ (nếu đang Sửa 1 dòng).
-      field.value = (isEdit && row) ? _getValueFromRow(row, field.name) : '';
+      // Tự động gán giá trị cũ (nếu đang Sửa hoặc Sao chép 1 dòng).
+      if (field.name === MODULE_CONFIG.PrimaryKey && !isEdit) {
+        field.value = '';
+      } else {
+        field.value = row ? _getValueFromRow(row, field.name) : '';
+      }
 
       // Khởi tạo Ô nhập liệu tuỳ thuộc vào quy tắc renderRule
       var inputEl;

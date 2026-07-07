@@ -10721,20 +10721,22 @@ UIControls.utils = (function() {
  * AppGrid.js - AG Grid Helper for Wedding-Banquet-Management
  */
 var AppGrid = {
-  getThemeClass: function() {
-    var isDark = document.body.classList.contains('dark-theme') || 
-                 localStorage.getItem('pmql_theme') === 'dark';
+  getThemeClass: function () {
+    var isDark = document.body.classList.contains('dark-theme') ||
+      localStorage.getItem('pmql_theme') === 'dark';
     return isDark ? 'ag-theme-quartz-dark' : 'ag-theme-quartz';
   },
 
-  create: function(container, customOptions) {
+  create: function (container, customOptions) {
     var self = this;
-    
+
     // Set class ban dau cho container
     container.className = self.getThemeClass();
 
     var defaultOptions = {
       pagination: true,
+      rowSelection: 'single',
+      rowMultiSelectWithClick: true,
       paginationPageSize: 10,
       paginationPageSizeSelector: [10, 20, 50, 100],
       defaultColDef: {
@@ -10779,7 +10781,7 @@ var AppGrid = {
 
     // Tron option mac dinh voi option custom
     var mergedOptions = Object.assign({}, defaultOptions, customOptions);
-    
+
     // Ghi de defaultColDef sau khi tron de dam bao an toan
     if (customOptions && customOptions.defaultColDef) {
       mergedOptions.defaultColDef = Object.assign({}, defaultOptions.defaultColDef, customOptions.defaultColDef);
@@ -10790,16 +10792,47 @@ var AppGrid = {
     var savedHidden = [];
     try {
       savedHidden = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    } catch (e) {}
+    } catch (e) { }
 
     if (savedHidden && savedHidden.length > 0 && mergedOptions.columnDefs) {
-      mergedOptions.columnDefs.forEach(function(col) {
+      mergedOptions.columnDefs.forEach(function (col) {
         var colId = col.field || col.colId;
         if (colId && savedHidden.includes(colId)) {
           col.hide = true;
         }
       });
     }
+
+    // Load saved filter state from localStorage
+    var filterStorageKey = 'grid_filter_' + (container.id || 'default');
+    var isFilterVisible = localStorage.getItem(filterStorageKey) === 'true'; // default to false
+
+    if (!isFilterVisible) {
+      if (mergedOptions.defaultColDef) {
+        mergedOptions.defaultColDef.floatingFilter = false;
+      }
+      if (mergedOptions.columnDefs) {
+        mergedOptions.columnDefs.forEach(function (col) {
+          col.floatingFilter = false;
+        });
+      }
+    }
+
+    // Toggle row selection on click (click again to deselect)
+    var lastSelectedNode = null;
+    var originalOnRowClicked = mergedOptions.onRowClicked;
+    mergedOptions.onRowClicked = function (event) {
+      var node = event.node;
+      if (lastSelectedNode === node) {
+        node.setSelected(false);
+        lastSelectedNode = null;
+      } else {
+        lastSelectedNode = node.isSelected() ? node : null;
+      }
+      if (typeof originalOnRowClicked === 'function') {
+        originalOnRowClicked(event);
+      }
+    };
 
     var gridApi = agGrid.createGrid(container, mergedOptions);
 
@@ -10813,7 +10846,7 @@ var AppGrid = {
       var btn = document.createElement('button');
       btn.className = 'grid-col-settings-btn';
       btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px; display: block;">view_column</span>';
-      btn.title = 'Ẩn/Hiện cột';
+      btn.title = 'Cấu hình cột & Bộ lọc';
       btn.style.position = 'absolute';
       btn.style.right = '6px';
       btn.style.top = '6px';
@@ -10831,10 +10864,10 @@ var AppGrid = {
       btn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
       btn.style.transition = 'all 0.15s ease';
 
-      btn.onmouseover = function() {
+      btn.onmouseover = function () {
         btn.style.background = 'var(--bg, var(--color-background, #f1f5f9))';
       };
-      btn.onmouseout = function() {
+      btn.onmouseout = function () {
         btn.style.background = 'var(--surface, var(--color-surface, #ffffff))';
       };
 
@@ -10854,13 +10887,53 @@ var AppGrid = {
       popover.style.display = 'none';
       popover.style.flexDirection = 'column';
       popover.style.gap = '6px';
-      popover.style.minWidth = '160px';
+      popover.style.minWidth = '180px';
 
       container.appendChild(btn);
       container.appendChild(popover);
 
       function updatePopover() {
         popover.innerHTML = '';
+
+        // Toggle Filter row at top of popover
+        var filterLabel = document.createElement('label');
+        filterLabel.style.display = 'flex';
+        filterLabel.style.alignItems = 'center';
+        filterLabel.style.gap = '8px';
+        filterLabel.style.cursor = 'pointer';
+        filterLabel.style.fontSize = '12px';
+        filterLabel.style.fontWeight = '700';
+        filterLabel.style.color = 'var(--text, var(--color-text, #1e293b))';
+        filterLabel.style.borderBottom = '1px solid var(--border, var(--color-border, #cbd5e1))';
+        filterLabel.style.paddingBottom = '6px';
+        filterLabel.style.marginBottom = '6px';
+        filterLabel.style.userSelect = 'none';
+
+        var filterCheckbox = document.createElement('input');
+        filterCheckbox.type = 'checkbox';
+        filterCheckbox.style.cursor = 'pointer';
+        filterCheckbox.checked = isFilterVisible;
+
+        filterCheckbox.onchange = function () {
+          var showFilter = filterCheckbox.checked;
+          localStorage.setItem(filterStorageKey, showFilter ? 'true' : 'false');
+          isFilterVisible = showFilter;
+
+          var currentDefs = gridApi.getColumnDefs();
+          var updatedDefs = currentDefs.map(function (col) {
+            col.floatingFilter = showFilter;
+            return col;
+          });
+          gridApi.setGridOption('columnDefs', updatedDefs);
+        };
+
+        filterLabel.appendChild(filterCheckbox);
+        var filterSpan = document.createElement('span');
+        filterSpan.innerText = 'Hiện ô tìm kiếm (Filter)';
+        filterLabel.appendChild(filterSpan);
+        popover.appendChild(filterLabel);
+
+        // Column selection title
         var title = document.createElement('div');
         title.innerText = 'Ẩn/Hiện cột';
         title.style.fontWeight = '700';
@@ -10871,7 +10944,7 @@ var AppGrid = {
         popover.appendChild(title);
 
         var colDefs = mergedOptions.columnDefs || [];
-        colDefs.forEach(function(col) {
+        colDefs.forEach(function (col) {
           var colId = col.field || col.colId;
           var header = col.headerName;
           if (!colId || !header) return;
@@ -10888,23 +10961,23 @@ var AppGrid = {
           var checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
           checkbox.style.cursor = 'pointer';
-          
+
           var isVisible = true;
-          var colState = gridApi.getColumnState().find(function(s) { return s.colId === colId; });
+          var colState = gridApi.getColumnState().find(function (s) { return s.colId === colId; });
           if (colState) {
             isVisible = !colState.hide;
           }
           checkbox.checked = isVisible;
 
-          checkbox.onchange = function() {
+          checkbox.onchange = function () {
             var visible = checkbox.checked;
             gridApi.setColumnVisible(colId, visible);
 
             var currentHidden = [];
             var states = gridApi.getColumnState();
-            states.forEach(function(s) {
+            states.forEach(function (s) {
               if (s.hide) {
-                var foundDef = colDefs.find(function(d) { return (d.field || d.colId) === s.colId; });
+                var foundDef = colDefs.find(function (d) { return (d.field || d.colId) === s.colId; });
                 if (foundDef && foundDef.headerName) {
                   currentHidden.push(s.colId);
                 }
@@ -10921,7 +10994,7 @@ var AppGrid = {
         });
       }
 
-      btn.onclick = function(e) {
+      btn.onclick = function (e) {
         e.stopPropagation();
         var isHidden = popover.style.display === 'none';
         if (isHidden) {
@@ -10932,15 +11005,15 @@ var AppGrid = {
         }
       };
 
-      document.addEventListener('click', function(e) {
+      document.addEventListener('click', function (e) {
         if (!popover.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
           popover.style.display = 'none';
         }
       });
     }
-    
+
     // Lang nghe thay doi class cua body de doi theme
-    var observer = new MutationObserver(function() {
+    var observer = new MutationObserver(function () {
       var newTheme = self.getThemeClass();
       if (container.className !== newTheme) {
         container.className = newTheme;
@@ -14599,6 +14672,7 @@ var UIActionToolbar = (function () {
     
     var buttons = [
       { text: 'Thêm',  icon: 'add',        type: 'tool', onClick: actions.onAdd,    className: 'btn-tool-add',    attrs: 'data-tooltip="Thêm bản ghi mới (Ins)"' },
+      { text: 'Sao chép', icon: 'content_copy', type: 'tool', onClick: actions.onCopy, className: 'btn-tool-copy', attrs: 'data-tooltip="Sao chép bản ghi đã chọn"' },
       { text: 'Sửa',   icon: 'edit',       type: 'tool', onClick: actions.onEdit,   className: 'btn-tool-edit',   attrs: 'data-tooltip="Sửa bản ghi đã chọn (F2)"' },
       { text: 'Xóa',   icon: 'delete',     type: 'tool', onClick: actions.onDelete, className: 'btn-tool-delete', attrs: 'data-tooltip="Xóa bản ghi đã chọn (Del)"' },
       { text: 'Lọc',   icon: 'filter_alt', type: 'tool', onClick: actions.onFilter, className: 'btn-tool-filter', attrs: 'data-tooltip="Lọc / Tìm kiếm dữ liệu"' },
@@ -14614,7 +14688,7 @@ var UIActionToolbar = (function () {
 
     var filteredButtons = [];
     buttons.forEach(function(b) {
-      if (b.onClick === false) return; // Hide button
+      if (b.onClick === false || b.onClick === undefined || b.onClick === null) return; // Hide button
       if (b.onClick === 'DISABLED' || b.onClick === 'disabled') {
         b.disabled = true;
         b.onClick = function() {

@@ -9,6 +9,7 @@ var UIActionToolbar = (function () {
     
     var buttons = [
       { text: 'Thêm',  icon: 'add',        type: 'tool', onClick: actions.onAdd,    className: 'btn-tool-add',    attrs: 'data-tooltip="Thêm bản ghi mới (Ins)"' },
+      { text: 'Sao chép', icon: 'content_copy', type: 'tool', onClick: actions.onCopy, className: 'btn-tool-copy', attrs: 'data-tooltip="Sao chép bản ghi đã chọn"' },
       { text: 'Sửa',   icon: 'edit',       type: 'tool', onClick: actions.onEdit,   className: 'btn-tool-edit',   attrs: 'data-tooltip="Sửa bản ghi đã chọn (F2)"' },
       { text: 'Xóa',   icon: 'delete',     type: 'tool', onClick: actions.onDelete, className: 'btn-tool-delete', attrs: 'data-tooltip="Xóa bản ghi đã chọn (Del)"' },
       { text: 'Lọc',   icon: 'filter_alt', type: 'tool', onClick: actions.onFilter, className: 'btn-tool-filter', attrs: 'data-tooltip="Lọc / Tìm kiếm dữ liệu"' },
@@ -24,7 +25,7 @@ var UIActionToolbar = (function () {
 
     var filteredButtons = [];
     buttons.forEach(function(b) {
-      if (b.onClick === false) return; // Hide button
+      if (b.onClick === false || b.onClick === undefined || b.onClick === null) return; // Hide button
       if (b.onClick === 'DISABLED' || b.onClick === 'disabled') {
         b.disabled = true;
         b.onClick = function() {
