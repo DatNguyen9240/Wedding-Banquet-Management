@@ -259,7 +259,7 @@ WHERE FormName = 'frmKhachThamQuan' AND FieldName = 'SanhTiec';
 -- Gắn Combobox Sảnh đặt tiệc (Chỉ hiện form, ẩn lưới)
 UPDATE SY_FormatFields SET 
     CaptionVN = N'Sảnh đặt', 
-    FormatID = 'sl', 
+    FormatID = 'ml', 
     DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View | dmSanhtiec', 
     FormPosition = '6', 
     OrderNo = 13, 

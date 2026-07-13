@@ -879,7 +879,7 @@ BEGIN
     UPDATE SY_FormatFields SET CaptionVN = N'Gói tiệc', FormPosition = '6', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = '/api/API_Gateway_Router?List=API_DanhSachGoiThucDon&Func=View&FormID=dmGoiThucDon' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'GoiThucDonID';
 END
 
-UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', ShowInGrid = 0, DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View | dmSanhtiec' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
+UPDATE SY_FormatFields SET CaptionVN = N'Sảnh đặt', FormPosition = '6', OrderNo = 15, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'ml', ShowInGrid = 0, DataSource = '/api/API_Gateway_Router?List=API_DanhSachSanh&Func=View | dmSanhtiec' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'JsonSanhTiec';
 
 -- Đảm bảo trường DaCocVND (Số tiền cọc) được hiển thị và cho phép nhập dạng số
 IF EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'DaCocVND')
@@ -898,27 +898,27 @@ END
 ELSE
 BEGIN
     INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmBiennhancoccho', 'DaCocVND', N'Số tiền cọc', 'mn', '6', 1, 15, 1, 1, 0, 0);
+    VALUES ('frmBiennhancoccho', 'DaCocVND', N'Số tiền cọc', 'mn', '6', 1, 14, 1, 1, 0, 0);
 END
 
 -- Nhóm 3: Số bàn (mỗi ô chiếm 1/4 dòng = df-col-3 để nằm gọn trên 1 hàng ngang)
-UPDATE SY_FormatFields SET CaptionVN = N'Số bàn mặn chính', FormPosition = '3', OrderNo = 15, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'n' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanManchinhthuc';
-UPDATE SY_FormatFields SET CaptionVN = N'Bàn mặn dự phòng', FormPosition = '3', OrderNo = 16, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'n' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanManduphong';
-UPDATE SY_FormatFields SET CaptionVN = N'Số bàn chay chính', FormPosition = '3', OrderNo = 17, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'n' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanChaychinhthuc';
-UPDATE SY_FormatFields SET CaptionVN = N'Bàn chay dự phòng', FormPosition = '3', OrderNo = 18, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'n' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanChayduphong';
+UPDATE SY_FormatFields SET CaptionVN = N'Số bàn mặn chính', FormPosition = '3', OrderNo = 17, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'n' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanManchinhthuc';
+UPDATE SY_FormatFields SET CaptionVN = N'Bàn mặn dự phòng', FormPosition = '3', OrderNo = 18, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'n' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanManduphong';
+UPDATE SY_FormatFields SET CaptionVN = N'Số bàn chay chính', FormPosition = '3', OrderNo = 19, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'n' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanChaychinhthuc';
+UPDATE SY_FormatFields SET CaptionVN = N'Bàn chay dự phòng', FormPosition = '3', OrderNo = 20, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'n' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'SobanChayduphong';
 
 -- Nhóm 4: Hạch toán và thanh toán (Mỗi ô chiếm 1/3 dòng = df-col-4 nằm gọn trên 1 hàng ngang)
-UPDATE SY_FormatFields SET CaptionVN = N'Hình thức thanh toán', FormPosition = '4', OrderNo = 19, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = N'STATIC:Tiền mặt|Tiền mặt,Chuyển khoản|Chuyển khoản,Tiền mặt / Chuyển khoản|Tiền mặt / Chuyển khoản' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'HinhThuc';
-UPDATE SY_FormatFields SET CaptionVN = N'Tài khoản Nợ', FormPosition = '4', OrderNo = 20, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'TaiKhoanNo';
-UPDATE SY_FormatFields SET CaptionVN = N'Tài khoản Có', FormPosition = '4', OrderNo = 21, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'TaiKhoanCo';
+UPDATE SY_FormatFields SET CaptionVN = N'Hình thức thanh toán', FormPosition = '4', OrderNo = 21, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = N'STATIC:Tiền mặt|Tiền mặt,Chuyển khoản|Chuyển khoản,Tiền mặt / Chuyển khoản|Tiền mặt / Chuyển khoản' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'HinhThuc';
+UPDATE SY_FormatFields SET CaptionVN = N'Tài khoản Nợ', FormPosition = '4', OrderNo = 22, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'TaiKhoanNo';
+UPDATE SY_FormatFields SET CaptionVN = N'Tài khoản Có', FormPosition = '4', OrderNo = 23, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'TaiKhoanCo';
 
 -- Nhóm 5: Ghi chú, lý do và hồ sơ kèm theo
-UPDATE SY_FormatFields SET CaptionVN = N'Lý do nộp tiền', FormPosition = '6', OrderNo = 22, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Lydo';
-UPDATE SY_FormatFields SET CaptionVN = N'Kèm theo chứng từ', FormPosition = '6', OrderNo = 23, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Kemtheo';
-UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú', FormPosition = '12', OrderNo = 24, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Ghichu';
+UPDATE SY_FormatFields SET CaptionVN = N'Lý do nộp tiền', FormPosition = '6', OrderNo = 24, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Lydo';
+UPDATE SY_FormatFields SET CaptionVN = N'Kèm theo chứng từ', FormPosition = '6', OrderNo = 25, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Kemtheo';
+UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú', FormPosition = '12', OrderNo = 26, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 't' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Ghichu';
 
 -- Cập nhật lần cọc (cọc lần 1 / lần 2) hiển thị trên Form
-UPDATE SY_FormatFields SET CaptionVN = N'Lần cọc', FormPosition = '6', OrderNo = 15, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = N'STATIC:1|Cọc lần 1' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Solan';
+UPDATE SY_FormatFields SET CaptionVN = N'Lần cọc', FormPosition = '6', OrderNo = 16, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyAdd = 0, IsReadOnlyEdit = 0, FormatID = 'sr', DataSource = N'STATIC:1|Cọc lần 1' WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Solan';
 
 -- Cấu hình hiển thị động (VisibleRule) cho các trường Chú rể / Cô dâu
 -- Chỉ hiển thị khi chọn loại tiệc là Tiệc cưới (blt000001 hoặc t01)

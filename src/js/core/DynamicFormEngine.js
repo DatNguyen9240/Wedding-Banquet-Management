@@ -2170,12 +2170,21 @@ window.DynamicFormEngine = (function () {
               var dynamicFilters = {};
 
               if (typeof currentModalFormState !== 'undefined') {
+                var dependencies = {};
+                if (field.dependsOn) {
+                  var parents = field.dependsOn.split(',').map(function (p) { return p.trim(); });
+                  parents.forEach(function (p) {
+                    if (currentModalFormState[p] !== undefined) {
+                      dependencies[p] = currentModalFormState[p];
+                    }
+                  });
+                }
+
                 if (isGateway) {
-                  dynamicFilters = Object.assign({}, currentModalFormState);
-                  // Cũng gán các thuộc tính lên payload để resolve placeholder trên Gateway router
-                  payload = Object.assign(payload, currentModalFormState);
+                  dynamicFilters = Object.assign({}, dependencies);
+                  payload = Object.assign(payload, dependencies);
                 } else {
-                  payload = Object.assign(payload, currentModalFormState);
+                  payload = Object.assign(payload, dependencies);
                 }
               }
 

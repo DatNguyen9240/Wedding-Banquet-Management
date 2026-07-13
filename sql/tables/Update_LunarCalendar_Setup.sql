@@ -1,4 +1,4 @@
-﻿USE [QLTiec];
+USE [QLTiec];
 GO
 
 -- =========================================================================
@@ -40,13 +40,16 @@ BEGIN
     
     DECLARE @NgayToChuc NVARCHAR(50) = NULL;
     
-    -- Trích xuất ngày tổ chức từ JSON (hỗ trợ cả NgayToChuc và ngaytochuc)
+    -- Trích xuất ngày tổ chức từ JSON (hỗ trợ cả NgayToChuc, ngaytochuc, NgayDuKien, ngaydukien)
     IF @JsonData IS NOT NULL AND ISJSON(@JsonData) = 1
     BEGIN
         SELECT @NgayToChuc = COALESCE(
             JSON_VALUE(@JsonData, '$.NgayToChuc'),
             JSON_VALUE(@JsonData, '$.Ngaytochuc'),
-            JSON_VALUE(@JsonData, '$.ngaytochuc')
+            JSON_VALUE(@JsonData, '$.ngaytochuc'),
+            JSON_VALUE(@JsonData, '$.NgayDuKien'),
+            JSON_VALUE(@JsonData, '$.Ngaydukien'),
+            JSON_VALUE(@JsonData, '$.ngaydukien')
         );
     END
     
@@ -79,8 +82,8 @@ BEGIN
         SET @LunarDate = dbo.fn_SolarToLunar(@ParsedDate);
     END
     
-    -- Trả về trường Nhamngay tương ứng với ô nhập trên form
-    SELECT @LunarDate AS [Nhamngay];
+    -- Trả về cả Nhamngay và NgayAmLich để tương thích với tất cả các biểu mẫu (frmHopDong, frmKhachThamQuan, v.v.)
+    SELECT @LunarDate AS [Nhamngay], @LunarDate AS [NgayAmLich];
 END;
 GO
 

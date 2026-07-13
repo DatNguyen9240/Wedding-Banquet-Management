@@ -13,11 +13,11 @@ BEGIN
 
     SELECT 
         Makh,
+        Tenkh,
         Tenchure,
         DTchure,
         Tencodau,
         DTcodau,
-        Tenkh,
         Dienthoai,
         ISNULL(NULLIF(Dienthoai, ''), ISNULL(DTchure, DTcodau)) AS DienthoaiChung,
         Dienthoai AS DienThoaiDaiDien,
@@ -38,11 +38,13 @@ BEGIN
         
         -- 2. Lọc Keyword (Tìm kiếm chung toàn cục cũ)
         AND (@Keyword IS NULL OR @Keyword = ''
+             OR Makh LIKE '%' + @Keyword + '%'
              OR Tenkh LIKE N'%' + @Keyword + '%'
              OR Tenchure LIKE N'%' + @Keyword + '%'
              OR Tencodau LIKE N'%' + @Keyword + '%'
              OR Dienthoai LIKE '%' + @Keyword + '%'
-             OR CMNDDaiDien LIKE '%' + @Keyword + '%');
+             OR CMNDDaiDien LIKE '%' + @Keyword + '%')
+    ORDER BY Makh DESC;
 END
 GO
 

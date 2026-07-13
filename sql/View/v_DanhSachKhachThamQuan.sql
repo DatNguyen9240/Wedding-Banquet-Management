@@ -32,19 +32,28 @@ SELECT
     t.Ngaytochuc AS [Ngaytochuc],
     t.DocumentDate AS [DocumentDate],
     
-    (
-        SELECT TOP 1 s.Tensanhtiec 
+    k.Tenchure AS [Tenchure],
+    k.Tencodau AS [Tencodau],
+    k.DTchure AS [DTchure],
+    k.DTcodau AS [DTcodau],
+    k.Diachi AS [Diachi],
+    k.Mail AS [Mail],
+    k.Nguoigd AS [Nguoigd],
+    k.Dienthoai AS [DienThoaiDaiDien],
+    
+    STUFF((
+        SELECT ', ' + s.Tensanhtiec 
         FROM tbmk_Khachthamquansanhtiec bs 
         INNER JOIN dmSanhtiec s ON bs.Sanhtiecid = s.Sanhtiecid 
         WHERE bs.DocumentID = t.DocumentID
-    ) AS [SanhTiec], -- Đã đổi thành Tên để hiện ra Lưới
+        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS [SanhTiec],
     
     -- Dành riêng cho Edit Form Binding
-    (
-        SELECT TOP 1 bs.Sanhtiecid 
+    STUFF((
+        SELECT ', ' + bs.Sanhtiecid 
         FROM tbmk_Khachthamquansanhtiec bs 
         WHERE bs.DocumentID = t.DocumentID
-    ) AS [SanhTiecID], -- Đổi thành cột chìm chứa ID
+        FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS [SanhTiecID],
     
     CASE
         WHEN t.IsHuy = 1 THEN N'Đã Hủy'

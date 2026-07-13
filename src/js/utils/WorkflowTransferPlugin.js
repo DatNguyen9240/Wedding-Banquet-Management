@@ -34,6 +34,20 @@ var WorkflowTransferPlugin = (function () {
             getTransferData: function (row) {
                 var data = Object.assign({}, row);
                 delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong;
+                
+                // Ánh xạ các trường khác tên từ KhachThamQuan sang BienNhanCoc
+                if (row.SanhTiecID !== undefined) {
+                    data.JsonSanhTiec = row.SanhTiecID;
+                }
+                if (row.SobanMan !== undefined) {
+                    data.SobanManchinhthuc = row.SobanMan;
+                }
+                if (row.SobanChay !== undefined) {
+                    data.SobanChaychinhthuc = row.SobanChay;
+                }
+                if (row.NgayDuKien !== undefined) {
+                    data.NgayToChuc = row.NgayDuKien;
+                }
                 return data;
             }
         },

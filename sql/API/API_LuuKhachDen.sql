@@ -61,7 +61,12 @@ BEGIN
     END
     ELSE IF (@Makh IS NOT NULL AND @Makh <> '')
     BEGIN
-        UPDATE dmkhachhang SET Tenkh = ISNULL(@Tenkh, Tenkh), Dienthoai = ISNULL(@Dienthoai, Dienthoai), CMNDDaiDien = ISNULL(@CCCD, CMNDDaiDien), CMNDnguoidd = ISNULL(@CCCD, CMNDnguoidd) WHERE Makh = @Makh;
+        UPDATE dmkhachhang SET 
+            Tenkh = ISNULL(NULLIF(@Tenkh, ''), Tenkh), 
+            Dienthoai = ISNULL(NULLIF(@Dienthoai, ''), Dienthoai), 
+            CMNDDaiDien = ISNULL(NULLIF(@CCCD, ''), CMNDDaiDien), 
+            CMNDnguoidd = ISNULL(NULLIF(@CCCD, ''), CMNDnguoidd) 
+        WHERE Makh = @Makh;
     END
 
     -- 3. Xử lý fallback cho Gói Thực Đơn
@@ -95,8 +100,18 @@ BEGIN
     BEGIN
         DELETE FROM tbmk_Khachthamquansanhtiec WHERE DocumentID = @DocumentID;
         
-        INSERT INTO tbmk_Khachthamquansanhtiec (DocumentID, Sanhtiecid, UserAutoid)
-        VALUES (@DocumentID, @SanhTiec, CAST(NEWID() AS VARCHAR(50)));
+        -- Nếu chứa nhiều sảnh cách nhau bởi dấu phẩy, tách chuỗi và chèn nhiều dòng
+        IF CHARINDEX(',', @SanhTiec) > 0
+        BEGIN
+            INSERT INTO tbmk_Khachthamquansanhtiec (DocumentID, Sanhtiecid, UserAutoid)
+            SELECT @DocumentID, LTRIM(RTRIM(value)), CAST(NEWID() AS VARCHAR(50))
+            FROM string_split(@SanhTiec, ',');
+        END
+        ELSE
+        BEGIN
+            INSERT INTO tbmk_Khachthamquansanhtiec (DocumentID, Sanhtiecid, UserAutoid)
+            VALUES (@DocumentID, @SanhTiec, CAST(NEWID() AS VARCHAR(50)));
+        END
     END
     ELSE IF @JsonSanhTiec IS NOT NULL AND @JsonSanhTiec <> '[]'
     BEGIN
