@@ -113,6 +113,20 @@ var AppGrid = {
       }
     }
 
+    // Debounce row double click to prevent double invocation (custom double-tap + native double-click)
+    var lastDoubleClickedTime = 0;
+    var originalOnRowDoubleClicked = mergedOptions.onRowDoubleClicked;
+    if (typeof originalOnRowDoubleClicked === 'function') {
+      mergedOptions.onRowDoubleClicked = function (event) {
+        var currentTime = Date.now();
+        if (currentTime - lastDoubleClickedTime < 400) {
+          return;
+        }
+        lastDoubleClickedTime = currentTime;
+        originalOnRowDoubleClicked(event);
+      };
+    }
+
     // Toggle row selection on click (click again to deselect) + custom double-tap for mobile
     var lastSelectedNode = null;
     var lastTapTime = 0;
