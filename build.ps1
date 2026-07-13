@@ -72,6 +72,7 @@ $jsFiles = @(
   "js\utils\CLManagementPlugin.js",
   "js\utils\PhuLucPlugin.js",
   "js\utils\QuyetToanPlugin.js",
+  "js\utils\AddressAutocompletePlugin.js",
   "js\core\EventBus.js",
   "js\core\KeyboardManager.js",
   "js\utils\FormatUtils.js",

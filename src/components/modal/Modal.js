@@ -48,6 +48,15 @@ var UIModal = (function () {
 
     document.getElementById('modal-container').appendChild(overlay);
 
+    // Tự động kích hoạt gợi ý địa chỉ nếu có AddressAutocompletePlugin và modal chứa ô địa chỉ
+    if (typeof AddressAutocompletePlugin !== 'undefined' && typeof AddressAutocompletePlugin.onInitModal === 'function') {
+      try {
+        AddressAutocompletePlugin.onInitModal(config.title || 'GenericModal', false, overlay, null, config);
+      } catch (err) {
+        console.error('[UIModal] Error running AddressAutocompletePlugin:', err);
+      }
+    }
+
     var modalId = config.id || 'modal-' + Date.now();
     // Dùng URL hiện tại (giữ nguyên hash) để không làm mất route
     history.pushState({ modalId: modalId }, null, window.location.href);
