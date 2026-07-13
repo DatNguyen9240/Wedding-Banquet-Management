@@ -218,7 +218,8 @@ BEGIN
                   AND Ngaytochuc = @NgayToChucParsed
                   AND ISNULL(IsHuy, 0) = 0
                   AND ISNULL(IsKetthuc, 0) = 0
-                  AND DocumentID != ISNULL(@DocumentID, '')
+                  AND ISNULL(IsDeleted, 0) = 0
+                  AND UPPER(DocumentID) != UPPER(ISNULL(@DocumentID, ''))
             )
             BEGIN
                 SELECT 0 AS [Success], N'Lỗi: Khách hàng này đã có một phiếu cọc chỗ đang hoạt động vào ngày tổ chức này. Vui lòng chỉnh sửa phiếu cọc cũ thay vì tạo mới!' AS [Message], NULL AS [DocumentID], NULL AS [Makh];
@@ -238,6 +239,7 @@ BEGIN
                 WHERE h.Ngaytochuc = @NgayToChucParsed 
                   AND h.Thoigianid = @Thoigianid
                   AND ISNULL(h.IsHuy, 0) = 0
+                  AND ISNULL(h.IsDeleted, 0) = 0
                   
                 UNION ALL
                 
@@ -250,7 +252,8 @@ BEGIN
                   AND b.Thoigianid = @Thoigianid
                   AND ISNULL(b.IsHuy, 0) = 0
                   AND ISNULL(b.IsKetthuc, 0) = 0
-                  AND b.DocumentID != ISNULL(@DocumentID, '')
+                  AND ISNULL(b.IsDeleted, 0) = 0
+                  AND UPPER(b.DocumentID) != UPPER(ISNULL(@DocumentID, ''))
             )
             BEGIN
                 SELECT 0 AS [Success], N'Lỗi: Sảnh bạn chọn đã được đặt cọc hoặc ký Hợp đồng trước đó trong ca tiệc này. Vui lòng kiểm tra lại!' AS [Message], NULL AS [DocumentID], NULL AS [Makh];

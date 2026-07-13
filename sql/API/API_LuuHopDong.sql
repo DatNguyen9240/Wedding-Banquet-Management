@@ -205,8 +205,15 @@ BEGIN
     IF (@NgayToChucParsed IS NULL AND @Sohopdong IS NOT NULL AND @Sohopdong <> '')
         SELECT TOP 1 @NgayToChucParsed = Ngaytochuc FROM tbmk_Hopdong WHERE Sohopdong = @Sohopdong;
 
-    IF (@NgayToChucParsed IS NULL AND @Sobiennhan IS NOT NULL AND @Sobiennhan <> '')
-        SELECT TOP 1 @NgayToChucParsed = Ngaytochuc FROM tbmk_Biennhancoccho WHERE DocumentID = @Sobiennhan OR SoBN = @Sobiennhan;
+    IF (@Sobiennhan IS NOT NULL AND @Sobiennhan <> '')
+    BEGIN
+        SELECT TOP 1 @Sobiennhan = DocumentID 
+        FROM tbmk_Biennhancoccho 
+        WHERE DocumentID = @Sobiennhan OR SoBN = @Sobiennhan;
+    END
+
+    IF (@NgayToChucParsed IS NULL AND @Sobiennhan IS NOT NULL)
+        SELECT TOP 1 @NgayToChucParsed = Ngaytochuc FROM tbmk_Biennhancoccho WHERE DocumentID = @Sobiennhan;
 
     IF (@NgayToChucParsed IS NULL)
     BEGIN
@@ -225,18 +232,24 @@ BEGIN
                 INNER JOIN tbmk_Hopdongsanhtiec hs ON h.Sohopdong = hs.Sohopdong
                 INNER JOIN OPENJSON(@JsonSanhTiec) j ON hs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
                 WHERE h.Ngaytochuc = @NgayToChucParsed AND h.Thoigianid = @Thoigianid
-                  AND ISNULL(h.IsHuy, 0) = 0 AND h.Sohopdong != ISNULL(@Sohopdong, '')
+                  AND ISNULL(h.IsHuy, 0) = 0 AND ISNULL(h.IsDeleted, 0) = 0 
+                  AND UPPER(h.Sohopdong) != UPPER(ISNULL(@Sohopdong, ''))
                 UNION ALL
                 SELECT 1 FROM tbmk_Biennhancoccho b
                 INNER JOIN tbmk_Biennhancocchosanhtiec bs ON b.DocumentID = bs.DocumentID
                 INNER JOIN OPENJSON(@JsonSanhTiec) j ON bs.Sanhtiecid = JSON_VALUE(j.value, '$.Sanhtiecid')
                 WHERE b.Ngaytochuc = @NgayToChucParsed AND b.Thoigianid = @Thoigianid
-                  AND ISNULL(b.IsHuy, 0) = 0 AND ISNULL(b.IsKetthuc, 0) = 0
-                  AND b.DocumentID != ISNULL(@Sobiennhan, '')
+                  AND ISNULL(b.IsHuy, 0) = 0 AND ISNULL(b.IsKetthuc, 0) = 0 AND ISNULL(b.IsDeleted, 0) = 0
+                  AND UPPER(b.DocumentID) != UPPER(ISNULL(@Sobiennhan, ''))
             )
             BEGIN
                 ROLLBACK TRANSACTION;
-                SELECT 0 AS [Success], N'Lỗi: Sảnh bạn chọn đã được đặt hoặc cọc trước đó trong ca tiệc này. Vui lòng kiểm tra lại!' AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
+                DECLARE @ErrorMsg NVARCHAR(1000) = N'Sảnh bạn chọn đã được đặt hoặc cọc trước đó trong ca tiệc này. Vui lòng kiểm tra lại!'
+                    + CHAR(13) + CHAR(10) + N'• Ngày tổ chức: ' + ISNULL(CONVERT(VARCHAR(10), @NgayToChucParsed, 103), N'Chưa xác định')
+                    + CHAR(13) + CHAR(10) + N'• Ca tiệc: ' + ISNULL(@Thoigianid, N'Chưa xác định')
+                    + CASE WHEN @Sohopdong IS NOT NULL AND @Sohopdong <> '' THEN CHAR(13) + CHAR(10) + N'• Loại trừ HĐ: ' + @Sohopdong ELSE '' END
+                    + CASE WHEN @Sobiennhan IS NOT NULL AND @Sobiennhan <> '' THEN CHAR(13) + CHAR(10) + N'• Loại trừ Phiếu cọc: ' + @Sobiennhan ELSE '' END;
+                SELECT 0 AS [Success], @ErrorMsg AS [Message], NULL AS [Sohopdong], NULL AS [Makh];
                 RETURN;
             END
         END
