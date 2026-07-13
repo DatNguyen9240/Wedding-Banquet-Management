@@ -33,7 +33,7 @@ var WorkflowTransferPlugin = (function () {
             storageKey: 'transfer_VisitorToBooking',
             getTransferData: function (row) {
                 var data = Object.assign({}, row);
-                delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong;
+                delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong; delete data.DocumentID; delete data.MaPhieu; delete data.MaChungTu;
                 
                 // Ánh xạ các trường khác tên từ KhachThamQuan sang BienNhanCoc
                 if (row.SanhTiecID !== undefined) {
@@ -60,7 +60,7 @@ var WorkflowTransferPlugin = (function () {
             getTransferData: function (row) {
                 var data = Object.assign({}, row);
                 data.Sobiennhan = row.DocumentID || row.SoBN || row.Id;
-                delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong;
+                delete data.Id; delete data.AutoID; delete data.Sohopdong; delete data.SoHopDong; delete data.DocumentID; delete data.MaPhieu; delete data.MaChungTu;
                 return data;
             }
         },
