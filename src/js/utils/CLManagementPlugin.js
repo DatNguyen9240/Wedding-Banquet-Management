@@ -112,6 +112,11 @@ var CLManagementPlugin = (function () {
         ratioInput.addEventListener('input', handler);
         ratioInput.addEventListener('change', handler);
       }
+
+      // 3. Re-apply VisibleRules after form data is fully populated
+      if (typeof UIControls !== 'undefined' && UIControls.utils && UIControls.utils.applyVisibleRules) {
+        UIControls.utils.applyVisibleRules(container);
+      }
     }, 150);
   }
 

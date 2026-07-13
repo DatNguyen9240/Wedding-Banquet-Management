@@ -5479,7 +5479,6 @@ var PromotionAutoFillPlugin = (function () {
 
             // Đảm bảo cache sảnh đã được tải trước khi người dùng kịp tương tác
             _ensureHallCache();
-
             var checkInterval = setInterval(function () {
               var loaiTiecEl = modalContentEl.querySelector('[name="Loaitiecid"]');
               if (loaiTiecEl) {
@@ -5619,6 +5618,25 @@ var CLManagementPlugin = (function () {
       if (ratioInput) {
         ratioInput.addEventListener('input', handler);
         ratioInput.addEventListener('change', handler);
+      }
+      // 3. Re-apply VisibleRules after form data is fully populated
+      if (typeof UIControls !== 'undefined' && UIControls.utils && UIControls.utils.applyVisibleRules) {
+        UIControls.utils.applyVisibleRules(container);
+      }
+
+      // Hậu phương án: Ẩn cứng bằng JS nếu điều kiện SQL bị cache hoặc lỗi hiển thị
+      var gridEl = container.querySelector('[data-field-name="JsonLichTrinh"]') || container.querySelector('[name="JsonLichTrinh"]');
+      if (gridEl) {
+        var rowWrapper = gridEl.closest('[class*="df-col-"]');
+        if (rowWrapper) {
+          var typeInput = container.querySelector('[name="LoaiHinhSuKien"]');
+          var typeValue = typeInput ? (typeInput.value || '').trim().toLowerCase() : '';
+          if (typeValue === 'tiệc cưới' || typeValue === 'tiec cuoi') {
+            rowWrapper.style.display = 'none';
+          } else {
+            rowWrapper.style.display = '';
+          }
+        }
       }
     }, 150);
   }
@@ -10245,7 +10263,7 @@ var ReportFilterDialog = (function () {
      */
     function _getFieldValue(fieldName) {
       var el = body.querySelector('[data-field-name="' + fieldName + '"]');
-      return el ? (el.value || '').toLowerCase() : '';
+      return el ? (el.value || '').trim().toLowerCase() : '';
     }
 
     /**
@@ -10678,7 +10696,7 @@ UIControls.utils = (function() {
         // Thử data-field-name trước (ReportFilterDialog), fallback sang name (DynamicFormEngine)
         var el = container.querySelector('[data-field-name="' + fieldName + '"]')
                || container.querySelector('[name="' + fieldName + '"]');
-        return el ? (el.value || '').toLowerCase() : '';
+        return el ? (el.value || '').trim().toLowerCase() : '';
       }
 
       function _evaluate(ruleStr) {

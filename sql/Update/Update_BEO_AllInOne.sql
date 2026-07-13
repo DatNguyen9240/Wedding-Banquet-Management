@@ -106,6 +106,7 @@ BEGIN
         h.Sohopdong,
         h.Sobiennhan,
         h.Makh,
+        h.Loaitiecid,
         CASE 
             WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL AND k.Tenchure <> '' AND k.Tencodau <> ''
                 THEN k.Tenchure + ' & ' + k.Tencodau
@@ -254,8 +255,14 @@ BEGIN
         ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), N'...') AS [Dot1Ngay],
 
         -- ── Lịch trình & ghi chú nghiệp vụ ─────────────────────────────
+        ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [JsonLichTrinh],
         ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [ChiTietLichTrinh],
-        ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [LichTrinh],
+        (
+            SELECT 
+                CONVERT(VARCHAR(10), h.Ngaytochuc, 103) AS Ngay,
+                JSON_QUERY(ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]')) AS ChiTietLichTrinh
+            FOR JSON PATH
+        ) AS [LichTrinh],
 
         -- Lịch trình thanh toán
         (
@@ -376,8 +383,8 @@ GO
 PRINT N'4. Đang đồng bộ SY_FormatFields cho frmBEO...';
 GO
 
--- Xóa các cột cũ không đồng bộ với DB vật lý
-DELETE FROM SY_FormatFields WHERE FormName = 'frmBEO' AND FieldName IN ('GioBatDau', 'GioKetThuc', 'SoBanChinhThuc', 'SoBanDuPhong');
+-- Xóa các cột cũ không đồng bộ với DB vật lý hoặc đã đổi tên
+DELETE FROM SY_FormatFields WHERE FormName = 'frmBEO' AND FieldName IN ('GioBatDau', 'GioKetThuc', 'SoBanChinhThuc', 'SoBanDuPhong', 'ChiTietLichTrinh');
 GO
 
 -- Dùng MERGE để UPSERT (insert nếu chưa có, update nếu đã có)
@@ -412,7 +419,7 @@ INSERT INTO @BEO_Fields VALUES
 ('NoteBieuNgu',     N'Ghi Chú Biểu Ngữ',     'ta', NULL,  '12', 22, 1,1,0,0),
 ('NoteKyThuat',     N'Ghi Chú Kỹ Thuật',     'ta', NULL,  '12', 23, 1,1,0,0),
 ('NoteLobby',       N'Ghi Chú Lobby',         'ta', NULL,  '12', 24, 1,1,0,0),
-('ChiTietLichTrinh',N'Lịch Trình Chi Tiết',  'js', N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"80px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"80px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"100px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]',  '12', 30, 0,0,1,1),
+('JsonLichTrinh',   N'Lịch Trình Chi Tiết',  'js', N'[{"key":"BatDau","label":"Bắt đầu","type":"text","width":"80px"},{"key":"KetThuc","label":"Kết thúc","type":"text","width":"80px"},{"key":"Sanh","label":"Sảnh","type":"text","width":"100px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]',  '12', 30, 1,1,0,0),
 ('LichTrinhThanhToan',N'Lịch Trình Thanh Toán','js', N'[{"key":"STT","label":"Đợt","type":"number","width":"60px"},{"key":"SoTien","label":"Số tiền","type":"text","width":"150px"},{"key":"Ngay","label":"Ngày","type":"text","width":"120px"},{"key":"NoiDung","label":"Nội dung","type":"text","width":"auto"}]', '12', 31, 0,0,1,1);
 
 MERGE SY_FormatFields AS tgt
@@ -432,6 +439,10 @@ WHEN MATCHED THEN
 WHEN NOT MATCHED THEN
     INSERT (FormName, FieldName, CaptionVN, FormatID, DataSource, FormPosition, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, IsRequired)
     VALUES (src.FormName, src.FieldName, src.CaptionVN, src.FormatID, src.DataSource, src.FormPosition, src.OrderNo, src.ShowInAdd, src.ShowInEdit, src.IsReadOnlyAdd, src.IsReadOnlyEdit, 0);
+-- Chỉ hiển thị Lịch Trình Chi Tiết khi Loại Hình Sự Kiện KHÁC Tiệc cưới
+UPDATE SY_FormatFields
+SET VisibleRule = 'LoaiHinhSuKien!=Tiệc cưới|tiệc cưới|Tieccuoi|tieccuoi'
+WHERE FormName = 'frmBEO' AND FieldName = 'JsonLichTrinh';
 GO
 
 PRINT N'=== HOÀN THÀNH TRIỂN KHAI MODULE BEO ===';
