@@ -295,6 +295,9 @@ SELECT
     
     -- Ngày tổ chức Dương lịch
     RIGHT('0' + CAST(DAY(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [NgayToChuc], -- {NgayToChuc}
+    CASE WHEN td.NgayToChucTD IS NOT NULL AND CONVERT(DATE, td.NgayToChucTD) <> CONVERT(DATE, hd.Ngaytochuc)
+         THEN CONVERT(VARCHAR(10), hd.Ngaytochuc, 103)
+         ELSE N'' END AS [NgayToChuc_Cu],
     RIGHT('0' + CAST(MONTH(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [ThangToChuc],
     CAST(YEAR(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR) AS [NamToChuc],
     ISNULL(td.NhamNgayTD, hd.Nhamngay) AS [Nhamngay],
@@ -326,18 +329,35 @@ SELECT
     
     -- Quy mô bàn & Đơn giá
     ISNULL(td.QuyMoBanTuTD, td.QuyMoBanTu) AS [QuyMoBanTu],
+    CASE WHEN td.QuyMoBanTuTD IS NOT NULL AND td.QuyMoBanTuTD <> td.QuyMoBanTu THEN CAST(td.QuyMoBanTu AS VARCHAR) ELSE N'' END AS [QuyMoBanTu_Cu],
+    
     ISNULL(td.QuyMoBanDenTD, td.QuyMoBanDen) AS [QuyMoBanDen],
+    CASE WHEN td.QuyMoBanDenTD IS NOT NULL AND td.QuyMoBanDenTD <> td.QuyMoBanDen THEN CAST(td.QuyMoBanDen AS VARCHAR) ELSE N'' END AS [QuyMoBanDen_Cu],
+    
     ISNULL(td.DonGiaBanTiecTD, td.DonGiaBanTiec) AS [DonGiaBanTiec],
+    CASE WHEN td.DonGiaBanTiecTD IS NOT NULL AND td.DonGiaBanTiecTD <> td.DonGiaBanTiec THEN FORMAT(td.DonGiaBanTiec, 'N0', 'vi-VN') ELSE N'' END AS [DonGiaBanTiec_Cu],
+    
     ISNULL(td.SoKhachTrenBanTD, td.SoKhachTrenBan) AS [SoKhachTrenBan],
+    CASE WHEN td.SoKhachTrenBanTD IS NOT NULL AND td.SoKhachTrenBanTD <> td.SoKhachTrenBan THEN CAST(td.SoKhachTrenBan AS VARCHAR) ELSE N'' END AS [SoKhachTrenBan_Cu],
     
     -- Bàn tiệc
     ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SobanManchinhthuc],
     ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) AS [SobanManduphong],
     ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
     ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
+    
     ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc) + ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SoBanChinhThuc], -- {SoBanChinhThuc}
+    CASE WHEN (td.SobanManchinhthuc > 0 AND td.SobanManchinhthuc <> hd.SobanManchinhthuc) OR (td.SobanChaychinhthuc > 0 AND td.SobanChaychinhthuc <> hd.SobanChaychinhthuc)
+         THEN CAST(hd.SobanManchinhthuc + ISNULL(hd.SobanChaychinhthuc, 0) AS VARCHAR)
+         ELSE N'' END AS [SoBanChinhThuc_Cu],
+         
     ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) + ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SoBanDuPhong], -- {SoBanDuPhong}
+    CASE WHEN (td.SobanManduphong > 0 AND td.SobanManduphong <> hd.SobanManduphong) OR (td.SobanChayduphong > 0 AND td.SobanChayduphong <> hd.SobanChayduphong)
+         THEN CAST(hd.SobanManduphong + ISNULL(hd.SobanChayduphong, 0) AS VARCHAR)
+         ELSE N'' END AS [SoBanDuPhong_Cu],
+         
     ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [BanTang], -- {BanTang}
+    CASE WHEN td.SoBanTang IS NOT NULL AND td.SoBanTang <> hd.SoBanTang THEN CAST(ISNULL(hd.SoBanTang, 0) AS VARCHAR) ELSE N'' END AS [BanTang_Cu],
     ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
  
     -- Thực đơn {#MenuTiec}
@@ -464,6 +484,9 @@ SELECT
     ISNULL(td.ThoaThuanPhuLucKhacTD, td.ThoaThuanPhuLucKhac) AS [ThoaThuanPhuLucKhac],
     
     FORMAT(ISNULL(td.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
+    CASE WHEN td.TongtienHopdongTD IS NOT NULL AND td.TongtienHopdongTD <> hd.Tongtienhopdong
+         THEN FORMAT(hd.Tongtienhopdong, 'N0', 'vi-VN')
+         ELSE N'' END AS [TongGiaTriTamTinh_Cu],
     td.LanThayDoi AS [LanThayDoi],
     td.Ghichu AS [Ghichu],
     td.Ghichu AS [NoiDungPhuLuc],

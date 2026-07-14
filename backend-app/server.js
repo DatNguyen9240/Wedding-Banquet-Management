@@ -530,10 +530,12 @@ app.post('/api/documents/generate', async (req, res) => {
             const fileHash = crypto.createHash('sha256').update(buf).digest('hex');
             const tiecId = dataMap.Sohopdong || dataMap.SoHopDong || dataMap.sohopdong || customerId || '';
             const userName = extractUserName(req);
+            const lanTaiLieu = parseInt(dataMap.LanTaiLieu, 10) || null;
+            const docType = dataMap.TemplateFile?.trim() || templateType;
             const docData = {
                 TiecID: tiecId,
-                DocType: templateType,
-                VersionNo: null,
+                DocType: docType,
+                VersionNo: lanTaiLieu,
                 FilePath: finalFileName,
                 FileHash: fileHash,
                 Status: 'ACTIVE',

@@ -21,13 +21,21 @@ INSERT INTO tbmk_LoaitiecAddfile (FormName, Loaitiecid, TemplateFile, GhiChu) VA
 ('frmHopDong', 'BLT000004', N'3.1 MAU HDONG - 0406 (HỘI NGHỊ + TIỆC-TEABREAK).docx', N'Mẫu in hợp đồng Hội nghị + Break Tea'),
 ('frmHopDong', 'BLT000005', N'3.2 MAU HDONG - 0406 (HỘI NGHỊ ).docx', N'Mẫu in hợp đồng Hội nghị');
 
--- 3. BEO (frmBEO) -> BEO cưới hoặc BEO Hội nghị/Triển lãm
+-- 3. BEO (frmBEO) -> BEO lần 1 (chưa thay đổi)
 INSERT INTO tbmk_LoaitiecAddfile (FormName, Loaitiecid, TemplateFile, GhiChu) VALUES 
-('frmBEO', 'BLT000001', N'BEO_Tiec_Cuoi.docx', N'BEO dành cho Tiệc Cưới'),
-('frmBEO', 'BLT000002', N'BEO_Hoi_Nghi.docx', N'BEO dành cho Triển lãm và Hội nghị'),
-('frmBEO', 'BLT000003', N'BEO_Hoi_Nghi.docx', N'BEO dành cho Triển lãm và Hội nghị'),
-('frmBEO', 'BLT000004', N'BEO_Hoi_Nghi.docx', N'BEO dành cho Triển lãm và Hội nghị'),
-('frmBEO', 'BLT000005', N'BEO_Hoi_Nghi.docx', N'BEO dành cho Triển lãm và Hội nghị');
+('frmBEO', 'BLT000001', N'BEO_Tiec_Cuoi.docx',                N'BEO Tiệc Cưới - Lần 1'),
+('frmBEO', 'BLT000002', N'BEO TIEC CTY - Chua Thay Doi.docx', N'BEO Tiệc CTY / Hội Nghị - Lần 1'),
+('frmBEO', 'BLT000003', N'BEO TIEC CTY - Chua Thay Doi.docx', N'BEO Tiệc CTY / Hội Nghị - Lần 1'),
+('frmBEO', 'BLT000004', N'BEO TIEC CTY - Chua Thay Doi.docx', N'BEO Tiệc CTY / Hội Nghị - Lần 1'),
+('frmBEO', 'BLT000005', N'BEO TIEC CTY - Chua Thay Doi.docx', N'BEO Tiệc CTY / Hội Nghị - Lần 1');
+
+-- 3b. BEO sau thay đổi (frmBEO_ThayDoi) -> BEO lần 2, 3, 4...
+INSERT INTO tbmk_LoaitiecAddfile (FormName, Loaitiecid, TemplateFile, GhiChu) VALUES 
+('frmBEO_ThayDoi', 'BLT000001', N'BEO_Tiec_Cuoi.docx',           N'BEO Tiệc Cưới - Lần 2+'),
+('frmBEO_ThayDoi', 'BLT000002', N'BEO TIEC CTY - Thay Doi.docx', N'BEO Tiệc CTY - Lần 2+'),
+('frmBEO_ThayDoi', 'BLT000003', N'BEO TIEC CTY - Thay Doi.docx', N'BEO Tiệc CTY - Lần 2+'),
+('frmBEO_ThayDoi', 'BLT000004', N'BEO TIEC CTY - Thay Doi.docx', N'BEO Tiệc CTY - Lần 2+'),
+('frmBEO_ThayDoi', 'BLT000005', N'BEO TIEC CTY - Thay Doi.docx', N'BEO Tiệc CTY - Lần 2+');
 
 -- 4. BÁO GIÁ (frmBaoGia) -> bao_gia.docx
 INSERT INTO tbmk_LoaitiecAddfile (FormName, Loaitiecid, TemplateFile, GhiChu) VALUES 

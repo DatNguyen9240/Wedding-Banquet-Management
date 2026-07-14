@@ -375,9 +375,8 @@ Tất cả các chương trình khuyến mãi và ưu đãi trên không quy đ�
                 WHERE ct.DocumentID = (
                     SELECT TOP 1 ud.DocumentID
                     FROM tbmk_Banuudai ud
-                    WHERE ud.Loaitiecid = h.Loaitiecid
-                      AND ISNULL(h.TongSoBan, 0) >= ud.Tusoluongban 
-                      AND ISNULL(h.TongSoBan, 0) <= ud.Densoluongban
+                    WHERE ISNULL(h.TongSoBan, h.SobanManchinhthuc + ISNULL(h.SobanChaychinhthuc, 0)) >= ud.Tusoluongban
+                      AND ISNULL(h.TongSoBan, h.SobanManchinhthuc + ISNULL(h.SobanChaychinhthuc, 0)) <= ud.Densoluongban
                       AND (ud.IsKetthuc IS NULL OR ud.IsKetthuc = 0)
                     ORDER BY ud.Tusoluongban DESC
                 )

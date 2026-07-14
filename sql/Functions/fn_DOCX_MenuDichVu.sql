@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -22,7 +22,7 @@ BEGIN
     DECLARE @result NVARCHAR(MAX);
 
     SET @result = (
-        SELECT [TenMenu], [DanhSachMon], [GhiChuMenu]
+        SELECT [TenMenu], [DanhSachMon], [GhiChu]
         FROM (
             SELECT
                 N'THỰC ĐƠN MẶN'
@@ -42,7 +42,7 @@ BEGIN
                     SELECT TOP 1 NULLIF(td.Ghichuthucdonman, '')
                     FROM tbmk_Hopdongthucdonman td
                     WHERE td.Sohopdong = @Sohopdong AND NULLIF(td.Ghichuthucdonman, '') IS NOT NULL
-                ), N'') AS [GhiChuMenu],
+                ), N'') AS [GhiChu],
                 1 AS [sort_order]
             FROM tbmk_Hopdong h
             WHERE h.Sohopdong = @Sohopdong
@@ -110,7 +110,7 @@ BEGIN
                 SELECT TOP 1 NULLIF(tu.Ghichuthucuong, '')
                 FROM tbmk_Hopdongthucuong tu
                 WHERE tu.Sohopdong = @Sohopdong AND NULLIF(tu.Ghichuthucuong, '') IS NOT NULL
-            ), N'') AS [GhiChuThucUong]
+            ), N'') AS [GhiChu]
         FOR JSON PATH
     );
 
@@ -181,7 +181,7 @@ BEGIN
             ISNULL(hh.Tenhang, hd.Mahang) AS [TenDichVu],
             FORMAT(ISNULL(hd.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
             FORMAT(ISNULL(hd.Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien],
-            ISNULL(hd.Ghichudichvu, N'') AS [GhiChuChiTiet]
+            ISNULL(hd.Ghichudichvu, N'') AS [GhiChu]
         FROM tbmk_Hopdongdichvu hd
         LEFT JOIN dmHanghoa hh ON hd.Mahang = hh.Mahang
         WHERE hd.Sohopdong = @Sohopdong
