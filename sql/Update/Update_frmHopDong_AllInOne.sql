@@ -1526,28 +1526,28 @@ ELSE
     UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú đợt cuối' WHERE FormName = 'frmHopDong' AND FieldName = 'DotCuoiGhiChu';
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBaoVe')
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
-    VALUES ('frmHopDong', 'NoteBaoVe', N'Ghi chú bảo vệ', 0, 0, 0, 106, '6');
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition, ShowInGrid)
+    VALUES ('frmHopDong', 'NoteBaoVe', N'Ghi chú bảo vệ', 0, 0, 0, 106, '6', 0);
 ELSE
-    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú bảo vệ' WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBaoVe';
+    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú bảo vệ', ShowInGrid = 0, ShowInAdd = 0, ShowInEdit = 0 WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBaoVe';
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NoteKyThuat')
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
-    VALUES ('frmHopDong', 'NoteKyThuat', N'Ghi chú kỹ thuật', 0, 0, 0, 107, '6');
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition, ShowInGrid)
+    VALUES ('frmHopDong', 'NoteKyThuat', N'Ghi chú kỹ thuật', 0, 0, 0, 107, '6', 0);
 ELSE
-    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú kỹ thuật' WHERE FormName = 'frmHopDong' AND FieldName = 'NoteKyThuat';
+    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú kỹ thuật', ShowInGrid = 0, ShowInAdd = 0, ShowInEdit = 0 WHERE FormName = 'frmHopDong' AND FieldName = 'NoteKyThuat';
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBieuNgu')
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
-    VALUES ('frmHopDong', 'NoteBieuNgu', N'Ghi chú biểu ngữ', 0, 0, 0, 108, '6');
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition, ShowInGrid)
+    VALUES ('frmHopDong', 'NoteBieuNgu', N'Ghi chú biểu ngữ', 0, 0, 0, 108, '6', 0);
 ELSE
-    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú biểu ngữ' WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBieuNgu';
+    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú biểu ngữ', ShowInGrid = 0, ShowInAdd = 0, ShowInEdit = 0 WHERE FormName = 'frmHopDong' AND FieldName = 'NoteBieuNgu';
 
 IF NOT EXISTS (SELECT 1 FROM SY_FormatFields WHERE FormName = 'frmHopDong' AND FieldName = 'NoteLobby')
-    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition)
-    VALUES ('frmHopDong', 'NoteLobby', N'Ghi chú đón khách (Lobby)', 0, 0, 0, 109, '6');
+    INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, ShowInFilter, OrderNo, FormPosition, ShowInGrid)
+    VALUES ('frmHopDong', 'NoteLobby', N'Ghi chú đón khách (Lobby)', 0, 0, 0, 109, '6', 0);
 ELSE
-    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú đón khách (Lobby)' WHERE FormName = 'frmHopDong' AND FieldName = 'NoteLobby';
+    UPDATE SY_FormatFields SET CaptionVN = N'Ghi chú đón khách (Lobby)', ShowInGrid = 0, ShowInAdd = 0, ShowInEdit = 0 WHERE FormName = 'frmHopDong' AND FieldName = 'NoteLobby';
 GO
 
 -- 4.9. Cấu hình thứ tự hiển thị (OrderNo) trên Form
