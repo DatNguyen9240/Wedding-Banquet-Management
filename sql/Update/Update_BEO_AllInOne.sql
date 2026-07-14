@@ -481,7 +481,7 @@ PRINT N'4. Đang đồng bộ SY_FormatFields cho frmBEO...';
 GO
 
 -- Xóa các cột cũ không đồng bộ với DB vật lý hoặc đã đổi tên
-DELETE FROM SY_FormatFields WHERE FormName = 'frmBEO' AND FieldName IN ('GioBatDau', 'GioKetThuc', 'SoBanChinhThuc', 'SoBanDuPhong', 'ChiTietLichTrinh');
+DELETE FROM SY_FormatFields WHERE FormName = 'frmBEO' AND FieldName IN ('GioDienRaSuKien', 'GioKetThucSuKien', 'TenSanhTiec', 'KhachHang', 'GioBatDau', 'GioKetThuc', 'SoBanChinhThuc', 'SoBanDuPhong', 'ChiTietLichTrinh');
 GO
 
 -- Dùng MERGE để UPSERT (insert nếu chưa có, update nếu đã có)
@@ -495,13 +495,13 @@ DECLARE @BEO_Fields TABLE (
 
 INSERT INTO @BEO_Fields VALUES
 ('Sohopdong',       N'Số Hợp Đồng',          'sr',  '/api/API_Gateway_Router?List=API_DanhSachHopDong&Func=View',  '6',  1,  1,1,0,1),
-('KhachHang',       N'Khách Hàng',            't',  NULL,  '6',  2,  1,1,1,1),
+('BenBDaiDien',     N'Khách Hàng',            't',  NULL,  '6',  2,  1,1,1,1),
 ('NgayRaBEO',       N'Ngày Ra BEO',           'dt', NULL,  '6',  3,  1,1,0,0),
 ('NgayToChuc',      N'Ngày Tổ Chức',          'dt', NULL,  '6',  4,  1,1,1,1),
 ('TenCa',           N'Ca / Thời Gian',        't',  NULL,  '6',  5,  1,1,1,1),
-('GioDienRaSuKien',   N'Giờ Bắt Đầu',          'tm',  NULL,  '6',  6,  1,1,0,0),
-('GioKetThucSuKien',  N'Giờ Kết Thúc',         'tm',  NULL,  '6',  7,  1,1,0,0),
-('TenSanhTiec',     N'Tên Sảnh',              't',  NULL,  '6',  8,  1,1,1,1),
+('GioBatDau',       N'Giờ Bắt Đầu',          'tm',  NULL,  '6',  6,  1,1,0,0),
+('GioKetThuc',      N'Giờ Kết Thúc',         'tm',  NULL,  '6',  7,  1,1,0,0),
+('Sanh',            N'Tên Sảnh',              't',  NULL,  '6',  8,  1,1,1,1),
 ('LoaiHinhSuKien',  N'Loại Hình Sự Kiện',    't',  NULL,  '6',  9,  1,1,1,1),
 ('SoKhachChinhThuc',N'Số Khách Chính Thức',  'n',  NULL,  '6',  10, 1,1,0,0),
 ('KieuSetup',       N'Kiểu Setup',            'sl', N'STATIC:Rạp hát|Rạp hát,Lớp học|Lớp học,Chữ U|Chữ U,Hội đồng|Hội đồng,Tiệc ngồi|Tiệc ngồi,Tiệc đứng|Tiệc đứng', '6', 11, 1,1,0,0),

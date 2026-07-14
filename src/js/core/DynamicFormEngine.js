@@ -1983,7 +1983,7 @@ window.DynamicFormEngine = (function () {
       var btnAdd = document.createElement('button');
       btnAdd.type = 'button';
       btnAdd.className = 'btn btn-outline-primary btn-sm';
-      btnAdd.style.cssText = 'margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 4px 10px; height: 28px;';
+      btnAdd.style.cssText = 'margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 4px 10px; height: 28px; width: fit-content; align-self: flex-start;';
       btnAdd.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">add</span> Thêm dòng mới';
       btnAdd.onclick = function () {
         addRow(null);
