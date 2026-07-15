@@ -1,8 +1,8 @@
 import fs from 'fs';
 import PizZip from 'pizzip';
 
-const srcPath = 'd:/LamViec/Wedding-Banquet-Management/backend-app/samples/BEO TIEC CTY - Chua Thay Doi.docx';
-const destPath = 'd:/LamViec/Wedding-Banquet-Management/backend-app/samples/BEO TIEC CTY - Thay Doi.docx';
+const srcPath = 'samples/BEO TIEC CTY - Chua Thay Doi.docx';
+const destPath = 'samples/BEO TIEC CTY - Thay Doi.docx';
 
 console.log('--- ĐANG TIẾN HÀNH SAO CHÉP & TỰ ĐỘNG TIÊM BIẾN SO SÁNH _CU ---');
 
