@@ -183,7 +183,16 @@ BEGIN
                 + CASE WHEN NULLIF(hh.DVTID, '') IS NOT NULL THEN N' ' + hh.DVTID ELSE N'' END AS [SoLuongText],
             FORMAT(ISNULL(hd.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
             FORMAT(ISNULL(hd.Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien],
-            ISNULL(hd.Ghichudichvu, N'') AS [GhiChu]
+            ISNULL(hd.Ghichudichvu, N'') AS [GhiChu],
+            CASE 
+                WHEN ISNULL(hh.Tenhang, ISNULL(hd.Mahang, '')) = '' THEN N'- ' + ISNULL(hd.Ghichudichvu, '')
+                ELSE CONCAT(
+                    N'- ', ISNULL(hh.Tenhang, hd.Mahang),
+                    CASE WHEN ISNULL(hd.Soluong, 0) > 0 THEN CONCAT(N' x ', FORMAT(hd.Soluong, 'G29'), N' ', hh.DVTID) END,
+                    CASE WHEN ISNULL(hd.Sotien, 0) > 0 THEN CONCAT(N': ', FORMAT(hd.Sotien, 'N0', 'vi-VN'), N'đ') END,
+                    CASE WHEN NULLIF(hd.Ghichudichvu, '') IS NOT NULL THEN CONCAT(N' (', hd.Ghichudichvu, N')') END
+                )
+            END AS [DichVuText]
         FROM tbmk_Hopdongdichvu hd
         LEFT JOIN dmHanghoa hh ON hd.Mahang = hh.Mahang
         WHERE hd.Sohopdong = @Sohopdong
