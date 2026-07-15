@@ -389,13 +389,6 @@ app.post('/api/documents/generate', async (req, res) => {
             const docXmlFile = zip.file("word/document.xml");
             if (docXmlFile) {
                 let xmlContent = docXmlFile.asText();
-                
-                const debugIdx = xmlContent.indexOf('DichVuKhuyenMai');
-                if (debugIdx >= 0) {
-                    console.log('=== [DEBUG XML AROUND DichVuKhuyenMai] ===');
-                    console.log(xmlContent.substring(Math.max(0, debugIdx - 200), Math.min(xmlContent.length, debugIdx + 800)));
-                    console.log('==========================================');
-                }
                 // Bước 1: Xóa XML tags lẫn trong placeholders (Word split tags)
                 xmlContent = xmlContent.replace(/\{[^{}]*?\}/g, (match) => {
                     return match.replace(/<[^>]+>/g, "");

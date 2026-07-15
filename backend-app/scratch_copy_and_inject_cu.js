@@ -63,7 +63,9 @@ for (const field of targetFields) {
     // Đoạn XML định dạng chữ màu đỏ (color w:val="FF0000") kèm gạch ngang (strike)
     // chứa lệnh của docxtemplater: nếu có giá trị cũ thì in ra dạng ~~GiáTrịCũ~~
     const valTag = isHtml ? `{@${field}_Cu}` : `{${field}_Cu}`;
-    const comparisonXml = `<w:r><w:rPr><w:strike w:val="true"/><w:color w:val="FF0000"/></w:rPr><w:t xml:space="preserve"> {#${field}_Cu}~~${valTag}~~{/${field}_Cu}</w:t></w:r>`;
+    const comparisonXml = (field === 'DichVuKhuyenMai')
+        ? `<w:r><w:rPr><w:strike w:val="true"/><w:color w:val="FF0000"/></w:rPr><w:t xml:space="preserve"> ${valTag}</w:t></w:r>`
+        : `<w:r><w:rPr><w:strike w:val="true"/><w:color w:val="FF0000"/></w:rPr><w:t xml:space="preserve"> {#${field}_Cu}~~${valTag}~~{/${field}_Cu}</w:t></w:r>`;
     
     if (docXml.includes(targetPlaceholder)) {
         console.log(`Tiêm biến so sánh cho: ${targetPlaceholder}`);

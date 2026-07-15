@@ -470,7 +470,7 @@ BEGIN
         -- DichVuKhuyenMai_Cu (Giá trị cũ của khuyến mãi để so sánh)
         CASE 
             WHEN ver_beo.NextVersion > 1 AND chg.ThoaThuanPhuLucKhac IS NOT NULL AND ISNULL(chg.ThoaThuanPhuLucKhac, '') <> ISNULL(h.Noidunguudai, '')
-                THEN ISNULL(NULLIF(chg.ThoaThuanPhuLucKhac, ''), N'') 
+                THEN N' ~~' + ISNULL(NULLIF(chg.ThoaThuanPhuLucKhac, ''), N'') + N'~~'
             ELSE N'' 
         END AS [DichVuKhuyenMai_Cu]
 

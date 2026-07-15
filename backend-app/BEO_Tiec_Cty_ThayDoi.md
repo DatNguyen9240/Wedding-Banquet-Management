@@ -88,7 +88,7 @@ LO ẠI TIỆC
 
 DỊCH VỤ ƯU ĐÃI
 
-| {DichVuKhuyenMai} {#DichVuKhuyenMai_Cu}~~{DichVuKhuyenMai_Cu}~~{/DichVuKhuyenMai_Cu}
+| {DichVuKhuyenMai} {DichVuKhuyenMai_Cu}
 
 | {#ChiTietLichTrinh}{BatDau}
 
