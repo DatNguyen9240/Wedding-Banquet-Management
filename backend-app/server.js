@@ -331,6 +331,11 @@ app.post('/api/documents/generate', async (req, res) => {
 
         // Tự động parse JSON từ CSDL — SQL đã trả JSON array sẵn, server không cần biết tên field
         dataMap = deepParseJsonStrings(dataMap);
+        
+        console.log('=== [DEBUG DATAMAP DichVuKhuyenMai] ===');
+        console.log('DichVuKhuyenMai:', dataMap.DichVuKhuyenMai);
+        console.log('DichVuKhuyenMai TYPE:', typeof dataMap.DichVuKhuyenMai);
+        console.log('=======================================');
 
         // Inject STT vào các mảng loop: nếu SQL đã cung cấp STT thì giữ nguyên, nếu không thì tự đánh idx+1
         const _injectSTT = (arr) => {
