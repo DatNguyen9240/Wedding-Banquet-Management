@@ -431,35 +431,43 @@ BEGIN
 
         -- ── Các trường giá trị cũ (_Cu) cho BEO Thay Đổi ──────────────
         CASE WHEN ver_beo.NextVersion > 1 AND chg.SobanManchinhthuc IS NOT NULL 
+              AND (chg.SobanManchinhthuc + ISNULL(chg.SobanChaychinhthuc, 0)) <> (h.SobanManchinhthuc + ISNULL(h.SobanChaychinhthuc, 0))
              THEN CAST(chg.SobanManchinhthuc + ISNULL(chg.SobanChaychinhthuc, 0) AS VARCHAR) 
              ELSE N'' END AS [SoBanChinhThuc_Cu],
              
         CASE WHEN ver_beo.NextVersion > 1 AND chg.SobanManduphong IS NOT NULL 
+              AND (chg.SobanManduphong + ISNULL(chg.SobanChayduphong, 0)) <> (h.SobanManduphong + ISNULL(h.SobanChayduphong, 0))
              THEN CAST(chg.SobanManduphong + ISNULL(chg.SobanChayduphong, 0) AS VARCHAR) 
              ELSE N'' END AS [SoBanDuPhong_Cu],
              
         CASE WHEN ver_beo.NextVersion > 1 AND chg.SoBanTang IS NOT NULL 
+              AND chg.SoBanTang <> h.SoBanTang
              THEN CAST(chg.SoBanTang AS VARCHAR) 
              ELSE N'' END AS [BanTang_Cu],
              
         CASE WHEN ver_beo.NextVersion > 1 AND chg.DonGiaBanTiec IS NOT NULL 
+              AND chg.DonGiaBanTiec <> h.DonGiaBanTiec
              THEN FORMAT(chg.DonGiaBanTiec, 'N0', 'vi-VN') 
              ELSE N'' END AS [DonGiaBanTiec_Cu],
              
         CASE WHEN ver_beo.NextVersion > 1 AND chg.SoKhachTrenBan IS NOT NULL 
+              AND chg.SoKhachTrenBan <> h.SoKhachTrenBan
              THEN CAST(chg.SoKhachTrenBan AS VARCHAR) 
              ELSE N'' END AS [SoKhachTrenBan_Cu],
              
         CASE WHEN ver_beo.NextVersion > 1 AND chg.QuyMoBanTu IS NOT NULL 
+              AND chg.QuyMoBanTu <> h.QuyMoBanTu
              THEN CAST(chg.QuyMoBanTu AS VARCHAR) 
              ELSE N'' END AS [QuyMoBanTu_Cu],
              
         CASE WHEN ver_beo.NextVersion > 1 AND chg.QuyMoBanDen IS NOT NULL 
+              AND chg.QuyMoBanDen <> h.QuyMoBanDen
              THEN CAST(chg.QuyMoBanDen AS VARCHAR) 
              ELSE N'' END AS [QuyMoBanDen_Cu],
 
         CASE 
             WHEN ver_beo.NextVersion > 1 AND chg.SobanManchinhthuc IS NOT NULL
+              AND (chg.SobanManchinhthuc + ISNULL(chg.SobanChaychinhthuc, 0)) <> (h.SobanManchinhthuc + ISNULL(h.SobanChaychinhthuc, 0))
                 THEN CASE 
                     WHEN h.SoKhachChinhThuc > 0 AND (chg.SobanManchinhthuc + ISNULL(chg.SobanChaychinhthuc, 0)) = 0
                         THEN CAST(h.SoKhachChinhThuc AS VARCHAR) + N' Khách'
