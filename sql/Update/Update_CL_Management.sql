@@ -311,9 +311,9 @@ BEGIN
         N'Ra hàng hóa' AS [OutNoiDung],
 
         -- DichVuKhuyenMai: các dịch vụ ưu đãi / tặng kèm cho sự kiện
-        -- Ưu tiên lấy từ h.DichVuKhuyenMai hoặc h.Noidunguudai, nếu không có mới tự tính theo gói
+        -- Ưu tiên lấy từ h.ThoaThuanPhuLucKhac, h.DichVuKhuyenMai, nếu không có mới tự tính theo gói
+        ISNULL(clean_h.CleanedNewPromotions,
         ISNULL(NULLIF(h.DichVuKhuyenMai, ''), 
-            ISNULL(NULLIF(h.Noidunguudai, ''), 
             ISNULL(
                 STUFF((
                     SELECT CHAR(10)
@@ -479,8 +479,12 @@ BEGIN
 
         -- DichVuKhuyenMai_Cu (Giá trị cũ của khuyến mãi để so sánh)
         CASE 
-            WHEN ver_beo.NextVersion > 1 AND chg.ThoaThuanPhuLucKhac IS NOT NULL AND ISNULL(chg.ThoaThuanPhuLucKhac, '') <> ISNULL(NULLIF(h.DichVuKhuyenMai, ''), ISNULL(h.Noidunguudai, ''))
-                THEN N' ~~' + ISNULL(NULLIF(chg.ThoaThuanPhuLucKhac, ''), N'') + N'~~'
+            WHEN ver_beo.NextVersion > 1 
+                 AND ISNULL(clean_chg.CleanedOldPromotions, '') 
+                     <> 
+                     ISNULL(clean_h.CleanedNewPromotions, 
+                            ISNULL(NULLIF(h.DichVuKhuyenMai, ''), ''))
+                THEN N' ~~' + ISNULL(clean_chg.CleanedOldPromotions, N'') + N'~~'
             ELSE N'' 
         END AS [DichVuKhuyenMai_Cu]
 
@@ -518,6 +522,22 @@ BEGIN
           AND td.LanThayDoi = (ver_beo.NextVersion - 1)
           AND ISNULL(td.IsDeleted, 0) = 0
     ) chg
+    OUTER APPLY (
+        SELECT 
+            CASE 
+                WHEN LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL(h.ThoaThuanPhuLucKhac, ''), '<p>', ''), '</p>', ''), '<br>', ''), '&nbsp;', ''), ' ', ''))) = ''
+                THEN NULL 
+                ELSE h.ThoaThuanPhuLucKhac 
+            END AS CleanedNewPromotions
+    ) clean_h
+    OUTER APPLY (
+        SELECT 
+            CASE 
+                WHEN LTRIM(RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(ISNULL(chg.ThoaThuanPhuLucKhac, ''), '<p>', ''), '</p>', ''), '<br>', ''), '&nbsp;', ''), ' ', ''))) = ''
+                THEN NULL 
+                ELSE chg.ThoaThuanPhuLucKhac 
+            END AS CleanedOldPromotions
+    ) clean_chg
 
     WHERE
         ISNULL(h.IsDeleted, 0) = 0
