@@ -332,6 +332,7 @@ BEGIN
                     WHERE ISNULL(h.TongSoBan, h.SobanManchinhthuc + ISNULL(h.SobanChaychinhthuc, 0)) >= ud.Tusoluongban
                       AND ISNULL(h.TongSoBan, h.SobanManchinhthuc + ISNULL(h.SobanChaychinhthuc, 0)) <= ud.Densoluongban
                       AND (ud.IsKetthuc IS NULL OR ud.IsKetthuc = 0)
+                      AND ud.Loaitiecid = (CASE WHEN h.Loaitiecid = 'BLT000001' THEN 'BLT000001' ELSE 'BLT000002' END)
                     ORDER BY ud.Tusoluongban DESC
                     FOR XML PATH(''), TYPE
                 ).value('.', 'NVARCHAR(MAX)'), 1, 1, N'')

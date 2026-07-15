@@ -331,11 +331,6 @@ app.post('/api/documents/generate', async (req, res) => {
 
         // Tự động parse JSON từ CSDL — SQL đã trả JSON array sẵn, server không cần biết tên field
         dataMap = deepParseJsonStrings(dataMap);
-        
-        console.log('=== [DEBUG DATAMAP DichVuKhuyenMai] ===');
-        console.log('DichVuKhuyenMai:', dataMap.DichVuKhuyenMai);
-        console.log('DichVuKhuyenMai TYPE:', typeof dataMap.DichVuKhuyenMai);
-        console.log('=======================================');
 
         // Inject STT vào các mảng loop: nếu SQL đã cung cấp STT thì giữ nguyên, nếu không thì tự đánh idx+1
         const _injectSTT = (arr) => {
@@ -401,10 +396,10 @@ app.post('/api/documents/generate', async (req, res) => {
 
                 // Bước 2: Tự động đóng unclosed loop tags {#tag} / {/tag}
                 // Scan tất cả {#tag} và {/tag} để phát hiện mismatch
-                const openTags  = [...xmlContent.matchAll(/\{#([^}]+)\}/g)].map(m => m[1]);
+                const openTags = [...xmlContent.matchAll(/\{#([^}]+)\}/g)].map(m => m[1]);
                 const closeTags = [...xmlContent.matchAll(/\{\/([^}]+)\}/g)].map(m => m[1]);
-                const openSet   = new Set(openTags);
-                const closeSet  = new Set(closeTags);
+                const openSet = new Set(openTags);
+                const closeSet = new Set(closeTags);
 
                 // Tìm {#tag} không có {/tag} tương ứng
                 for (const tag of openSet) {
@@ -430,7 +425,7 @@ app.post('/api/documents/generate', async (req, res) => {
                     if (!openSet.has(tag)) {
                         console.warn(`[XML-FIX] Loop chưa mở: {/${tag}} -> Tự động thêm {#${tag}}`);
                         const closeMarker = `{/${tag}}`;
-                        const openMarker  = `{#${tag}}`;
+                        const openMarker = `{#${tag}}`;
                         const idx = xmlContent.indexOf(closeMarker);
                         if (idx >= 0) {
                             const paraStart = xmlContent.lastIndexOf('<w:p', idx);
@@ -447,7 +442,7 @@ app.post('/api/documents/generate', async (req, res) => {
                 // Điều này giúp docxtemplater tự động ẩn dấu ngoặc đi nếu GhiChu rỗng
                 xmlContent = xmlContent.replace(/\(\s*\{GhiChu\}\s*\)/gi, '{#GhiChu}({GhiChu}){/GhiChu}');
                 xmlContent = xmlContent.replace(/\(\s*\{GhiChuPhuLuc\}\s*\)/gi, '{#GhiChuPhuLuc}({GhiChuPhuLuc}){/GhiChuPhuLuc}');
-                
+
                 // Tự động tiêm placeholder {STT} vào ngay sau loop mở nếu cột đầu thiếu STT
                 xmlContent = xmlContent.replace(/\{#MenuTiec\}(?!\s*\{STT\})/gi, '{#MenuTiec}{STT}');
                 xmlContent = xmlContent.replace(/\{#DanhSachChiPhi\}(?!\s*\{STT\})/gi, '{#DanhSachChiPhi}{STT}');
@@ -480,11 +475,6 @@ app.post('/api/documents/generate', async (req, res) => {
                                 }
                             }
                         }
-                        console.log(`[PARSER GET] Tag: "${tag}"`);
-                        if (tag.toLowerCase().includes('khuyenmai')) {
-                            console.log(`[PARSER GET DETAIL] Tag: ${tag}, Scope Keys:`, Object.keys(scope || {}));
-                            console.log(`[PARSER GET DETAIL] Tag: ${tag}, Found Value:`, val);
-                        }
                         if (val && typeof val === 'object') {
                             return val;
                         }
@@ -500,7 +490,7 @@ app.post('/api/documents/generate', async (req, res) => {
         try {
             doc.render(dataMap);
             console.log('[GENERATE] ✅ Render dữ liệu vào template thành công');
-            
+
             // Hậu xử lý: Dọn dẹp các ngoặc đơn rỗng "()" hoặc " ()" phát sinh sau khi render các biến rỗng
             const docZip = doc.getZip();
             if (docZip) {
@@ -585,7 +575,7 @@ app.delete('/api/documents/:fileName', async (req, res) => {
         const fileName = req.params.fileName;
         const filePath = path.join(UPLOADS_DIR, fileName);
         if (fs.existsSync(filePath)) {
-            // fs.unlinkSync(filePath); // Comment out to debug generated file content
+            fs.unlinkSync(filePath);
             try {
                 let parsedTiecID = 'UNKNOWN';
                 let parsedDocType = 'UNKNOWN';
