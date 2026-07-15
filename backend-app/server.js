@@ -343,6 +343,10 @@ app.post('/api/documents/generate', async (req, res) => {
         // Áp dụng cho tất cả field là array trong dataMap
         for (const key of Object.keys(dataMap)) {
             if (Array.isArray(dataMap[key])) {
+                // Tự động tiêm [{}] cho mảng rỗng để tránh bị xóa hàng bảng biểu
+                if (dataMap[key].length === 0) {
+                    dataMap[key] = [{}];
+                }
                 dataMap[key] = _injectSTT(dataMap[key]);
             }
         }
@@ -458,23 +462,32 @@ app.post('/api/documents/generate', async (req, res) => {
             linebreaks: true,
             parser: function (tag) {
                 return {
-                    get: function (scope) {
+                    get: function (scope, context) {
                         if (tag === '.') return scope;
-                        let val = "";
-                        if (scope && typeof scope === 'object') {
-                            if (scope[tag] !== undefined && scope[tag] !== null) {
-                                val = scope[tag];
-                            } else {
-                                const cleanTag = tag.toLowerCase().replace(/_/g, '');
-                                const foundKey = Object.keys(scope).find(k => {
-                                    const cleanKey = k.toLowerCase().replace(/_/g, '');
-                                    return cleanKey === cleanTag;
-                                });
-                                if (foundKey && scope[foundKey] !== undefined && scope[foundKey] !== null) {
-                                    val = scope[foundKey];
+                        let val = undefined;
+                        
+                        // Duyệt động từ scope hiện tại ngược lên scope cha gốc
+                        const scopeList = (context && context.scopeList) ? context.scopeList : [scope];
+                        for (let i = scopeList.length - 1; i >= 0; i--) {
+                            const currentScope = scopeList[i];
+                            if (currentScope && typeof currentScope === 'object') {
+                                if (currentScope[tag] !== undefined && currentScope[tag] !== null) {
+                                    val = currentScope[tag];
+                                    break;
+                                } else {
+                                    const cleanTag = tag.toLowerCase().replace(/_/g, '');
+                                    const foundKey = Object.keys(currentScope).find(k => {
+                                        const cleanKey = k.toLowerCase().replace(/_/g, '');
+                                        return cleanKey === cleanTag;
+                                        });
+                                    if (foundKey && currentScope[foundKey] !== undefined && currentScope[foundKey] !== null) {
+                                        val = currentScope[foundKey];
+                                        break;
+                                    }
                                 }
                             }
                         }
+                        
                         if (val && typeof val === 'object') {
                             return val;
                         }
