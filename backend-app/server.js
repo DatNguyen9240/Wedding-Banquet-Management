@@ -480,9 +480,10 @@ app.post('/api/documents/generate', async (req, res) => {
                                 }
                             }
                         }
+                        console.log(`[PARSER GET] Tag: "${tag}"`);
                         if (tag.toLowerCase().includes('khuyenmai')) {
-                            console.log(`[PARSER GET] Tag: ${tag}, Scope Keys:`, Object.keys(scope || {}));
-                            console.log(`[PARSER GET] Tag: ${tag}, Found Value:`, val);
+                            console.log(`[PARSER GET DETAIL] Tag: ${tag}, Scope Keys:`, Object.keys(scope || {}));
+                            console.log(`[PARSER GET DETAIL] Tag: ${tag}, Found Value:`, val);
                         }
                         if (val && typeof val === 'object') {
                             return val;
