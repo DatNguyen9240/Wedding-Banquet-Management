@@ -311,8 +311,9 @@ BEGIN
         N'Ra hàng hóa' AS [OutNoiDung],
 
         -- DichVuKhuyenMai: các dịch vụ ưu đãi / tặng kèm cho sự kiện
-        -- Ưu tiên lấy từ h.Noidunguudai nếu được nhập tay, nếu không thì tự tính theo gói
-        ISNULL(NULLIF(h.Noidunguudai, ''), 
+        -- Ưu tiên lấy từ h.DichVuKhuyenMai hoặc h.Noidunguudai, nếu không có mới tự tính theo gói
+        ISNULL(NULLIF(h.DichVuKhuyenMai, ''), 
+            ISNULL(NULLIF(h.Noidunguudai, ''), 
             ISNULL(
                 STUFF((
                     SELECT CHAR(10)
@@ -469,7 +470,7 @@ BEGIN
 
         -- DichVuKhuyenMai_Cu (Giá trị cũ của khuyến mãi để so sánh)
         CASE 
-            WHEN ver_beo.NextVersion > 1 AND chg.ThoaThuanPhuLucKhac IS NOT NULL AND ISNULL(chg.ThoaThuanPhuLucKhac, '') <> ISNULL(h.Noidunguudai, '')
+            WHEN ver_beo.NextVersion > 1 AND chg.ThoaThuanPhuLucKhac IS NOT NULL AND ISNULL(chg.ThoaThuanPhuLucKhac, '') <> ISNULL(NULLIF(h.DichVuKhuyenMai, ''), ISNULL(h.Noidunguudai, ''))
                 THEN N' ~~' + ISNULL(NULLIF(chg.ThoaThuanPhuLucKhac, ''), N'') + N'~~'
             ELSE N'' 
         END AS [DichVuKhuyenMai_Cu]

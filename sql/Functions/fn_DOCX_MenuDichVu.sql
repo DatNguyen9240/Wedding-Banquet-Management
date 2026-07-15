@@ -179,6 +179,8 @@ BEGIN
         SELECT
             ROW_NUMBER() OVER (ORDER BY hd.STT, hd.Mahang) AS [STT],
             ISNULL(hh.Tenhang, hd.Mahang) AS [TenDichVu],
+            CAST(FORMAT(ISNULL(hd.Soluong, 0), 'G29') AS NVARCHAR) 
+                + CASE WHEN NULLIF(hh.DVTID, '') IS NOT NULL THEN N' ' + hh.DVTID ELSE N'' END AS [SoLuongText],
             FORMAT(ISNULL(hd.Dongia, 0), 'N0', 'vi-VN') AS [DonGia],
             FORMAT(ISNULL(hd.Sotien, 0), 'N0', 'vi-VN') AS [ThanhTien],
             ISNULL(hd.Ghichudichvu, N'') AS [GhiChu]
