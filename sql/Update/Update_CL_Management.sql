@@ -162,6 +162,7 @@ BEGIN
         h.Sohopdong,
         h.Sobiennhan,
         h.Makh,
+        h.Loaitiecid,
         CASE 
             WHEN k.Tenchure IS NOT NULL AND k.Tencodau IS NOT NULL AND k.Tenchure <> '' AND k.Tencodau <> ''
                 THEN k.Tenchure + ' & ' + k.Tencodau
@@ -201,6 +202,12 @@ BEGIN
                 s.Tensanhtiec                           AS [Sanh],
                 ISNULL(h.SoKhachChinhThuc, 0)          AS [SoKhachChinhThuc],
                 ISNULL(h.SobanManduphong, 0) + ISNULL(h.SobanChayduphong, 0) AS [SoBanDuPhong],
+                ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanChaychinhthuc, 0) AS [SoBanChinhThuc],
+                CASE 
+                    WHEN h.SoKhachChinhThuc > 0 AND (ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanChaychinhthuc, 0)) = 0
+                        THEN CAST(h.SoKhachChinhThuc AS VARCHAR) + N' Khách'
+                    ELSE CAST(ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanChaychinhthuc, 0) AS VARCHAR) + N' Bàn'
+                END AS [SoLuongText],
                 ISNULL(h.KieuSetup, N'Tiệc ngồi')      AS [KieuSetup]
             FROM tbmk_Hopdongsanhtiec hs
             INNER JOIN dmSanhtiec s ON hs.Sanhtiecid = s.Sanhtiecid
@@ -233,6 +240,10 @@ BEGIN
         ISNULL(h.SobanManchinhthuc, 0) AS [SobanManchinhthuc],
         ISNULL(h.SobanManduphong, 0)   AS [SobanManduphong],
         ISNULL(h.SobanManchinhthuc, 0) + ISNULL(h.SobanChaychinhthuc, 0) AS [SoBanChinhThuc],
+        ISNULL(h.SoBanTang, 0)         AS [BanTang],
+        ISNULL(h.SobanChaychinhthuc, 0) AS [BanChay],
+        ISNULL(h.SobanManduphong, 0) + ISNULL(h.SobanChayduphong, 0)     AS [SoBanDuPhong],
+        ISNULL(h.TongSoBan, 0)         AS [TongSoBan],
         ISNULL(h.SoNguoiTrenBan, 10)   AS [SoKhachTrenBan],
 
         -- ── Casual Labor (CL) Fields ──────────────────────────────────────
@@ -276,12 +287,14 @@ BEGIN
         k.DTcodau AS [Sdtcodau],
         ISNULL(h.Tentiec, N'LỄ THÀNH HÔN') AS [TenLe],
         ISNULL(k.Diachi, N'...')         AS [BenBDiaChiTemplate],
+        ISNULL(k.Nguoigd, N'')           AS [NguoiGiaoDich],
 
         -- NgayHopDong
         ISNULL(CONVERT(VARCHAR(10), h.Ngayhopdong, 103), N'...') AS [NgayHopDong],
 
         -- NgaySetup
         ISNULL(CONVERT(VARCHAR(10), DATEADD(DAY, -1, h.Ngaytochuc), 103), N'...') AS [NgaySetup],
+        ISNULL(CONVERT(VARCHAR(10), h.NgayTraSanhDV, 103), N'...')                AS [NgayTraSanhDV],
 
         -- DonViThiCong
         ISNULL(NULLIF(h.DonViThiCong, ''), N'') AS [DonViThiCong],
@@ -289,11 +302,47 @@ BEGIN
         -- TieuSuKhachHang
         ISNULL(NULLIF(h.TieuSuKhachHang, ''), N'') AS [TieuSuKhachHang],
 
-        -- DichVuKhuyenMai
-        ISNULL(NULLIF(h.DichVuKhuyenMai, ''), N'') AS [DoiTuongKhach],
-        
-        -- LuuY
+        -- Setup & Lịch trình tĩnh (Không dùng loop để tránh vỡ bảng gộp)
+        ISNULL(h.TuGioDenGioSetup, '...') AS [SetupBatDau],
+        ISNULL(h.DenGioSetup, '...') AS [SetupKetThuc],
+        N'Vào hàng hóa' AS [SetupNoiDung1],
+        ISNULL(h.GhiChuSetup, N'SETUP: Không máy lạnh') AS [SetupNoiDung2],
+        N'RHS: Có ATAS, Led; không máy lạnh' AS [ToChucNoiDung],
+        N'Ra hàng hóa' AS [OutNoiDung],
+
+        -- DichVuKhuyenMai: các dịch vụ ưu đãi / tặng kèm cho sự kiện
+        -- Ưu tiên lấy từ h.Noidunguudai nếu được nhập tay, nếu không thì tự tính theo gói
+        ISNULL(NULLIF(h.Noidunguudai, ''), 
+            ISNULL(
+                STUFF((
+                    SELECT CHAR(10)
+                        + '- ' + ISNULL(ud.Tenuudai, ud.DocumentID) + ':' + CHAR(10)
+                        + ISNULL(
+                            STUFF((
+                                SELECT CHAR(10) + '+ ' + ISNULL(hh.Tenhang, ct.Mahang)
+                                FROM tbmk_Banuudaict ct
+                                LEFT JOIN dmHanghoa hh ON ct.Mahang = hh.Mahang
+                                WHERE ct.DocumentID = ud.DocumentID
+                                ORDER BY ct.STT
+                                FOR XML PATH(''), TYPE
+                            ).value('.', 'NVARCHAR(MAX)'), 1, 1, N'')
+                        , N'')
+                    FROM tbmk_Banuudai ud
+                    WHERE ISNULL(h.TongSoBan, h.SobanManchinhthuc + ISNULL(h.SobanChaychinhthuc, 0)) >= ud.Tusoluongban
+                      AND ISNULL(h.TongSoBan, h.SobanManchinhthuc + ISNULL(h.SobanChaychinhthuc, 0)) <= ud.Densoluongban
+                      AND (ud.IsKetthuc IS NULL OR ud.IsKetthuc = 0)
+                    ORDER BY ud.Tusoluongban DESC
+                    FOR XML PATH(''), TYPE
+                ).value('.', 'NVARCHAR(MAX)'), 1, 1, N'')
+            , N'')
+        ) AS [DichVuKhuyenMai],
+
+        -- LuuY / GhiChu
         ISNULL(NULLIF(h.LuuY, ''), ISNULL(NULLIF(h.Ghichu, ''), N'')) AS [LuuY],
+        ISNULL(NULLIF(h.LuuY, ''), ISNULL(NULLIF(h.Ghichu, ''), N'')) AS [GhiChu],
+
+        -- DichVuKhuyenMai (lưu trong DoiTuongKhach để giữ tương thích ngược nếu cần)
+        ISNULL(NULLIF(h.DichVuKhuyenMai, ''), N'') AS [DoiTuongKhach],
 
         -- HDTenCty
         ISNULL(NULLIF(h.TenCtyHoaDon, ''), ISNULL(k.Tenkh, N'')) AS [HDTenCty],
@@ -310,8 +359,14 @@ BEGIN
         ISNULL(CONVERT(VARCHAR(10), (SELECT TOP 1 b.DocumentDate FROM tbmk_Biennhancoccho b WHERE b.DocumentID = h.Sobiennhan), 103), N'...') AS [Dot1Ngay],
 
         -- ── Lịch trình & ghi chú nghiệp vụ (định dạng text sạch) ──────────
+        ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [JsonLichTrinh],
         ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [ChiTietLichTrinh],
-        ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]') AS [LichTrinh],
+        (
+            SELECT 
+                CONVERT(VARCHAR(10), h.Ngaytochuc, 103) AS Ngay,
+                JSON_QUERY(ISNULL(NULLIF(h.JsonLichTrinh, ''), '[]')) AS ChiTietLichTrinh
+            FOR JSON PATH
+        ) AS [LichTrinh],
 
         -- Lịch trình thanh toán
         (
@@ -345,8 +400,6 @@ BEGIN
             FOR JSON PATH
         ) AS [LichTrinhThanhToan],
 
-
-
         -- ── Ghi chú cho các bộ phận ──────────────────────────────────────
         ISNULL(NULLIF(h.ThongTinSetup, ''), N'Theo bản vẽ sơ đồ sảnh đính kèm') AS [ThongTinSetup],
         ISNULL(NULLIF(h.NoteBaoVe, ''),  N'Danh sách vào + ra hàng hóa (BÁO SAU)')  AS [NoteBaoVe],
@@ -368,10 +421,94 @@ BEGIN
         dbo.fn_DOCX_DanhSachNgay(h.Sohopdong)     AS [DanhSachNgay],
         dbo.fn_DOCX_DanhSachDichVu(h.Sohopdong)   AS [DanhSachDichVu],
         dbo.fn_DOCX_MenuTiec(h.Sohopdong)         AS [MenuTiec],
-        dbo.fn_DOCX_MenuTongCong(h.Sohopdong)     AS [MenuTongCong]
+        dbo.fn_DOCX_MenuTongCong(h.Sohopdong)     AS [MenuTongCong],
+
+        -- ── Versioning BEO ─────────────────────────────────────────────
+        tm_beo.TemplateFile                               AS [TemplateFile],
+        ver_beo.NextVersion                               AS [LanTaiLieu],
+        N'LẦN ' + CAST(ver_beo.NextVersion AS NVARCHAR)  AS [SoLanTaiLieu],
+
+        -- ── Các trường giá trị cũ (_Cu) cho BEO Thay Đổi ──────────────
+        CASE WHEN ver_beo.NextVersion > 1 AND chg.SobanManchinhthuc IS NOT NULL 
+             THEN CAST(chg.SobanManchinhthuc + ISNULL(chg.SobanChaychinhthuc, 0) AS VARCHAR) 
+             ELSE N'' END AS [SoBanChinhThuc_Cu],
+             
+        CASE WHEN ver_beo.NextVersion > 1 AND chg.SobanManduphong IS NOT NULL 
+             THEN CAST(chg.SobanManduphong + ISNULL(chg.SobanChayduphong, 0) AS VARCHAR) 
+             ELSE N'' END AS [SoBanDuPhong_Cu],
+             
+        CASE WHEN ver_beo.NextVersion > 1 AND chg.SoBanTang IS NOT NULL 
+             THEN CAST(chg.SoBanTang AS VARCHAR) 
+             ELSE N'' END AS [BanTang_Cu],
+             
+        CASE WHEN ver_beo.NextVersion > 1 AND chg.DonGiaBanTiec IS NOT NULL 
+             THEN FORMAT(chg.DonGiaBanTiec, 'N0', 'vi-VN') 
+             ELSE N'' END AS [DonGiaBanTiec_Cu],
+             
+        CASE WHEN ver_beo.NextVersion > 1 AND chg.SoKhachTrenBan IS NOT NULL 
+             THEN CAST(chg.SoKhachTrenBan AS VARCHAR) 
+             ELSE N'' END AS [SoKhachTrenBan_Cu],
+             
+        CASE WHEN ver_beo.NextVersion > 1 AND chg.QuyMoBanTu IS NOT NULL 
+             THEN CAST(chg.QuyMoBanTu AS VARCHAR) 
+             ELSE N'' END AS [QuyMoBanTu_Cu],
+             
+        CASE WHEN ver_beo.NextVersion > 1 AND chg.QuyMoBanDen IS NOT NULL 
+             THEN CAST(chg.QuyMoBanDen AS VARCHAR) 
+             ELSE N'' END AS [QuyMoBanDen_Cu],
+
+        CASE 
+            WHEN ver_beo.NextVersion > 1 AND chg.SobanManchinhthuc IS NOT NULL
+                THEN CASE 
+                    WHEN h.SoKhachChinhThuc > 0 AND (chg.SobanManchinhthuc + ISNULL(chg.SobanChaychinhthuc, 0)) = 0
+                        THEN CAST(h.SoKhachChinhThuc AS VARCHAR) + N' Khách'
+                    ELSE CAST(chg.SobanManchinhthuc + ISNULL(chg.SobanChaychinhthuc, 0) AS VARCHAR) + N' Bàn'
+                END
+            ELSE N'' 
+        END AS [SoLuongText_Cu],
+
+        -- DichVuKhuyenMai_Cu (Giá trị cũ của khuyến mãi để so sánh)
+        CASE 
+            WHEN ver_beo.NextVersion > 1 AND chg.ThoaThuanPhuLucKhac IS NOT NULL AND ISNULL(chg.ThoaThuanPhuLucKhac, '') <> ISNULL(h.Noidunguudai, '')
+                THEN ISNULL(NULLIF(chg.ThoaThuanPhuLucKhac, ''), N'') 
+            ELSE N'' 
+        END AS [DichVuKhuyenMai_Cu]
 
     FROM tbmk_Hopdong h
     LEFT JOIN dmkhachhang k ON h.Makh = k.Makh
+    OUTER APPLY (
+        -- Version = số phiếu thay đổi thực tế + 1 (nguồn nghiệp vụ, không bị ảnh hưởng bởi tần suất generate)
+        SELECT COUNT(*) + 1 AS NextVersion
+        FROM tbmk_Thaydoi td
+        WHERE td.Sohopdong      = h.Sohopdong
+          AND ISNULL(td.IsDeleted, 0) = 0
+    ) ver_beo
+    OUTER APPLY (
+        -- Chọn template: Lần 1 -> frmBEO, Lần 2+ -> frmBEO_ThayDoi
+        SELECT TOP 1 tm.TemplateFile
+        FROM tbmk_LoaitiecAddfile tm
+        WHERE tm.FormName   = CASE WHEN ver_beo.NextVersion = 1 THEN 'frmBEO' ELSE 'frmBEO_ThayDoi' END
+          AND tm.Loaitiecid = h.Loaitiecid
+    ) tm_beo
+    OUTER APPLY (
+        -- Lấy giá trị cũ từ dòng thay đổi liền trước (NextVersion - 1) để so sánh
+        SELECT TOP 1 
+            td.SobanManchinhthuc,
+            td.SobanManduphong,
+            td.SobanChaychinhthuc,
+            td.SobanChayduphong,
+            td.SoBanTang,
+            td.QuyMoBanTu,
+            td.QuyMoBanDen,
+            td.DonGiaBanTiec,
+            td.SoKhachTrenBan,
+            td.ThoaThuanPhuLucKhac
+        FROM tbmk_Thaydoi td
+        WHERE td.Sohopdong = h.Sohopdong
+          AND td.LanThayDoi = (ver_beo.NextVersion - 1)
+          AND ISNULL(td.IsDeleted, 0) = 0
+    ) chg
+
     WHERE
         ISNULL(h.IsDeleted, 0) = 0
         AND (@Sohopdong IS NULL OR h.Sohopdong = @Sohopdong)

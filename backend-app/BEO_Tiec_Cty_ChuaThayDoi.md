@@ -58,7 +58,7 @@ HỘI NGH Ị + TIỆC TỐI
 
 ĐỊA CHỈ
 
-| {BenBDienChi}
+| {BenBDiaChi}
 
 | 
 
@@ -88,7 +88,7 @@ LO ẠI TIỆC
 
 DỊCH VỤ ƯU ĐÃI
 
-| {@DichVuKhuyenMai}
+| {DichVuKhuyenMai}
 
 | {#ChiTietLichTrinh}{BatDau}
 
@@ -148,7 +148,7 @@ DỊCH VỤ TÍNH PHÍ
 
 {#DichVuTinhPhi}
 
-{TenDichVu} | {SoLuong} {GhiChu} | Đơn giá: {DonGia} | Thành tiền: {ThanhTien}
+{TenDichVu} | {SoLuongText}{GhiChu} | Đơn giá: {DonGia} | Thành tiền: {ThanhTien}
 
 {/DichVuTinhPhi}
 
@@ -174,7 +174,7 @@ DỊCH VỤ TÍNH PHÍ
 
 | 
 
-| {@GhiChu}
+| {GhiChu}
 
 | HÌNH TH ỨC PH ỤC VỤ
 
@@ -186,7 +186,7 @@ SẮP XẾP
 
 | 
 
-{@ThongTinSetup}
+{ThongTinSetup}
 
 | 
 
@@ -208,7 +208,7 @@ Lần {STT}: {SoTien} - Ngày {Ngay} - {NoiDung}
 
 BẢO VỆ
 
-| {@NoteBaoVe}
+| {NoteBaoVe}
 
 | 
 
@@ -218,7 +218,7 @@ BẢO VỆ
 
 KỸ THU ẬT
 
-| {@NoteKyThuat}
+| {NoteKyThuat}
 
 | 
 
@@ -226,13 +226,13 @@ KỸ THU ẬT
 
 | BIỂU NG Ữ SÂN KH ẤU
 
-| {@NoteBieuNgu}
+| {NoteBieuNgu}
 
 | 
 
 LOBBY
 
-| {@NoteLobby}
+| {NoteLobby}
 
 | GIÁM ĐỐC
 

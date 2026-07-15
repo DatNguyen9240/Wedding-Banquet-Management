@@ -4,7 +4,7 @@
 
 | 
 
-PHIẾU ĐẶT TIỆC THAY ĐỔI LẦN 1
+PHI ẾU ĐẶT TIỆC
 
 | Chuẩn bị bởi:
 
@@ -30,9 +30,9 @@ PHIẾU ĐẶT TIỆC THAY ĐỔI LẦN 1
 
 | {HDTenCty}
 
-| NGÀY TIỆC
+| NG ÀY TIỆC
 
-| 18/05/2026
+| {NgayToChuc}
 
 | ĐƠN VỊ THI CÔNG
 
@@ -40,11 +40,11 @@ PHIẾU ĐẶT TIỆC THAY ĐỔI LẦN 1
 
 | 
 
-LOẠI HÌNH SỰ KIỆN
+LO ẠI HÌNH SỰ KI ỆN
 
 | 
 
-HỘI NGHỊ + TIỆC TỐI
+HỘI NGH Ị + TIỆC TỐI
 
 | NGƯỜI GIAO DỊCH
 
@@ -58,19 +58,19 @@ HỘI NGHỊ + TIỆC TỐI
 
 ĐỊA CHỈ
 
-| {BenBDienChi}
+| {BenBDiaChi}
 
 | 
 
-THỜI GIAN
+TH ỜI GIAN
 
 | 
 
-VỊ TRÍ
+VỊ TR Í
 
 | 
 
-LOẠI TIỆC
+LO ẠI TIỆC
 
 | TIỂU SỬ KHÁCH HÀNG
 
@@ -78,155 +78,31 @@ LOẠI TIỆC
 
 | BẮT ĐẦU
 
-| KẾT THÚC
+| KẾT TH ÚC
 
 | 
 
 | 
-
-| ĐIỆN THOẠI
-
-| {BenBDienThoai}
-
-| 17/05/2026
 
 | 
 
 DỊCH VỤ ƯU ĐÃI
 
-| - Sử dụng phòng Hội nghị Queen 1:
+| {DichVuKhuyenMai} {#DichVuKhuyenMai_Cu}~~{DichVuKhuyenMai_Cu}~~{/DichVuKhuyenMai_Cu}
 
-+ Kích thước sảnh Queen 1: 24.6m*21m*5m
+| {#ChiTietLichTrinh}{BatDau}
 
-+ Kích thước sân khấu: 7.2m*3.6m*0.8m
+| {KetThuc}
 
-| 12h30
+|               {Sanh}
 
-| 13h00
-
-| 
-
-Queen 1
-
-| Vào hàng hóa
+| {NoiDung}{/ChiTietLichTrinh}
 
 | 
 
 | 
 
-| 13h00
-
-| 17h00
-
-| 
-
-| SETUP: Không máy lạnh
-
-| 
-
-| + Phông màn sâu khấu: Voan trắng
-
-+ Sức chứa tối đa là 240 khách dạng lớp học
-
-+ Set up tiêu chuẩn
-
-+ Hệ thống âm thanh, ánh sáng tiêu chuẩn
-
-+ 02 micro không dây
-
-+ Trang trí hoa tươi: bục phát biểu (KHÔNG SỬ DỤNG); bàn đón khách, bàn đại biểu theo tiêu chuẩn nhà hàng
-
-+ Miễn phí kết nối WIFI theo tiêu chuẩn
-
-+ RHS từ 10h00 -12h00 (có ATAS+ có Led; không máy lạnh): Không tính phí
-
-- Sử dụng phòng Tiệc Queen 5:
-
-+ Kích thước sảnh Queen 5: 17m*11.8m*5m
-
-+ Kích thước sân khấu: 4.0m*3.0m*0.5m
-
-+ Phông màn sâu khấu: Màn sao đen
-
-+ Sức chứa tối đa là 120 Khách
-
-+ Set up tiêu chuẩn
-
-+ Hệ thống âm thanh, ánh sáng tiêu chuẩn
-
-+ 02 micro không dây
-
-+ Trang trí hoa tươi: Bàn đón khách, bàn tiệc, bục phát biểu theo tiêu chuẩn nhà hàng
-
-+ Miễn phí kết nối WIFI theo tiêu chuẩn
-
-+ Pháo hoa kim tuyến (02 viên/01 lần)
-
-+ Background sân khấu: 6m*3.5m
-
-Bảng chào điện tử chiếu nội dung đón khách tại Queen 1 và Queen 5: HỘI NGHỊ KHÁCH HÀNG 2026 - KHU VỰC MIỀN NAM
-
-| 18/05/2026
-
-| 
-
-| 
-
-| 10h00
-
-| 12h00
-
-| 
-
-Queen 1
-
-| RHS: Có ATAS, Led; không máy lạnh
-
-| 
-
-| 
-
-| 13h00
-
-| 17h00
-
-| 
-
-| HỘI NGHỊ
-
-| 
-
-| 
-
-| 18h00
-
-| 22h00
-
-| Queen 5
-
-| TIỆC
-
-| 
-
-| 
-
-| 19/05/2026
-
-| 
-
-| 
-
-| Trước 10h sáng
-
-| Queen 1
-
-| Ra hàng hóa
-
-| 
-
-| 
-
-| SL CHÍNH THỨC
+| SL CH ÍNH TH ỨC
 
 | SL DỰ PHÒNG
 
@@ -238,33 +114,19 @@ Queen 1
 
 | 
 
-| 120 Khách
+| {#DanhSachSanh}{SoLuongText} {#SoLuongText_Cu}~~{SoLuongText_Cu}~~{/SoLuongText_Cu}
 
-| 0
+| {SoBanDuPhong} {#SoBanDuPhong_Cu}~~{SoBanDuPhong_Cu}~~{/SoBanDuPhong_Cu}
 
-| Queen 1
+|     {Sanh}
 
-| Bố trí theo layout đính kèm
-
-| 
-
-| 
-
-| 11 Bàn
-
-| 1
-
-| Queen 5
-
-| Tiệc bàn tròn (Setup 12 bàn trong sảnh)
+| {KieuSetup}{/DanhSachSanh}
 
 | 
 
 | 
 
-| THỰC ĐƠN: 10 bàn
-
-| THỰC ĐƠN: 01 bàn của Sếp
+| TH ỰC ĐƠN
 
 | 
 
@@ -272,33 +134,11 @@ Queen 1
 
 | 
 
-Xà Lách Tôm Rong Nho - Bò Mỹ Cuộn Vẹm Đút Lò Sốt Mật Ong Mù Tạc
+{#DanhSachMenu}
 
-Súp Hải Sản Tóc Tiên
+{TenMon} {GhiChu}
 
-Gà File Nướng Sốt Miso - Xôi Đặc Biệt
-
-Tôm Sú Sốt Kem Tỏi Với Bánh Puff Pastry
-
-Cá Tầm Hấp Sốt Tương Tỏi Ớt
-
-Chè Tuyết Yến Táo Đỏ Hạt Sen
-
-| 
-
-Xà Lách Tôm Rong Nho - Bò Mỹ Cuộn Vẹm Đút Lò Sốt Mật Ong Mù Tạc
-
-Súp Hải Sản Tóc Tiên
-
-Gà File Nướng Sốt Miso - Xôi Đặc Biệt
-
-Tôm Sú Sốt Kem Tỏi Với Bánh Puff Pastry
-
-Cá Tầm Hấp Hongkong
-
-Chè Tuyết Yến Táo Đỏ Hạt Sen
-
-==&gt; Lưu ý: Bàn của Sếp các món không cay
+{/DanhSachMenu}
 
 | 
 
@@ -306,37 +146,23 @@ DỊCH VỤ TÍNH PHÍ
 
 | 
 
-Queen 1:
+{#DichVuTinhPhi}
 
-Phí setup không máy lạnh: 12.000.000VNĐ++/nửa ngày/sảnh
+{TenDichVu} | {SoLuongText} {#SoLuongText_Cu}~~{SoLuongText_Cu}~~{/SoLuongText_Cu}{GhiChu} | Đơn giá: {DonGia} | Thành tiền: {ThanhTien}
 
-Phí thuê sảnh hội nghị : 29.750.000VNĐ++/buổi/sảnh
+{/DichVuTinhPhi}
 
-Màn hình Led 12m2 (4m*3m): 5.000.000VNĐ++/Show
-
-Cổng chính
-
-Công căng banner cổng chính: 8.5m*1.2m: 1.000.000VNĐ++/banner
-
-Queen 5:
-
-Thực đơn bàn tiệc: 5.050.000VNĐ/bàn 10 khách * 11 bàn
-
-Nước suối 500ml: 20 chai * 15.000VNĐ++/chai
-
-Nước ngọt: 28 lon *15.000VNĐ++/lon
-
-Bia Tiger lon bạc: 288 lon *28.000VNĐ++/lon
-
-| THỨC UỐNG QUEEN 5: TIỆC BÀN TRÒN
+| TH ỨC UỐNG QUEEN 5: TIỆC BÀN TR ÒN
 
 | 
 
 | 
 
-| Nước suối Aquafina: 500ml Nước ngọt
+| {#DanhSachThucUong}
 
-Bia Tiger lon bạc
+{TenThucUong} {GhiChu}
+
+{/DanhSachThucUong}
 
 | 
 
@@ -348,31 +174,11 @@ Bia Tiger lon bạc
 
 | 
 
-| Queen 1:
+| {GhiChu}
 
-Phí phát sinh ghế trong hội nghị: 50.000VNĐ++/ ghế ( nếu có)
+| HÌNH TH ỨC PH ỤC VỤ
 
-Phụ phí thuê sảnh: 8.750.000VNĐ++/giờ/sảnh (nếu có)
-
-Micro: 300.000VNĐ++/cái và 500.000VNĐ++/cặp (nếu có)
-
-Phát sinh máy lạnh khi setup sảnh Queen 1: 3.500.000VNĐ++/ giờ (nếu có)
-
-Queen 5:
-
-Phát sinh phí thuê sảnh: 3.750.000VNĐ++/giờ/sảnh (nếu có)
-
-Nước suối 500ml phát sinh tính: 15.000VNĐ++/chai và 300.000VNĐ++/thùng (Tính theo thực tế sử dụng) (nếu có)
-
-Nước ngọt phát sinh tính: 15.000VNĐ++/lon và 300.000VNĐ++/thùng (Tính theo thực tế sử dụng) (nếu có)
-
-Bia Tiger lon bạc phát sinh tính: 28.000VNĐ++/lon và 650.000VNĐ++/thùng (Tính theo thực tế sử dụng) (nếu có)
-
-Tăng bàn từ bàn số 13, cộng 10% vào giá thực đơn bàn ( nếu có)
-
-| HÌNH THỨC PHỤC VỤ
-
-| Hội Nghị Queen 1 + Tiệc tối Queen 5
+| {LoaiHinhSuKien}
 
 | 
 
@@ -380,37 +186,19 @@ SẮP XẾP
 
 | 
 
-Phía FnB:
-
-Queen 1:
-
-Setup sảnh Queen 1 Hội nghị (layout đính kèm)
-
-Bao ghế trắng + nơ vàng đồng
-
-Mượn 04 bàn IBM đặt trong sảnh (không dùng khăn trải bàn)
-
-Hướng dẫn khách sau khi Hội nghị kết thúc đặt ụ gỗ của khách ở vị trí phù hợp và khách out hàng trước 10h sáng ngày 19/05
-
-Queen 5:
-
-Setup bàn tròn tiệc tối
-
-Bao ghế trắng + nơ voan xanh
-
-Phía khách:
-
-Set up sảnh + lobby sảnh Queen 1 Hội Nghị (layout đính kèm)
+{ThongTinSetup}
 
 | 
 
-THU NGÂN/KẾ TOÁN
+THU NG ÂN/K Ế TO ÁN
 
-| Phương thức thanh toán:
+| Ph ương thức thanh toán:
 
-Lần 1: 89.675.555 VNĐ - Ngày 13/05/2026
+{#LichTrinhThanhToan}
 
-Lần 2: Thanh toán sau tiệc 07 ngày
+Lần {STT}: {SoTien} - Ngày {Ngay} - {NoiDung}
+
+{/LichTrinhThanhToan}
 
 | 
 
@@ -420,9 +208,7 @@ Lần 2: Thanh toán sau tiệc 07 ngày
 
 BẢO VỆ
 
-| 
-
-Danh sách vào + ra hàng hóa (BÁO SAU)
+| {NoteBaoVe}
 
 | 
 
@@ -430,29 +216,29 @@ Danh sách vào + ra hàng hóa (BÁO SAU)
 
 | 
 
-KỸ THUẬT
+KỸ THU ẬT
 
-| Căng banner cổng chính: 8.5m*1.2m
-
-Căng Background sân khấu: 6m*3.5m (Queen 5)
+| {NoteKyThuat}
 
 | 
 
 | 
 
-| BIỂU NGỮ SÂN KHẤU
+| BIỂU NG Ữ SÂN KH ẤU
 
-| Phối hợp với khách
+| {NoteBieuNgu}
 
-| LOBBY
+| 
 
-| Bàn Lễ Tân đón khách Queen 1 và Queen 5
+LOBBY
+
+| {NoteLobby}
 
 | GIÁM ĐỐC
 
 | 
 
-| KẾ TOÁN
+| KẾ TO ÁN
 
 | T.PKD
 
@@ -472,17 +258,17 @@ Căng Background sân khấu: 6m*3.5m (Queen 5)
 
 | KHO
 
-| TRANG TRÍ
+| TRANG TR Í
 
 | IT
 
 | BẢO VỆ
 
-| QUẢN GIA
+| QU ẢN GIA
 
 | DỊCH VỤ
 
-| KỸ THUẬT
+| KỸ THU ẬT
 
 | 
 

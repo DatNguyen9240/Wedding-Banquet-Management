@@ -84,7 +84,7 @@ DỊCH VỤ KHUYẾN MÃI
 
 | {GioKetThuc}
 
-| {SanhDat}
+| {Sanh}
 
 | 
 
@@ -134,7 +134,7 @@ THỰC ĐƠN: {TenMenu}
 
 {/DanhSachMon}
 
-{GhiChuMenu}
+{GhiChu}
 
 {/DanhSachMenu}
 
@@ -144,7 +144,7 @@ DỊCH VỤ TÍNH PHÍ
 
 | {#DichVuTinhPhi}- {TenDichVu}: {DonGia} VNĐ ({GhiChu})\n{/DichVuTinhPhi}
 
-{LuuY}
+{GhiChu}
 
 | {#DanhSachThucUong}
 
@@ -156,7 +156,7 @@ THỨC UỐNG: {TenThucUong}
 
 {/DanhSachMonUong}
 
-{GhiChuThucUong}
+{GhiChu}
 
 {/DanhSachThucUong}
 
@@ -174,7 +174,7 @@ THỨC UỐNG: {TenThucUong}
 
 {/DanhSachMonUong}
 
-{GhiChuThucUong}
+{GhiChu}
 
 {/DanhSachThucUong}
 
@@ -204,7 +204,7 @@ Lần {STT}: {SoTien} - {NoiDung}
 
 BIỂU NGỮ SÂN KHẤU
 
-| 459105464961{TenLe} {BieuNguCR} - {BieuNguCD}
+| 459105464961{TenLe} {Tenchure} - {Tencodau}
 
 {NgayToChuc}
 
