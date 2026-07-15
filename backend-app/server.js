@@ -464,14 +464,8 @@ app.post('/api/documents/generate', async (req, res) => {
                 return {
                     get: function (scope, context) {
                         if (tag === '.') return scope;
-                        
-                        // Nếu là dòng giả lập rỗng (được tiêm vào để tránh xóa hàng) thì trả về rỗng luôn
-                        if (scope && typeof scope === 'object' && Object.keys(scope).length === 0) {
-                            return "";
-                        }
-                        
                         let val = undefined;
-                        
+
                         // Duyệt động từ scope hiện tại ngược lên scope cha gốc
                         const scopeList = (context && context.scopeList) ? context.scopeList : [scope];
                         for (let i = scopeList.length - 1; i >= 0; i--) {
@@ -485,7 +479,7 @@ app.post('/api/documents/generate', async (req, res) => {
                                     const foundKey = Object.keys(currentScope).find(k => {
                                         const cleanKey = k.toLowerCase().replace(/_/g, '');
                                         return cleanKey === cleanTag;
-                                        });
+                                    });
                                     if (foundKey && currentScope[foundKey] !== undefined && currentScope[foundKey] !== null) {
                                         val = currentScope[foundKey];
                                         break;
@@ -493,7 +487,7 @@ app.post('/api/documents/generate', async (req, res) => {
                                 }
                             }
                         }
-                        
+
                         if (val && typeof val === 'object') {
                             return val;
                         }
