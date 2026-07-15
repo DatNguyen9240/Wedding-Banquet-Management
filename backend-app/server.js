@@ -580,7 +580,7 @@ app.delete('/api/documents/:fileName', async (req, res) => {
         const fileName = req.params.fileName;
         const filePath = path.join(UPLOADS_DIR, fileName);
         if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+            // fs.unlinkSync(filePath); // Comment out to debug generated file content
             try {
                 let parsedTiecID = 'UNKNOWN';
                 let parsedDocType = 'UNKNOWN';
