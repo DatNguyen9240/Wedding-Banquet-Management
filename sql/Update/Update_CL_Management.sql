@@ -336,7 +336,7 @@ BEGIN
                     FOR XML PATH(''), TYPE
                 ).value('.', 'NVARCHAR(MAX)'), 1, 1, N'')
             , N'')
-        ) AS [DichVuKhuyenMai],
+        )) AS [DichVuKhuyenMai],
 
         -- LuuY / GhiChu
         ISNULL(NULLIF(h.LuuY, ''), ISNULL(NULLIF(h.Ghichu, ''), N'')) AS [LuuY],
