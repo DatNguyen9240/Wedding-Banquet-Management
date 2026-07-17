@@ -52,10 +52,13 @@
         if (!formName) return;
         if (typeof ApiClient !== 'undefined') {
           btnLoadFields.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang tải...';
-          ApiClient.post('/api/API_DanhSachTruongGiaoDien', { FormName: formName, Username: 'admin', Limit: 1000 })
+          ApiClient.post('/api/API_LoadFormMeta', { FormName: formName })
             .then(function(res) {
               btnLoadFields.innerHTML = '<span class="material-symbols-outlined">sync</span> Tải Cột';
-              fields = res.list || res.records || res.data || res || [];
+              if (!res || res.code !== 0) throw new Error((res && (res.msg || res.message)) || 'Metadata khong hop le');
+              fields = (res.list || res.records || []).map(function (field) {
+                return { FieldName: field.name, CaptionVN: field.label };
+              });
               if (Array.isArray(fields) && fields.length > 0) {
                 var allSelects = conditionsList.querySelectorAll('select.field-select');
                 allSelects.forEach(function(sel) { populateFieldSelect(sel, fields); });

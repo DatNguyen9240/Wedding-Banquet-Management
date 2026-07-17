@@ -6,159 +6,249 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
--- =========================================================================
--- [API_LoadFormMeta] - TẢI METADATA GIAO DIỆN DỰA TRÊN DB HỆ THỐNG
--- Quét trực tiếp các cột từ sys.columns của bảng vật lý @FormName.
--- Kết hợp thông tin cấu hình hiển thị có sẵn từ SY_FmtFldTbl, SY_FrmDrdwTbl, và SY_FmatTbl.
--- Không yêu cầu thay đổi cấu trúc bảng SY_FmtFldTbl gốc.
--- =========================================================================
-IF OBJECT_ID('dbo.API_LoadFormMeta', 'P') IS NOT NULL
-    DROP PROCEDURE dbo.API_LoadFormMeta;
-GO
-CREATE PROCEDURE [dbo].[API_LoadFormMeta]
-    @FormName VARCHAR(100) = NULL -- Tên bảng vật lý trong database (Vd: 'dmkhachhang')
+/*
+  Canonical metadata contract
+
+  SY_FmtFldTbl  : global field dictionary (FieldName, Caption*, FormatID, alignment, widths)
+  SY_FmatTbl    : format definition (FormatID, masks, ranges, precision)
+  SY_FrmDrdwTbl : form-specific lookup behaviour (FormID + ColumnID)
+
+  A field must exist in the field dictionary and its FormatID must exist in the
+  format dictionary. The procedure deliberately returns a configuration error
+  instead of inventing labels or formats at runtime.
+*/
+CREATE OR ALTER PROCEDURE dbo.API_LoadFormMeta
+    @FormName SYSNAME
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Phương án 2: Tên Form chính là tên View hoặc Bảng vật lý thật trong CSDL
-    DECLARE @ViewName VARCHAR(100) = @FormName;
-    DECLARE @SaveTable VARCHAR(100) = '';
-    
-    -- Tự động tìm bảng vật lý gốc mà View này tham chiếu tới (Nếu ViewName là View)
-    SELECT TOP 1 @SaveTable = LTRIM(RTRIM(referenced_entity_name))
-    FROM sys.dm_sql_referenced_entities('dbo.' + @ViewName, 'OBJECT')
-    WHERE referenced_minor_id = 0;
-    
-    -- Nếu không phải View (hoặc không tìm thấy tham chiếu), SaveTable chính là ViewName
-    IF @SaveTable IS NULL OR @SaveTable = ''
-    BEGIN
-        SET @SaveTable = @ViewName;
-    END;
-    
-    -- Kiểm tra đối tượng có tồn tại không (bảng hoặc view)
-    IF OBJECT_ID(@ViewName) IS NULL
-    BEGIN
-        SELECT TOP 0 '' AS [name];
-        RETURN;
-    END
-
-    -- 1. Tự động tìm Primary Key từ hệ thống (trên bảng vật lý SaveTable)
+    DECLARE @ObjectId INT = OBJECT_ID(@FormName);
     DECLARE @PrimaryKey VARCHAR(100) = '';
-    SELECT TOP 1 @PrimaryKey = c.name
-    FROM sys.indexes i
-    JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-    JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-    WHERE i.is_primary_key = 1
-      AND i.object_id = OBJECT_ID(@SaveTable);
+    DECLARE @MissingFields NVARCHAR(MAX) = '';
+    DECLARE @DuplicateFields NVARCHAR(MAX) = '';
+    DECLARE @DuplicateDropdowns NVARCHAR(MAX) = '';
+    DECLARE @MissingCaptions NVARCHAR(MAX) = '';
+    DECLARE @InvalidFormats NVARCHAR(MAX) = '';
 
-    -- 2. Truy vấn metadata kết hợp thông tin cấu hình từ các bảng có sẵn
-    SELECT 
-        -- A. Thông tin cột từ DB kết hợp hiển thị từ SY_FmtFldTbl
+    IF @ObjectId IS NULL
+    BEGIN
+        SELECT -1 AS code, N'Không tìm thấy bảng hoặc view: ' + ISNULL(@FormName, '') AS msg;
+        RETURN;
+    END;
+
+    IF OBJECT_ID('dbo.SY_FmtFldTbl', 'U') IS NULL
+       OR OBJECT_ID('dbo.SY_FmatTbl', 'U') IS NULL
+       OR OBJECT_ID('dbo.SY_FrmDrdwTbl', 'U') IS NULL
+    BEGIN
+        SELECT -1 AS code, N'Thiếu bảng metadata chuẩn SY_FmtFldTbl, SY_FmatTbl hoặc SY_FrmDrdwTbl.' AS msg;
+        RETURN;
+    END;
+
+    /* FieldName is global. More than one dictionary row for a name is invalid. */
+    SELECT @DuplicateFields = STUFF((
+        SELECT N', ' + d.FieldName
+        FROM (
+            SELECT FieldName
+            FROM dbo.SY_FmtFldTbl
+            GROUP BY FieldName
+            HAVING COUNT(*) > 1
+        ) d
+        ORDER BY d.FieldName
+        FOR XML PATH(''), TYPE
+    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
+
+    IF ISNULL(@DuplicateFields, '') <> ''
+    BEGIN
+        SELECT -1 AS code, N'Trùng FieldName trong SY_FmtFldTbl: ' + @DuplicateFields AS msg;
+        RETURN;
+    END;
+
+    SELECT @DuplicateDropdowns = STUFF((
+        SELECT N', ' + d.ColumnID
+        FROM (
+            SELECT ColumnID
+            FROM dbo.SY_FrmDrdwTbl
+            WHERE FormID = @FormName
+            GROUP BY ColumnID
+            HAVING COUNT(*) > 1
+        ) d
+        ORDER BY d.ColumnID
+        FOR XML PATH(''), TYPE
+    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
+
+    IF ISNULL(@DuplicateDropdowns, '') <> ''
+    BEGIN
+        SELECT -1 AS code, N'Trung ColumnID trong SY_FrmDrdwTbl: ' + @DuplicateDropdowns AS msg;
+        RETURN;
+    END;
+
+    SELECT @MissingFields = STUFF((
+        SELECT N', ' + c.name
+        FROM sys.columns c
+        WHERE c.object_id = @ObjectId
+          AND NOT EXISTS (
+              SELECT 1
+              FROM dbo.SY_FmtFldTbl f
+              WHERE f.FieldName = c.name
+          )
+        ORDER BY c.column_id
+        FOR XML PATH(''), TYPE
+    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
+
+    IF ISNULL(@MissingFields, '') <> ''
+    BEGIN
+        SELECT -1 AS code, N'Chưa đồng bộ dictionary cho field: ' + @MissingFields AS msg;
+        RETURN;
+    END;
+
+    SELECT @MissingCaptions = STUFF((
+        SELECT N', ' + f.FieldName
+        FROM dbo.SY_FmtFldTbl f
+        WHERE EXISTS (
+            SELECT 1
+            FROM sys.columns c
+            WHERE c.object_id = @ObjectId AND c.name = f.FieldName
+        )
+          AND NULLIF(LTRIM(RTRIM(f.CaptionVN)), '') IS NULL
+        ORDER BY f.FieldName
+        FOR XML PATH(''), TYPE
+    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
+
+    IF ISNULL(@MissingCaptions, '') <> ''
+    BEGIN
+        SELECT -1 AS code, N'Missing CaptionVN in SY_FmtFldTbl: ' + @MissingCaptions AS msg;
+        RETURN;
+    END;
+
+    SELECT @InvalidFormats = STUFF((
+        SELECT N', ' + f.FieldName + N' (' + ISNULL(f.FormatID, '') + N')'
+        FROM dbo.SY_FmtFldTbl f
+        WHERE EXISTS (
+            SELECT 1
+            FROM sys.columns c
+            WHERE c.object_id = @ObjectId AND c.name = f.FieldName
+        )
+          AND (NULLIF(LTRIM(RTRIM(f.FormatID)), '') IS NULL
+               OR NOT EXISTS (SELECT 1 FROM dbo.SY_FmatTbl fm WHERE fm.FormatID = f.FormatID))
+        ORDER BY f.FieldName
+        FOR XML PATH(''), TYPE
+    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
+
+    IF ISNULL(@InvalidFormats, '') <> ''
+    BEGIN
+        SELECT -1 AS code, N'FormatID không hợp lệ: ' + @InvalidFormats AS msg;
+        RETURN;
+    END;
+
+    SELECT TOP (1) @PrimaryKey = c.name
+    FROM sys.indexes i
+    INNER JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+    INNER JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+    WHERE i.object_id = @ObjectId
+      AND i.is_primary_key = 1
+    ORDER BY ic.key_ordinal;
+
+    SELECT
         c.name AS [name],
-        
-        -- Nhãn hiển thị: Cấu hình nhãn -> Tên cột
-        ISNULL(f.CaptionVN, c.name) AS [label],
-        
+        f.CaptionVN AS [label],
         f.CaptionEN AS [labelEN],
         f.CaptionCH AS [labelCH],
-        
-        -- Căn lề và độ rộng
+        f.FormatID AS [formatId],
+        f.FormatID AS [renderRule],
         f.AlignX AS [align],
         f.MinWidth AS [minWidth],
         f.MaxWidth AS [maxWidth],
-        
-        -- Thứ tự hiển thị: từ SY_FmtFldTbl nếu có, fallback theo column_id
-        ISNULL(f.OrderNo, c.column_id) AS [orderNo],
-        
-        -- Vị trí: từ SY_FmtFldTbl nếu có, fallback theo FormatID
-        ISNULL(f.FormPosition, 
-            CASE 
-                WHEN f.FormatID IN ('js', 'ta') THEN '12'
-                ELSE '6'
-            END
-        ) AS [position],
-        
-        -- Trường bắt buộc: từ SY_FmtFldTbl nếu có, fallback theo NOT NULL
-        ISNULL(f.IsRequired,
-            CASE 
-                WHEN c.is_nullable = 0 AND c.is_identity = 0 AND c.is_computed = 0 THEN 1 
-                ELSE 0 
-            END
-        ) AS [required],
-        
-        -- Cờ hiển thị: ưu tiên từ SY_FmtFldTbl, sau đó SY_FrmDrdwTbl, cuối cùng fallback
-        ISNULL(f.ShowInGrid, CASE WHEN dd.isInvisible = 1 THEN 0 ELSE 1 END) AS [showInGrid],
-        ISNULL(f.ShowInAdd,
-            CASE 
-                WHEN dd.isInvisible = 1 THEN 0
-                WHEN c.name = @PrimaryKey AND c.is_identity = 1 THEN 0 
-                ELSE 1 
-            END
-        ) AS [showInAdd],
-        ISNULL(f.ShowInEdit,
-            CASE 
-                WHEN dd.isInvisible = 1 THEN 0
-                ELSE 1 
-            END
-        ) AS [showInEdit],
-        ISNULL(f.IsReadOnlyAdd,
-            CASE 
-                WHEN dd.isLock = 1 THEN 1
-                WHEN c.name = @PrimaryKey AND c.is_identity = 1 THEN 1 
-                ELSE 0 
-            END
-        ) AS [isReadOnlyAdd],
-        ISNULL(f.IsReadOnlyEdit,
-            CASE 
-                WHEN dd.isLock = 1 THEN 1
-                WHEN c.name = @PrimaryKey THEN 1 
-                ELSE 0 
-            END
-        ) AS [isReadOnlyEdit],
-        ISNULL(f.ShowInFilter, 0) AS [showInFilter],
-        
-        -- Khóa chính của bảng
+        c.column_id AS [orderNo],
+        '6' AS [position],
+        CASE
+            WHEN c.is_nullable = 0
+             AND c.is_identity = 0
+             AND c.is_computed = 0
+             AND c.system_type_id <> 189
+             AND c.default_object_id = 0 THEN 1
+            ELSE 0
+        END AS [required],
+        CASE WHEN ISNULL(dd.isInvisible, 0) = 1 THEN 0 ELSE 1 END AS [showInGrid],
+        CASE
+            WHEN c.is_identity = 1 OR c.is_computed = 1 OR c.system_type_id = 189 THEN 0
+            WHEN ISNULL(dd.isInvisible, 0) = 1 THEN 0
+            ELSE 1
+        END AS [showInAdd],
+        CASE
+            WHEN c.is_identity = 1 OR c.is_computed = 1 OR c.system_type_id = 189 THEN 0
+            WHEN ISNULL(dd.isInvisible, 0) = 1 THEN 0
+            ELSE 1
+        END AS [showInEdit],
+        CASE
+            WHEN c.is_identity = 1 OR c.is_computed = 1 OR c.system_type_id = 189 THEN 1
+            WHEN ISNULL(dd.isLock, 0) = 1 THEN 1
+            ELSE 0
+        END AS [isReadOnlyAdd],
+        CASE
+            WHEN c.name = @PrimaryKey OR c.is_identity = 1 OR c.is_computed = 1 OR c.system_type_id = 189 THEN 1
+            WHEN ISNULL(dd.isLock, 0) = 1 THEN 1
+            ELSE 0
+        END AS [isReadOnlyEdit],
+        1 AS [showInFilter],
         @PrimaryKey AS [primaryKey],
-
-        -- B. Cấu hình định dạng dữ liệu (từ SY_FmatTbl)
-        ISNULL(f.FormatID, '') AS [renderRule],
         t.name AS [dataType],
-        
-        -- Các rule bổ trợ từ SY_FmtFldTbl
-        ISNULL(f.ValidateRule, '') AS [validateRule],
-        ISNULL(f.DependsOn,    '') AS [dependsOn],
-        ISNULL(f.VisibleRule,  '') AS [visibleRule],
-        
+        fm.FormatName AS [formatName],
+        fm.NumberDecimal AS [numberDecimal],
         fm.FormatString AS [formatString],
         fm.MaskString AS [maskString],
-        fm.NumberDecimal AS [numberDecimal],
         fm.MaxLength AS [maxLength],
         fm.Type AS [formatType],
+        fm.Params AS [formatParams],
+        fm.Align AS [formatAlign],
+        fm.IsComplex AS [isComplex],
         fm.MinValue AS [minValue],
         fm.MaxValue AS [maxValue],
-        
-        -- C. Cấu hình Dropdown / Lookup (từ SY_FrmDrdwTbl)
-        ISNULL(dd.Source, '') AS [dataSource],
-        ISNULL(dd.Type, '') AS [dropdownType],
+        dd.UserAutoID AS [dropdownId],
+        dd.Source AS [dataSource],
+        dd.Type AS [dropdownType],
         dd.ValueColumn AS [dropdownValueColumn],
         dd.DisplayColumn AS [dropdownDisplayColumn],
         dd.ColumnArr AS [dropdownColumnArr],
         dd.WidthArr AS [dropdownWidthArr],
+        dd.LinkColumn AS [dropdownLinkColumn],
+        dd.DisableAddNew AS [dropdownDisableAddNew],
+        dd.ParaArr AS [dropdownParaArr],
+        dd.ParaRequireArr AS [dropdownParaRequireArr],
+        dd.KeepValue AS [dropdownKeepValue],
+        dd.SummaryFieldArr AS [dropdownSummaryFieldArr],
         dd.IsMultiSelect AS [dropdownIsMultiSelect],
         dd.IsNotInList AS [dropdownIsNotInList],
-        dd.DisableAddNew AS [dropdownDisableAddNew]
-        
+        dd.IsDisable AS [dropdownIsDisable],
+        dd.ColumnName_Filter AS [dropdownFilterColumn],
+        dd.ColumnValue_Filter AS [dropdownFilterValue],
+        dd.OnlyValue_Filter AS [dropdownOnlyFilterValue],
+        dd.ManualSQLSearch AS [dropdownManualSearch],
+        dd.ManualSQLOrderBy AS [dropdownManualOrderBy],
+        dd.DefaultValue AS [defaultValue],
+        dd.DefaultValueSQL AS [defaultValueSql],
+        dd.IsReload AS [dropdownIsReload],
+        dd.EditableColumns AS [dropdownEditableColumns],
+        dd.Caption AS [dropdownCaption],
+        dd.isLock AS [dropdownIsLock],
+        dd.isInvisible AS [dropdownIsInvisible],
+        dd.isWordWrap AS [dropdownIsWordWrap],
+        dd.isMultiValue AS [dropdownIsMultiValue],
+        dd.GroupCaption AS [dropdownGroupCaption],
+        dd.WordWrapArr AS [dropdownWordWrapArr],
+        dd.GroupColumnArr AS [dropdownGroupColumnArr],
+        dd.DisplayMember2 AS [dropdownDisplayMember2],
+        dd.TreeViewColumn AS [dropdownTreeViewColumn],
+        dd.TreeViewColumnParent AS [dropdownTreeViewColumnParent],
+        dd.ReloadType AS [dropdownReloadType],
+        dd.EditType AS [dropdownEditType],
+        dd.TriggerOnOpenForm AS [dropdownTriggerOnOpenForm]
     FROM sys.columns c
-    JOIN sys.types t ON c.user_type_id = t.user_type_id
-     -- Khớp cấu hình hiển thị cột có sẵn
-    LEFT JOIN dbo.SY_FmtFldTbl f ON f.FormName = @FormName AND f.FieldName = c.name
-    -- Khớp cấu hình định dạng chi tiết
-    LEFT JOIN dbo.SY_FmatTbl fm ON f.FormatID = fm.FormatID
-    -- Khớp cấu hình dropdown
+    INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+    INNER JOIN dbo.SY_FmtFldTbl f ON f.FieldName = c.name
+    INNER JOIN dbo.SY_FmatTbl fm ON fm.FormatID = f.FormatID
     LEFT JOIN dbo.SY_FrmDrdwTbl dd ON dd.FormID = @FormName AND dd.ColumnID = c.name
-    
-    WHERE c.object_id = OBJECT_ID(@ViewName)
-    ORDER BY c.column_id ASC;
+    WHERE c.object_id = @ObjectId
+    ORDER BY c.column_id;
 END
 GO

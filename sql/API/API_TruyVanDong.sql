@@ -1,5 +1,5 @@
 CREATE OR ALTER PROCEDURE [dbo].[API_TruyVanDong]
-    @List VARCHAR(50),
+    @List SYSNAME,
     @Keyword NVARCHAR(200) = '',
     @SortColumn VARCHAR(50) = '',
     @SortDir VARCHAR(10) = '',
@@ -7,11 +7,19 @@ CREATE OR ALTER PROCEDURE [dbo].[API_TruyVanDong]
 AS
 BEGIN
     SET NOCOUNT ON;
-    DECLARE @TableName VARCHAR(100);
-    DECLARE @PrimaryKey VARCHAR(50);
+    DECLARE @TableName SYSNAME;
+    DECLARE @PrimaryKey SYSNAME;
+    DECLARE @ObjectId INT = OBJECT_ID(@List, 'U');
+    DECLARE @QualifiedTable NVARCHAR(517);
     
     -- Ánh xạ động: Tên Form chính là tên View hoặc Bảng vật lý thật trong CSDL
-    SET @TableName = @List;
+    SET @TableName = OBJECT_NAME(@ObjectId);
+
+    IF @ObjectId IS NULL
+    BEGIN
+        SELECT -1 AS code, N'List must be an existing user table: ' + ISNULL(@List, '') AS msg;
+        RETURN;
+    END
 
     SET @PrimaryKey = '';
 
@@ -23,7 +31,7 @@ BEGIN
         JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
         JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
         WHERE i.is_primary_key = 1
-          AND i.object_id = OBJECT_ID(@TableName);
+          AND i.object_id = @ObjectId;
     END
 
     IF @TableName IS NULL OR @TableName = ''
@@ -33,6 +41,8 @@ BEGIN
     END
     
     -- Biến chứa SQL động
+    SET @QualifiedTable = QUOTENAME(OBJECT_SCHEMA_NAME(@ObjectId)) + N'.' + QUOTENAME(@TableName);
+
     DECLARE @sql NVARCHAR(MAX);
     DECLARE @whereClause NVARCHAR(MAX) = ' WHERE 1=1';
 
@@ -41,14 +51,14 @@ BEGIN
     BEGIN
         DECLARE @jsonFilter NVARCHAR(MAX);
         SELECT @jsonFilter = STUFF((
-            SELECT ' AND ' + QUOTENAME([key]) + ' LIKE N''%'' + ' + 
+            SELECT ' AND CONVERT(NVARCHAR(MAX), ' + QUOTENAME([key]) + ') LIKE N''%'' + ' +
                    'REPLACE(N''' + REPLACE([value], '''', '''''') + ''', ''\t'', '''')' + ' + ''%'''
             FROM OPENJSON(@Data)
             WHERE [value] IS NOT NULL AND CAST([value] AS NVARCHAR(MAX)) <> ''
               AND [key] COLLATE DATABASE_DEFAULT <> 'Keyword'
               AND EXISTS (
                   SELECT 1 FROM sys.columns 
-                  WHERE object_id = OBJECT_ID(@TableName) AND name = [key] COLLATE DATABASE_DEFAULT
+                  WHERE object_id = @ObjectId AND name = [key] COLLATE DATABASE_DEFAULT
               )
             FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 0, '');
 
@@ -62,6 +72,14 @@ BEGIN
 
 
     -- Thêm điều kiện tìm kiếm nếu có Keyword (Tìm kiếm toàn cục)
+    IF EXISTS (
+        SELECT 1 FROM sys.columns
+        WHERE object_id = @ObjectId AND name = 'IsDeleted'
+    )
+    BEGIN
+        SET @whereClause = @whereClause + ' AND ISNULL(' + QUOTENAME('IsDeleted') + ', 0) = 0';
+    END
+
     IF ISNULL(@Keyword, '') <> ''
     BEGIN
         DECLARE @searchCols NVARCHAR(MAX);
@@ -72,7 +90,7 @@ BEGIN
             FROM sys.columns c
             JOIN sys.objects t ON c.object_id = t.object_id
             JOIN sys.types ty ON c.system_type_id = ty.system_type_id
-            WHERE t.name = @TableName 
+             WHERE t.object_id = @ObjectId
               AND ty.name IN ('varchar', 'nvarchar', 'char', 'nchar', 'text', 'ntext')
             FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 4, '');
 
@@ -87,6 +105,11 @@ BEGIN
     
     -- Nếu frontend truyền SortColumn thì ưu tiên dùng
     IF ISNULL(@SortColumn, '') <> ''
+       AND EXISTS (
+           SELECT 1 FROM sys.columns
+           WHERE object_id = @ObjectId
+             AND name = @SortColumn
+       )
     BEGIN
         -- Mặc định ASC nếu không truyền SortDir hợp lệ
         IF ISNULL(@SortDir, '') NOT IN ('ASC', 'DESC', 'asc', 'desc')
@@ -105,19 +128,25 @@ BEGIN
     END
 
     -- Lấy danh sách cột
+    -- Read columns from the actual table/view schema. SY_FmtFldTbl only controls UI presentation.
+    -- This lets newly added database columns flow through to the UI without a separate registration step.
     DECLARE @ColumnList NVARCHAR(MAX);
     SELECT @ColumnList = STUFF((
-        SELECT ', ' + QUOTENAME(FieldName)
-        FROM SY_FmtFldTbl
-        WHERE FormName = @List
+        SELECT ', ' + QUOTENAME(c.name)
+        FROM sys.columns c
+        WHERE c.object_id = @ObjectId
+        ORDER BY c.column_id
         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
-        
+
     IF @ColumnList IS NULL OR @ColumnList = ''
-        SET @ColumnList = '*';
+    BEGIN
+        SELECT -1 AS code, N'No columns found for table/view ' + @TableName AS msg;
+        RETURN;
+    END
 
     -- Sinh câu SQL động (Trả toàn bộ dữ liệu để C# Backend tự phân trang)
     SET @sql = 'SELECT ' + @ColumnList + ' ' +
-               ' FROM ' + QUOTENAME(@TableName) + @whereClause +
+               ' FROM ' + @QualifiedTable + @whereClause +
                @OrderByClause + ';';
     
     -- Chạy lệnh

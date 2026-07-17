@@ -131,7 +131,9 @@ BEGIN
                 BEGIN SET @Val = @List; SET @IsMapped = 1; END
             ELSE IF LOWER(@KeyName) = 'func' 
                 BEGIN SET @Val = @Func; SET @IsMapped = 1; END
-            ELSE IF LOWER(@KeyName) = 'jsondata' 
+            -- Generic CRUD procedures historically use either @JsonData or @Data.
+            -- Both must receive the JSON payload posted by the frontend.
+            ELSE IF LOWER(@KeyName) IN ('jsondata', 'data')
                 BEGIN SET @Val = @JsonData; SET @IsMapped = 1; END
         END
         

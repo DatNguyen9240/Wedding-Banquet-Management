@@ -180,7 +180,7 @@ UIControls.utils = (function() {
     /**
      * Áp VisibleRule cho các field trong một container (form modal hoặc filter dialog)
      *
-     * Syntax (lưu trong SY_FormatFields.VisibleRule):
+     * Syntax (do caller truyền vào thuộc tính data-visible-rule):
      *   "fieldA=val"           → hiện khi fieldA = val
      *   "fieldA=v1|v2"         → hiện khi fieldA = v1 HOẶC v2
      *   "fieldA!=val"          → hiện khi fieldA KHÁC val

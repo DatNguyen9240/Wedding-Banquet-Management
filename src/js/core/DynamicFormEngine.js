@@ -126,7 +126,7 @@ window.DynamicFormEngine = (function () {
   }
 
   /** Ánh xạ FormatID từ DB (ví dụ: D, H, F, B, S, U, N) sang renderRule tiêu chuẩn của Frontend */
-  function _mapRenderRule(formatId, dataType) {
+  function _mapRenderRule(formatId) {
     var fid = String(formatId || '').toUpperCase().trim();
     if (fid) {
       if (fid === 'D') return 'dt'; // Date Format
@@ -137,10 +137,6 @@ window.DynamicFormEngine = (function () {
       return fid.toLowerCase();
     }
     // Tự động phân loại theo kiểu dữ liệu gốc nếu không cấu hình FormatID
-    var type = String(dataType || '').toLowerCase().trim();
-    if (['date', 'datetime', 'datetime2', 'smalldatetime'].includes(type)) return 'dt';
-    if (type === 'bit') return 'sw';
-    if (['int', 'bigint', 'smallint', 'tinyint', 'decimal', 'numeric', 'float', 'real', 'money'].includes(type)) return 'n';
     return '';
   }
   /**
@@ -158,6 +154,26 @@ window.DynamicFormEngine = (function () {
       btn.innerHTML = originalHTML || btn._originalHTML || btn.innerHTML;
       btn.disabled = false;
     }
+  }
+
+  function _applyFieldConstraints(inputEl, field) {
+    var controls = [];
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(inputEl.tagName)) controls.push(inputEl);
+    controls = controls.concat(Array.prototype.slice.call(inputEl.querySelectorAll ? inputEl.querySelectorAll('input, select, textarea') : []));
+
+    controls.forEach(function (control) {
+      if (field.maxLength !== null && field.maxLength !== undefined && Number(field.maxLength) > 0) {
+        control.maxLength = Number(field.maxLength);
+      }
+      if (field.minValue !== null && field.minValue !== undefined && field.minValue !== '') control.min = field.minValue;
+      if (field.maxValue !== null && field.maxValue !== undefined && field.maxValue !== '') control.max = field.maxValue;
+      if (field.maskString && control.tagName === 'INPUT') control.pattern = field.maskString;
+      if (field.numberDecimal !== null && field.numberDecimal !== undefined && control.type === 'number') {
+        var decimals = Number(field.numberDecimal);
+        control.step = decimals > 0 ? ('0.' + '0'.repeat(decimals - 1) + '1') : '1';
+      }
+      if (field.dropdownIsDisable) control.disabled = true;
+    });
   }
 
   /**
@@ -279,11 +295,11 @@ window.DynamicFormEngine = (function () {
     globalFormSchema = [];
     globalRenderers = {};
 
-    // API defaults: Định tuyến qua Gateway Router trung tâm và API Metadata
+    // API defaults: CRUD trực tiếp theo bảng vật lý và metadata chuẩn.
     _setDefaults(MODULE_CONFIG, {
-      ApiSearch: '/api/API_Gateway_Router',
-      ApiSave: '/api/API_Gateway_Router',
-      ApiDelete: '/api/API_Gateway_Router'
+      ApiSearch: '/api/API_TruyVanDong',
+      ApiSave: '/api/API_LuuDong',
+      ApiDelete: '/api/API_XoaDong'
     });
     _setDefaults(MODULE_CONFIG, { ApiDictionary: '/api/API_LoadFormMeta' });
 
@@ -315,7 +331,14 @@ window.DynamicFormEngine = (function () {
 
       // 2. Lưu Từ điển vào biến toàn cục
       var dataList = resConfig ? (resConfig.list || resConfig.records) : null;
-      if (resConfig && resConfig.code === 0 && dataList) {
+      if (!resConfig || resConfig.code !== 0 || !Array.isArray(dataList) || dataList.length === 0) {
+        var metadataError = (resConfig && (resConfig.msg || resConfig.message)) || 'Metadata form khong hop le hoac chua duoc dong bo.';
+        console.error('Metadata loading failed for', MODULE_CONFIG.FormName, metadataError);
+        $container.innerHTML = '<div class="p-4 text-danger">' + MODULE_CONFIG.TextLoadingError + metadataError + '</div>';
+        return;
+      }
+
+      {
 
         // --- NO-CODE MAGIC: Đọc cấu hình cấp Form từ Record đầu tiên ---
         if (dataList.length > 0) {
@@ -365,8 +388,8 @@ window.DynamicFormEngine = (function () {
 
 
           // Xây dựng Custom Renderers Động từ cấu hình DB (tránh đè logic JSON của UITable)
-          if (item.renderRule || item.dataType) {
-            var mappedRule = _mapRenderRule(item.renderRule, item.dataType);
+          if (item.renderRule) {
+            var mappedRule = _mapRenderRule(item.renderRule);
             var outerRule = mappedRule.toLowerCase();
             var outerNameLower = (item.name || '').toLowerCase();
 
@@ -397,7 +420,7 @@ window.DynamicFormEngine = (function () {
               }
 
               // Danh sách chọn tĩnh (STATIC) -> Hiển thị Tên thay vì Mã trên Grid
-              if (item.dropdownType === 'STATIC' || item.dataSource.toUpperCase().startsWith('STATIC:')) {
+              if (item.dropdownType === 'STATIC' || (item.dataSource && item.dataSource.toUpperCase().startsWith('STATIC:'))) {
                 var staticStr = item.dataSource;
                 if (staticStr.toUpperCase().startsWith('STATIC:')) {
                   staticStr = staticStr.substring(7);
@@ -467,8 +490,44 @@ window.DynamicFormEngine = (function () {
             isReadOnlyAdd: _bool(item.isReadOnlyAdd),
             position: item.position,
             orderNo: item.orderNo,
-            renderRule: _mapRenderRule(item.renderRule, item.dataType),
+            renderRule: _mapRenderRule(item.renderRule),
             dataSource: item.dataSource,
+            dataType: item.dataType,
+            formatId: item.formatId,
+            formatName: item.formatName,
+            formatString: item.formatString,
+            maskString: item.maskString,
+            numberDecimal: item.numberDecimal,
+            maxLength: item.maxLength,
+            minValue: item.minValue,
+            maxValue: item.maxValue,
+            align: item.align,
+            minWidth: item.minWidth,
+            maxWidth: item.maxWidth,
+            defaultValue: item.defaultValue,
+            dropdownLinkColumn: item.dropdownLinkColumn,
+            dropdownParaArr: item.dropdownParaArr,
+            dropdownParaRequireArr: item.dropdownParaRequireArr,
+            dropdownKeepValue: _bool(item.dropdownKeepValue),
+            dropdownFilterColumn: item.dropdownFilterColumn,
+            dropdownFilterValue: item.dropdownFilterValue,
+            dropdownOnlyFilterValue: item.dropdownOnlyFilterValue,
+            dropdownManualSearch: _bool(item.dropdownManualSearch),
+            dropdownManualOrderBy: item.dropdownManualOrderBy,
+            dropdownIsReload: _bool(item.dropdownIsReload),
+            dropdownEditableColumns: item.dropdownEditableColumns,
+            dropdownIsDisable: _bool(item.dropdownIsDisable),
+            dropdownCaption: item.dropdownCaption,
+            dropdownIsWordWrap: _bool(item.dropdownIsWordWrap),
+            dropdownIsMultiValue: _bool(item.dropdownIsMultiValue),
+            dropdownGroupCaption: item.dropdownGroupCaption,
+            dropdownGroupColumnArr: item.dropdownGroupColumnArr,
+            dropdownDisplayMember2: item.dropdownDisplayMember2,
+            dropdownTreeViewColumn: item.dropdownTreeViewColumn,
+            dropdownTreeViewColumnParent: item.dropdownTreeViewColumnParent,
+            dropdownReloadType: item.dropdownReloadType,
+            dropdownEditType: item.dropdownEditType,
+            dropdownTriggerOnOpenForm: _bool(item.dropdownTriggerOnOpenForm),
 
             // Thêm các cấu hình Dropdown mới từ SY_FrmDrdwTbl
             dropdownType: item.dropdownType,
@@ -483,10 +542,8 @@ window.DynamicFormEngine = (function () {
         });
 
         if (Object.keys(globalDictionary).length === 0) {
-          console.warn('API returned no fields for FormName:', MODULE_CONFIG.FormName);
+          throw new Error('Metadata form khong co field hop le.');
         }
-      } else {
-        console.warn('API Dictionary fetch failed or empty', resConfig);
       }
       // Tự động sinh mã HTML (Không cần file .html rời nữa)
       $container.innerHTML = `
@@ -554,18 +611,12 @@ window.DynamicFormEngine = (function () {
 
               var payload = {
                 List: MODULE_CONFIG.FormName,
-                Func: 'Delete',
+                Ids: pkValues,
                 UserName: _currentUser()
               };
 
               // Bơm dữ liệu dòng đầu tiên kèm theo danh sách ID dạng batch (comma separated) để tránh mất các cột Not Null
-              var rowData = Object.assign({}, selectedRows[0] || {});
-              rowData.IsDeleted = 1; // Flag xóa mềm
-              rowData[pkField] = pkValues;
-              rowData['DocumentIDs'] = pkValues;
-              rowData['Ids'] = pkValues;
 
-              payload.JsonData = JSON.stringify(rowData);
 
               var deletePromises = [ApiClient.post(MODULE_CONFIG.ApiDelete, payload)];
 
@@ -836,9 +887,6 @@ window.DynamicFormEngine = (function () {
 
       var query = {
         List: MODULE_CONFIG.FormName,
-        Func: 'View',
-        UserName: _currentUser(),
-        User: _currentUser(),
         Page: currentPage,
         Limit: currentLimit,
         SortColumn: currentSortCol || '',
@@ -847,7 +895,7 @@ window.DynamicFormEngine = (function () {
       };
 
       if (Object.keys(activeFilters).length > 0) {
-        query.JsonData = JSON.stringify(activeFilters);
+        query.Data = JSON.stringify(activeFilters);
       }
       ApiClient.post(MODULE_CONFIG.ApiSearch, query).then(function (result) {
         // Trả lại quyền sinh sát (tính phân trang) cho C# Backend
@@ -909,10 +957,6 @@ window.DynamicFormEngine = (function () {
           dictionary[f.name] = f.label;
         }
       });
-      if (Object.keys(dictionary).length === 0) {
-        dictionary = globalDictionary;
-      }
-
       var columnDefs = [];
 
       Object.keys(dictionary).forEach(function (key) {
@@ -1857,7 +1901,7 @@ window.DynamicFormEngine = (function () {
       if (field.name === MODULE_CONFIG.PrimaryKey && !isEdit) {
         field.value = '';
       } else {
-        field.value = row ? _getValueFromRow(row, field.name) : '';
+        field.value = row ? _getValueFromRow(row, field.name) : (field.defaultValue == null ? '' : field.defaultValue);
       }
 
       // Khởi tạo Ô nhập liệu tuỳ thuộc vào quy tắc renderRule
@@ -2253,6 +2297,8 @@ window.DynamicFormEngine = (function () {
         inputEl = UIInput.createText(field);
       }
 
+      _applyFieldConstraints(inputEl, field);
+
       // Áp dụng kích thước FlexBox từ field.position
       if (((isEdit && field.isReadOnlyEdit) || (!isEdit && field.isReadOnlyAdd))) {
         var innerFields = inputEl.querySelectorAll('input, select, textarea, button');
@@ -2413,16 +2459,9 @@ window.DynamicFormEngine = (function () {
     }
 
     // Gọi API tuần tự
-    var finalPayloads = payloads;
-    if (endpoint === '/api/API_Gateway_Router') {
-      finalPayloads = payloads.map(function (p) {
-        return {
-          List: MODULE_CONFIG.FormName,
-          Func: 'Save',
-          JsonData: JSON.stringify(p)
-        };
-      });
-    }
+    var finalPayloads = payloads.map(function (p) {
+      return { List: MODULE_CONFIG.FormName, Data: JSON.stringify(p) };
+    });
 
     _sendSequential(
       endpoint,
@@ -2508,14 +2547,7 @@ window.DynamicFormEngine = (function () {
     if (payloads.length === 0) { modal.closeNow(); return; }
 
     // 5. Gọi API Lưu
-    var finalPayload = payloads[0];
-    if (endpoint === '/api/API_Gateway_Router') {
-      finalPayload = {
-        List: MODULE_CONFIG.FormName,
-        Func: 'Save',
-        JsonData: JSON.stringify(payloads[0])
-      };
-    }
+    var finalPayload = { List: MODULE_CONFIG.FormName, Data: JSON.stringify(payloads[0]) };
     ApiClient.post(endpoint, finalPayload)
       .then(function (res) {
         if (res && res.code === 0) {
@@ -2561,9 +2593,9 @@ window.DynamicFormEngine = (function () {
     var schemaPayload = { FormName: formName };
 
     ApiClient.post(detailUrl, schemaPayload).then(function (schemaRes) {
-      var rawSchema = schemaRes.list || schemaRes.records || [];
+      var rawSchema = schemaRes && (schemaRes.list || schemaRes.records) || [];
 
-      if (rawSchema.length === 0) {
+      if (!schemaRes || schemaRes.code !== 0 || !Array.isArray(rawSchema) || rawSchema.length === 0) {
         Alert.error('Lỗi', 'Không tìm thấy cấu hình trường cho form: ' + formName);
         return;
       }
@@ -2573,13 +2605,13 @@ window.DynamicFormEngine = (function () {
           name: f.name,
           label: f.label,
           required: _bool(f.required),
-          renderRule: f.renderRule.toLowerCase(),
+          renderRule: _mapRenderRule(f.renderRule),
           dataSource: f.dataSource,
           position: f.position,
           showInAdd: _bool(f.showInAdd),
           showInEdit: _bool(f.showInEdit),
           orderNo: f.orderNo,
-          value: ''
+          value: f.defaultValue == null ? '' : f.defaultValue
         };
       });
 
@@ -2603,7 +2635,7 @@ window.DynamicFormEngine = (function () {
           var hiddenEl = document.createElement('input');
           hiddenEl.type = 'hidden';
           hiddenEl.name = field.name;
-          hiddenEl.value = '';
+          hiddenEl.value = field.value;
           body.appendChild(hiddenEl);
           return;
         }
@@ -2662,7 +2694,7 @@ window.DynamicFormEngine = (function () {
         wrapper.appendChild(inputEl);
         grid.appendChild(wrapper);
 
-        currentModalFormState[field.name] = '';
+        currentModalFormState[field.name] = field.value;
       });
 
       var footer = document.createElement('div');
@@ -2680,12 +2712,8 @@ window.DynamicFormEngine = (function () {
       footer.appendChild(btnCancel);
       footer.appendChild(btnSave);
 
-      var titleCaption = (dictRes.records && dictRes.records.find(function (d) {
-        var id = d.FormID || d.Formid || d.formID || d.formid || d.FormName || d.formName || d.FieldName || d.fieldname;
-        return id === formName;
-      }))?.CaptionVN || formName;
       var modal = UIModal.show({
-        title: 'Thêm nhanh: ' + titleCaption,
+        title: 'Thêm nhanh: ' + formName,
         width: '800px',
         content: body,
         footer: footer
@@ -2731,14 +2759,9 @@ window.DynamicFormEngine = (function () {
           return;
         }
 
-        payload.IsEdit = 0; // Quick Add is always add mode
-        var savePayload = {
-          List: formName,
-          Func: 'Save',
-          JsonData: JSON.stringify(payload)
-        };
+        var savePayload = { List: formName, Data: JSON.stringify(payload) };
 
-        ApiClient.post('/api/API_Gateway_Router', savePayload).then(function (saveRes) {
+        ApiClient.post('/api/API_LuuDong', savePayload).then(function (saveRes) {
           if (saveRes && saveRes.code === 0) {
             var firstRec = saveRes.records && saveRes.records[0];
             if (firstRec && (firstRec.Success === false || String(firstRec.Success) === '0')) {

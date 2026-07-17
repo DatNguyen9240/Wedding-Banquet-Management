@@ -243,39 +243,26 @@ app.get('/api/documents/fields/:listName', async (req, res) => {
 
         let formFields = [];
         try {
-            const fieldsUrl = `${SQL_API_BASE}/api/API_DanhSachTruongGiaoDien`;
-            const payload = { FormName: sqlListName, Username: 'admin', Limit: 1000 };
+            const fieldsUrl = `${SQL_API_BASE}/api/API_LoadFormMeta`;
+            const payload = { FormName: sqlListName };
             const headers = {};
             if (req.headers.authorization) headers['Authorization'] = req.headers.authorization;
             const fieldsResp = await axios.post(fieldsUrl, payload, { headers, timeout: 5000 });
-            if (fieldsResp.data && fieldsResp.data.records) {
-                formFields = fieldsResp.data.records.map(r => r.FieldName || r.fieldName || r.fieldname).filter(Boolean);
+            if (fieldsResp.data && fieldsResp.data.code === 0 && (fieldsResp.data.list || fieldsResp.data.records)) {
+                formFields = (fieldsResp.data.list || fieldsResp.data.records).map(r => r.name).filter(Boolean);
             }
         } catch (fieldsErr) {
-            console.warn(`[FIELDS] Lỗi lấy trường từ API_DanhSachTruongGiaoDien cho '${sqlListName}':`, fieldsErr.message);
+            console.warn(`[FIELDS] Lỗi lấy metadata chuẩn cho '${sqlListName}':`, fieldsErr.message);
         }
 
-        let sampleRow = {};
-        try {
-            const sqlRow = await fetchFromSQLAPI(sqlListName, '', req.headers.authorization);
-            if (sqlRow) sampleRow = sqlRow;
-        } catch (e) { }
+        if (formFields.length === 0) {
+            return res.status(422).json({
+                success: false,
+                message: `Metadata không hợp lệ hoặc chưa có field cho '${sqlListName}'.`
+            });
+        }
 
-        const setup = await fetchSetupInfo(req.headers.authorization).catch(() => ({}));
-
-        const allFieldsSet = new Set([
-            ...Object.keys(setup),
-            ...formFields,
-            ...Object.keys(sampleRow)
-        ]);
-
-        const excludeFields = [
-            'id', 'code', 'msg', 'records', 'autoid', 'formname', 'fieldname',
-            'status', 'createdby', 'createdat', 'updatedby', 'updatedat'
-        ];
-        const fields = Array.from(allFieldsSet).filter(f => !excludeFields.includes(f.toLowerCase()));
-
-        const formattedFields = fields.map(f => `{${f}}`);
+        const formattedFields = formFields.map(f => `{${f}}`);
         res.json({ success: true, fields: formattedFields });
     } catch (error) {
         console.error('[API] Lỗi lấy danh sách biến:', error);

@@ -2,18 +2,18 @@
  * ReportFilterDialog Component
  * ─────────────────────────────────────────────
  * Dialog "Chọn báo cáo / Lọc" — các field được fetch động từ API
- * theo cùng pattern với DynamicFormEngine (API_LayCacTruongGiaoDien)
+ * theo cùng contract metadata với DynamicFormEngine (API_LoadFormMeta)
  *
  * Usage:
  *   ReportFilterDialog.open({
- *     formName: 'frmReportFilter',       // Tên form trong SY_FormatFields
+ *     formName: 'tblReportFilter',       // Tên bảng/view cần lấy metadata
  *     title: 'Chọn báo cáo',             // optional
  *     onConfirm: function(values) {      // values = { fieldName: value, ... }
  *       console.log(values);
  *     }
  *   });
  *
- * Schema field (từ API_LayCacTruongGiaoDien):
+ * Schema field (từ API_LoadFormMeta):
  *   renderRule = ''   → text input
  *   renderRule = 'dt' → date input
  *   renderRule = 'nm' → number input
@@ -28,7 +28,7 @@ var ReportFilterDialog = (function () {
 
 
   /** Ánh xạ FormatID từ DB (ví dụ: D, H, F, B, S, U, N) sang renderRule tiêu chuẩn của Giao diện */
-  function _mapRenderRule(formatId, dataType) {
+  function _mapRenderRule(formatId) {
     var fid = String(formatId || '').toUpperCase().trim();
     if (fid) {
       if (fid === 'D') return 'dt'; // Date Format
@@ -39,10 +39,6 @@ var ReportFilterDialog = (function () {
       return fid.toLowerCase();
     }
     // Tự động phân loại theo kiểu dữ liệu gốc nếu không cấu hình FormatID
-    var type = String(dataType || '').toLowerCase().trim();
-    if (['date', 'datetime', 'datetime2', 'smalldatetime'].includes(type)) return 'dt';
-    if (type === 'bit') return 'sw';
-    if (['int', 'bigint', 'smallint', 'tinyint', 'decimal', 'numeric', 'float', 'real', 'money'].includes(type)) return 'n';
     return '';
   }
 
@@ -137,7 +133,7 @@ var ReportFilterDialog = (function () {
    * Trả về { row: HTMLElement, getValue: fn, setValue: fn }
    */
   function _buildField(field) {
-    var rule = _mapRenderRule(field.renderRule, field.dataType);
+    var rule = _mapRenderRule(field.renderRule);
     var name = field.name;
     var label = field.label;
     var required = field.required;
@@ -279,7 +275,7 @@ var ReportFilterDialog = (function () {
   /**
    * Parse và áp VisibleRule cho toàn bộ fields trong body
    *
-   * VisibleRule syntax (lưu trong SY_FormatFields.VisibleRule):
+   * VisibleRule syntax (do caller truyền vào component):
    *   "KyBaoCao=custom"         → hiện khi KyBaoCao = 'custom'
    *   "KyBaoCao=custom|today"   → hiện khi KyBaoCao = 'custom' HOẶC 'today'
    *   "HinhThucPV!=online"      → hiện khi HinhThucPV KHÁC 'online'
@@ -375,7 +371,7 @@ var ReportFilterDialog = (function () {
   /**
    * Mở dialog filter
    * @param {Object} opts
-   * @param {string} opts.formName         - FormName trong SY_FormatFields
+   * @param {string} opts.formName         - Tên bảng/view trong metadata chuẩn
    * @param {string} [opts.title]          - Tiêu đề dialog, mặc định 'Chọn báo cáo'
    * @param {string} [opts.apiDictionary]  - Override API endpoint
    * @param {Object} [opts.defaultValues]  - Giá trị mặc định { fieldName: value }
@@ -430,7 +426,7 @@ var ReportFilterDialog = (function () {
         body.innerHTML = '';
         var dataList = (res && (res.list || res.records)) || [];
 
-        if (!dataList.length) {
+        if (!res || res.code !== 0 || !Array.isArray(dataList) || !dataList.length) {
           body.innerHTML = '<div style="color:var(--color-text-secondary);padding:16px;">Không tìm thấy cấu hình filter cho form: ' + opts.formName + '</div>';
           return;
         }
@@ -440,15 +436,15 @@ var ReportFilterDialog = (function () {
 
         dataList.forEach(function (item) {
           var fieldDef = {
-            name: item.name || item.FieldName,
-            label: item.label || item.CaptionVN,
-            required: String(item.required || item.IsRequired) === '1',
-            renderRule: (item.renderRule || item.FormatID || '').toLowerCase().trim(),
-            dataSource: (item.dataSource || item.DataSource || '').trim(),
-            valueField: item.valueField || item.ValueField || 'Value',
-            labelField: item.labelField || item.LabelField || 'Label',
-            defaultValue: item.defaultValue || item.DefaultValue || '',
-            placeholder: item.placeholder || '',
+            name: item.name,
+            label: item.label,
+            required: String(item.required) === '1',
+            renderRule: _mapRenderRule(item.renderRule),
+            dataSource: item.dataSource,
+            valueField: item.dropdownValueColumn,
+            labelField: item.dropdownDisplayColumn,
+            defaultValue: item.defaultValue,
+            placeholder: '',
             visibleRule: (item.visibleRule || item.VisibleRule || '').trim()  // ← mới
           };
 
