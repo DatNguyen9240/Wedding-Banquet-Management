@@ -1,7 +1,10 @@
 USE [QLTiec]
 GO
 
-CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachKhachDen]
+IF OBJECT_ID('dbo.API_DanhSachKhachDen', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.API_DanhSachKhachDen;
+GO
+CREATE PROCEDURE [dbo].[API_DanhSachKhachDen]
     @TuNgay DATE = NULL,
     @DenNgay DATE = NULL,
     @Keyword NVARCHAR(100) = NULL
@@ -9,7 +12,12 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT *
+    SELECT 
+        MaPhieu, DocumentID, Makh, TenKhachHang, DienThoai, CCCD,
+        NgayDuKien, NgayAmLich, GoiThucDonID, GoiTiec, Loaitiecid,
+        Thoigianid, SobanMan, SobanChay, Ghichu, Ngaytochuc, DocumentDate,
+        Tenchure, Tencodau, DTchure, DTcodau, Diachi, Mail, Nguoigd,
+        DienThoaiDaiDien, SanhTiec, SanhTiecID, TrangThai
     FROM v_DanhSachKhachThamQuan
     WHERE 
         (@Keyword IS NULL OR DocumentID LIKE '%' + @Keyword + '%' OR TenKhachHang LIKE N'%' + @Keyword + '%' OR DienThoai LIKE '%' + @Keyword + '%' OR CCCD LIKE '%' + @Keyword + '%')

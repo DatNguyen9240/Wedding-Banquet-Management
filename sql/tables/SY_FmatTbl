@@ -1,0 +1,12 @@
+FormatID	varchar
+FormatName	nvarchar
+NumberDecimal	int
+FormatString	nvarchar
+MaskString	varchar
+MaxLength	smallint
+Type	char
+Params	varchar
+Align	char
+IsComplex	bit
+MinValue	float
+MaxValue	float

@@ -1,5 +1,36 @@
 -- Script Update Hợp Đồng All-in-One
 
+-- Helper tạm thời phục vụ migration
+IF OBJECT_ID('SY_FormatFields', 'U') IS NULL
+BEGIN
+    CREATE TABLE SY_FormatFields (
+        AutoID int IDENTITY(1,1) PRIMARY KEY,
+        FormatID varchar(50),
+        FieldName varchar(50),
+        FormName varchar(50),
+        CaptionVN nvarchar(255),
+        CaptionEN nvarchar(200),
+        CaptionCH nvarchar(200),
+        AlignX varchar(50),
+        MinWidth int,
+        MaxWidth int,
+        ShowInAdd bit DEFAULT 1,
+        ShowInEdit bit DEFAULT 1,
+        FormPosition varchar(50),
+        IsRequired bit DEFAULT 0,
+        OrderNo int,
+        DataSource nvarchar(500),
+        ValidateRule nvarchar(500),
+        DependsOn varchar(50),
+        VisibleRule nvarchar(500),
+        IsReadOnlyAdd bit DEFAULT 0,
+        IsReadOnlyEdit bit DEFAULT 0,
+        ShowInFilter bit DEFAULT 0,
+        ShowInGrid bit DEFAULT 1
+    );
+END
+GO
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1131,10 +1162,7 @@ WHERE ISNULL(h.IsDeleted, 0) = 0;
 GO
 
 
-UPDATE SY_FrmLstTbl 
-SET TableName = 'v_DanhSachHopDong', SaveTableName = 'tbmk_Hopdong', PrimaryKey = 'Sohopdong'
-WHERE FormID = 'frmHopDong';
-GO
+
 
 EXEC API_DongBoTruongGiaoDien @FormName = 'frmHopDong', @ObjectName = 'v_DanhSachHopDong';
 GO
@@ -1626,4 +1654,72 @@ FROM dmLoaihinhtiec
 WHERE Loaitiecid NOT IN (
     SELECT Loaitiecid FROM tbmk_LoaitiecAddfile WHERE FormName = 'frmHopDong'
 );
+GO
+
+-- =========================================================================
+-- DI TRÚ DỮ LIỆU TỰ ĐỘNG SANG CÁC BẢNG CHUẨN (SY_FmtFldTbl & SY_FrmDrdwTbl)
+-- =========================================================================
+PRINT N'Đang di chuyển dữ liệu từ SY_FormatFields sang SY_FmtFldTbl...';
+GO
+
+MERGE INTO SY_FmtFldTbl AS target
+USING SY_FormatFields AS source
+ON (target.FormName = source.FormName AND target.FieldName = source.FieldName)
+WHEN MATCHED THEN
+    UPDATE SET 
+        CaptionVN = ISNULL(source.CaptionVN, target.CaptionVN),
+        CaptionEN = ISNULL(source.CaptionEN, target.CaptionEN),
+        CaptionCH = ISNULL(source.CaptionCH, target.CaptionCH),
+        FormatID  = ISNULL(source.FormatID,  target.FormatID),
+        AlignX    = ISNULL(source.AlignX,    target.AlignX),
+        MinWidth  = ISNULL(source.MinWidth,  target.MinWidth),
+        MaxWidth  = ISNULL(source.MaxWidth,  target.MaxWidth)
+WHEN NOT MATCHED THEN
+    INSERT (FormName, FieldName, CaptionVN, CaptionEN, CaptionCH, FormatID, AlignX, MinWidth, MaxWidth)
+    VALUES (source.FormName, source.FieldName, source.CaptionVN, source.CaptionEN, source.CaptionCH, source.FormatID, source.AlignX, source.MinWidth, source.MaxWidth);
+GO
+
+MERGE INTO SY_FrmDrdwTbl AS target
+USING (
+    SELECT FormName, FieldName, DataSource,
+           CASE WHEN ShowInAdd = 0 AND ShowInEdit = 0 THEN 1 ELSE 0 END AS IsInvisibleVal,
+           CASE WHEN IsReadOnlyAdd = 1 OR IsReadOnlyEdit = 1 THEN 1 ELSE 0 END AS IsLockVal
+    FROM SY_FormatFields
+    WHERE DataSource IS NOT NULL AND DataSource <> ''
+) AS source
+ON (target.FormID = source.FormName AND target.ColumnID = source.FieldName)
+WHEN MATCHED THEN
+    UPDATE SET 
+        Source = source.DataSource,
+        Type = 'API',
+        ValueColumn = source.FieldName,
+        DisplayColumn = 'Ten',
+        isInvisible = source.IsInvisibleVal,
+        isLock = source.IsLockVal
+WHEN NOT MATCHED THEN
+    INSERT (UserAutoID, FormID, ColumnID, Source, Type, ValueColumn, DisplayColumn, isInvisible, isLock)
+    VALUES (LOWER(REPLACE(CAST(NEWID() AS VARCHAR(50)), '-', '')), source.FormName, source.FieldName, source.DataSource, 'API', source.FieldName, 'Ten', source.IsInvisibleVal, source.IsLockVal);
+GO
+
+MERGE INTO SY_FrmDrdwTbl AS target
+USING (
+    SELECT FormName, FieldName,
+           CASE WHEN ShowInAdd = 0 AND ShowInEdit = 0 THEN 1 ELSE 0 END AS IsInvisibleVal,
+           CASE WHEN IsReadOnlyAdd = 1 OR IsReadOnlyEdit = 1 THEN 1 ELSE 0 END AS IsLockVal
+    FROM SY_FormatFields
+    WHERE (DataSource IS NULL OR DataSource = '')
+      AND (ShowInAdd = 0 OR ShowInEdit = 0 OR IsReadOnlyAdd = 1 OR IsReadOnlyEdit = 1 OR FormPosition = 'hidden')
+) AS source
+ON (target.FormID = source.FormName AND target.ColumnID = source.FieldName)
+WHEN MATCHED THEN
+    UPDATE SET 
+        isInvisible = source.IsInvisibleVal,
+        isLock = source.IsLockVal
+WHEN NOT MATCHED THEN
+    INSERT (UserAutoID, FormID, ColumnID, isInvisible, isLock)
+    VALUES (LOWER(REPLACE(CAST(NEWID() AS VARCHAR(50)), '-', '')), source.FormName, source.FieldName, source.IsInvisibleVal, source.IsLockVal);
+GO
+
+IF OBJECT_ID('SY_FormatFields', 'U') IS NOT NULL
+    DROP TABLE SY_FormatFields;
 GO

@@ -1,13 +1,2 @@
-AutoID	numeric
-FormatID	varchar
-FieldName	varchar
-FormName	varchar
-CaptionVN	nvarchar
-CaptionEN	nvarchar
-IsRequired	bit
-FormPosition	varchar
-OrderNo	int
-DataSource	nvarchar
-ValidateRule	nvarchar
-DependsOn	varchar
-VisibleRule	nvarchar
+-- Bảng này đã bị xoá và thay thế bằng bảng chuẩn SY_FmtFldTbl.
+-- Vui lòng xoá file này khỏi thư mục của bạn.

@@ -23,8 +23,28 @@
  */
 var ReportFilterDialog = (function () {
 
-  var _apiDictionary = '/api/API_LayCacTruongGiaoDien';
+  var _apiDictionary = '/api/API_LoadFormMeta';
   var _activeModal = null;
+
+
+  /** Ánh xạ FormatID từ DB (ví dụ: D, H, F, B, S, U, N) sang renderRule tiêu chuẩn của Giao diện */
+  function _mapRenderRule(formatId, dataType) {
+    var fid = String(formatId || '').toUpperCase().trim();
+    if (fid) {
+      if (fid === 'D') return 'dt'; // Date Format
+      if (fid === 'H') return 'tm'; // Time Format
+      if (fid === 'F') return 'sw'; // Bit/Switch
+      if (['B', 'S', 'U'].includes(fid)) return 'mn'; // BaseAmount, SourceAmount, UnitPrice -> money
+      if (['1D', '2D', '3D', '4D', '5D', '6D', 'BU', 'N', 'N0', 'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'P', 'P1', 'P2', 'PN', 'Q', 'Y'].includes(fid)) return 'n'; // numbers
+      return fid.toLowerCase();
+    }
+    // Tự động phân loại theo kiểu dữ liệu gốc nếu không cấu hình FormatID
+    var type = String(dataType || '').toLowerCase().trim();
+    if (['date', 'datetime', 'datetime2', 'smalldatetime'].includes(type)) return 'dt';
+    if (type === 'bit') return 'sw';
+    if (['int', 'bigint', 'smallint', 'tinyint', 'decimal', 'numeric', 'float', 'real', 'money'].includes(type)) return 'n';
+    return '';
+  }
 
   // ── Helpers ──────────────────────────────────────────────────
 
@@ -42,8 +62,7 @@ var ReportFilterDialog = (function () {
     if (cached) return Promise.resolve(JSON.parse(cached));
 
     return ApiClient.post(_apiDictionary, {
-      FormName: formName,
-      UserName: _currentUser()
+      FormName: formName
     }).then(function (res) {
       if (res && res.code === 0 && (res.list || res.records)) {
         window._reportFilterSchemaCache = window._reportFilterSchemaCache || {};
@@ -59,14 +78,18 @@ var ReportFilterDialog = (function () {
    *   '/api/API_DanhSachKhuVuc'       → gọi API, lấy [{ value, label }]
    *   'STATIC:--Tất cả--=,value1=Nhãn 1,value2=Nhãn 2'
    */
-  function _fetchOptions(dataSource, valueField, labelField) {
+  function _fetchOptions(dataSource, valueField, labelField, dropdownType) {
     if (!dataSource) return Promise.resolve([]);
 
-    // STATIC: prefix
-    if (dataSource.indexOf('STATIC:') === 0) {
-      var raw = dataSource.substring(7);
+    // STATIC: prefix hoặc dropdownType = STATIC
+    if (dropdownType === 'STATIC' || dataSource.toUpperCase().startsWith('STATIC:')) {
+      var raw = dataSource;
+      if (raw.toUpperCase().startsWith('STATIC:')) {
+        raw = raw.substring(7);
+      }
       var opts = raw.split(',').map(function (item) {
-        var parts = item.split('=');
+        var separator = item.indexOf('|') > -1 ? '|' : '=';
+        var parts = item.split(separator);
         return { value: parts[1] !== undefined ? parts[1] : parts[0], label: parts[0] };
       });
       return Promise.resolve(opts);
@@ -114,7 +137,7 @@ var ReportFilterDialog = (function () {
    * Trả về { row: HTMLElement, getValue: fn, setValue: fn }
    */
   function _buildField(field) {
-    var rule = (field.renderRule || '').toLowerCase().trim();
+    var rule = _mapRenderRule(field.renderRule, field.dataType);
     var name = field.name;
     var label = field.label;
     var required = field.required;
@@ -186,8 +209,8 @@ var ReportFilterDialog = (function () {
       };
     }
 
-    // ── Number (nm) ──
-    if (rule === 'nm') {
+    // ── Number (n) ──
+    if (rule === 'n') {
       var input = document.createElement('input');
       input.type = 'number';
       input.className = 'ui-input rfd-input';
@@ -202,8 +225,8 @@ var ReportFilterDialog = (function () {
       };
     }
 
-    // ── Select (sl hoặc sr) ──
-    if (rule === 'sl' || rule === 'sr') {
+    // ── Select (sl hoặc có dataSource) ──
+    if (rule === 'sl' || field.dataSource) {
       var sel = document.createElement('select');
       sel.className = 'ui-input rfd-input rfd-select';
       sel.dataset.fieldName = name;
@@ -216,7 +239,7 @@ var ReportFilterDialog = (function () {
       sel.appendChild(placeholder);
 
       // Load options async
-      _fetchOptions(field.dataSource, field.valueField, field.labelField)
+      _fetchOptions(field.dataSource, field.dropdownValueColumn, field.dropdownDisplayColumn, field.dropdownType)
         .then(function (opts) {
           opts.forEach(function (opt) {
             var o = document.createElement('option');
@@ -228,16 +251,8 @@ var ReportFilterDialog = (function () {
           if (defaultVal) sel.value = defaultVal;
         });
 
-      // sr = select + search icon (dùng SearchDropdown nếu có)
-      var wrap = sel;
-      if (rule === 'sr' && typeof SearchDropdown !== 'undefined') {
-        // SearchDropdown sẽ wrap select thành combobox có tìm kiếm
-        // (SearchDropdown.attachTo pattern)
-        // Giữ nguyên select để đơn giản, tích hợp sau
-      }
-
       return {
-        row: _buildRow(label, required, wrap, visibleRule),
+        row: _buildRow(label, required, sel, visibleRule),
         getValue: function () { var o = {}; o[name] = sel.value; return o; },
         setValue: function (v) { sel.value = v || ''; }
       };

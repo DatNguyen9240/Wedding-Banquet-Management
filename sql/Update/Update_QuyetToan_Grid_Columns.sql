@@ -5,13 +5,13 @@ PRINT N'=== BẮT ĐẦU CẬP NHẬT CẤU HÌNH CỘT LƯỚI CHO FRMQUYETTOAN
 GO
 
 -- Xóa cấu hình cũ của các trường hiển thị để tránh trùng lặp
-DELETE FROM SY_FormatFields 
+DELETE FROM SY_FmtFldTbl 
 WHERE FormName = 'frmQuyetToan' 
   AND FieldName IN ('DocumentID', 'DocumentDate', 'Tenkh', 'Nguoinop', 'Tongtiencoc', 'TongtienHoaDon', 'Thanhtoan', 'Conlai');
 GO
 
 -- Chèn cấu hình các trường cột cho Grid và Form Quyết Toán
-INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, ShowInFilter)
+INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, ShowInFilter)
 VALUES 
 ('frmQuyetToan', 'DocumentID', N'Số Phiếu QT', 't', '6', 0, 5, 0, 1, 1, 1, 1),
 ('frmQuyetToan', 'DocumentDate', N'Ngày Quyết Toán', 'dt', '6', 0, 8, 1, 1, 0, 0, 1),

@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -109,18 +109,14 @@ LEFT JOIN dmkhachhang k ON b.Makh = k.Makh
 WHERE ISNULL(b.IsDeleted, 0) = 0;
 GO
 
--- Dạy cho Form Đặt Cọc biết: Hãy chọc vào cái View v_DanhSachPhieuCoc thay vì bảng gốc và dùng khóa chính DocumentID
-UPDATE SY_FrmLstTbl 
-SET TableName = 'v_DanhSachPhieuCoc', PrimaryKey = 'DocumentID'
-WHERE FormID = 'frmBiennhancoccho';
-GO
+
 
 -- Đồng bộ hóa các trường giao diện
 EXEC API_DongBoTruongGiaoDien @FormName = 'frmBiennhancoccho', @ObjectName = 'v_DanhSachPhieuCoc';
 GO
 
 -- Cấu hình ẩn trường Makh khỏi Add/Edit nhưng vẫn sinh input ẩn
-UPDATE SY_FormatFields
+UPDATE SY_FmtFldTbl
 SET ShowInAdd = 0, ShowInEdit = 0
 WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Makh';
 GO

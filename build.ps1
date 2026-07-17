@@ -64,7 +64,6 @@ $jsFiles = @(
   "js\utils\apiClient.js",
   "js\utils\permission.js",
   "js\utils\DocumentExportPlugin.js",
-  "js\utils\FormBuilderPlugin.js",
   "js\utils\WorkflowTransferPlugin.js",
   "js\utils\FoodSelectionPlugin.js",
   "js\utils\PhatSinhPlugin.js",

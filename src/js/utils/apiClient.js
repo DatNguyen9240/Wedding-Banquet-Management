@@ -39,15 +39,39 @@ const ApiClient = (function () {
      * Hàm gọi API cốt lõi
      */
     async function request(endpoint, options = {}) {
+        let finalEndpoint = String(endpoint || '').trim();
+        let finalOptions = { ...options };
+
+        // Tự động nhận diện và chuyển đổi câu lệnh SQL thành API URL tương thích của dự án
+        if (finalEndpoint.toUpperCase().startsWith('SELECT')) {
+            // Regex khớp cấu trúc: SELECT columns FROM table [WHERE conditions]
+            const selectRegex = /^\s*SELECT\s+([\s\S]+?)\s+FROM\s+(\w+)(?:\s+WHERE\s+([\s\S]+))?\s*$/i;
+            const match = finalEndpoint.match(selectRegex);
+            if (match) {
+                const columns = match[1].split(',').map(s => s.trim()).join(';');
+                const tableName = match[2].trim();
+                const whereClause = match[3] ? match[3].trim() : '';
+                
+                finalEndpoint = `/api/${tableName}?f=${encodeURIComponent(columns)}`;
+                if (whereClause) {
+                    finalEndpoint += `&w=${encodeURIComponent(whereClause)}`;
+                }
+                
+                // Buộc dùng phương thức GET và xóa body payload (vì GET không có body)
+                finalOptions.method = 'GET';
+                delete finalOptions.body;
+            }
+        }
+
         const baseUrl = getBaseUrl();
         // Nếu endpoint đã là URL đầy đủ thì không nối BaseUrl nữa
-        const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
+        const url = finalEndpoint.startsWith('http') ? finalEndpoint : `${baseUrl}${finalEndpoint}`;
 
         // Thiết lập Headers mặc định
         const headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            ...(options.headers || {})
+            ...(finalOptions.headers || {})
         };
 
         // Gắn Bearer Token nếu có
@@ -57,7 +81,7 @@ const ApiClient = (function () {
         }
 
         const config = {
-            ...options,
+            ...finalOptions,
             headers
         };
 

@@ -108,13 +108,13 @@ GO
 -- Kích hoạt trigger gọi API_TinhLichAm mỗi khi chọn Ngày tổ chức
 -- =========================================================================
 
--- Cho Form Hợp Đồng (frmHopDong)
-UPDATE SY_FormatFields
+-- Cho Form Hợp Đồng (frmHopDong / v_DanhSachHopDong)
+UPDATE SY_FmtFldTbl
 SET ValidateRule = 'trigger:/api/API_Gateway_Router?List=API_TinhLichAm&Func=View'
-WHERE FormName = 'frmHopDong' AND FieldName = 'NgayToChuc';
+WHERE FormName IN ('frmHopDong', 'v_DanhSachHopDong') AND FieldName = 'NgayToChuc';
 
--- Cho Form Biên Nhận Đặt Cọc (frmBiennhancoccho)
-UPDATE SY_FormatFields
+-- Cho Form Biên Nhận Đặt Cọc (frmBiennhancoccho / v_DanhSachPhieuCoc)
+UPDATE SY_FmtFldTbl
 SET ValidateRule = 'trigger:/api/API_Gateway_Router?List=API_TinhLichAm&Func=View'
-WHERE FormName = 'frmBiennhancoccho' AND FieldName = 'Ngaytochuc';
+WHERE FormName IN ('frmBiennhancoccho', 'v_DanhSachPhieuCoc') AND FieldName = 'Ngaytochuc';
 GO

@@ -1,4 +1,7 @@
-﻿CREATE OR ALTER PROCEDURE [dbo].[API_LuuTaiKhoan]
+IF OBJECT_ID('dbo.API_LuuTaiKhoan', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.API_LuuTaiKhoan;
+GO
+CREATE PROCEDURE [dbo].[API_LuuTaiKhoan]
     @UserName NVARCHAR(50),
     @HoTen NVARCHAR(100) = NULL,
     @TenNgan NVARCHAR(100) = NULL,

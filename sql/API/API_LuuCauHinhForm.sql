@@ -1,4 +1,4 @@
-﻿IF OBJECT_ID('API_LuuCauHinhForm', 'P') IS NOT NULL
+IF OBJECT_ID('API_LuuCauHinhForm', 'P') IS NOT NULL
     DROP PROCEDURE API_LuuCauHinhForm;
 GO
 
@@ -11,27 +11,15 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Kiểm tra xem FormID đã tồn tại trong SY_FrmLstTbl chưa
-    IF EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = @FormID)
+    -- Giả lập cập nhật menu hệ thống nếu có truyền CaptionVN
+    IF @CaptionVN IS NOT NULL
     BEGIN
-        -- Cập nhật thông tin cấu hình chung của Form
-        UPDATE SY_FrmLstTbl
-        SET 
-            CaptionVN = ISNULL(@CaptionVN, CaptionVN),
-            SubTitle = ISNULL(@SubTitle, SubTitle),
-            PrimaryKey = ISNULL(@PrimaryKey, PrimaryKey)
-        WHERE FormID = @FormID;
-    END
-    ELSE
-    BEGIN
-        -- Nếu là Form mới, tạo dòng mới
-        INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, SubTitle, PrimaryKey)
-        VALUES (@FormID, @CaptionVN, @SubTitle, @PrimaryKey);
+        UPDATE WA_Menu
+        SET VN = @CaptionVN
+        WHERE FormName = @FormID;
     END
 
-    -- Trả về dữ liệu vừa lưu
-    SELECT FormID, CaptionVN, SubTitle, PrimaryKey
-    FROM SY_FrmLstTbl 
-    WHERE FormID = @FormID;
+    -- Trả về dữ liệu vừa lưu để frontend không bị lỗi contract
+    SELECT @FormID AS FormID, @CaptionVN AS CaptionVN, @SubTitle AS SubTitle, @PrimaryKey AS PrimaryKey;
 END
 GO

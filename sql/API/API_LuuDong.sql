@@ -11,13 +11,20 @@ BEGIN
     DECLARE @TableName VARCHAR(100);
     DECLARE @PrimaryKey VARCHAR(100);
     
-    -- Lấy thông tin Bảng và Khóa chính
-    -- Nâng cấp: Dùng SaveTableName (Bảng gốc) để GHI, nếu không có thì xài TableName (View)
-    SELECT 
-        @TableName = COALESCE(SaveTableName, TableName),
-        @PrimaryKey = PrimaryKey
-    FROM SY_FrmLstTbl 
-    WHERE FormID = @List;
+    -- Phương án 2: Tên Form chính là tên View hoặc Bảng vật lý thật trong CSDL
+    SET @TableName = @List;
+    SET @PrimaryKey = '';
+
+    -- Tìm Primary Key từ hệ thống nếu chưa map tĩnh
+    IF @PrimaryKey IS NULL OR @PrimaryKey = ''
+    BEGIN
+        SELECT TOP 1 @PrimaryKey = c.name
+        FROM sys.indexes i
+        JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+        JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+        WHERE i.is_primary_key = 1
+          AND i.object_id = OBJECT_ID(@TableName);
+    END
 
     IF @TableName IS NULL OR @TableName = ''
     BEGIN

@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 -- 1. Tạo bảng Tiec_Documents nếu chưa tồn tại
@@ -42,18 +42,14 @@ PRINT '>> DA DANG KY WA_API CHO Tiec_Documents THANH CONG.';
 GO
 
 -- 3. Đăng ký bảng cấu hình danh mục/form No-Code cho Tiec_Documents
-DELETE FROM SY_FrmLstTbl WHERE FormID = 'Tiec_Documents';
-INSERT INTO SY_FrmLstTbl (FormID, FormType, CaptionVN, TableName, PrimaryKey)
-VALUES ('Tiec_Documents', 'LIST', N'Sổ Lưu Trữ Tài Liệu', 'Tiec_Documents', 'DocumentID');
-PRINT '>> DA DANG KY SY_FrmLstTbl CHO Tiec_Documents THANH CONG.';
-GO
 
--- 4. Đồng bộ các cột của bảng Tiec_Documents vào bảng thuộc tính giao diện SY_FormatFields
+
+-- 4. Đồng bộ các cột của bảng Tiec_Documents vào bảng thuộc tính giao diện SY_FmtFldTbl
 EXEC API_DongBoTruongGiaoDien @FormName = 'Tiec_Documents', @ObjectName = 'Tiec_Documents';
 GO
 
 -- Cấu hình lại nhãn tiếng Việt hiển thị đẹp mắt cho Tiec_Documents
-UPDATE SY_FormatFields
+UPDATE SY_FmtFldTbl
 SET CaptionVN = CASE FieldName
     WHEN 'DocumentID' THEN N'Mã Lưu Trữ'
     WHEN 'TiecID' THEN N'Mã Tiệc / Số Hợp Đồng'

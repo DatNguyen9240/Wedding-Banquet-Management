@@ -1,0 +1,10 @@
+AutoID	numeric
+FormatID	varchar
+FieldName	varchar
+FormName	varchar
+CaptionVN	nvarchar
+CaptionEN	nvarchar
+CaptionCH	nvarchar
+AlignX	varchar
+MinWidth	int
+MaxWidth	int

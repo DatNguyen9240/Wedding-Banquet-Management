@@ -1,4 +1,4 @@
-﻿IF OBJECT_ID('API_XoaTruongGiaoDien', 'P') IS NOT NULL
+IF OBJECT_ID('API_XoaTruongGiaoDien', 'P') IS NOT NULL
     DROP PROCEDURE API_XoaTruongGiaoDien;
 GO
 
@@ -18,7 +18,7 @@ BEGIN
 
     BEGIN TRY
         -- Tách chuỗi ID và xóa (hỗ trợ SQL Server 2016 trở lên)
-        DELETE FROM SY_FormatFields 
+        DELETE FROM SY_FmtFldTbl 
         WHERE AutoID IN (SELECT TRY_CAST(value AS int) FROM STRING_SPLIT(@IDs, ',') WHERE TRY_CAST(value AS int) IS NOT NULL);
 
         SELECT 0 AS code, N'Xóa thành công' AS message;

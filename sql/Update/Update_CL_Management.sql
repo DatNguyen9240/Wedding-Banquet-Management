@@ -69,19 +69,12 @@ UPDATE dmLoaihinhtiec SET DinhBienCL = 0.20 WHERE DinhBienCL IS NULL;
 GO
 
 -- =========================================================================
--- 4. ĐĂNG KÝ HỆ THỐNG MẪU BIỂU (SY_FrmLstTbl & SY_FormatFields)
+-- 4. ĐĂNG KÝ HỆ THỐNG MẪU BIỂU (SY_FmtFldTbl & SY_FrmDrdwTbl)
 -- =========================================================================
-PRINT N'4. Đồng bộ SY_FrmLstTbl và SY_FormatFields...';
+PRINT N'4. Đồng bộ SY_FmtFldTbl và SY_FrmDrdwTbl...';
 GO
 
--- Đăng ký dmLoaihinhtiec để có thể dùng API_LuuDong sửa cấu hình
-IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'dmLoaihinhtiec')
-BEGIN
-    INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, TableName, SaveTableName, PrimaryKey)
-    VALUES ('dmLoaihinhtiec', N'Định biên CL theo Loại hình tiệc', 'dmLoaihinhtiec', 'dmLoaihinhtiec', 'Loaitiecid');
-    PRINT N'  + Đã đăng ký dmLoaihinhtiec vào SY_FrmLstTbl';
-END
-GO
+
 
 -- Đăng ký API Save cho dmLoaihinhtiec vào bảng định tuyến WA_API
 IF EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'WA_API') AND type in (N'U'))
@@ -91,29 +84,47 @@ BEGIN
     VALUES ('dmLoaihinhtiec', 'Save', 'API_LuuDong', '@List=N''dmLoaihinhtiec'', @Data=N''{JsonData}''');
     PRINT N'  + Đã đăng ký API Save cho dmLoaihinhtiec vào WA_API';
 END
--- Đăng ký các trường cho dmLoaihinhtiec vào SY_FormatFields
-DELETE FROM SY_FormatFields WHERE FormName = 'dmLoaihinhtiec';
+-- Đăng ký các trường cho dmLoaihinhtiec vào SY_FmtFldTbl
+DELETE FROM SY_FmtFldTbl WHERE FormName = 'dmLoaihinhtiec';
 GO
-INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, IsRequired)
+INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID)
 VALUES
-('dmLoaihinhtiec', 'Loaitiecid',   N'Mã Loại Tiệc',       't',  '6',  1,  1, 1, 0, 1, 1),
-('dmLoaihinhtiec', 'Tenloaitiec',   N'Tên Loại Tiệc',       't',  '6',  2,  1, 1, 0, 0, 1),
-('dmLoaihinhtiec', 'DinhBienCL',     N'Định Biên CL',       'n',  '6',  3,  1, 1, 0, 0, 0);
-PRINT N'  + Đã đăng ký các trường của dmLoaihinhtiec vào SY_FormatFields';
+('dmLoaihinhtiec', 'Loaitiecid',   N'Mã Loại Tiệc',       't'),
+('dmLoaihinhtiec', 'Tenloaitiec',   N'Tên Loại Tiệc',       't'),
+('dmLoaihinhtiec', 'DinhBienCL',     N'Định Biên CL',       'n');
+
+-- Cấu hình chỉ đọc cho Loaitiecid
+IF NOT EXISTS (SELECT 1 FROM SY_FrmDrdwTbl WHERE FormID = 'dmLoaihinhtiec' AND ColumnID = 'Loaitiecid')
+    INSERT INTO SY_FrmDrdwTbl (UserAutoID, FormID, ColumnID, isLock) VALUES (LOWER(REPLACE(CAST(NEWID() AS VARCHAR(50)), '-', '')), 'dmLoaihinhtiec', 'Loaitiecid', 1);
+ELSE
+    UPDATE SY_FrmDrdwTbl SET isLock = 1 WHERE FormID = 'dmLoaihinhtiec' AND ColumnID = 'Loaitiecid';
+PRINT N'  + Đã đăng ký các trường của dmLoaihinhtiec vào SY_FmtFldTbl';
 GO
 
 
--- Đăng ký 4 cột mới vào phiếu BEO (frmBEO) trong SY_FormatFields
-DELETE FROM SY_FormatFields WHERE FormName = 'frmBEO' AND FieldName IN ('DinhBienCL', 'SoNVPhanCong', 'CLDeXuat', 'CLThucTe');
+-- Đăng ký 4 cột mới vào phiếu BEO (frmBEO) trong SY_FmtFldTbl
+DELETE FROM SY_FmtFldTbl WHERE FormName = 'frmBEO' AND FieldName IN ('DinhBienCL', 'SoNVPhanCong', 'CLDeXuat', 'CLThucTe');
 GO
 
-INSERT INTO SY_FormatFields (FormName, FieldName, CaptionVN, FormatID, FormPosition, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, IsRequired)
+INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID)
 VALUES
-('frmBEO', 'DinhBienCL',     N'Định Biên CL',       'n',  '3',  14,  1, 1, 1, 1, 0),
-('frmBEO', 'SoNVPhanCong',   N'Số NV Phân Công',    'n',  '3',  15,  1, 1, 0, 0, 0),
-('frmBEO', 'CLDeXuat',       N'CL Đề Xuất',         'n',  '3',  16,  1, 1, 1, 1, 0),
-('frmBEO', 'CLThucTe',       N'CL Thực Tế',         'n',  '3',  17,  1, 1, 0, 0, 0);
-PRINT N'  + Đã đăng ký các cột CL vào SY_FormatFields của frmBEO (kích thước 3/12)';
+('frmBEO', 'DinhBienCL',     N'Định Biên CL',       'n'),
+('frmBEO', 'SoNVPhanCong',   N'Số NV Phân Công',    'n'),
+('frmBEO', 'CLDeXuat',       N'CL Đề Xuất',         'n'),
+('frmBEO', 'CLThucTe',       N'CL Thực Tế',         'n');
+
+-- Cấu hình chỉ đọc cho các trường tính toán
+IF NOT EXISTS (SELECT 1 FROM SY_FrmDrdwTbl WHERE FormID = 'frmBEO' AND ColumnID = 'DinhBienCL')
+    INSERT INTO SY_FrmDrdwTbl (UserAutoID, FormID, ColumnID, isLock) VALUES (LOWER(REPLACE(CAST(NEWID() AS VARCHAR(50)), '-', '')), 'frmBEO', 'DinhBienCL', 1);
+ELSE
+    UPDATE SY_FrmDrdwTbl SET isLock = 1 WHERE FormID = 'frmBEO' AND ColumnID = 'DinhBienCL';
+
+IF NOT EXISTS (SELECT 1 FROM SY_FrmDrdwTbl WHERE FormID = 'frmBEO' AND ColumnID = 'CLDeXuat')
+    INSERT INTO SY_FrmDrdwTbl (UserAutoID, FormID, ColumnID, isLock) VALUES (LOWER(REPLACE(CAST(NEWID() AS VARCHAR(50)), '-', '')), 'frmBEO', 'CLDeXuat', 1);
+ELSE
+    UPDATE SY_FrmDrdwTbl SET isLock = 1 WHERE FormID = 'frmBEO' AND ColumnID = 'CLDeXuat';
+
+PRINT N'  + Đã đăng ký các cột CL vào SY_FmtFldTbl của frmBEO';
 GO
 
 -- =========================================================================

@@ -1,4 +1,4 @@
-﻿IF OBJECT_ID('API_DanhSachTruongGiaoDien', 'P') IS NOT NULL
+IF OBJECT_ID('API_DanhSachTruongGiaoDien', 'P') IS NOT NULL
     DROP PROCEDURE API_DanhSachTruongGiaoDien;
 GO
 
@@ -20,7 +20,7 @@ BEGIN
         IF ISNULL(@SortDir, '') NOT IN ('ASC', 'DESC', 'asc', 'desc')
             SET @SortDir = 'ASC';
             
-        -- Thêm bí danh 'ff.' nếu cột nằm trong SY_FormatFields để tránh ambiguous
+        -- Thêm bí danh 'ff.' nếu cột nằm trong SY_FmtFldTbl để tránh ambiguous
         -- Trong trường hợp này các cột lấy ra đều thuộc ff trừ một số cột đặc biệt,
         -- tạm thời cứ truyền thẳng tên cột vào QUOTENAME
         SET @OrderByClause = ' ORDER BY ' + QUOTENAME(@SortColumn) + ' ' + @SortDir;
@@ -51,13 +51,11 @@ BEGIN
         ISNULL(ff.IsReadOnlyAdd,  0) AS IsReadOnlyAdd,
         ISNULL(ff.ShowInFilter,   0) AS ShowInFilter
 
-    FROM SY_FormatFields ff
-    LEFT JOIN SY_FrmLstTbl l ON ff.FormName = l.FormID
+    FROM SY_FmtFldTbl ff
     WHERE (@Keyword IS NULL OR @Keyword = '''' 
            OR ff.FormName LIKE ''%'' + @Keyword + ''%'' 
            OR ff.FieldName LIKE ''%'' + @Keyword + ''%''
-           OR ff.CaptionVN LIKE N''%'' + @Keyword + ''%''
-           OR l.CaptionVN LIKE N''%'' + @Keyword + ''%'')
+           OR ff.CaptionVN LIKE N''%'' + @Keyword + ''%'')
       AND (@FormName IS NULL OR @FormName = '''' OR @FormName = ''frmFormBuilder'' OR ff.FormName = @FormName)
     ' + @OrderByClause;
 

@@ -7,40 +7,44 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- =========================================================================
--- [API_Gateway_Router] - TRẠM ĐỊNH TUYẾN TRUNG TÂM
--- Đọc cấu hình từ bảng WA_API để gọi các thủ tục tương ứng.
+-- [API_Gateway_Router] - TRẠM ĐỊNH TUYẾN TRUNG TÂM (DYNAMIC AUTO-MAPPING GATEWAY)
+-- 1. Tìm StoreName trong WA_API dựa vào @List và @Func.
+-- 2. Tự động truy vấn danh sách tham số của Stored Procedure đích qua sys.parameters.
+-- 3. Tự động trích xuất và ánh xạ các tham số từ:
+--    - Payload JSON (@JsonData) gửi từ Frontend (không phân biệt chữ hoa/thường).
+--    - Thông tin hệ thống / Context (@UserName, @BranchID, @UserGroup, @EmployeeID...).
+--    - Tham số chung của yêu cầu (@Keyword, @Page, @Limit, @SortColumn...).
+-- 4. Thực thi thủ tục mục tiêu mà không cần cấu hình danh sách tham số tĩnh.
 -- =========================================================================
 CREATE OR ALTER PROCEDURE [dbo].[API_Gateway_Router]
-    @List VARCHAR(50),               -- Ví dụ: 'Customer', 'ComboNhanVien'
-    @Func VARCHAR(50) = 'View',      -- Ví dụ: 'View', 'Save', 'Delete'
-    @UserName VARCHAR(50) = '',      -- Tên user lấy từ Frontend/Session
-    @Keyword NVARCHAR(200) = '',     -- Tham số tìm kiếm chung
+    @List VARCHAR(50),               -- Ví dụ: 'Customer', 'frmKhachHang'
+    @Func VARCHAR(50) = 'View',      -- Ví dụ: 'View' (hoặc 'List'), 'Save', 'Delete'
+    @UserName VARCHAR(50) = '',      -- Tên tài khoản đang đăng nhập
+    @Keyword NVARCHAR(200) = '',     -- Tìm kiếm chung toàn cục
     @Page INT = 1,
     @Limit INT = 20,
-    @JsonData NVARCHAR(MAX) = '',    -- Dùng cho các hàm Save/Update có body phức tạp
+    @JsonData NVARCHAR(MAX) = '',    -- Dữ liệu payload JSON từ Frontend
     @SortColumn VARCHAR(50) = '',    -- Cột cần sắp xếp
-    @SortDir VARCHAR(10) = ''        -- Chiều sắp xếp (ASC/DESC)
+    @SortDir VARCHAR(10) = ''        -- Hướng sắp xếp (ASC/DESC)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @TargetStore NVARCHAR(200);
-    DECLARE @ParaTemplate NVARCHAR(MAX);
+    DECLARE @StoreName NVARCHAR(200);
     
-    -- 1. Tra cứu cấu hình từ bảng WA_API
-    SELECT @TargetStore = LTRIM(RTRIM([SQL])), 
-           @ParaTemplate = LTRIM(RTRIM(ISNULL(Para, '')))
-    FROM WA_API
+    -- 1. Tra cứu Stored Procedure đích từ bảng cấu hình WA_API
+    SELECT @StoreName = LTRIM(RTRIM([SQL]))
+    FROM dbo.WA_API
     WHERE list = @List AND func = @Func;
 
-    -- Kiểm tra nếu API chưa được định nghĩa
-    IF @TargetStore IS NULL OR @TargetStore = ''
+    -- Kiểm tra nếu API chưa được cấu hình định tuyến
+    IF @StoreName IS NULL OR @StoreName = ''
     BEGIN
         SELECT -1 AS code, N'Lỗi: Chưa định nghĩa API [' + @List + '] - Hành động: [' + @Func + '] trong bảng WA_API!' AS msg;
         RETURN;
     END
 
-    -- 2. Lấy Context của hệ thống dựa theo UserName (Phục vụ Phân quyền RLS)
+    -- 2. Lấy Context hệ thống bảo mật dựa trên UserName
     DECLARE @UserGroup VARCHAR(50) = '';
     DECLARE @BranchID VARCHAR(50) = '';
     DECLARE @ManagerID VARCHAR(50) = '';
@@ -48,96 +52,138 @@ BEGIN
     
     IF ISNULL(@UserName, '') <> ''
     BEGIN
-        -- Móc toàn bộ thông tin ngữ cảnh từ bảng tài khoản cốt lõi (SY_User)
         SELECT 
             @UserGroup = UserGroupID, 
             @BranchID = BranchID,
             @ManagerID = ManagerID,
             @EmployeeID = EmployeeID
-        FROM SY_User 
+        FROM dbo.SY_User 
         WHERE UserName = @UserName;
     END
 
-    -- 3. Xử lý Đắp tham số (Replace Placeholders)
-    -- CHÚ Ý CẤU HÌNH TRONG DB: Nếu biến là chuỗi, phải có dấu nháy đơn bao quanh. Ví dụ: '{User}', N'{Keyword}', {Page}
+    -- 3. Nạp dữ liệu JSON vào bảng tạm để ánh xạ Case-Insensitive (Không phân biệt chữ hoa/thường)
+    DECLARE @JsonTable TABLE (
+        JsonKey NVARCHAR(100) COLLATE DATABASE_DEFAULT,
+        JsonValue NVARCHAR(MAX) COLLATE DATABASE_DEFAULT
+    );
     
-    -- 3.1. Thay thế các biến Server-side Context (Bảo mật tuyệt đối, Frontend không can thiệp được)
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{User}', ISNULL(@UserName, ''));
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{UserGroup}', ISNULL(@UserGroup, ''));
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{BranchID}', ISNULL(@BranchID, ''));
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{ManagerID}', ISNULL(@ManagerID, ''));
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{EmployeeID}', ISNULL(@EmployeeID, ''));
-    
-    -- 3.2. Thay thế các biến Request từ Frontend
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{List}', ISNULL(@List, ''));
-    
-    -- BƯỚC ĐỘT PHÁ MỚI: ƯU TIÊN 1 - TỰ ĐỘNG MAP TẤT CẢ TỪ JSON (Sử dụng CURSOR lặp để thay thế tuần tự chính xác 100%)
     IF ISNULL(@JsonData, '') <> '' AND ISJSON(@JsonData) = 1
     BEGIN
-        DECLARE @JsonKey NVARCHAR(100);
-        DECLARE @JsonVal NVARCHAR(MAX);
-        
-        DECLARE json_cursor CURSOR LOCAL FORWARD_ONLY STATIC READ_ONLY FOR
-        SELECT [key], CAST([value] AS NVARCHAR(MAX))
+        INSERT INTO @JsonTable (JsonKey, JsonValue)
+        SELECT [key], [value]
         FROM OPENJSON(@JsonData);
+    END
+
+    -- 4. Đọc danh sách các tham số mà Stored Procedure đích mong muốn nhận
+    DECLARE @ParaList NVARCHAR(MAX) = '';
+    
+    DECLARE @ParamName NVARCHAR(100);
+    DECLARE @KeyName NVARCHAR(100);
+    DECLARE @DataType NVARCHAR(50);
+    
+    DECLARE param_cursor CURSOR LOCAL FORWARD_ONLY STATIC READ_ONLY FOR
+    SELECT 
+        p.name,
+        SUBSTRING(p.name, 2, LEN(p.name)), -- Cắt bỏ tiền tố '@'
+        t.name
+    FROM sys.parameters p
+    JOIN sys.types t ON p.user_type_id = t.user_type_id
+    WHERE p.object_id = OBJECT_ID(@StoreName)
+      AND p.is_output = 0; -- Chỉ map tham số Input
+    
+    OPEN param_cursor;
+    FETCH NEXT FROM param_cursor INTO @ParamName, @KeyName, @DataType;
+    
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        DECLARE @Val NVARCHAR(MAX) = NULL;
+        DECLARE @IsMapped BIT = 0;
         
-        OPEN json_cursor;
-        FETCH NEXT FROM json_cursor INTO @JsonKey, @JsonVal;
+        -- A. Ưu tiên 1: Lấy từ JSON data (Case-Insensitive)
+        SELECT TOP 1 @Val = JsonValue, @IsMapped = 1
+        FROM @JsonTable
+        WHERE LOWER(JsonKey) = LOWER(@KeyName);
         
-        WHILE @@FETCH_STATUS = 0
+        -- B. Ưu tiên 2: Nếu JSON không có, kiểm tra Context / Biến Hệ Thống
+        IF @IsMapped = 0
         BEGIN
-            SET @ParaTemplate = REPLACE(@ParaTemplate, '{' + @JsonKey + '}', REPLACE(ISNULL(@JsonVal, ''), '''', ''''''));
-            FETCH NEXT FROM json_cursor INTO @JsonKey, @JsonVal;
+            IF LOWER(@KeyName) IN ('username', 'user', 'usercreate', 'userupdate') 
+                BEGIN SET @Val = @UserName; SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) IN ('usergroup', 'usergroupid', 'nhomnguoidangthaotac') 
+                BEGIN SET @Val = @UserGroup; SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'branchid' 
+                BEGIN SET @Val = @BranchID; SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'managerid' 
+                BEGIN SET @Val = @ManagerID; SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'employeeid' 
+                BEGIN SET @Val = @EmployeeID; SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'keyword' 
+                BEGIN SET @Val = @Keyword; SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'page' 
+                BEGIN SET @Val = CAST(@Page AS NVARCHAR(50)); SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'limit' 
+                BEGIN SET @Val = CAST(@Limit AS NVARCHAR(50)); SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'sortcolumn' 
+                BEGIN SET @Val = @SortColumn; SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'sortdir' 
+                BEGIN SET @Val = @SortDir; SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'list' 
+                BEGIN SET @Val = @List; SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'func' 
+                BEGIN SET @Val = @Func; SET @IsMapped = 1; END
+            ELSE IF LOWER(@KeyName) = 'jsondata' 
+                BEGIN SET @Val = @JsonData; SET @IsMapped = 1; END
         END
         
-        CLOSE json_cursor;
-        DEALLOCATE json_cursor;
-    END
-    
-    -- ƯU TIÊN 2: FALLBACK (DỰ PHÒNG CÁC BIẾN CỨNG TỪ C# NẾU CHƯA ĐƯỢC MAP BỞI JSON)
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{Keyword}', REPLACE(ISNULL(@Keyword, ''), '''', ''''''));
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{SortColumn}', ISNULL(@SortColumn, ''));
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{SortDir}', ISNULL(@SortDir, ''));
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{Page}', ISNULL(CAST(@Page AS VARCHAR), ''));
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{Limit}', ISNULL(CAST(@Limit AS VARCHAR), ''));
-    
-    -- Cuối cùng, Replace chính cái cục JsonData nếu API đích cần đọc cả cục
-    SET @ParaTemplate = REPLACE(@ParaTemplate, '{JsonData}', REPLACE(ISNULL(@JsonData, ''), '''', ''''''));
-
-    -- 4. DỌN DẸP CÁC BIẾN KHÔNG ĐƯỢC TRUYỀN (GIÁ TRỊ VẪN LÀ '{TenBien}')
-    IF OBJECT_ID(@TargetStore) IS NOT NULL
-    BEGIN
-        SELECT @ParaTemplate = REPLACE(@ParaTemplate, name + '=''{' + SUBSTRING(name, 2, LEN(name)) + '}''', '')
-        FROM sys.parameters WHERE object_id = OBJECT_ID(@TargetStore);
+        -- C. Ráp giá trị vào câu lệnh SQL dạng Literal
+        IF @IsMapped = 1 AND @Val IS NOT NULL
+        BEGIN
+            DECLARE @Literal NVARCHAR(MAX) = '';
+            
+            IF @DataType IN ('varchar', 'nvarchar', 'char', 'nchar', 'text', 'ntext')
+            BEGIN
+                SET @Literal = 'N''' + REPLACE(@Val, '''', '''''') + '''';
+            END
+            ELSE IF @DataType IN ('date', 'datetime', 'datetime2', 'smalldatetime', 'time')
+            BEGIN
+                -- Kiểm tra nếu là chuỗi rỗng thì truyền NULL cho cột kiểu ngày giờ
+                IF LTRIM(RTRIM(@Val)) = ''
+                    SET @Literal = 'NULL';
+                ELSE
+                    SET @Literal = '''' + REPLACE(@Val, '''', '''''') + '''';
+            END
+            ELSE -- Kiểu số (int, decimal, float...) hoặc Boolean (bit)
+            BEGIN
+                IF LTRIM(RTRIM(@Val)) = ''
+                    SET @Literal = 'NULL';
+                ELSE
+                    SET @Literal = @Val;
+            END
+            
+            -- Ghi nhận tham số cần truyền
+            SET @ParaList = @ParaList + CASE WHEN @ParaList = '' THEN '' ELSE ', ' END 
+                            + @ParamName + ' = ' + @Literal;
+        END
         
-        -- Dọn dẹp với tiền tố N (nếu có)
-        SELECT @ParaTemplate = REPLACE(@ParaTemplate, name + '=N''{' + SUBSTRING(name, 2, LEN(name)) + '}''', '')
-        FROM sys.parameters WHERE object_id = OBJECT_ID(@TargetStore);
+        FETCH NEXT FROM param_cursor INTO @ParamName, @KeyName, @DataType;
     END
     
-    -- Xóa rác (dấu phẩy thừa)
-    WHILE CHARINDEX(', ,', @ParaTemplate) > 0 SET @ParaTemplate = REPLACE(@ParaTemplate, ', ,', ',');
-    IF LEFT(LTRIM(@ParaTemplate), 1) = ',' SET @ParaTemplate = LTRIM(SUBSTRING(LTRIM(@ParaTemplate), 2, LEN(@ParaTemplate)));
-    IF RIGHT(RTRIM(@ParaTemplate), 1) = ',' SET @ParaTemplate = RTRIM(SUBSTRING(RTRIM(@ParaTemplate), 1, LEN(RTRIM(@ParaTemplate)) - 1));
+    CLOSE param_cursor;
+    DEALLOCATE param_cursor;
 
-    -- 5. Chạy câu lệnh hoàn chỉnh
+    -- 5. Thực thi Stored Procedure bằng Dynamic SQL
     DECLARE @FinalSQL NVARCHAR(MAX);
-    
-    -- Ráp lệnh EXEC
-    IF @ParaTemplate <> ''
-        SET @FinalSQL = 'EXEC ' + QUOTENAME(@TargetStore) + ' ' + @ParaTemplate;
+    IF @ParaList <> ''
+        SET @FinalSQL = 'EXEC ' + QUOTENAME(@StoreName) + ' ' + @ParaList;
     ELSE
-        SET @FinalSQL = 'EXEC ' + QUOTENAME(@TargetStore);
+        SET @FinalSQL = 'EXEC ' + QUOTENAME(@StoreName);
 
-    -- Dòng này dùng để debug khi anh test bằng SQL Management Studio (SSMS)
-    -- PRINT N'Đang thực thi lệnh: ' + @FinalSQL;
+    -- PRINT @FinalSQL; -- Có thể uncomment dòng này để debug câu lệnh chạy thực tế
 
-    -- 5. Thực thi lệnh
     BEGIN TRY
         EXEC(@FinalSQL);
     END TRY
     BEGIN CATCH
-        -- Bắt lỗi thông minh trả về Frontend
         SELECT -1 AS code, ERROR_MESSAGE() + N' [SQL: ' + ISNULL(@FinalSQL, '') + N']' AS msg, ERROR_LINE() AS error_line;
     END CATCH
 END

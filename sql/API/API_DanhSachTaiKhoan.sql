@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 SET ANSI_NULLS ON
@@ -9,7 +9,10 @@ GO
 -- =========================================================================
 -- 1. STORED PROCEDURE XEM DANH SÁCH TÀI KHOẢN (VIEW API)
 -- =========================================================================
-CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachTaiKhoan]
+IF OBJECT_ID('dbo.API_DanhSachTaiKhoan', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.API_DanhSachTaiKhoan;
+GO
+CREATE PROCEDURE [dbo].[API_DanhSachTaiKhoan]
     @Keyword NVARCHAR(100) = NULL
 AS
 BEGIN
@@ -48,7 +51,10 @@ GO
 -- =========================================================================
 -- 2. STORED PROCEDURE LƯU TÀI KHOẢN (SAVE API)
 -- =========================================================================
-CREATE OR ALTER PROCEDURE [dbo].[API_LuuTaiKhoan]
+IF OBJECT_ID('dbo.API_LuuTaiKhoan', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.API_LuuTaiKhoan;
+GO
+CREATE PROCEDURE [dbo].[API_LuuTaiKhoan]
     @UserName NVARCHAR(50),
     @HoTen NVARCHAR(100) = NULL,
     @TenNgan NVARCHAR(100) = NULL,
@@ -128,21 +134,9 @@ END
 GO
 
 -- =========================================================================
--- 3. ĐĂNG KÝ MODULE VÀO HỆ THỐNG METADATA (SY_FrmLstTbl & WA_API)
+-- 3. ĐĂNG KÝ MODULE VÀO HỆ THỐNG METADATA (WA_API)
 -- =========================================================================
 PRINT N'Đang đăng ký form frmTaiKhoan...';
-
-IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'frmTaiKhoan')
-BEGIN
-    INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, TableName, PrimaryKey)
-    VALUES ('frmTaiKhoan', N'Danh sách Tài khoản', 'SY_User', 'UserName');
-END
-ELSE
-BEGIN
-    UPDATE SY_FrmLstTbl 
-    SET TableName = 'SY_User', PrimaryKey = 'UserName', CaptionVN = N'Danh sách Tài khoản'
-    WHERE FormID = 'frmTaiKhoan';
-END
 GO
 
 -- Cấu hình định tuyến API Gateway Router
@@ -154,104 +148,44 @@ VALUES
 GO
 
 -- =========================================================================
--- 4. ĐỒNG BỘ VÀ CẤU HÌNH GIAO DIỆN FORM (SY_FormatFields)
+-- 4. CẤU HÌNH GIAO DIỆN FORM (SY_FmtFldTbl & SY_FrmDrdwTbl)
 -- =========================================================================
 PRINT N'Đang đồng bộ giao diện cho frmTaiKhoan...';
 
-DELETE FROM SY_FormatFields WHERE FormName = 'frmTaiKhoan';
+DELETE FROM dbo.SY_FmtFldTbl WHERE FormName = 'frmTaiKhoan';
+DELETE FROM dbo.SY_FrmDrdwTbl WHERE FormID = 'frmTaiKhoan';
 GO
 
-EXEC API_DongBoTruongGiaoDien @FormName = 'frmTaiKhoan', @ObjectName = 'SY_User';
+-- 4.1. Nhãn tiếng Việt và định dạng cột (FormatID) trong SY_FmtFldTbl
+INSERT INTO dbo.SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID)
+VALUES 
+('frmTaiKhoan', 'UserName', N'Tên đăng nhập', 't'),
+('frmTaiKhoan', 'HoTen', N'Họ và tên', 't'),
+('frmTaiKhoan', 'UserGroupID', N'Nhóm quyền', 'sl'),
+('frmTaiKhoan', 'Disable', N'Khóa tài khoản', 'sw'),
+('frmTaiKhoan', 'TenNgan', N'Tên hiển thị (Tên ngắn)', 't'),
+('frmTaiKhoan', 'Password', N'Mật khẩu', 't'),
+('frmTaiKhoan', 'EmployeeID', N'Nhân viên liên kết', 'sl'),
+('frmTaiKhoan', 'Manager', N'Tài khoản Quản lý', 'sw'),
+('frmTaiKhoan', 'StartupForm', N'Trang bắt đầu', 't'),
+('frmTaiKhoan', 'IsBaocongno', N'Quyền xem Báo cáo Công nợ', 'sw'),
+('frmTaiKhoan', 'IsBackupDatabase', N'Quyền Sao lưu Dữ liệu', 'sw'),
+('frmTaiKhoan', 'IsFormBaocao', N'Quyền xem Báo cáo Doanh thu', 'sw'),
+('frmTaiKhoan', 'IsPhieuchi', N'Quyền lập Phiếu chi', 'sw'),
+('frmTaiKhoan', 'IsBaococcho', N'Quyền xem Báo cáo Cọc chỗ', 'sw'),
+('frmTaiKhoan', 'IsBaotiec', N'Quyền xem Báo cáo Tiệc', 'sw'),
+('frmTaiKhoan', 'IsBaoTrungSanh', N'Cảnh báo trùng sảnh', 'sw'),
+('frmTaiKhoan', 'IsBaoHopDong', N'Quyền xem Báo cáo Hợp đồng', 'sw'),
+('frmTaiKhoan', 'IsBaoLichTiec', N'Quyền xem Lịch tiệc', 'sw'),
+('frmTaiKhoan', 'IsDuyetDeXuat', N'Quyền Duyệt Đề Xuất', 'sw'),
+('frmTaiKhoan', 'DisableAutoBackup', N'Tắt tự động sao lưu', 'sw');
 GO
 
--- 4.1. Ẩn tất cả các trường không cần thiết/ngoài danh mục quản lý
-UPDATE SY_FormatFields
-SET ShowInAdd = 0, ShowInEdit = 0, ShowInFilter = 0, FormPosition = 'hidden'
-WHERE FormName = 'frmTaiKhoan';
-GO
-
--- 4.2. Cấu hình các trường hiển thị trên Grid danh sách & Form nhập liệu (Vị trí = con số)
-UPDATE SY_FormatFields
-SET CaptionVN = N'Tên đăng nhập', FormatID = 't', FormPosition = '6', OrderNo = 1, IsRequired = 1, ShowInAdd = 1, ShowInEdit = 1, IsReadOnlyEdit = 1, ShowInFilter = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'UserName';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Họ và tên', FormatID = 't', FormPosition = '6', OrderNo = 2, IsRequired = 1, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'HoTen';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Nhóm quyền', FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_LayDanhSachNhom&Func=View', FormPosition = '6', OrderNo = 3, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'UserGroupID';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Khóa tài khoản', FormatID = 'sw', FormPosition = '6', OrderNo = 4, ShowInAdd = 1, ShowInEdit = 1, ShowInFilter = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'Disable';
-
--- 4.3. Cấu hình các trường chỉ xuất hiện trong Modal Form nhập liệu (Vị trí = 'hidden')
-UPDATE SY_FormatFields
-SET CaptionVN = N'Tên hiển thị (Tên ngắn)', FormatID = 't', FormPosition = 'hidden', OrderNo = 5, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'TenNgan';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Mật khẩu', FormatID = 't', FormPosition = 'hidden', OrderNo = 6, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'Password';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Nhân viên liên kết', FormatID = 'sl', DataSource = '/api/API_Gateway_Router?List=API_ComboNhanVien&Func=View', FormPosition = 'hidden', OrderNo = 7, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'EmployeeID';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Tài khoản Quản lý', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 8, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'Manager';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Trang bắt đầu', FormatID = 't', FormPosition = 'hidden', OrderNo = 9, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'StartupForm';
-
--- 4.4. Cấu hình các Switch quyền hạn bổ sung (Chỉ hiện trong Modal)
-UPDATE SY_FormatFields
-SET CaptionVN = N'Quyền xem Báo cáo Công nợ', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 10, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'IsBaocongno';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Quyền Sao lưu Dữ liệu', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 11, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'IsBackupDatabase';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Quyền xem Báo cáo Doanh thu', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 12, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'IsFormBaocao';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Quyền lập Phiếu chi', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 13, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'IsPhieuchi';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Quyền xem Báo cáo Cọc chỗ', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 14, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'IsBaococcho';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Quyền xem Báo cáo Tiệc', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 15, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'IsBaotiec';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Cảnh báo trùng sảnh', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 16, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'IsBaoTrungSanh';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Quyền xem Báo cáo Hợp đồng', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 17, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'IsBaoHopDong';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Quyền xem Lịch tiệc', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 18, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'IsBaoLichTiec';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Quyền Duyệt Đề Xuất', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 19, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'IsDuyetDeXuat';
-
-UPDATE SY_FormatFields
-SET CaptionVN = N'Tắt tự động sao lưu', FormatID = 'sw', FormPosition = 'hidden', OrderNo = 20, ShowInAdd = 1, ShowInEdit = 1
-WHERE FormName = 'frmTaiKhoan' AND FieldName = 'DisableAutoBackup';
+-- 4.2. Cấu hình Dropdown trong SY_FrmDrdwTbl
+INSERT INTO dbo.SY_FrmDrdwTbl (UserAutoID, FormID, ColumnID, Source, Type, ValueColumn, DisplayColumn)
+VALUES
+(LOWER(REPLACE(CAST(NEWID() AS VARCHAR(50)), '-', '')), 'frmTaiKhoan', 'UserGroupID', 'SELECT UserGroupID, UserGroupName FROM SY_UserGroup WHERE IsDisable = 0', 'API', 'UserGroupID', 'UserGroupName'),
+(LOWER(REPLACE(CAST(NEWID() AS VARCHAR(50)), '-', '')), 'frmTaiKhoan', 'EmployeeID', 'SELECT NHANVIENID AS EmployeeID, Tennv AS EmployeeName FROM dmNhanvienView', 'API', 'EmployeeID', 'EmployeeName');
 GO
 
 PRINT N'Hoàn thành thiết lập All-In-One cho frmTaiKhoan!';

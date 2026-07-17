@@ -122,10 +122,7 @@ window.API_CONFIG = {
             SHIFTS: '/api/API_DanhSachCaLam',
             BANQUET_TYPES: '/api/API_DanhSachLoaiHinhTiec',
             SETUP_VALUE: '/api/API_LayGiaTriSetup',
-            GET_UI_DICTIONARY: '/api/API_LayCacTruongGiaoDien',
-            GET_FIELDS_LIST: '/api/API_DanhSachTruongGiaoDien',
-            SAVE_FIELD: '/api/API_LuuTruongGiaoDien',
-            DELETE_FIELD: '/api/API_XoaTruongGiaoDien'
+            GET_UI_DICTIONARY: '/api/API_LoadFormMeta'
         },
         CONTRACT: {
             LIST: '/api/API_DanhSachHopDong',

@@ -29,11 +29,7 @@ FROM dmkhachhang
 WHERE ISNULL(IsDeleted, 0) = 0;
 GO
 
--- 1. Cập nhật Form Khách Hàng chọc vào View này thay vì bảng gốc dmkhachhang
-UPDATE SY_FrmLstTbl 
-SET TableName = 'v_DanhSachKhachHang', PrimaryKey = 'Makh'
-WHERE FormID = 'frmCustomer';
-GO
+
 
 -- 2. Đồng bộ lại cấu hình các cột giao diện từ View
 EXEC API_DongBoTruongGiaoDien @FormName = 'frmCustomer', @ObjectName = 'v_DanhSachKhachHang';

@@ -9,23 +9,7 @@ GO
 PRINT N'=== BẮT ĐẦU CẬP NHẬT CSDL CHO KỲ KẾ TOÁN (SY_Period) ===';
 GO
 
--- =========================================================================
--- 1. ĐĂNG KÝ HỆ THỐNG MẪU BIỂU (SY_FrmLstTbl)
--- =========================================================================
-PRINT N'1. Đăng ký SY_Period vào hệ thống mẫu biểu SY_FrmLstTbl (nếu chưa có)...';
-GO
 
-IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'SY_Period')
-BEGIN
-    INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, TableName, SaveTableName, PrimaryKey)
-    VALUES ('SY_Period', N'Kỳ Kế Toán / Năm Sử Dụng', 'SY_Period', 'SY_Period', 'PeriodID');
-    PRINT N'  + Đã đăng ký SY_Period vào SY_FrmLstTbl';
-END
-ELSE
-BEGIN
-    PRINT N'  + SY_Period đã được đăng ký trong SY_FrmLstTbl';
-END
-GO
 
 -- =========================================================================
 -- 2. CẬP NHẬT HOẶC TẠO MỚI STORED PROCEDURE API_SY_Period_Edit

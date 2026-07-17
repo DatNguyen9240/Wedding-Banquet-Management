@@ -263,22 +263,12 @@ END
 GO
 
 -- =========================================================================
--- 2. SY_FrmLstTbl + WA_API
+-- 2. WA_API
 -- =========================================================================
-PRINT N'2. Đang đồng bộ SY_FrmLstTbl và WA_API cho frmBaoGia...';
+PRINT N'2. Đang đồng bộ WA_API cho frmBaoGia...';
 GO
 
-IF NOT EXISTS (SELECT 1 FROM SY_FrmLstTbl WHERE FormID = 'frmBaoGia')
-    INSERT INTO SY_FrmLstTbl (FormID, CaptionVN, TableName, SaveTableName, PrimaryKey)
-    VALUES ('frmBaoGia', N'Báo Giá Dịch Vụ', 'API_DanhSachBaoGia', 'tbmk_Hopdong', 'Sohopdong');
-ELSE
-    UPDATE SY_FrmLstTbl
-    SET CaptionVN = N'Báo Giá Dịch Vụ',
-        TableName = 'API_DanhSachBaoGia',
-        SaveTableName = 'tbmk_Hopdong',
-        PrimaryKey = 'Sohopdong'
-    WHERE FormID = 'frmBaoGia';
-GO
+
 
 DELETE FROM WA_API WHERE List = 'frmBaoGia' AND Func IN ('View', 'Save');
 GO

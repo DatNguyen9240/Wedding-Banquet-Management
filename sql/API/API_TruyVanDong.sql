@@ -1,4 +1,4 @@
-﻿CREATE OR ALTER PROCEDURE [dbo].[API_TruyVanDong]
+CREATE OR ALTER PROCEDURE [dbo].[API_TruyVanDong]
     @List VARCHAR(50),
     @Keyword NVARCHAR(200) = '',
     @SortColumn VARCHAR(50) = '',
@@ -10,12 +10,21 @@ BEGIN
     DECLARE @TableName VARCHAR(100);
     DECLARE @PrimaryKey VARCHAR(50);
     
-    -- Lấy thông tin Bảng vật lý và Khóa chính từ cấu hình form
-    SELECT 
-        @TableName = LTRIM(RTRIM(TableName)),
-        @PrimaryKey = LTRIM(RTRIM(PrimaryKey))
-    FROM SY_FrmLstTbl 
-    WHERE FormID = @List;
+    -- Ánh xạ động: Tên Form chính là tên View hoặc Bảng vật lý thật trong CSDL
+    SET @TableName = @List;
+
+    SET @PrimaryKey = '';
+
+    -- Tìm Primary Key từ hệ thống nếu chưa map tĩnh
+    IF @PrimaryKey IS NULL OR @PrimaryKey = ''
+    BEGIN
+        SELECT TOP 1 @PrimaryKey = c.name
+        FROM sys.indexes i
+        JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+        JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+        WHERE i.is_primary_key = 1
+          AND i.object_id = OBJECT_ID(@TableName);
+    END
 
     IF @TableName IS NULL OR @TableName = ''
     BEGIN
@@ -99,7 +108,7 @@ BEGIN
     DECLARE @ColumnList NVARCHAR(MAX);
     SELECT @ColumnList = STUFF((
         SELECT ', ' + QUOTENAME(FieldName)
-        FROM SY_FormatFields
+        FROM SY_FmtFldTbl
         WHERE FormName = @List
         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
         
