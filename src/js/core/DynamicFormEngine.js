@@ -44,7 +44,7 @@ window.DynamicFormEngine = (function () {
   // ── Helpers ──────────────────────────────────────────────
   function _currentGroup() {
     var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    return u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
+    return u.UserGroupID || u.userGroupID || u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
   }
 
   function _currentUser() {
@@ -219,6 +219,13 @@ window.DynamicFormEngine = (function () {
   }
 
   function _hasPermission(action) {
+    // Dynamic menu forms receive their effective user permission together
+    // with the menu row. This avoids looking up a permission by DataSource
+    // (a table/view name), which is not the permission key.
+    if (action === 'ADD' && MODULE_CONFIG.UserCanAdd !== undefined) return MODULE_CONFIG.UserCanAdd === true;
+    if (action === 'EDIT' && MODULE_CONFIG.UserCanEdit !== undefined) return MODULE_CONFIG.UserCanEdit === true;
+    if (action === 'DELETE' && MODULE_CONFIG.UserCanDelete !== undefined) return MODULE_CONFIG.UserCanDelete === true;
+
     if (typeof Permission !== 'undefined') {
       var module = MODULE_CONFIG.FormName;
       if (action === 'ADD') return Permission.canAdd(module);
@@ -260,12 +267,12 @@ window.DynamicFormEngine = (function () {
         sortCol: currentSortCol,
         sortDir: currentSortDir,
         page: currentPage,
-        filters: window.currentFilters
       };
     }
 
     $container = container;
     MODULE_CONFIG = config;
+    MODULE_CONFIG.HideFilterBtn = true;
     currentFormName = config.FormName;
 
     // Hiển thị skeleton loader ban đầu trong lúc tải cấu hình form (metadata)
@@ -280,14 +287,12 @@ window.DynamicFormEngine = (function () {
       currentSortCol = savedState.sortCol;
       currentSortDir = savedState.sortDir;
       currentPage = savedState.page;
-      window.currentFilters = savedState.filters;
     } else {
       // Nếu chưa từng vào thì reset về mặc định
       currentKeyword = '';
       currentSortCol = '';
       currentSortDir = '';
       currentPage = 1;
-      window.currentFilters = null;
     }
 
     // Reset sạch sẽ Dictionary & Schema của Form cũ để tránh lây nhiễm (ví dụ API form mới bị lỗi thì không hiện rác của form cũ)
@@ -297,9 +302,9 @@ window.DynamicFormEngine = (function () {
 
     // API defaults: CRUD trực tiếp theo bảng vật lý và metadata chuẩn.
     _setDefaults(MODULE_CONFIG, {
-      ApiSearch: '/api/API_TruyVanDong',
-      ApiSave: '/api/API_LuuDong',
-      ApiDelete: '/api/API_XoaDong'
+      ApiSearch: '/api/API_TruyVanForm',
+      ApiSave: '/api/API_LuuForm',
+      ApiDelete: '/api/API_XoaForm'
     });
     _setDefaults(MODULE_CONFIG, { ApiDictionary: '/api/API_LoadFormMeta' });
 
@@ -334,7 +339,7 @@ window.DynamicFormEngine = (function () {
       if (!resConfig || resConfig.code !== 0 || !Array.isArray(dataList) || dataList.length === 0) {
         var metadataError = (resConfig && (resConfig.msg || resConfig.message)) || 'Metadata form khong hop le hoac chua duoc dong bo.';
         console.error('Metadata loading failed for', MODULE_CONFIG.FormName, metadataError);
-        $container.innerHTML = '<div class="p-4 text-danger">' + MODULE_CONFIG.TextLoadingError + metadataError + '</div>';
+        $container.innerHTML = '<div class="p-4 text-danger">' + (MODULE_CONFIG.TextLoadingError || '') + metadataError + '</div>';
         return;
       }
 
@@ -544,13 +549,13 @@ window.DynamicFormEngine = (function () {
         if (Object.keys(globalDictionary).length === 0) {
           throw new Error('Metadata form khong co field hop le.');
         }
+
       }
       // Tự động sinh mã HTML (Không cần file .html rời nữa)
       $container.innerHTML = `
         <div id="dynamic-btn-container" style="display:none;"></div>
         <div class="card dynamic-grid-card" style="display: flex; flex-direction: column; height: calc(100vh - 195px); border: none; box-shadow: none; margin-bottom: 0; border-radius: var(--radius-sm); background: var(--color-surface); overflow: hidden;">
           <div class="card-body" style="padding: 0; display: flex; flex-direction: column; flex: 1; min-height: 0;">
-            <div id="dynamic-filter-container" style="margin-bottom:16px;"></div>
             <div id="dynamic-grid-container" style="display: flex; flex-direction: column; flex: 1; min-height: 0;"></div>
           </div>
         </div>
@@ -610,7 +615,7 @@ window.DynamicFormEngine = (function () {
               var pkValues = selectedRows.map(function (row) { return row[pkField]; }).filter(Boolean).join(',');
 
               var payload = {
-                List: MODULE_CONFIG.FormName,
+                FormKey: MODULE_CONFIG.FormID,
                 Ids: pkValues,
                 UserName: _currentUser()
               };
@@ -670,7 +675,9 @@ window.DynamicFormEngine = (function () {
               }
             }
           },
-          onPrint: false,
+          onPrint: MODULE_CONFIG.HidePrintBtn ? false : function () {
+            DocumentExportPlugin.generate(selectedRows, MODULE_CONFIG);
+          },
           onClose: false,
           extras: extraBtns
         });
@@ -886,7 +893,7 @@ window.DynamicFormEngine = (function () {
       }
 
       var query = {
-        List: MODULE_CONFIG.FormName,
+        FormKey: MODULE_CONFIG.FormID,
         Page: currentPage,
         Limit: currentLimit,
         SortColumn: currentSortCol || '',
@@ -897,13 +904,21 @@ window.DynamicFormEngine = (function () {
       if (Object.keys(activeFilters).length > 0) {
         query.Data = JSON.stringify(activeFilters);
       }
-      ApiClient.post(MODULE_CONFIG.ApiSearch, query).then(function (result) {
-        // Trả lại quyền sinh sát (tính phân trang) cho C# Backend
-        totalRecords = result._recordtotal || 0;
-        totalPagesFromApi = result._pagetotal || 0;
+      var searchPromise = ApiClient.post(MODULE_CONFIG.ApiSearch, query);
 
+      searchPromise.then(function (result) {
+        // Trả lại quyền sinh sát (tính phân trang) cho C# Backend
+        var dataList = typeof MODULE_CONFIG.ExtractSearchRows === 'function'
+          ? MODULE_CONFIG.ExtractSearchRows(result)
+          : (result.list || result.records || []);
+        if (MODULE_CONFIG.IsPaged === false) {
+          totalRecords = dataList.length;
+          totalPagesFromApi = dataList.length > 0 ? 1 : 0;
+        } else {
+          totalRecords = result._recordtotal || 0;
+          totalPagesFromApi = result._pagetotal || 0;
+        }
         lastTimestamp = result._timestamp || '';
-        var dataList = result.list || result.records || [];
         gridData = dataList.map(function (item) {
           // Lấy khóa chính từ cấu hình, nếu không có thì tự động lấy cột đầu tiên của dữ liệu
           var firstKey = Object.keys(item).length > 0 ? Object.keys(item)[0] : null;
@@ -2460,7 +2475,7 @@ window.DynamicFormEngine = (function () {
 
     // Gọi API tuần tự
     var finalPayloads = payloads.map(function (p) {
-      return { List: MODULE_CONFIG.FormName, Data: JSON.stringify(p) };
+      return { FormKey: MODULE_CONFIG.FormID, Data: JSON.stringify(p) };
     });
 
     _sendSequential(
@@ -2547,7 +2562,7 @@ window.DynamicFormEngine = (function () {
     if (payloads.length === 0) { modal.closeNow(); return; }
 
     // 5. Gọi API Lưu
-    var finalPayload = { List: MODULE_CONFIG.FormName, Data: JSON.stringify(payloads[0]) };
+    var finalPayload = { FormKey: MODULE_CONFIG.FormID, Data: JSON.stringify(payloads[0]) };
     ApiClient.post(endpoint, finalPayload)
       .then(function (res) {
         if (res && res.code === 0) {

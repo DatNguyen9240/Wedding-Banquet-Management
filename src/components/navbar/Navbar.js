@@ -343,14 +343,14 @@ var Navbar = (function () {
     _attachVerticalEvents();
   }
 
-  var CACHE_KEY = 'pmql_nav_cache';
+  var CACHE_KEY = 'pmql_nav_cache_v3';
 
   function render(containerId) {
     var container = document.getElementById(containerId);
     if (!container) return;
 
     var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var groupId = u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
+    var groupId = u.UserGroupID || u.userGroupID || u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
 
     // Check version server trước — nếu khác cache thì tự clear (bắt được thay đổi từ máy Admin)
     if (window.SystemDataService && SystemDataService.getMenuSyncVersion) {

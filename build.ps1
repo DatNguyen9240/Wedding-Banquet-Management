@@ -42,7 +42,6 @@ $cssFiles = @(
   "components\pagination\pagination.css",
   "components\popover\popover.css",
   "components\header\search-bar.css",
-  "components\ui-utils\shared-dropdown.css",
   "components\skeleton\skeleton.css",
   "components\slider\slider.css",
   "components\stepper\stepper.css",
@@ -54,8 +53,6 @@ $cssFiles = @(
   "components\total-bar\total-bar.css",
   "components\tree\tree.css",
   "components\user-profile\user-profile.css",
-  "components\search-dropdown\search-dropdown.css",
-  "components\side-panel\side-panel.css",
   "components\screen-capture\screen-capture.css"
 )
 
@@ -75,12 +72,8 @@ $jsFiles = @(
   "js\core\EventBus.js",
   "js\core\KeyboardManager.js",
   "js\utils\FormatUtils.js",
-  "js\utils\UITooltip.js",
-  "js\utils\PrintUtils.js",
   "js\services\CalendarService.js",
   "js\services\SystemDataService.js",
-  "js\services\BookingService.js",
-  "js\services\VisitorService.js",
   "js\services\ContractService.js",
   "js\services\CheckoutService.js",
   "js\services\PermissionsService.js",
@@ -131,10 +124,6 @@ $jsFiles = @(
   "components\slider\Slider.js",
   "components\toast\Toast.js",
   "components\popover\Popover.js",
-  "components\header\Header.js",
-  "components\sidebar\Sidebar.js",
-  "components\search-dropdown\SearchDropdown.js",
-  "components\side-panel\SidePanel.js",
   "components\screen-capture\ScreenCapture.js",
   "components\rule-builder\RuleBuilderDialog.js"
 )

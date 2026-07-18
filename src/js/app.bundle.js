@@ -225,278 +225,78 @@ var Permission = (function () {
 
 
 /* --- DocumentExportPlugin.js --- */
-/**
- * DocumentExportPlugin
- * ─────────────────────────────────────────────────────────────────────
- * Plugin cấu hình nút "Xuất tài liệu" cho các form:
- *   frmHopDong   → Hợp đồng tiệc     (PK: Sohopdong)
- *   frmBiennhancoccho    → Biên nhận đặt cọc (PK: MaChungTu)
- *   frmQuyetToan → Quyết toán        (PK: Sohopdong)
+/*
+ * Document export for metadata-driven forms.
+ * SY_FormTbl is the single source for template, detail source and document ID.
  */
 var DocumentExportPlugin = (function () {
-  var DOC_API_BASE = window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API;
-
-  var FORM_CONFIG = {
-    'frmHopDong': {
-      docType: 'hop_dong',
-      label: 'Xuất Hợp Đồng',
-      icon: 'description',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'API_DanhSachHopDong',
-      convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi', 'DanhSachBanTiec', 'DanhSachThucUong']
-    },
-    'frmBiennhancoccho': {
-      docType: 'phieu_thu',
-      label: 'Xuất Phiếu Thu',
-      icon: 'receipt_long',
-      altKeys: ['MaChungTu', 'maChungTu', 'DocumentID', 'SoPhieu'],
-      sqlListName: 'API_DanhSachPhieuCoc'
-    },
-    'frmQuyetToan': {
-      docType: 'quyet_toan',
-      label: 'Xuất Quyết Toán',
-      icon: 'receipt',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'frmQuyetToan',
-      convertFields: []
-    },
-    'tbmk_Thaydoi': {
-      docType: 'de_nghi_thay_doi',
-      label: 'Xuất Phiếu Thay Đổi',
-      icon: 'edit_note',
-      altKeys: ['Sothaydoi', 'sothaydoi', 'SoThayDoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'tbmk_Thaydoi',
-      convertFields: ['ThoaThuanPhuLucKhac', 'ChiTietThayDoi', 'DichVuTinhPhiPhuLuc']
-    },
-    'frmPhuLucHopDong': {
-      docType: 'phu_luc_hop_dong',
-      label: 'Xuất Phụ Lục HĐ',
-      icon: 'description',
-      altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'frmPhuLucHopDong',
-      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac', 'ChiTietThayDoi']
-    },
-    'frmThayDoiBoSung': {
-      docType: 'phu_luc_hop_dong',
-      label: 'Xuất Phụ Lục HĐ',
-      icon: 'description',
-      altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'frmPhuLucHopDong',
-      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac', 'ChiTietThayDoi']
-    },
-    'frmBEO': {
-      docType: 'beo_tiec_cuoi',
-      label: 'Xuất BEO',
-      icon: 'print',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'frmBEO',
-      convertFields: ['ThongTinSetup', 'NoteBaoVe', 'NoteBieuNgu', 'NoteKyThuat', 'NoteLobby', 'LuuY', 'DichVuTinhPhi'],
-      getDocType: function (row) {
-        var lh = (row.LoaiHinhSuKien || row.LoaiHinhSK || '').toString().toLowerCase();
-        if (lh.includes('hội nghị') || lh.includes('hoi nghi') || lh.includes('conference')) {
-          return 'BEO_Hoi_Nghi';
-        }
-        return 'BEO_Tiec_Cuoi';
-      }
-    },
-    'frmBaoGia': {
-      docType: 'bao_gia',
-      label: 'Xuất Báo Giá',
-      icon: 'request_quote',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'frmBaoGia',
-      convertFields: ['LuuYChung', 'GhiChuSanh1', 'GhiChuSanh2', 'GhiChuSanh3']
+  function _rowValue(row, fieldName) {
+    if (!row || !fieldName) return '';
+    if (row[fieldName] !== undefined && row[fieldName] !== null) return row[fieldName];
+    var expected = fieldName.toLowerCase();
+    for (var key in row) {
+      if (key.toLowerCase() === expected && row[key] !== null && row[key] !== undefined) return row[key];
     }
-  };
-
-  function _getPrimaryKey(row, config) {
-    if (!row) return null;
-    for (var i = 0; i < config.altKeys.length; i++) {
-      var v = row[config.altKeys[i]];
-      if (v !== undefined && v !== null && v !== '') return String(v);
-    }
-    return null;
+    return '';
   }
 
-  function _generateDocument(row, config) {
-    var docId = _getPrimaryKey(row, config);
-    if (!docId) {
-      if (typeof Alert !== 'undefined') {
-        Alert.error('Lỗi', 'Không tìm thấy mã chứng từ của dòng này. Kiểm tra lại cấu hình primaryKey.');
-      } else {
-        alert('Không tìm thấy ID của dòng này!');
-      }
-      return;
-    }
-
-    // Đọc tên file mẫu từ DB (được cấu hình trong bảng tbmk_LoaitiecAddfile qua View)
-    var actualDocType = config.docType;
-    if (row.TemplateFile && !config.ignoreTemplateFile) {
-      actualDocType = row.TemplateFile;
-    } else if (typeof config.getDocType === 'function') {
-      actualDocType = config.getDocType(row);
-    }
-
-    var btn = document.getElementById('btn-export-doc-' + config.docType);
-    var originalHTML = btn ? btn.innerHTML : '';
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:spin 1s linear infinite;">autorenew</span><span class="d-none d-md-inline">Đang xuất...</span>';
-    }
-
-    if (!document.getElementById('__dep_spin__')) {
-      var ks = document.createElement('style');
-      ks.id = '__dep_spin__';
-      ks.textContent = '@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}';
-      document.head.appendChild(ks);
-    }
-
+  function _authHeaders() {
     var headers = { 'Content-Type': 'application/json' };
-    var token = '';
-    if (typeof ApiClient !== 'undefined' && typeof ApiClient.getCookie === 'function') {
-      token = ApiClient.getCookie('auth_token');
-    } else {
-      var match = document.cookie.match(/(?:^|; )auth_token=([^;]*)/);
-      if (match) token = decodeURIComponent(match[1]);
-    }
-    if (token) {
-      headers['Authorization'] = 'Bearer ' + token;
+    var token = typeof ApiClient !== 'undefined' && typeof ApiClient.getCookie === 'function'
+      ? ApiClient.getCookie('auth_token')
+      : '';
+    if (token) headers.Authorization = 'Bearer ' + token;
+    return headers;
+  }
+
+  function generate(selectedRows, config) {
+    if (!selectedRows || selectedRows.length !== 1) {
+      return Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn đúng một dòng để xuất tài liệu.');
     }
 
-    fetch(DOC_API_BASE + '/generate', {
+    var row = selectedRows[0];
+    var documentId = _rowValue(row, config.DocumentIdField);
+    if (documentId === '') {
+      return Alert.error('Thiếu mã chứng từ', 'Dòng đang chọn không có giá trị cho cột ' + config.DocumentIdField + '.');
+    }
+
+    // TemplateFile is a business field returned by the selected record. When it
+    // is populated, that record intentionally selects its own approved template.
+    var templateType = _rowValue(row, 'TemplateFile') || config.DocumentTemplate;
+    var documentBase = window.API_CONFIG && window.API_CONFIG.ENDPOINTS
+      && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER
+      && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API;
+    if (!documentBase) {
+      return Alert.error('Lỗi cấu hình', 'Chưa cấu hình DOCUMENT_MANAGER.BASE_API.');
+    }
+
+    fetch(documentBase + '/generate', {
       method: 'POST',
-      headers: headers,
+      headers: _authHeaders(),
       body: JSON.stringify({
-        templateType: actualDocType,
-        customerId: docId,
-        outputFileName: actualDocType + '_' + docId,
+        templateType: templateType,
+        customerId: String(documentId),
+        outputFileName: templateType + '_' + documentId,
         rowData: row,
-        sqlListName: config.sqlListName,
-        convertFields: config.convertFields || []
+        sqlListName: config.DocumentListName
       })
     })
-      .then(function (res) { return res.json(); })
-      .then(function (json) {
-        if (json.success) {
-          if (typeof Toast !== 'undefined') {
-            Toast.show({ message: 'Đã tạo tài liệu: ' + json.fileName, type: 'success' });
-          }
-          sessionStorage.setItem('docmgr_open_file', json.fileName);
-          window.location.hash = '#/document-manager';
-        } else {
-          if (typeof Alert !== 'undefined') {
-            Alert.error('Lỗi xuất tài liệu', json.message || 'Không xác định');
-          }
+      .then(function (response) { return response.json(); })
+      .then(function (result) {
+        if (!result.success) {
+          Alert.error('Không thể tạo DOCX', result.message || 'Server không trả về file tài liệu.');
+          return;
         }
+        sessionStorage.setItem('docmgr_open_file', result.fileName);
+        if (typeof UIToast !== 'undefined') UIToast.show('Đã tạo DOCX: ' + result.fileName, 'success');
+        window.location.hash = '#/document-manager';
       })
-      .catch(function (err) {
-        if (typeof Alert !== 'undefined') {
-          Alert.error('Lỗi kết nối', 'Không thể kết nối tới Document Server.');
-        }
-        console.error('[DocumentExportPlugin]', err);
-      })
-      .finally(function () {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = originalHTML;
-        }
+      .catch(function () {
+        Alert.error('Không kết nối được', 'Không thể kết nối Document Server.');
       });
   }
 
-  function getExtraButtons(formName, getSelectedRows) {
-    var config = FORM_CONFIG[formName];
-    if (!config) return [];
-
-    var buttons = [{
-      id: 'btn-export-doc-' + config.docType,
-      text: config.label,
-      icon: config.icon,
-      type: 'tool',
-      onClick: function () {
-        var selectedRows = getSelectedRows();
-        if (!selectedRows || selectedRows.length !== 1) {
-          if (typeof Alert !== 'undefined') {
-            Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng duy nhất để xuất tài liệu.');
-          } else {
-            alert('Vui lòng chọn 1 dòng để xuất tài liệu!');
-          }
-          return;
-        }
-
-        var row = selectedRows[0];
-        // Bỏ chặn xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký) theo yêu cầu
-        /*
-        var st = (row.Status || row.TrangThai || '').toString().toLowerCase();
-        if (st.includes('đã ký')) {
-          if (typeof Alert !== 'undefined') {
-            Alert.warning('Bị khóa', 'Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
-          } else {
-            alert('Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
-          }
-          return;
-        }
-        */
-
-        _generateDocument(row, config);
-      }
-    }];
-
-    if (formName === 'frmHopDong' || formName === 'frmQuyetToan') {
-      buttons.push({
-        id: 'btn-export-phatsinh',
-        text: 'Xuất BB Phát Sinh',
-        icon: 'post_add',
-        type: 'tool',
-        onClick: function () {
-          var selectedRows = getSelectedRows();
-          if (!selectedRows || selectedRows.length !== 1) {
-            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng dữ liệu duy nhất.');
-            else alert('Vui lòng chọn 1 dòng dữ liệu!');
-            return;
-          }
-          _generateDocument(selectedRows[0], {
-            docType: 'phat_sinh.docx',
-            altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-            sqlListName: 'API_DanhSachPhatSinh',
-            ignoreTemplateFile: true,
-            convertFields: ['MonMan', 'MonChay', 'MonPhatSinh']
-          });
-        }
-      });
-    }
-
-    if (formName === 'frmQuyetToan') {
-      buttons.push({
-        id: 'btn-export-bbnt',
-        text: 'Xuất BB Nghiệm Thu',
-        icon: 'assignment_turned_in',
-        type: 'tool',
-        onClick: function () {
-          var selectedRows = getSelectedRows();
-          if (!selectedRows || selectedRows.length !== 1) {
-            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng dữ liệu duy nhất.');
-            else alert('Vui lòng chọn 1 dòng dữ liệu!');
-            return;
-          }
-          _generateDocument(selectedRows[0], {
-            docType: 'BBNT_Giao_Nhan_Tiec',
-            altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-            sqlListName: 'frmQuyetToan',
-            ignoreTemplateFile: true,
-            convertFields: []
-          });
-        }
-      });
-    }
-
-    return buttons;
-  }
-
-  // Đăng ký Plugin vào hệ thống
-  window.FormActionPlugins = window.FormActionPlugins || [];
-  window.FormActionPlugins.push({ getExtraButtons: getExtraButtons });
-
-  return { getExtraButtons: getExtraButtons };
+  return { generate: generate };
 })();
 
 
@@ -7882,136 +7682,6 @@ var FormatUtils = (function () {
 })();
 
 
-/* --- UITooltip.js --- */
-/**
- * UITooltip — JS-driven tooltip dùng position: fixed
- * Không bị clip bởi overflow:hidden/auto của bất kỳ container nào.
- * Tự động gắn vào mọi [data-tooltip] khi DOM thay đổi.
- */
-var UITooltip = (function () {
-  var _el = null;
-  var _hideTimer = null;
-
-  function _getEl() {
-    if (!_el) {
-      _el = document.createElement('div');
-      _el.id = 'ui-tooltip';
-      document.body.appendChild(_el);
-    }
-    return _el;
-  }
-
-  function show(text, anchorEl) {
-    clearTimeout(_hideTimer);
-    var tip = _getEl();
-    tip.textContent = text;
-    tip.classList.remove('visible');
-
-    // Tính vị trí: bên dưới anchor
-    var rect = anchorEl.getBoundingClientRect();
-    var tipLeft = rect.left + rect.width / 2;
-    var tipTop = rect.bottom + 8;
-
-    tip.style.left = tipLeft + 'px';
-    tip.style.top = tipTop + 'px';
-    tip.style.transform = 'translateX(-50%)';
-
-    // Kiểm tra có tràn ra phải màn hình không
-    requestAnimationFrame(function () {
-      var tipRect = tip.getBoundingClientRect();
-      if (tipRect.right > window.innerWidth - 8) {
-        tip.style.left = (window.innerWidth - tipRect.width - 8) + 'px';
-        tip.style.transform = 'none';
-      }
-      tip.classList.add('visible');
-    });
-  }
-
-  function hide() {
-    _hideTimer = setTimeout(function () {
-      var tip = _getEl();
-      tip.classList.remove('visible');
-    }, 100);
-  }
-
-  function init() {
-    // Dùng event delegation trên document để bắt tất cả [data-tooltip]
-    document.addEventListener('mouseover', function (e) {
-      var target = e.target.closest('[data-tooltip]');
-      if (target) {
-        show(target.getAttribute('data-tooltip'), target);
-      }
-    });
-
-    document.addEventListener('mouseout', function (e) {
-      var target = e.target.closest('[data-tooltip]');
-      if (target) {
-        hide();
-      }
-    });
-
-    document.addEventListener('scroll', hide, true);
-    document.addEventListener('click', hide, true);
-  }
-
-  // Tự khởi động khi DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-
-  return { show: show, hide: hide };
-})();
-
-
-/* --- PrintUtils.js --- */
-/**
- * Print Utility
- * Phục vụ nghiệp vụ IN phiếu và IN lưới từ ứng dụng CSR (Client Side Render)
- */
-var PrintUtils = (function () {
-
-  /**
-   * Mở cửa sổ in một vùng giao diện (DOM Node)
-   * @param {Node} element - DOM Node cần in
-   * @param {string} title - Tiêu đề trang in
-   */
-  function printElement(element, title) {
-    var win = window.open('', '', 'height=700,width=900');
-    if (!win) {
-      Alert.error('Lỗi', 'Trình duyệt bị chặn mở cửa sổ (Popup blocked). Vui lòng cho phép!');
-      return;
-    }
-
-    win.document.write('<html><head><title>' + (title || 'In tài liệu') + '</title>');
-    
-    // Nạp toàn bộ style hiện tại vào bản in
-    var styles = document.querySelectorAll('link[rel="stylesheet"], style');
-    styles.forEach(function(s) {
-      win.document.write(s.outerHTML);
-    });
-
-    win.document.write('<style> @media print { body { padding: 20px; background: var(--color-surface); } .btn-tool { display: none; } } </style>');
-    win.document.write('</head><body >');
-    win.document.write(element.outerHTML);
-    win.document.write('</body></html>');
-
-    win.document.close();
-    win.focus();
-
-    setTimeout(function() {
-      win.print();
-      win.close();
-    }, 500); // Đợi CSS load
-  }
-
-  return {
-    printElement: printElement
-  };
-})();
-
-
 /* --- CalendarService.js --- */
 /**
  * Lớp Dịch vụ Quản lý Dữ liệu Lịch (Calendar Service)
@@ -8315,210 +7985,6 @@ var SystemDataService = (function() {
     getSetupValue: getSetupValue,
     getMenuSyncVersion: getMenuSyncVersion,
     invalidateCache: invalidateCache
-  };
-})();
-
-
-/* --- BookingService.js --- */
-/**
- * BookingService
- * Quản lý toàn bộ API call liên quan đến Biên nhận Cọc chỗ (Booking).
- */
-var BookingService = (function () {
-
-  /**
-   * Lấy danh sách biên nhận cọc
-   * @param {Object} filterParams - { Keyword, TuNgay, DenNgay }
-   * @returns {Promise<Array>}
-   */
-  function getList(filterParams) {
-    return new Promise(function (resolve, reject) {
-      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.BOOKING || !API_CONFIG.ENDPOINTS.BOOKING.LIST) {
-        console.warn('[BookingService] Thiếu cấu hình API BOOKING.LIST');
-        return resolve([]);
-      }
-      var payloadString = encodeURIComponent(JSON.stringify(filterParams || {}));
-      var endpoint = API_CONFIG.ENDPOINTS.BOOKING.LIST + '?q=' + payloadString;
-
-      ApiClient.get(endpoint)
-        .then(function (res) {
-          var data = [];
-          if (res && res.records)      data = res.records;
-          else if (res && res.data)    data = res.data;
-          else if (Array.isArray(res)) data = res;
-          resolve(data);
-        })
-        .catch(function (err) {
-          console.error('[BookingService] Lỗi getList:', err);
-          reject(err);
-        });
-    });
-  }
-
-  /**
-   * Hủy phiếu cọc
-   * @param {Object} payload - { DocumentID, Lydohuy }
-   * @returns {Promise}
-   */
-  function cancel(payload) {
-    return new Promise(function (resolve, reject) {
-      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.BOOKING || !API_CONFIG.ENDPOINTS.BOOKING.CANCEL) {
-        return reject('Chưa cấu hình API BOOKING.CANCEL');
-      }
-      ApiClient.post(API_CONFIG.ENDPOINTS.BOOKING.CANCEL, payload)
-        .then(resolve)
-        .catch(function (err) {
-          console.error('[BookingService] Lỗi cancel:', err);
-          reject(err);
-        });
-    });
-  }
-
-  /**
-   * Tìm kiếm khách hàng theo từ khóa
-   * @param {string} keyword
-   * @returns {Promise<Array>}
-   */
-  function searchCustomer(keyword, sortCol, sortDir, page, limit) {
-    return new Promise(function (resolve, reject) {
-      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.CUSTOMER || !API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH) {
-        return resolve({ list: [], total: 0 });
-      }
-      var payloadObj = { Keyword: keyword || '' };
-      var payload = JSON.stringify(payloadObj);
-      
-      var queryParams = [
-        'q=' + encodeURIComponent(payload),
-        'limit=' + (limit || 20),
-        'page=' + (page || 1)
-      ];
-
-      if (sortCol) {
-        var sortValue = sortCol + (sortDir && sortDir.toUpperCase() === 'DESC' ? ' desc' : '');
-        queryParams.push('sort=' + encodeURIComponent(sortValue));
-      } else {
-        queryParams.push('sort=DateCreate desc'); // Mặc định sắp xếp theo ngày tạo
-      }
-
-      var url = API_CONFIG.ENDPOINTS.CUSTOMER.SEARCH + '?' + queryParams.join('&');
-
-      ApiClient.get(url)
-        .then(function (res) {
-          var list = (res && res.records) ? res.records : (Array.isArray(res) ? res : []);
-          var total = res ? (res._recordtotal || res.total || list.length) : 0;
-          resolve({ list: list, total: total });
-        })
-        .catch(function (err) {
-          console.error('[BookingService] Lỗi searchCustomer:', err);
-          reject(err);
-        });
-    });
-  }
-
-  /**
-   * Lưu biên nhận cọc (thêm mới hoặc cập nhật)
-   * @param {Object} payload
-   * @returns {Promise}
-   */
-  function save(payload) {
-    return new Promise(function (resolve, reject) {
-      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.BOOKING || !API_CONFIG.ENDPOINTS.BOOKING.SAVE) {
-        return reject('Thiếu cấu hình API BOOKING.SAVE');
-      }
-      ApiClient.post(API_CONFIG.ENDPOINTS.BOOKING.SAVE, payload)
-        .then(resolve)
-        .catch(function (err) {
-          console.error('[BookingService] Lỗi save:', err);
-          reject(err);
-        });
-    });
-  }
-
-  /**
-   * Xóa biên nhận cọc qua Gateway (Batch)
-   * @param {Object} payload - { DocumentIDs: 'ID1,ID2' }
-   * @returns {Promise}
-   */
-  function remove(payload) {
-    return new Promise(function (resolve, reject) {
-      var endpoint = (typeof API_CONFIG !== 'undefined' && API_CONFIG.ENDPOINTS && API_CONFIG.ENDPOINTS.ROUTER)
-        ? API_CONFIG.ENDPOINTS.ROUTER
-        : '/api/API_Gateway_Router';
-
-      // Chuẩn hóa payload để luôn đảm bảo có thuộc tính DocumentIDs chứa chuỗi phân tách bằng dấu phẩy
-      var normalizedPayload = {};
-      if (typeof payload === 'string') {
-        normalizedPayload.DocumentIDs = payload;
-      } else if (Array.isArray(payload)) {
-        normalizedPayload.DocumentIDs = payload.join(',');
-      } else if (payload && typeof payload === 'object') {
-        normalizedPayload.DocumentIDs = payload.DocumentIDs || payload.DocumentID || '';
-      }
-
-      var routerPayload = {
-        List: 'frmBiennhancoccho',
-        Func: 'Delete',
-        JsonData: JSON.stringify(normalizedPayload)
-      };
-
-      ApiClient.post(endpoint, routerPayload)
-        .then(resolve)
-        .catch(function (err) {
-          console.error('[BookingService] Lỗi remove:', err);
-          reject(err);
-        });
-    });
-  }
-
-  return {
-    getList: getList,
-    cancel: cancel,
-    remove: remove,
-    searchCustomer: searchCustomer,
-    save: save
-  };
-})();
-
-
-/* --- VisitorService.js --- */
-/**
- * VisitorService
- * Quản lý toàn bộ API call liên quan đến Khách Tham Quan.
- */
-var VisitorService = (function () {
-
-  /**
-   * Lấy danh sách khách tham quan
-   * @param {Object} filterParams - { Keyword, TuNgay, DenNgay, ... }
-   * @returns {Promise<Array>}
-   */
-  function getList(filterParams) {
-    return new Promise(function (resolve, reject) {
-      if (typeof API_CONFIG === 'undefined' || !API_CONFIG.ENDPOINTS.VISITOR || !API_CONFIG.ENDPOINTS.VISITOR.LIST) {
-        console.warn('[VisitorService] Thiếu cấu hình API VISITOR.LIST — trả về mảng rỗng');
-        return resolve([]);
-      }
-
-      var payloadString = encodeURIComponent(JSON.stringify(filterParams || {}));
-      var endpoint = API_CONFIG.ENDPOINTS.VISITOR.LIST + '?q=' + payloadString;
-
-      ApiClient.get(endpoint)
-        .then(function (res) {
-          var data = [];
-          if (res && res.records)      data = res.records;
-          else if (res && res.data)    data = res.data;
-          else if (Array.isArray(res)) data = res;
-          resolve(data);
-        })
-        .catch(function (err) {
-          console.error('[VisitorService] Lỗi getList:', err);
-          reject(err);
-        });
-    });
-  }
-
-  return {
-    getList: getList
   };
 })();
 
@@ -8885,7 +8351,7 @@ var PermissionsService = (function () {
 
   function _currentGroupId() {
     var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    return u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
+    return u.UserGroupID || u.userGroupID || u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
   }
 
   /**
@@ -10183,7 +9649,7 @@ var SectionPanel = (function () {
  *   renderRule = 'dt' → date input
  *   renderRule = 'nm' → number input
  *   renderRule = 'sl' → select (dataSource = API path hoặc STATIC:v1=Nhãn 1,v2=Nhãn 2)
- *   renderRule = 'sr' → select + search (SearchDropdown)
+ *   renderRule = 'sr' → select + search
  *   renderRule = 'dr' → date range (Từ ngày + Đến ngày trên cùng dòng)
  */
 var ReportFilterDialog = (function () {
@@ -11663,14 +11129,14 @@ var Navbar = (function () {
     _attachVerticalEvents();
   }
 
-  var CACHE_KEY = 'pmql_nav_cache';
+  var CACHE_KEY = 'pmql_nav_cache_v3';
 
   function render(containerId) {
     var container = document.getElementById(containerId);
     if (!container) return;
 
     var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var groupId = u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
+    var groupId = u.UserGroupID || u.userGroupID || u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
 
     // Check version server trước — nếu khác cache thì tự clear (bắt được thay đổi từ máy Admin)
     if (window.SystemDataService && SystemDataService.getMenuSyncVersion) {
@@ -14973,7 +14439,7 @@ var UIActionToolbar = (function () {
       { text: 'Sửa',   icon: 'edit',       type: 'tool', onClick: actions.onEdit,   className: 'btn-tool-edit',   attrs: 'data-tooltip="Sửa bản ghi đã chọn (F2)"' },
       { text: 'Xóa',   icon: 'delete',     type: 'tool', onClick: actions.onDelete, className: 'btn-tool-delete', attrs: 'data-tooltip="Xóa bản ghi đã chọn (Del)"' },
       { text: 'Lọc',   icon: 'filter_alt', type: 'tool', onClick: actions.onFilter, className: 'btn-tool-filter', attrs: 'data-tooltip="Lọc / Tìm kiếm dữ liệu"' },
-      { text: 'In',    icon: 'print',      type: 'tool', onClick: actions.onPrint,  className: 'btn-tool-print',  attrs: 'data-tooltip="In danh sách (Ctrl+P)"' },
+      { text: 'Xuất DOCX', icon: 'print',  type: 'tool', onClick: actions.onPrint,  className: 'btn-tool-print',  attrs: 'data-tooltip="Tạo tài liệu DOCX trên server"' },
       { text: 'Đóng',  icon: 'close',      type: 'tool', onClick: actions.onClose,  className: 'btn-tool-close',  attrs: 'data-tooltip="Đóng trang hiện tại"' }
     ];
 
@@ -18150,444 +17616,6 @@ var UIPopover = (function () {
     show: show,
     hide: hide
   };
-})();
-
-
-/* --- Header.js --- */
-/**
- * Header Component
- * Cấu trúc thanh Header trên cùng
- */
-var Header = (function () {
-  
-  function render(containerId) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
-
-    var html = `
-      <header class="app-header">
-        <div class="header-left">
-          <!-- Nút Hamburger Mở Sidebar (Chỉ hiện trên Mobile) -->
-          <button class="btn-hamburger" id="btn-hamburger">
-            <span class="material-symbols-outlined">menu</span>
-          </button>
-
-          <!-- Thanh tìm kiếm kiểu Tailadmin -->
-          <div class="search-box">
-            <span class="material-symbols-outlined">search</span>
-            <input type="text" placeholder="Type to search...">
-          </div>
-        </div>
-
-        <div class="header-right">
-          <!-- Các nút Notification / Chat -->
-          <div class="icon-btn" onclick="Alert.info('Thông báo', 'Bạn không có thông báo mới')">
-            <span class="material-symbols-outlined" style="font-size:20px;">notifications</span>
-            <span class="badge"></span>
-          </div>
-
-
-          <!-- Thông tin User -->
-          <div class="user-profile">
-            <div class="user-text">
-              <div class="user-name">Admin</div>
-              <div class="user-role">Quản trị hệ thống</div>
-            </div>
-            <div class="user-avatar">
-              <img src="https://ui-avatars.com/api/?name=Admin&background=3C50E0&color=fff" alt="User">
-            </div>
-            <span class="material-symbols-outlined" style="color:var(--color-text-secondary)">expand_more</span>
-          </div>
-        </div>
-      </header>
-    `;
-
-    container.innerHTML = html;
-
-    _attachEvents();
-  }
-
-  function _attachEvents() {
-    var $btnHamburger = document.getElementById('btn-hamburger');
-    var $sidebar = document.getElementById('app-sidebar');
-    var $sidebarOverlay = document.getElementById('sidebar-overlay');
-
-    if ($btnHamburger) {
-      $btnHamburger.addEventListener('click', function() {
-        if ($sidebar) $sidebar.classList.add('open');
-        if ($sidebarOverlay) $sidebarOverlay.classList.add('active');
-      });
-    }
-  }
-
-  return {
-    render: render
-  };
-})();
-
-
-/* --- Sidebar.js --- */
-/**
- * Sidebar Component
- * Cấu trúc thanh điều hướng bên trái
- * Đã được nâng cấp để lấy Menu động từ Database giống Navbar
- */
-var Sidebar = (function () {
-
-  var CACHE_KEY = 'pmql_nav_cache';
-  var NAV_CONFIG = [];
-
-  function _buildConfigFromDB(dbMenus) {
-    var config = [];
-    var parents = dbMenus.filter(function (m) { return !m.parent || String(m.parent).trim() === ''; });
-    parents.sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
-
-    parents.forEach(function (p) {
-      var children = dbMenus.filter(function (m) { return m.parent === p.id; });
-      if (children.length > 0) {
-        children.sort(function (a, b) { return String(a.id).localeCompare(String(b.id)); });
-        var items = children.map(function (c) {
-          return {
-            href: c.URLPara || c.urlPara || c.FormKey || '',
-            icon: c.icon || c.IconClass || 'circle',
-            label: c.label || c.TenMenu || c.VN || ''
-          };
-        });
-        config.push({
-          type: 'group',
-          icon: p.icon || p.IconClass || 'folder',
-          label: p.label || p.TenMenu || p.VN || '',
-          items: items
-        });
-      } else {
-        config.push({
-          type: 'link',
-          href: p.URLPara || p.urlPara || p.FormKey || '',
-          icon: p.icon || p.IconClass || 'link',
-          label: p.label || p.TenMenu || p.VN || ''
-        });
-      }
-    });
-    return config;
-  }
-
-  function _buildSidebarNavHTML() {
-    var html = '';
-    NAV_CONFIG.forEach(function (item) {
-      if (item.type === 'link') {
-        html += `
-          <a href="${item.href}" class="nav-item">
-            <span class="material-symbols-outlined icon">${item.icon}</span>
-            ${item.label}
-          </a>`;
-        return;
-      }
-      html += `<div class="nav-group-title">${item.label}</div>`;
-      item.items.forEach(function (di) {
-        html += `
-          <a href="${di.href}" class="nav-item">
-            <span class="material-symbols-outlined icon">${di.icon}</span>
-            ${di.label}
-          </a>`;
-      });
-    });
-    return html;
-  }
-
-  function render(containerId) {
-    var container = document.getElementById(containerId);
-    if (!container) return;
-
-    var u = JSON.parse(localStorage.getItem('pmql_user') || '{}');
-    var groupId = u.Group || u.GroupUser || u.GroupID || u.group || u.NhomQuyen || 'Admin';
-
-    // Thử load từ cache giống Navbar
-    try {
-      var cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
-      if (cached && cached.groupId === groupId && cached.config && cached.config.length > 0) {
-        NAV_CONFIG = cached.config;
-        _doRender(container);
-        return;
-      }
-    } catch (e) {}
-
-    // Nếu không có cache, gọi API fetch
-    _fetchAndRender(container, groupId);
-  }
-
-  function _fetchAndRender(container, groupId) {
-    var endpoint = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.PERMISSIONS)
-      ? window.API_CONFIG.ENDPOINTS.PERMISSIONS.GET_MENU_BY_GROUP : null;
-
-    if (endpoint && window.ApiClient) {
-      ApiClient.post(endpoint, {
-        NhomNguoiDangThaoTac: groupId,
-        UserGroupID: groupId
-      }).then(function (res) {
-        var records = (res && res.records) ? res.records : (res && res.data ? res.data : []);
-        if (records && records.length > 0) {
-          NAV_CONFIG = _buildConfigFromDB(records);
-          try {
-            sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-              groupId: groupId,
-              config: NAV_CONFIG,
-              rawRecords: records
-            }));
-          } catch (e) { }
-        }
-        _doRender(container);
-      }).catch(function (err) {
-        console.error('[Sidebar] Lỗi tải menu từ DB:', err);
-        _doRender(container); // Fallback render empty
-      });
-    } else {
-      _doRender(container);
-    }
-  }
-
-  function _doRender(container) {
-    var navHtml = _buildSidebarNavHTML();
-
-    // Fallback HTML nếu DB rỗng
-    if (!navHtml) {
-      navHtml = `
-        <div class="nav-group-title">Hệ Thống</div>
-        <a href="#/dashboard" class="nav-item active">
-          <span class="material-symbols-outlined icon">dashboard</span>
-          Tổng quan
-        </a>
-      `;
-    }
-
-    var html = `
-      <aside class="app-sidebar" id="app-sidebar">
-        <div class="sidebar-header">
-          <div onclick="window.location.href = window.location.pathname + '#/'; var sb=document.getElementById('app-sidebar'); if(sb) sb.classList.remove('open'); var sbo=document.getElementById('sidebar-overlay'); if(sbo) sbo.classList.remove('active'); var md=document.getElementById('mobile-drawer'); if(md) md.classList.remove('open'); var mdo=document.getElementById('mobile-drawer-overlay'); if(mdo) mdo.classList.remove('active');" style="display:flex; align-items:center; justify-content:flex-start; width:100%; margin: 16px 0; padding-left: 16px; cursor: pointer;">
-            <img src="./src/assets/logo-full-cropped.png" class="app-logo-light" alt="Tiệc Cưới Logo" style="width: 150px; height: auto;">
-            <img src="./src/assets/logo-full-cropped-dark.png" class="app-logo-dark" alt="Tiệc Cưới Logo" style="width: 150px; height: auto;">
-          </div>
-          <!-- Nút đóng Sidebar trên Mobile -->
-          <button class="btn-close-sidebar" id="btn-close-sidebar">
-            <span class="material-symbols-outlined">arrow_back</span>
-          </button>
-        </div>
-
-        <nav class="sidebar-nav" id="sidebar-nav">
-          ${navHtml}
-        </nav>
-      </aside>
-
-      <!-- Overlay mờ khi mở Sidebar trên Mobile -->
-      <div class="sidebar-overlay" id="sidebar-overlay"></div>
-    `;
-
-    container.innerHTML = html;
-    _attachEvents();
-  }
-
-  function _attachEvents() {
-    var $sidebar = document.getElementById('app-sidebar');
-    var $btnCloseSidebar = document.getElementById('btn-close-sidebar');
-    var $sidebarOverlay = document.getElementById('sidebar-overlay');
-
-    function closeSidebar() {
-      if ($sidebar) $sidebar.classList.remove('open');
-      if ($sidebarOverlay) $sidebarOverlay.classList.remove('active');
-    }
-
-    if ($btnCloseSidebar) {
-      $btnCloseSidebar.addEventListener('click', closeSidebar);
-    }
-
-    if ($sidebarOverlay) {
-      $sidebarOverlay.addEventListener('click', closeSidebar);
-    }
-
-    // Auto highlight active nav item based on hash
-    _highlightActiveNav();
-    window.addEventListener('hashchange', _highlightActiveNav);
-  }
-
-  function _highlightActiveNav() {
-    var currentHash = window.location.hash || '#/dashboard';
-    var navItems = document.querySelectorAll('.sidebar-nav .nav-item');
-
-    navItems.forEach(function (item) {
-      item.classList.remove('active');
-      if (item.getAttribute('href') === currentHash) {
-        item.classList.add('active');
-      }
-    });
-  }
-
-  return {
-    render: render
-  };
-})();
-
-
-/* --- SearchDropdown.js --- */
-/**
- * Search Dropdown Component
- * Autocomplete / Custom search results list with input and search button
- */
-var UIControls = window.UIControls || {};
-
-UIControls.createSearchDropdown = function (options) {
-  var wrapper = document.createElement('div');
-  wrapper.className = 'ui-search-dropdown-wrapper d-flex gap-2 align-items-center';
-  wrapper.style.position = 'relative';
-  wrapper.style.zIndex = '100'; // To avoid overlap issues in cards
-  if (options.width) wrapper.style.width = options.width;
-
-  var input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'ui-input flex-grow-1';
-  input.placeholder = options.placeholder || 'Tìm kiếm...';
-  input.style.height = '32px';
-  input.style.fontSize = '13px';
-
-  var btn = document.createElement('button');
-  btn.className = 'btn btn-outline-primary d-flex align-items-center gap-1';
-  btn.style.height = '32px';
-  btn.style.padding = '0 12px';
-  btn.style.fontSize = '13px';
-  btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">search</span>' + (options.btnText || 'Tìm');
-
-  var dropdown = document.createElement('div');
-  dropdown.className = 'ui-search-dropdown-menu';
-  
-  wrapper.appendChild(input);
-  wrapper.appendChild(btn);
-  wrapper.appendChild(dropdown);
-
-  function showDropdown() {
-    dropdown.classList.add('show');
-  }
-
-  function hideDropdown() {
-    dropdown.classList.remove('show');
-  }
-
-  function renderResults(results) {
-    dropdown.innerHTML = '';
-    if (!results || results.length === 0) {
-      dropdown.innerHTML = '<div class="p-3 text-center text-secondary">Không tìm thấy kết quả!</div>';
-    } else {
-      results.forEach(function (item) {
-        var div = document.createElement('a');
-        div.className = 'ui-search-dropdown-item border-bottom';
-        div.style.cursor = 'pointer';
-        div.innerHTML = options.renderItem ? options.renderItem(item) : item.toString();
-        div.addEventListener('click', function () {
-          hideDropdown();
-          if (typeof options.onSelect === 'function') {
-            options.onSelect(item);
-          }
-        });
-        dropdown.appendChild(div);
-      });
-    }
-    showDropdown();
-  }
-
-  btn.addEventListener('click', function (e) {
-    e.preventDefault();
-    var keyword = input.value.trim();
-    if (!keyword && options.requireKeyword) {
-      if (window.UIToast) UIToast.show('Vui lòng nhập từ khóa', 'warning');
-      return;
-    }
-    dropdown.innerHTML = '<div class="p-3 text-center text-secondary">Đang tìm kiếm...</div>';
-    showDropdown();
-    
-    if (typeof options.onSearch === 'function') {
-      options.onSearch(keyword, renderResults, hideDropdown);
-    }
-  });
-
-  input.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      btn.click();
-    }
-  });
-
-  document.addEventListener('click', function (e) {
-    if (!wrapper.contains(e.target)) hideDropdown();
-  });
-
-  return wrapper;
-};
-
-
-/* --- SidePanel.js --- */
-/**
- * SidePanel Component (Right Drawer)
- * Automatically handles overlays, sliding animations, and shadow-safe hiding.
- */
-var UISidePanel = (function () {
-  function SidePanel(selectorOrElement) {
-    this.panel = typeof selectorOrElement === 'string' 
-      ? document.querySelector(selectorOrElement) 
-      : selectorOrElement;
-      
-    if (!this.panel) return;
-
-    this.panel.classList.add('ui-side-panel');
-    
-    // Ensure initial state is off-screen and display:none
-    this.panel.style.display = 'none';
-    this.panel.style.right = '-1000px';
-
-    // Automatically find or create an overlay
-    this.overlay = document.querySelector('.ui-side-panel-overlay');
-    if (!this.overlay) {
-      this.overlay = document.createElement('div');
-      this.overlay.className = 'ui-side-panel-overlay';
-      document.body.appendChild(this.overlay);
-    }
-
-    var self = this;
-    
-    // Bind close buttons
-    var closeBtns = this.panel.querySelectorAll('[data-dismiss="side-panel"]');
-    closeBtns.forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        self.hide();
-      });
-    });
-
-    this.overlay.addEventListener('click', function() {
-      self.hide();
-    });
-  }
-
-  SidePanel.prototype.show = function() {
-    var self = this;
-    this.panel.style.display = 'flex';
-    this.overlay.classList.add('show');
-    // Tiny delay to allow display:flex to register before animation
-    setTimeout(function() {
-      self.panel.classList.add('show');
-    }, 10);
-  };
-
-  SidePanel.prototype.hide = function() {
-    var self = this;
-    this.overlay.classList.remove('show');
-    this.panel.classList.remove('show');
-    // Wait for transition to finish before display:none
-    setTimeout(function() {
-      if (!self.panel.classList.contains('show')) {
-        self.panel.style.display = 'none';
-        self.panel.style.right = '-1000px';
-      }
-    }, 300);
-  };
-
-  return SidePanel;
 })();
 
 

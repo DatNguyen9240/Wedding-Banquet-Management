@@ -37,11 +37,11 @@ var InventoryPage = (function () {
 
   function _bindEvents(containerElement) {
     var tabs = [
-      { id: 'tab-kho-btn', paneId: 'tab-kho-pane', containerId: 'kho-list-view', formName: 'frmKho', title: 'Danh Mục Kho' },
-      { id: 'tab-nvl-btn', paneId: 'tab-nvl-pane', containerId: 'nvl-list-view', formName: 'frmHanghoa', title: 'Nguyên Vật Liệu' },
-      { id: 'tab-bom-btn', paneId: 'tab-bom-pane', containerId: 'bom-list-view', formName: 'frmHanghoadinhluong', title: 'Định Lượng (BOM)' },
-      { id: 'tab-nhap-btn', paneId: 'tab-nhap-pane', containerId: 'nhap-list-view', formName: 'frmNhapKho', title: 'Nhập Kho' },
-      { id: 'tab-xuat-btn', paneId: 'tab-xuat-pane', containerId: 'xuat-list-view', formName: 'frmXuatKho', title: 'Xuất Kho' }
+      { id: 'tab-kho-btn', paneId: 'tab-kho-pane', containerId: 'kho-list-view', formName: 'dmKho', title: 'Danh Mục Kho' },
+      { id: 'tab-nvl-btn', paneId: 'tab-nvl-pane', containerId: 'nvl-list-view', formName: 'dmHangHoa', title: 'Nguyên Vật Liệu' },
+      { id: 'tab-bom-btn', paneId: 'tab-bom-pane', containerId: 'bom-list-view', formName: 'dmHanghoadinhluong', title: 'Định Lượng (BOM)' },
+      { id: 'tab-nhap-btn', paneId: 'tab-nhap-pane', containerId: 'nhap-list-view', formName: 'tbNhaphang', title: 'Nhập Kho' },
+      { id: 'tab-xuat-btn', paneId: 'tab-xuat-pane', containerId: 'xuat-list-view', formName: 'tbXuatnvl', title: 'Xuất Kho' }
     ];
 
     function resetTabs() {

@@ -1,273 +1,73 @@
-/**
- * DocumentExportPlugin
- * ─────────────────────────────────────────────────────────────────────
- * Plugin cấu hình nút "Xuất tài liệu" cho các form:
- *   frmHopDong   → Hợp đồng tiệc     (PK: Sohopdong)
- *   frmBiennhancoccho    → Biên nhận đặt cọc (PK: MaChungTu)
- *   frmQuyetToan → Quyết toán        (PK: Sohopdong)
+/*
+ * Document export for metadata-driven forms.
+ * SY_FormTbl is the single source for template, detail source and document ID.
  */
 var DocumentExportPlugin = (function () {
-  var DOC_API_BASE = window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API;
-
-  var FORM_CONFIG = {
-    'frmHopDong': {
-      docType: 'hop_dong',
-      label: 'Xuất Hợp Đồng',
-      icon: 'description',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'API_DanhSachHopDong',
-      convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi', 'DanhSachBanTiec', 'DanhSachThucUong']
-    },
-    'frmBiennhancoccho': {
-      docType: 'phieu_thu',
-      label: 'Xuất Phiếu Thu',
-      icon: 'receipt_long',
-      altKeys: ['MaChungTu', 'maChungTu', 'DocumentID', 'SoPhieu'],
-      sqlListName: 'API_DanhSachPhieuCoc'
-    },
-    'frmQuyetToan': {
-      docType: 'quyet_toan',
-      label: 'Xuất Quyết Toán',
-      icon: 'receipt',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'frmQuyetToan',
-      convertFields: []
-    },
-    'tbmk_Thaydoi': {
-      docType: 'de_nghi_thay_doi',
-      label: 'Xuất Phiếu Thay Đổi',
-      icon: 'edit_note',
-      altKeys: ['Sothaydoi', 'sothaydoi', 'SoThayDoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'tbmk_Thaydoi',
-      convertFields: ['ThoaThuanPhuLucKhac', 'ChiTietThayDoi', 'DichVuTinhPhiPhuLuc']
-    },
-    'frmPhuLucHopDong': {
-      docType: 'phu_luc_hop_dong',
-      label: 'Xuất Phụ Lục HĐ',
-      icon: 'description',
-      altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'frmPhuLucHopDong',
-      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac', 'ChiTietThayDoi']
-    },
-    'frmThayDoiBoSung': {
-      docType: 'phu_luc_hop_dong',
-      label: 'Xuất Phụ Lục HĐ',
-      icon: 'description',
-      altKeys: ['SoPhuLuc', 'soPhuLuc', 'Sothaydoi', 'sothaydoi', 'Sohopdong', 'sohopdong'],
-      sqlListName: 'frmPhuLucHopDong',
-      convertFields: ['DichVuTinhPhiPhuLuc', 'ThoaThuanPhuLucKhac', 'ChiTietThayDoi']
-    },
-    'frmBEO': {
-      docType: 'beo_tiec_cuoi',
-      label: 'Xuất BEO',
-      icon: 'print',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'frmBEO',
-      convertFields: ['ThongTinSetup', 'NoteBaoVe', 'NoteBieuNgu', 'NoteKyThuat', 'NoteLobby', 'LuuY', 'DichVuTinhPhi'],
-      getDocType: function (row) {
-        var lh = (row.LoaiHinhSuKien || row.LoaiHinhSK || '').toString().toLowerCase();
-        if (lh.includes('hội nghị') || lh.includes('hoi nghi') || lh.includes('conference')) {
-          return 'BEO_Hoi_Nghi';
-        }
-        return 'BEO_Tiec_Cuoi';
-      }
-    },
-    'frmBaoGia': {
-      docType: 'bao_gia',
-      label: 'Xuất Báo Giá',
-      icon: 'request_quote',
-      altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-      sqlListName: 'frmBaoGia',
-      convertFields: ['LuuYChung', 'GhiChuSanh1', 'GhiChuSanh2', 'GhiChuSanh3']
+  function _rowValue(row, fieldName) {
+    if (!row || !fieldName) return '';
+    if (row[fieldName] !== undefined && row[fieldName] !== null) return row[fieldName];
+    var expected = fieldName.toLowerCase();
+    for (var key in row) {
+      if (key.toLowerCase() === expected && row[key] !== null && row[key] !== undefined) return row[key];
     }
-  };
-
-  function _getPrimaryKey(row, config) {
-    if (!row) return null;
-    for (var i = 0; i < config.altKeys.length; i++) {
-      var v = row[config.altKeys[i]];
-      if (v !== undefined && v !== null && v !== '') return String(v);
-    }
-    return null;
+    return '';
   }
 
-  function _generateDocument(row, config) {
-    var docId = _getPrimaryKey(row, config);
-    if (!docId) {
-      if (typeof Alert !== 'undefined') {
-        Alert.error('Lỗi', 'Không tìm thấy mã chứng từ của dòng này. Kiểm tra lại cấu hình primaryKey.');
-      } else {
-        alert('Không tìm thấy ID của dòng này!');
-      }
-      return;
-    }
-
-    // Đọc tên file mẫu từ DB (được cấu hình trong bảng tbmk_LoaitiecAddfile qua View)
-    var actualDocType = config.docType;
-    if (row.TemplateFile && !config.ignoreTemplateFile) {
-      actualDocType = row.TemplateFile;
-    } else if (typeof config.getDocType === 'function') {
-      actualDocType = config.getDocType(row);
-    }
-
-    var btn = document.getElementById('btn-export-doc-' + config.docType);
-    var originalHTML = btn ? btn.innerHTML : '';
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:spin 1s linear infinite;">autorenew</span><span class="d-none d-md-inline">Đang xuất...</span>';
-    }
-
-    if (!document.getElementById('__dep_spin__')) {
-      var ks = document.createElement('style');
-      ks.id = '__dep_spin__';
-      ks.textContent = '@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}';
-      document.head.appendChild(ks);
-    }
-
+  function _authHeaders() {
     var headers = { 'Content-Type': 'application/json' };
-    var token = '';
-    if (typeof ApiClient !== 'undefined' && typeof ApiClient.getCookie === 'function') {
-      token = ApiClient.getCookie('auth_token');
-    } else {
-      var match = document.cookie.match(/(?:^|; )auth_token=([^;]*)/);
-      if (match) token = decodeURIComponent(match[1]);
-    }
-    if (token) {
-      headers['Authorization'] = 'Bearer ' + token;
+    var token = typeof ApiClient !== 'undefined' && typeof ApiClient.getCookie === 'function'
+      ? ApiClient.getCookie('auth_token')
+      : '';
+    if (token) headers.Authorization = 'Bearer ' + token;
+    return headers;
+  }
+
+  function generate(selectedRows, config) {
+    if (!selectedRows || selectedRows.length !== 1) {
+      return Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn đúng một dòng để xuất tài liệu.');
     }
 
-    fetch(DOC_API_BASE + '/generate', {
+    var row = selectedRows[0];
+    var documentId = _rowValue(row, config.DocumentIdField);
+    if (documentId === '') {
+      return Alert.error('Thiếu mã chứng từ', 'Dòng đang chọn không có giá trị cho cột ' + config.DocumentIdField + '.');
+    }
+
+    // TemplateFile is a business field returned by the selected record. When it
+    // is populated, that record intentionally selects its own approved template.
+    var templateType = _rowValue(row, 'TemplateFile') || config.DocumentTemplate;
+    var documentBase = window.API_CONFIG && window.API_CONFIG.ENDPOINTS
+      && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER
+      && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API;
+    if (!documentBase) {
+      return Alert.error('Lỗi cấu hình', 'Chưa cấu hình DOCUMENT_MANAGER.BASE_API.');
+    }
+
+    fetch(documentBase + '/generate', {
       method: 'POST',
-      headers: headers,
+      headers: _authHeaders(),
       body: JSON.stringify({
-        templateType: actualDocType,
-        customerId: docId,
-        outputFileName: actualDocType + '_' + docId,
+        templateType: templateType,
+        customerId: String(documentId),
+        outputFileName: templateType + '_' + documentId,
         rowData: row,
-        sqlListName: config.sqlListName,
-        convertFields: config.convertFields || []
+        sqlListName: config.DocumentListName
       })
     })
-      .then(function (res) { return res.json(); })
-      .then(function (json) {
-        if (json.success) {
-          if (typeof Toast !== 'undefined') {
-            Toast.show({ message: 'Đã tạo tài liệu: ' + json.fileName, type: 'success' });
-          }
-          sessionStorage.setItem('docmgr_open_file', json.fileName);
-          window.location.hash = '#/document-manager';
-        } else {
-          if (typeof Alert !== 'undefined') {
-            Alert.error('Lỗi xuất tài liệu', json.message || 'Không xác định');
-          }
+      .then(function (response) { return response.json(); })
+      .then(function (result) {
+        if (!result.success) {
+          Alert.error('Không thể tạo DOCX', result.message || 'Server không trả về file tài liệu.');
+          return;
         }
+        sessionStorage.setItem('docmgr_open_file', result.fileName);
+        if (typeof UIToast !== 'undefined') UIToast.show('Đã tạo DOCX: ' + result.fileName, 'success');
+        window.location.hash = '#/document-manager';
       })
-      .catch(function (err) {
-        if (typeof Alert !== 'undefined') {
-          Alert.error('Lỗi kết nối', 'Không thể kết nối tới Document Server.');
-        }
-        console.error('[DocumentExportPlugin]', err);
-      })
-      .finally(function () {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = originalHTML;
-        }
+      .catch(function () {
+        Alert.error('Không kết nối được', 'Không thể kết nối Document Server.');
       });
   }
 
-  function getExtraButtons(formName, getSelectedRows) {
-    var config = FORM_CONFIG[formName];
-    if (!config) return [];
-
-    var buttons = [{
-      id: 'btn-export-doc-' + config.docType,
-      text: config.label,
-      icon: config.icon,
-      type: 'tool',
-      onClick: function () {
-        var selectedRows = getSelectedRows();
-        if (!selectedRows || selectedRows.length !== 1) {
-          if (typeof Alert !== 'undefined') {
-            Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng duy nhất để xuất tài liệu.');
-          } else {
-            alert('Vui lòng chọn 1 dòng để xuất tài liệu!');
-          }
-          return;
-        }
-
-        var row = selectedRows[0];
-        // Bỏ chặn xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký) theo yêu cầu
-        /*
-        var st = (row.Status || row.TrangThai || '').toString().toLowerCase();
-        if (st.includes('đã ký')) {
-          if (typeof Alert !== 'undefined') {
-            Alert.warning('Bị khóa', 'Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
-          } else {
-            alert('Không thể xuất lại file cho Hợp đồng/Phiếu đã chốt (Đã ký).');
-          }
-          return;
-        }
-        */
-
-        _generateDocument(row, config);
-      }
-    }];
-
-    if (formName === 'frmHopDong' || formName === 'frmQuyetToan') {
-      buttons.push({
-        id: 'btn-export-phatsinh',
-        text: 'Xuất BB Phát Sinh',
-        icon: 'post_add',
-        type: 'tool',
-        onClick: function () {
-          var selectedRows = getSelectedRows();
-          if (!selectedRows || selectedRows.length !== 1) {
-            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng dữ liệu duy nhất.');
-            else alert('Vui lòng chọn 1 dòng dữ liệu!');
-            return;
-          }
-          _generateDocument(selectedRows[0], {
-            docType: 'phat_sinh.docx',
-            altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-            sqlListName: 'API_DanhSachPhatSinh',
-            ignoreTemplateFile: true,
-            convertFields: ['MonMan', 'MonChay', 'MonPhatSinh']
-          });
-        }
-      });
-    }
-
-    if (formName === 'frmQuyetToan') {
-      buttons.push({
-        id: 'btn-export-bbnt',
-        text: 'Xuất BB Nghiệm Thu',
-        icon: 'assignment_turned_in',
-        type: 'tool',
-        onClick: function () {
-          var selectedRows = getSelectedRows();
-          if (!selectedRows || selectedRows.length !== 1) {
-            if (typeof Alert !== 'undefined') Alert.warning('Chưa chọn dữ liệu', 'Vui lòng chọn 1 dòng dữ liệu duy nhất.');
-            else alert('Vui lòng chọn 1 dòng dữ liệu!');
-            return;
-          }
-          _generateDocument(selectedRows[0], {
-            docType: 'BBNT_Giao_Nhan_Tiec',
-            altKeys: ['Sohopdong', 'sohopdong', 'SoHopDong'],
-            sqlListName: 'frmQuyetToan',
-            ignoreTemplateFile: true,
-            convertFields: []
-          });
-        }
-      });
-    }
-
-    return buttons;
-  }
-
-  // Đăng ký Plugin vào hệ thống
-  window.FormActionPlugins = window.FormActionPlugins || [];
-  window.FormActionPlugins.push({ getExtraButtons: getExtraButtons });
-
-  return { getExtraButtons: getExtraButtons };
+  return { generate: generate };
 })();

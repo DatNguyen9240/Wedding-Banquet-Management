@@ -18,7 +18,7 @@
  *   renderRule = 'dt' → date input
  *   renderRule = 'nm' → number input
  *   renderRule = 'sl' → select (dataSource = API path hoặc STATIC:v1=Nhãn 1,v2=Nhãn 2)
- *   renderRule = 'sr' → select + search (SearchDropdown)
+ *   renderRule = 'sr' → select + search
  *   renderRule = 'dr' → date range (Từ ngày + Đến ngày trên cùng dòng)
  */
 var ReportFilterDialog = (function () {

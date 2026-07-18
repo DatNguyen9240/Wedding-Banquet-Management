@@ -13,7 +13,7 @@ var UIActionToolbar = (function () {
       { text: 'Sửa',   icon: 'edit',       type: 'tool', onClick: actions.onEdit,   className: 'btn-tool-edit',   attrs: 'data-tooltip="Sửa bản ghi đã chọn (F2)"' },
       { text: 'Xóa',   icon: 'delete',     type: 'tool', onClick: actions.onDelete, className: 'btn-tool-delete', attrs: 'data-tooltip="Xóa bản ghi đã chọn (Del)"' },
       { text: 'Lọc',   icon: 'filter_alt', type: 'tool', onClick: actions.onFilter, className: 'btn-tool-filter', attrs: 'data-tooltip="Lọc / Tìm kiếm dữ liệu"' },
-      { text: 'In',    icon: 'print',      type: 'tool', onClick: actions.onPrint,  className: 'btn-tool-print',  attrs: 'data-tooltip="In danh sách (Ctrl+P)"' },
+      { text: 'Xuất DOCX', icon: 'print',  type: 'tool', onClick: actions.onPrint,  className: 'btn-tool-print',  attrs: 'data-tooltip="Tạo tài liệu DOCX trên server"' },
       { text: 'Đóng',  icon: 'close',      type: 'tool', onClick: actions.onClose,  className: 'btn-tool-close',  attrs: 'data-tooltip="Đóng trang hiện tại"' }
     ];
 

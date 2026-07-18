@@ -9,7 +9,7 @@ BEGIN
     SET NOCOUNT ON;
     DECLARE @TableName SYSNAME;
     DECLARE @PrimaryKey SYSNAME;
-    DECLARE @ObjectId INT = OBJECT_ID(@List, 'U');
+    DECLARE @ObjectId INT = OBJECT_ID(@List);
     DECLARE @QualifiedTable NVARCHAR(517);
     
     -- Ánh xạ động: Tên Form chính là tên View hoặc Bảng vật lý thật trong CSDL
@@ -17,7 +17,14 @@ BEGIN
 
     IF @ObjectId IS NULL
     BEGIN
-        SELECT -1 AS code, N'List must be an existing user table: ' + ISNULL(@List, '') AS msg;
+        SELECT -1 AS code, N'List must be an existing table or view: ' + ISNULL(@List, '') AS msg;
+        RETURN;
+    END
+
+    IF OBJECTPROPERTY(@ObjectId, 'IsUserTable') = 0
+       AND OBJECTPROPERTY(@ObjectId, 'IsView') = 0
+    BEGIN
+        SELECT -1 AS code, N'List must be an existing table or view: ' + ISNULL(@List, '') AS msg;
         RETURN;
     END
 

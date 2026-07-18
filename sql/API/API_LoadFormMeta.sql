@@ -11,7 +11,7 @@ GO
 
   SY_FmtFldTbl  : global field dictionary (FieldName, Caption*, FormatID, alignment, widths)
   SY_FmatTbl    : format definition (FormatID, masks, ranges, precision)
-  SY_FrmDrdwTbl : form-specific lookup behaviour (FormID + ColumnID)
+  SY_FrmDrdwTbl : UI lookup behaviour (FormID + GridName + ColumnID)
 
   A field must exist in the field dictionary and its FormatID must exist in the
   format dictionary. The procedure deliberately returns a configuration error
@@ -70,6 +70,7 @@ BEGIN
             SELECT ColumnID
             FROM dbo.SY_FrmDrdwTbl
             WHERE FormID = @FormName
+              AND NULLIF(LTRIM(RTRIM(GridName)), '') IS NULL
             GROUP BY ColumnID
             HAVING COUNT(*) > 1
         ) d
@@ -247,7 +248,12 @@ BEGIN
     INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
     INNER JOIN dbo.SY_FmtFldTbl f ON f.FieldName = c.name
     INNER JOIN dbo.SY_FmatTbl fm ON fm.FormatID = f.FormatID
-    LEFT JOIN dbo.SY_FrmDrdwTbl dd ON dd.FormID = @FormName AND dd.ColumnID = c.name
+    /* This API describes a table's main editor. Detail-grid metadata is not part
+       of this result and is keyed separately by GridName. */
+    LEFT JOIN dbo.SY_FrmDrdwTbl dd
+      ON dd.FormID = @FormName
+     AND NULLIF(LTRIM(RTRIM(dd.GridName)), '') IS NULL
+     AND dd.ColumnID = c.name
     WHERE c.object_id = @ObjectId
     ORDER BY c.column_id;
 END
