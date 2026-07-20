@@ -1,13 +1,13 @@
-IF OBJECT_ID('API_LuuDong', 'P') IS NOT NULL
-    DROP PROCEDURE API_LuuDong;
-GO
-
-CREATE PROCEDURE [dbo].[API_LuuDong]
+CREATE OR ALTER PROCEDURE [dbo].[API_LuuDong]
     @List SYSNAME,
     @Data NVARCHAR(MAX) -- Chuỗi JSON chứa dữ liệu cần lưu
 AS
 BEGIN
     SET NOCOUNT ON;
+    /* Form đọc dùng view, nhưng ghi phải đi vào bảng vật lý. */
+    IF @List = N'v_DanhSachHopDong'
+        SET @List = N'tbmk_Hopdong';
+
     DECLARE @TableName SYSNAME;
     DECLARE @PrimaryKey SYSNAME;
     DECLARE @ObjectId INT = OBJECT_ID(@List, 'U');
@@ -86,6 +86,43 @@ BEGIN
                 AND c.is_computed = 0
                 AND c.system_type_id <> 189
           );
+
+        /* Chuẩn hóa ngày, không phụ thuộc DATEFORMAT của phiên SQL Server. */
+        DECLARE @InvalidDateColumn SYSNAME;
+        SELECT TOP (1) @InvalidDateColumn = jsonData.ColumnName
+        FROM #JsonData jsonData
+        INNER JOIN sys.columns columnInfo
+            ON columnInfo.object_id = @ObjectId
+           AND columnInfo.name = jsonData.ColumnName
+        WHERE columnInfo.system_type_id IN (40, 42, 43, 58, 61)
+          AND NULLIF(LTRIM(RTRIM(jsonData.ColumnValue)), '') IS NOT NULL
+          AND TRY_CONVERT(DATETIME2(7), jsonData.ColumnValue, 126) IS NULL
+          AND TRY_CONVERT(DATETIME2(7), jsonData.ColumnValue, 103) IS NULL;
+
+        IF @InvalidDateColumn IS NOT NULL
+        BEGIN
+            SELECT -1 AS code,
+                   N'Giá trị ngày không hợp lệ tại field ' + @InvalidDateColumn
+                   + N'. Dùng yyyy-MM-dd hoặc dd/MM/yyyy.' AS msg;
+            DROP TABLE #JsonData;
+            RETURN;
+        END;
+
+        UPDATE jsonData
+        SET jsonData.ColumnValue = CONVERT(
+                NVARCHAR(33),
+                COALESCE(
+                    TRY_CONVERT(DATETIME2(7), jsonData.ColumnValue, 126),
+                    TRY_CONVERT(DATETIME2(7), jsonData.ColumnValue, 103)
+                ),
+                126
+            )
+        FROM #JsonData jsonData
+        INNER JOIN sys.columns columnInfo
+            ON columnInfo.object_id = @ObjectId
+           AND columnInfo.name = jsonData.ColumnName
+        WHERE columnInfo.system_type_id IN (40, 42, 43, 58, 61)
+          AND NULLIF(LTRIM(RTRIM(jsonData.ColumnValue)), '') IS NOT NULL;
         
         -- TỰ ĐỘNG SINH KHÓA CHÍNH NẾU ĐỂ TRỐNG (INSERT MODE)
         IF @IsEdit = 0 AND COLUMNPROPERTY(@ObjectId, @PrimaryKey, 'IsIdentity') = 0

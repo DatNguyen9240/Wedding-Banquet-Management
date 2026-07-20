@@ -12,6 +12,7 @@ GO
   SY_FmtFldTbl  : global field dictionary (FieldName, Caption*, FormatID, alignment, widths)
   SY_FmatTbl    : format definition (FormatID, masks, ranges, precision)
   SY_FrmDrdwTbl : UI lookup behaviour (FormID + GridName + ColumnID)
+  SY_FrmLstTbl  : form-level grid configuration (HideColumnArr)
 
   A field must exist in the field dictionary and its FormatID must exist in the
   format dictionary. The procedure deliberately returns a configuration error
@@ -30,6 +31,10 @@ BEGIN
     DECLARE @DuplicateDropdowns NVARCHAR(MAX) = '';
     DECLARE @MissingCaptions NVARCHAR(MAX) = '';
     DECLARE @InvalidFormats NVARCHAR(MAX) = '';
+    DECLARE @HideColumnArr VARCHAR(MAX) = '';
+    DECLARE @AddNewColumnArr VARCHAR(MAX) = '';
+    DECLARE @EditorColumnArr VARCHAR(MAX) = '';
+    DECLARE @RequiredObjectId INT = @ObjectId;
 
     IF @ObjectId IS NULL
     BEGIN
@@ -40,10 +45,41 @@ BEGIN
     IF OBJECT_ID('dbo.SY_FmtFldTbl', 'U') IS NULL
        OR OBJECT_ID('dbo.SY_FmatTbl', 'U') IS NULL
        OR OBJECT_ID('dbo.SY_FrmDrdwTbl', 'U') IS NULL
+       OR OBJECT_ID('dbo.SY_FrmLstTbl', 'U') IS NULL
     BEGIN
-        SELECT -1 AS code, N'Thiếu bảng metadata chuẩn SY_FmtFldTbl, SY_FmatTbl hoặc SY_FrmDrdwTbl.' AS msg;
+        SELECT -1 AS code, N'Thiếu bảng metadata chuẩn SY_FmtFldTbl, SY_FmatTbl, SY_FrmDrdwTbl hoặc SY_FrmLstTbl.' AS msg;
         RETURN;
     END;
+
+    /*
+      The router calls this procedure with TableName. FormID is also accepted
+      for callers that load metadata directly. HideColumnArr is a semicolon-
+      separated list, for example: objectName;objectPhone. AddNewColumnArr and
+      EditorColumnArr are optional allow-lists for the add/edit modal; when
+      populated, every other view column remains available only as a hidden
+      input so read-model JSON does not become an editable textbox.
+    */
+    SELECT TOP (1)
+        @HideColumnArr = ISNULL(formConfig.HideColumnArr, ''),
+        @AddNewColumnArr = ISNULL(formConfig.AddNewColumnArr, ''),
+        @EditorColumnArr = ISNULL(formConfig.EditorColumnArr, ''),
+        @PrimaryKey = NULLIF(LTRIM(RTRIM(formConfig.PrimaryKey)), '')
+    FROM dbo.SY_FrmLstTbl formConfig
+    WHERE formConfig.FormID = @FormName
+       OR formConfig.TableName = @FormName
+    ORDER BY CASE WHEN formConfig.FormID = @FormName THEN 0 ELSE 1 END;
+
+    /*
+      v_DanhSachHopDong là read-model: nullability của view không phản ánh đúng
+      cột nhập liệu. Required phải lấy từ bảng ghi thật tbmk_Hopdong.
+    */
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.SY_FrmLstTbl formConfig
+        WHERE (formConfig.FormID = @FormName OR formConfig.TableName = @FormName)
+          AND formConfig.TableName = 'v_DanhSachHopDong'
+    )
+        SET @RequiredObjectId = OBJECT_ID(N'dbo.tbmk_Hopdong', N'U');
 
     /* FieldName is global. More than one dictionary row for a name is invalid. */
     SELECT @DuplicateFields = STUFF((
@@ -142,13 +178,16 @@ BEGIN
         RETURN;
     END;
 
-    SELECT TOP (1) @PrimaryKey = c.name
-    FROM sys.indexes i
-    INNER JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
-    INNER JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
-    WHERE i.object_id = @ObjectId
-      AND i.is_primary_key = 1
-    ORDER BY ic.key_ordinal;
+    IF NULLIF(LTRIM(RTRIM(@PrimaryKey)), '') IS NULL
+    BEGIN
+        SELECT TOP (1) @PrimaryKey = c.name
+        FROM sys.indexes i
+        INNER JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+        INNER JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+        WHERE i.object_id = @ObjectId
+          AND i.is_primary_key = 1
+        ORDER BY ic.key_ordinal;
+    END;
 
     SELECT
         c.name AS [name],
@@ -160,25 +199,49 @@ BEGIN
         f.AlignX AS [align],
         f.MinWidth AS [minWidth],
         f.MaxWidth AS [maxWidth],
-        c.column_id AS [orderNo],
+        CASE
+            WHEN NULLIF(LTRIM(RTRIM(@EditorColumnArr)), '') IS NULL THEN c.column_id
+            ELSE COALESCE(
+                NULLIF(CHARINDEX(';' + c.name + ';', ';' + @EditorColumnArr + ';'), 0),
+                100000 + c.column_id
+            )
+        END AS [orderNo],
         '6' AS [position],
         CASE
-            WHEN c.is_nullable = 0
-             AND c.is_identity = 0
-             AND c.is_computed = 0
-             AND c.system_type_id <> 189
-             AND c.default_object_id = 0 THEN 1
+            WHEN @RequiredObjectId <> @ObjectId AND requiredColumn.column_id IS NULL THEN 0
+            WHEN ISNULL(requiredColumn.is_nullable, c.is_nullable) = 0
+             AND ISNULL(requiredColumn.is_identity, c.is_identity) = 0
+             AND ISNULL(requiredColumn.is_computed, c.is_computed) = 0
+             AND ISNULL(requiredColumn.system_type_id, c.system_type_id) <> 189
+             AND ISNULL(requiredColumn.default_object_id, c.default_object_id) = 0 THEN 1
             ELSE 0
         END AS [required],
-        CASE WHEN ISNULL(dd.isInvisible, 0) = 1 THEN 0 ELSE 1 END AS [showInGrid],
+        CASE
+            WHEN EXISTS (
+                SELECT 1
+                FROM STRING_SPLIT(ISNULL(@HideColumnArr, ''), ';') hiddenColumn
+                WHERE LTRIM(RTRIM(hiddenColumn.value)) = c.name
+            ) THEN 0
+            ELSE 1
+        END AS [showInGrid],
         CASE
             WHEN c.is_identity = 1 OR c.is_computed = 1 OR c.system_type_id = 189 THEN 0
-            WHEN ISNULL(dd.isInvisible, 0) = 1 THEN 0
+            WHEN NULLIF(LTRIM(RTRIM(@AddNewColumnArr)), '') IS NOT NULL
+             AND NOT EXISTS (
+                 SELECT 1
+                 FROM STRING_SPLIT(@AddNewColumnArr, ';') allowedColumn
+                 WHERE LTRIM(RTRIM(allowedColumn.value)) = c.name
+             ) THEN 0
             ELSE 1
         END AS [showInAdd],
         CASE
             WHEN c.is_identity = 1 OR c.is_computed = 1 OR c.system_type_id = 189 THEN 0
-            WHEN ISNULL(dd.isInvisible, 0) = 1 THEN 0
+            WHEN NULLIF(LTRIM(RTRIM(@EditorColumnArr)), '') IS NOT NULL
+             AND NOT EXISTS (
+                 SELECT 1
+                 FROM STRING_SPLIT(@EditorColumnArr, ';') allowedColumn
+                 WHERE LTRIM(RTRIM(allowedColumn.value)) = c.name
+             ) THEN 0
             ELSE 1
         END AS [showInEdit],
         CASE
@@ -246,6 +309,9 @@ BEGIN
         dd.TriggerOnOpenForm AS [dropdownTriggerOnOpenForm]
     FROM sys.columns c
     INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+    LEFT JOIN sys.columns requiredColumn
+        ON requiredColumn.object_id = @RequiredObjectId
+       AND requiredColumn.name = c.name
     INNER JOIN dbo.SY_FmtFldTbl f ON f.FieldName = c.name
     INNER JOIN dbo.SY_FmatTbl fm ON fm.FormatID = f.FormatID
     /* This API describes a table's main editor. Detail-grid metadata is not part
@@ -255,6 +321,14 @@ BEGIN
      AND NULLIF(LTRIM(RTRIM(dd.GridName)), '') IS NULL
      AND dd.ColumnID = c.name
     WHERE c.object_id = @ObjectId
-    ORDER BY c.column_id;
+    ORDER BY
+        CASE
+            WHEN NULLIF(LTRIM(RTRIM(@EditorColumnArr)), '') IS NULL THEN c.column_id
+            ELSE COALESCE(
+                NULLIF(CHARINDEX(';' + c.name + ';', ';' + @EditorColumnArr + ';'), 0),
+                100000 + c.column_id
+            )
+        END,
+        c.column_id;
 END
 GO

@@ -10,15 +10,15 @@ GO
   API Lấy danh sách Gói Thực Đơn (Gói Tiệc)
   Dùng để làm nguồn dữ liệu (DataSource) cho các Dropdown/Combobox trên giao diện.
 */
-ALTER PROCEDURE [dbo].[API_DanhSachGoiThucDon]
+CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachGoiThucDon]
     @Keyword NVARCHAR(100) = ''
 AS
 BEGIN
     SET NOCOUNT ON;
 
     SELECT 
-        GoiThucDonID AS [id],
-        TenGoiThucDon AS [Tên gói]
+        GoiThucDonID,
+        TenGoiThucDon
 
     FROM 
         [dbo].[dmGoiThucDon]

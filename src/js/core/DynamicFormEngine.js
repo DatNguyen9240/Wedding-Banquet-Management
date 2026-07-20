@@ -212,8 +212,15 @@ window.DynamicFormEngine = (function () {
    */
   function _buildPayload(base, isEdit) {
     var p = Object.assign({}, base);
-    p.UserName = _currentUser();
-    p.UserCreate = _currentUser();
+    var currentUser = _currentUser();
+    p.UserName = currentUser;
+    if (isEdit) {
+      p.UserUpdate = currentUser;
+      delete p.UserCreate;
+    } else {
+      p.UserCreate = currentUser;
+      delete p.UserUpdate;
+    }
     p.IsEdit = isEdit ? 1 : 0;
     return p;
   }
@@ -1204,6 +1211,7 @@ window.DynamicFormEngine = (function () {
 
   function _openBulkGridEditForm(rows, isAdd) {
     var body = document.createElement('div');
+    body.className = 'dynamic-form-body';
     body.style.display = 'flex';
     body.style.flexDirection = 'column';
     body.style.gap = '14px';
@@ -1888,6 +1896,7 @@ window.DynamicFormEngine = (function () {
     var currentModalFormState = {}; // Trạng thái form để truyền cho các Combobox gọi API
 
     var grid = document.createElement('div');
+    grid.className = 'dynamic-form-grid';
     grid.style.display = 'flex';
     grid.style.flexWrap = 'wrap';
     grid.style.gap = '12px 10px'; // Dòng cách dòng 12px, ô cách ô 10px
@@ -2064,6 +2073,12 @@ window.DynamicFormEngine = (function () {
                     // Dùng từ điển hiện tại của form để dịch tiêu đề lưới (nếu có), CHỈ HIỆN MAX CỘT ĐƯỢC CHỈ ĐỊNH (mặc định 4)
                     var displayKeys = keys.slice(0, maxCols);
                     headers = displayKeys.map(function (k) {
+                      if (field.dropdownValueColumn && String(k).toLowerCase() === String(field.dropdownValueColumn).toLowerCase()) {
+                        return 'Mã';
+                      }
+                      if (field.dropdownDisplayColumn && String(k).toLowerCase() === String(field.dropdownDisplayColumn).toLowerCase() && field.dropdownCaption) {
+                        return field.dropdownCaption;
+                      }
                       var keyLower = k.toLowerCase();
                       if (typeof globalDictionary !== 'undefined') {
                         var foundKey = Object.keys(globalDictionary).find(function (gk) {
@@ -2338,6 +2353,18 @@ window.DynamicFormEngine = (function () {
         wrapper.style.flex = '0 0 ' + w;
         wrapper.style.maxWidth = w;
       }
+      if (field.renderRule === 'dt') wrapper.classList.add('df-date-field');
+
+      // Kích thước ô lấy từ MinWidth/MaxWidth trong SY_FmtFldTbl.
+      var minFieldWidth = Number(field.minWidth);
+      var maxFieldWidth = Number(field.maxWidth);
+      if (Number.isFinite(minFieldWidth) && minFieldWidth > 0) {
+        wrapper.style.minWidth = minFieldWidth + 'px';
+      }
+      if (Number.isFinite(maxFieldWidth) && maxFieldWidth > 0) {
+        wrapper.style.maxWidth = maxFieldWidth + 'px';
+      }
+      wrapper.style.boxSizing = 'border-box';
 
 
       wrapper.appendChild(inputEl);
@@ -2382,14 +2409,14 @@ window.DynamicFormEngine = (function () {
     footer.appendChild(btnCancel);
     footer.appendChild(btnSave);
 
-    var modalWidth = MODULE_CONFIG.ModalWidth || '850px';
+    var modalWidth = MODULE_CONFIG.ModalWidth || 'min(1180px, 95vw)';
     var hasJsonField = formSchema.some(function (f) {
       var isVisible = isEdit ? f.showInEdit : f.showInAdd;
       return (String(isVisible) === '1' || isVisible === true) && f.renderRule === 'js';
     });
 
     if (hasJsonField) {
-      modalWidth = '1300px';
+      modalWidth = 'min(1380px, 96vw)';
     }
 
     var modal = UIModal.show({
@@ -2398,6 +2425,7 @@ window.DynamicFormEngine = (function () {
       content: body,
       footer: footer
     });
+    if (modal && modal.node) modal.node.classList.add('dynamic-form-modal');
 
     btnCancel.onclick = function () { modal.close(); };
     btnSave.onclick = function () {
@@ -2512,6 +2540,8 @@ window.DynamicFormEngine = (function () {
         var val = el.value.trim();
         var field = globalFormSchema.find(function (f) { return f.name === el.name; });
         if (field) {
+          var isVisibleForMode = isEdit ? field.showInEdit : field.showInAdd;
+          if (!_bool(isVisibleForMode) && field.name !== MODULE_CONFIG.PrimaryKey) return;
           var rule = (field.renderRule || '').toLowerCase().trim();
           if (rule === 'money' || rule === 'm' || rule === 'mn') {
             val = val.replace(/\D/g, '');
@@ -2529,6 +2559,8 @@ window.DynamicFormEngine = (function () {
     var isInvalid = false;
     for (var i = 0; i < globalFormSchema.length; i++) {
       var field = globalFormSchema[i];
+      var isVisibleForMode = isEdit ? field.showInEdit : field.showInAdd;
+      if (!_bool(isVisibleForMode)) continue;
       var val = formInputData[field.name];
       var isJsonField = field.renderRule === 'js';
       var isEmptyJson = false;
@@ -2633,11 +2665,13 @@ window.DynamicFormEngine = (function () {
       formSchema.sort(function (a, b) { return a.orderNo - b.orderNo; });
 
       var body = document.createElement('div');
+      body.className = 'dynamic-form-body';
       body.style.display = 'flex';
       body.style.flexDirection = 'column';
       body.style.gap = '14px';
 
       var grid = document.createElement('div');
+      grid.className = 'dynamic-form-grid';
       grid.style.display = 'flex';
       grid.style.flexWrap = 'wrap';
       grid.style.gap = '12px 10px';
@@ -2706,6 +2740,17 @@ window.DynamicFormEngine = (function () {
           wrapper.style.flex = '0 0 ' + w;
           wrapper.style.maxWidth = w;
         }
+        if (field.renderRule === 'dt') wrapper.classList.add('df-date-field');
+        // Kích thước ô lấy từ MinWidth/MaxWidth trong SY_FmtFldTbl.
+        var minFieldWidth = Number(field.minWidth);
+        var maxFieldWidth = Number(field.maxWidth);
+        if (Number.isFinite(minFieldWidth) && minFieldWidth > 0) {
+          wrapper.style.minWidth = minFieldWidth + 'px';
+        }
+        if (Number.isFinite(maxFieldWidth) && maxFieldWidth > 0) {
+          wrapper.style.maxWidth = maxFieldWidth + 'px';
+        }
+        wrapper.style.boxSizing = 'border-box';
         wrapper.appendChild(inputEl);
         grid.appendChild(wrapper);
 
@@ -2733,6 +2778,7 @@ window.DynamicFormEngine = (function () {
         content: body,
         footer: footer
       });
+      if (modal && modal.node) modal.node.classList.add('dynamic-form-modal');
 
       btnCancel.onclick = function () { modal.close(); };
       btnSave.onclick = function () {

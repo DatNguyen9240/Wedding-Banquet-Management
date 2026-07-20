@@ -13827,12 +13827,14 @@ var UIInput = (function () {
     }
 
     var obj = _createBaseWrapper(config, 'text');
+    obj.wrapper.classList.add('date-input-wrapper');
     var visibleInput = obj.input;
 
     // Remove name to prevent duplicate submission of the text representation
     visibleInput.removeAttribute('name');
     var elementId = config.id || config.name;
     if (elementId) visibleInput.id = elementId + '_visible';
+    if (config.name) visibleInput.dataset.fieldName = config.name;
     visibleInput.readOnly = true;
     visibleInput.style.cursor = 'pointer';
     visibleInput.placeholder = config.placeholder || 'Chọn ngày...';
@@ -14010,6 +14012,10 @@ var UIInput = (function () {
             if (p.length === 3) {
               visibleInput.value = p[2] + '/' + p[1] + '/' + p[0];
             }
+            // Phát event trên cả input hiển thị để các trigger bên ngoài form
+            // bắt được thay đổi, đồng thời vẫn giữ input ẩn cho serializer.
+            visibleInput.dispatchEvent(new Event('change', { bubbles: true }));
+            visibleInput.dispatchEvent(new Event('input', { bubbles: true }));
             hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
             hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
             closePopup();

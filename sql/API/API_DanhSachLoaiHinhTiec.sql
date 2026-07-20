@@ -9,14 +9,14 @@ GO
 -- =============================================
 -- Mô tả: API Lấy danh sách Loại Hình Tiệc (Cưới, Thôi nôi, v.v...)
 -- =============================================
-CREATE PROCEDURE [dbo].[API_DanhSachLoaiHinhTiec]
+CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachLoaiHinhTiec]
 AS
 BEGIN
     SET NOCOUNT ON;
 
     SELECT 
-        Loaitiecid AS [Mã loại],
-        Tenloaitiec AS [Loại hình tiệc]
+        Loaitiecid,
+        Tenloaitiec
     FROM dmLoaihinhtiec
     ORDER BY Tenloaitiec ASC;
 END

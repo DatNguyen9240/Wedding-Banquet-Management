@@ -1,7 +1,10 @@
 IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong]'))
     DROP VIEW [dbo].[v_DanhSachHopDong]
 GO
-CREATE VIEW [dbo].[v_DanhSachHopDong] AS
+IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[dbo].[v_DanhSachHopDong_Core]'))
+    DROP VIEW [dbo].[v_DanhSachHopDong_Core]
+GO
+CREATE VIEW [dbo].[v_DanhSachHopDong_Core] AS
 SELECT 
     h.Sohopdong AS [Id], -- Đóng vai trò là PrimaryKey cho Frontend
 
@@ -474,4 +477,79 @@ CROSS APPLY (
     END AS CalcTienThueVAT
 ) c_vat
 WHERE ISNULL(h.IsDeleted, 0) = 0;
+GO
+
+/*
+  Giữ toàn bộ cột tính toán của read model và tự bổ sung các cột gốc của
+  tbmk_Hopdong chưa có trong read model. Các tên đã tồn tại không được lặp lại.
+*/
+DECLARE @AdditionalColumns NVARCHAR(MAX) = N'';
+DECLARE @CreateViewSql NVARCHAR(MAX);
+
+SELECT @AdditionalColumns = (
+    SELECT N', source.' + QUOTENAME(sourceColumn.name)
+    FROM sys.columns sourceColumn
+    WHERE sourceColumn.object_id = OBJECT_ID(N'dbo.tbmk_Hopdong')
+      AND NOT EXISTS (
+          SELECT 1
+          FROM sys.columns coreColumn
+          WHERE coreColumn.object_id = OBJECT_ID(N'dbo.v_DanhSachHopDong_Core')
+            AND coreColumn.name = sourceColumn.name
+      )
+    ORDER BY sourceColumn.column_id
+    FOR XML PATH(''), TYPE
+).value('.', 'NVARCHAR(MAX)');
+
+SET @CreateViewSql =
+    N'CREATE VIEW dbo.v_DanhSachHopDong AS
+      SELECT core.*' + ISNULL(@AdditionalColumns, N'') + N'
+      FROM dbo.v_DanhSachHopDong_Core core
+      INNER JOIN dbo.tbmk_Hopdong source
+          ON source.Sohopdong = core.Sohopdong;';
+
+EXEC sys.sp_executesql @CreateViewSql;
+GO
+
+/* Tự đăng ký metadata cơ bản cho mọi cột mới để API có thể trả schema. */
+IF OBJECT_ID(N'dbo.SY_FmtFldTbl', N'U') IS NOT NULL
+BEGIN
+    UPDATE dictionary
+    SET dictionary.FormatID = CASE
+            WHEN viewColumn.system_type_id = 104 THEN 'sw'
+            WHEN viewColumn.system_type_id IN (40, 42, 43, 58, 61) THEN 'D'
+            WHEN viewColumn.system_type_id = 41 THEN 'H'
+            WHEN viewColumn.system_type_id IN (48, 52, 56, 59, 60, 62, 106, 108, 122, 127) THEN 'N0'
+            ELSE 't'
+        END
+    FROM dbo.SY_FmtFldTbl dictionary
+    INNER JOIN sys.columns viewColumn
+        ON viewColumn.object_id = OBJECT_ID(N'dbo.v_DanhSachHopDong')
+       AND viewColumn.name = dictionary.FieldName
+    WHERE NULLIF(LTRIM(RTRIM(dictionary.FormatID)), '') IS NULL
+       OR NOT EXISTS (
+           SELECT 1
+           FROM dbo.SY_FmatTbl formatDefinition
+           WHERE formatDefinition.FormatID = dictionary.FormatID
+       );
+
+    INSERT INTO dbo.SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID)
+    SELECT
+        'v_DanhSachHopDong',
+        viewColumn.name,
+        CONVERT(NVARCHAR(255), viewColumn.name),
+        CASE
+            WHEN viewColumn.system_type_id = 104 THEN 'sw'
+            WHEN viewColumn.system_type_id IN (40, 42, 43, 58, 61) THEN 'D'
+            WHEN viewColumn.system_type_id = 41 THEN 'H'
+            WHEN viewColumn.system_type_id IN (48, 52, 56, 59, 60, 62, 106, 108, 122, 127) THEN 'N0'
+            ELSE 't'
+        END
+    FROM sys.columns viewColumn
+    WHERE viewColumn.object_id = OBJECT_ID(N'dbo.v_DanhSachHopDong')
+      AND NOT EXISTS (
+          SELECT 1
+          FROM dbo.SY_FmtFldTbl dictionary
+          WHERE dictionary.FieldName = viewColumn.name
+      );
+END;
 GO

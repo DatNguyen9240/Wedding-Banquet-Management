@@ -3,7 +3,8 @@ GO
 
 /*
   Explicit global field dictionary for the two custom read models rendered by
-  DynamicFormEngine.  No fields or formats are inferred at runtime.
+  DynamicFormEngine. No fields or formats are inferred at runtime. Grid
+  visibility belongs to SY_FrmLstTbl.HideColumnArr.
 */
 SET XACT_ABORT ON
 GO
@@ -93,26 +94,6 @@ BEGIN TRY
     FROM @Fields expected
     WHERE NOT EXISTS (
         SELECT 1 FROM dbo.SY_FmtFldTbl fieldDictionary WHERE fieldDictionary.FieldName = expected.FieldName
-    );
-
-    /* The quotation read model exposes these values for its API contract, not
-       as duplicate columns in the shared grid. */
-    UPDATE dbo.SY_FrmDrdwTbl
-    SET isInvisible = 1
-    WHERE FormID = 'v_DanhSachBaoGia'
-      AND NULLIF(LTRIM(RTRIM(GridName)), '') IS NULL
-      AND ColumnID IN ('KhachHang', 'NgayToChucFormat');
-
-    INSERT INTO dbo.SY_FrmDrdwTbl (UserAutoID, FormID, ColumnID, isInvisible)
-    SELECT LOWER(REPLACE(CAST(NEWID() AS VARCHAR(50)), '-', '')),
-           'v_DanhSachBaoGia', control.ColumnID, 1
-    FROM (VALUES ('KhachHang'), ('NgayToChucFormat')) control(ColumnID)
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM dbo.SY_FrmDrdwTbl configured
-        WHERE configured.FormID = 'v_DanhSachBaoGia'
-          AND NULLIF(LTRIM(RTRIM(configured.GridName)), '') IS NULL
-          AND configured.ColumnID = control.ColumnID
     );
 
     IF EXISTS (

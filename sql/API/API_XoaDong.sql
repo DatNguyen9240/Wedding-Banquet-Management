@@ -8,8 +8,8 @@ GO
 
 /*
   Generic delete contract
-  @List must be an actual user table name. This procedure intentionally does
-  not map form names to tables and does not route through WA_API.
+  @List normally names a physical user table. Known read-model views are
+  explicitly mapped to their write table before validation.
 */
 CREATE OR ALTER PROCEDURE dbo.API_XoaDong
     @List SYSNAME,
@@ -18,6 +18,10 @@ CREATE OR ALTER PROCEDURE dbo.API_XoaDong
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    /* Form đọc dùng view, nhưng xóa phải đi vào bảng vật lý. */
+    IF @List = N'v_DanhSachHopDong'
+        SET @List = N'tbmk_Hopdong';
 
     DECLARE @ObjectId INT = OBJECT_ID(@List, 'U');
     DECLARE @PrimaryKey SYSNAME;

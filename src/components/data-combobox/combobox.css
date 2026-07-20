@@ -68,6 +68,72 @@
 
 .combo-action-btn .material-symbols-outlined { font-size: 22px; }
 
+/* Dropdown panel */
+.data-dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 260px;
+  max-width: min(720px, calc(100vw - 20px));
+  max-height: 300px;
+  overflow: hidden;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #1e293b);
+  border: 1px solid var(--color-border-strong, #cbd5e1);
+  border-radius: 10px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+  opacity: 0;
+  visibility: hidden;
+}
+
+.data-dropdown-menu.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  background: var(--color-surface, #fff);
+}
+
+.dropdown-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 9px 12px;
+  text-align: left;
+  white-space: nowrap;
+  color: #fff;
+  background: var(--color-primary, #4f46e5);
+  border-bottom: 1px solid var(--color-primary-dark, #4338ca);
+  font-weight: 700;
+}
+
+.dropdown-table td {
+  padding: 8px 12px;
+  color: var(--color-text, #1e293b);
+  background: var(--color-surface, #fff);
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  white-space: nowrap;
+}
+
+.dropdown-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.dropdown-table tbody tr:hover td,
+.dropdown-table tbody tr.active td {
+  background: var(--color-primary-light, rgba(79, 70, 229, 0.1));
+}
+
+.dropdown-table td.highlight-col {
+  color: var(--color-text, #1e293b);
+  font-weight: 500;
+}
+
 /* ── Dropdown: Search bar ─────────────────────────────────────── */
 .dd-search-wrapper {
   display: flex;

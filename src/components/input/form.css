@@ -38,6 +38,111 @@
   cursor: not-allowed;
 }
 
+/* Dynamic form modal: rộng hơn, ô co giãn đúng theo lưới, không tràn ngang. */
+.dynamic-form-modal .modal-content {
+  width: min(1180px, 95vw) !important;
+  max-width: 95vw !important;
+}
+
+.dynamic-form-modal .ui-modal-body {
+  padding: 18px 22px 16px !important;
+}
+
+.dynamic-form-body {
+  gap: 10px !important;
+  min-width: 0;
+}
+
+.dynamic-form-grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  align-items: start;
+  min-width: 0;
+}
+
+.dynamic-form-grid > .df-col-12,
+.dynamic-form-grid > .df-col-8,
+.dynamic-form-grid > .df-col-6,
+.dynamic-form-grid > .df-col-4,
+.dynamic-form-grid > .df-col-3,
+.dynamic-form-grid > .df-col-2,
+.dynamic-form-grid > .df-col-custom {
+  /* Width/Position quy định độ rộng mặc định; MinWidth/MaxWidth inline sẽ
+     thu nhỏ chính ô layout để field kế tiếp lấp vào khoảng trống. */
+  flex: 0 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.dynamic-form-grid .form-group {
+  min-width: 0;
+  gap: 5px;
+}
+
+.dynamic-form-grid .form-group label {
+  line-height: 1.25;
+  min-height: 17px;
+}
+
+.dynamic-form-grid .ui-input,
+.dynamic-form-grid .combo-box-container,
+.dynamic-form-grid .combo-box-container .ui-input {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Ngày chỉ cần đủ cho dd/MM/yyyy và icon; không chiếm nguyên nửa hàng. */
+.dynamic-form-grid > .df-date-field {
+  flex: 0 1 230px;
+  width: 230px !important;
+  max-width: 230px !important;
+}
+
+.dynamic-form-grid .date-input-wrapper,
+.dynamic-form-grid .date-input-wrapper > div {
+  width: 100%;
+  min-width: 0;
+}
+
+.dynamic-form-grid textarea {
+  min-height: 76px;
+  max-height: 220px;
+  resize: vertical;
+}
+
+@media (max-width: 768px) {
+  .dynamic-form-modal .modal-content {
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  .dynamic-form-grid {
+    gap: 9px;
+  }
+
+  .dynamic-form-grid > .df-col-12,
+  .dynamic-form-grid > .df-col-8,
+  .dynamic-form-grid > .df-col-6,
+  .dynamic-form-grid > .df-col-4,
+  .dynamic-form-grid > .df-col-3,
+  .dynamic-form-grid > .df-col-2,
+  .dynamic-form-grid > .df-col-custom {
+    width: calc(50% - 4.5px) !important;
+    flex: 0 0 calc(50% - 4.5px) !important;
+    min-width: 0 !important;
+    max-width: calc(50% - 4.5px) !important;
+  }
+
+  .dynamic-form-grid > .df-date-field {
+    width: calc(50% - 4.5px) !important;
+    flex: 0 0 calc(50% - 4.5px) !important;
+    max-width: calc(50% - 4.5px) !important;
+  }
+}
+
 /* Ẩn nút reveal/clear mặc định của trình duyệt cho input password */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear,

@@ -4,7 +4,8 @@ GO
 /*
   Register the complete contract read-model schema in the canonical global
   dictionary. This runs during SQL deployment only; the frontend never invents
-  labels or formats at runtime. The grid exposes only the explicit list fields.
+  labels or formats at runtime. Grid visibility belongs to
+  SY_FrmLstTbl.HideColumnArr and is not written here.
 */
 SET XACT_ABORT ON
 GO
@@ -28,11 +29,10 @@ BEGIN TRY
     DECLARE @Columns TABLE (
         FieldName VARCHAR(128) NOT NULL PRIMARY KEY,
         CaptionVN NVARCHAR(255) NOT NULL,
-        FormatID VARCHAR(20) NOT NULL,
-        IsGridField BIT NOT NULL
+        FormatID VARCHAR(20) NOT NULL
     );
 
-    INSERT INTO @Columns (FieldName, CaptionVN, FormatID, IsGridField)
+    INSERT INTO @Columns (FieldName, CaptionVN, FormatID)
     SELECT
         c.name,
         CONVERT(NVARCHAR(255), c.name),
@@ -42,16 +42,19 @@ BEGIN TRY
             WHEN c.system_type_id = 41 THEN 'H'
             WHEN c.system_type_id IN (48, 52, 56, 59, 60, 62, 106, 108, 122, 127) THEN 'N0'
             ELSE 't'
-        END,
-        CASE WHEN c.name IN (
-            'Sohopdong', 'Sobiennhan', 'Makh', 'TenKhachHang', 'DienThoai',
-            'NgayToChuc', 'SoBan', 'SanhDat', 'TongTien', 'TrangThai'
-        ) THEN 1 ELSE 0 END
+        END
     FROM sys.columns c
     WHERE c.object_id = @ObjectId;
 
     UPDATE dictionary
-    SET FormatID = schemaColumn.FormatID,
+    SET FormatID = CASE
+            WHEN EXISTS (
+                SELECT 1
+                FROM dbo.SY_FmatTbl existingFormat
+                WHERE existingFormat.FormatID = dictionary.FormatID
+            ) THEN dictionary.FormatID
+            ELSE schemaColumn.FormatID
+        END,
         CaptionVN = CASE
             WHEN NULLIF(LTRIM(RTRIM(dictionary.CaptionVN)), '') IS NULL THEN schemaColumn.CaptionVN
             ELSE dictionary.CaptionVN
@@ -64,28 +67,6 @@ BEGIN TRY
     FROM @Columns schemaColumn
     WHERE NOT EXISTS (
         SELECT 1 FROM dbo.SY_FmtFldTbl dictionary WHERE dictionary.FieldName = schemaColumn.FieldName
-    );
-
-    UPDATE control
-    SET isInvisible = CASE WHEN schemaColumn.IsGridField = 1 THEN 0 ELSE 1 END
-    FROM dbo.SY_FrmDrdwTbl control
-    INNER JOIN @Columns schemaColumn ON schemaColumn.FieldName = control.ColumnID
-    WHERE control.FormID = 'v_DanhSachHopDong'
-      AND NULLIF(LTRIM(RTRIM(control.GridName)), '') IS NULL;
-
-    INSERT INTO dbo.SY_FrmDrdwTbl (UserAutoID, FormID, ColumnID, isInvisible)
-    SELECT
-        LOWER(REPLACE(CAST(NEWID() AS VARCHAR(50)), '-', '')),
-        'v_DanhSachHopDong',
-        schemaColumn.FieldName,
-        CASE WHEN schemaColumn.IsGridField = 1 THEN 0 ELSE 1 END
-    FROM @Columns schemaColumn
-    WHERE NOT EXISTS (
-        SELECT 1
-        FROM dbo.SY_FrmDrdwTbl control
-        WHERE control.FormID = 'v_DanhSachHopDong'
-          AND NULLIF(LTRIM(RTRIM(control.GridName)), '') IS NULL
-          AND control.ColumnID = schemaColumn.FieldName
     );
 
     IF EXISTS (
