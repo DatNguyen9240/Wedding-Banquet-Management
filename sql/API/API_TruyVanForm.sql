@@ -11,21 +11,20 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @DataSource SYSNAME;
+    DECLARE @TableName SYSNAME;
 
-    SELECT @DataSource = DataSource
-    FROM dbo.SY_FormTbl
-    WHERE FormKey = @FormKey
-      AND IsActive = 1;
+    SELECT @TableName = TableName
+    FROM dbo.SY_FrmLstTbl
+    WHERE FormID = @FormKey;
 
-    IF @DataSource IS NULL
+    IF @TableName IS NULL
     BEGIN
         SELECT -1 AS code, N'Unknown or inactive FormKey: ' + ISNULL(@FormKey, '') AS msg;
         RETURN;
     END;
 
     EXEC dbo.API_TruyVanDong
-        @List = @DataSource,
+        @List = @TableName,
         @Keyword = @Keyword,
         @SortColumn = @SortColumn,
         @SortDir = @SortDir,

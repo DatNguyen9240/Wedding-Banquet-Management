@@ -274,7 +274,9 @@ app.post('/api/documents/generate', async (req, res) => {
     try {
         let { outputFileName, templateType, customerId, rowData, sqlListName } = req.body;
         if (!templateType) return res.status(400).json({ success: false, message: 'Thiếu templateType.' });
-        if (!sqlListName) return res.status(400).json({ success: false, message: 'Thiếu sqlListName để truy vấn.' });
+        if (!sqlListName && (!rowData || typeof rowData !== 'object')) {
+            return res.status(400).json({ success: false, message: 'Thiếu rowData hoặc sqlListName để lấy dữ liệu.' });
+        }
         if (!outputFileName) outputFileName = 'Generated_' + templateType;
         outputFileName = outputFileName.replace(/[\/\\:*?"<>|()+]/g, '_').replace(/\s+/g, '_');
 
@@ -282,7 +284,7 @@ app.post('/api/documents/generate', async (req, res) => {
         let dataMap = { ...setup };
 
         let dbRow = null;
-        if (customerId) {
+        if (customerId && sqlListName) {
             try {
                 // Thử lấy qua Func GetDetails trước để lấy dữ liệu chi tiết và format đầy đủ
                 dbRow = await fetchFromSQLAPI(sqlListName, customerId, req.headers.authorization, 'GetDetails', { Sothaydoi: customerId });
@@ -340,6 +342,8 @@ app.post('/api/documents/generate', async (req, res) => {
 
 
 
+        // templateType is selected by the user from GET /api/documents/templates.
+        // Resolve it only inside samples/; never trust an arbitrary filesystem path.
         const docxTemplatePath = findTemplatePath(SAMPLES_DIR, templateType);
         if (!docxTemplatePath) {
             return res.status(404).json({
@@ -704,7 +708,17 @@ function deepParseJsonStrings(value) {
 }
 
 function findTemplatePath(baseDir, templateName) {
-    const cleanName = templateName.replace(/\.docx?$/i, '');
+    const cleanInput = String(templateName || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    const baseResolved = path.resolve(baseDir);
+    const directPath = path.resolve(baseResolved, cleanInput);
+    if (directPath.startsWith(baseResolved + path.sep)
+        && fs.existsSync(directPath)
+        && fs.statSync(directPath).isFile()
+        && /\.docx$/i.test(directPath)) {
+        return directPath;
+    }
+
+    const cleanName = cleanInput.replace(/\.docx?$/i, '');
     const findRecursive = (dir) => {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         for (const entry of entries) {
@@ -730,6 +744,7 @@ app.get('/', (req, res) => {
         status: '✅ Running smoothly',
         endpoints: {
             list: 'GET /api/documents',
+            templates: 'GET /api/documents/templates',
             generate: 'POST /api/documents/generate',
             delete: 'DELETE /api/documents/:fileName',
             callback: 'POST /api/documents/callback'

@@ -28,16 +28,8 @@ BEGIN
         M.IconClass     AS [icon],
         M.FormName      AS [formName],
         M.FormKey       AS [formKey],
-        F.DataSource    AS [dataSource],
+        F.TableName     AS [tableName],
         F.PrimaryKey    AS [primaryKey],
-        F.IsPaged       AS [isPaged],
-        ISNULL(F.CanAdd, 0) AS [canAdd],
-        ISNULL(F.CanEdit, 0) AS [canEdit],
-        ISNULL(F.CanDelete, 0) AS [canDelete],
-        ISNULL(F.CanPrint, 0) AS [canPrint],
-        F.DocumentTemplate AS [documentTemplate],
-        F.DocumentListName AS [documentListName],
-        F.DocumentIdField AS [documentIdField],
         M.URLPara       AS [urlPara],
         ISNULL(P.IsRun,        0) AS IsRun,
         ISNULL(P.IsAdd,        0) AS IsAdd,
@@ -53,8 +45,8 @@ BEGIN
     FROM WA_Menu M
     INNER JOIN WA_UserGroupPermisstion P        -- Đổi LEFT JOIN → INNER JOIN
         ON M.MenuID = P.MenuID AND P.UserGroupID = @UserGroupID
-    LEFT JOIN dbo.SY_FormTbl F
-        ON F.FormKey = M.FormKey AND F.IsActive = 1
+    LEFT JOIN dbo.SY_FrmLstTbl F
+        ON F.FormID = M.FormKey
     WHERE COALESCE(M.isDisable, 0) = 0
       AND COALESCE(M.URLPara, '') <> ''
 
@@ -68,23 +60,15 @@ BEGIN
         M.IconClass AS [icon],
         M.FormName  AS [formName],
         M.FormKey   AS [formKey],
-        F.DataSource AS [dataSource],
+        F.TableName AS [tableName],
         F.PrimaryKey AS [primaryKey],
-        F.IsPaged AS [isPaged],
-        ISNULL(F.CanAdd, 0) AS [canAdd],
-        ISNULL(F.CanEdit, 0) AS [canEdit],
-        ISNULL(F.CanDelete, 0) AS [canDelete],
-        ISNULL(F.CanPrint, 0) AS [canPrint],
-        F.DocumentTemplate AS [documentTemplate],
-        F.DocumentListName AS [documentListName],
-        F.DocumentIdField AS [documentIdField],
         M.URLPara   AS [urlPara],
         1 AS IsRun, 0 AS IsAdd, 0 AS IsUpdate, 0 AS IsDelete,
         0 AS isManager, 0 AS isAdmin, 0 AS isAutoLock, 0 AS isHideAmount,
         0 AS isLockDoc, 0 AS isUnLockDoc, 0 AS isExportExcel
     FROM WA_Menu M
-    LEFT JOIN dbo.SY_FormTbl F
-        ON F.FormKey = M.FormKey AND F.IsActive = 1
+    LEFT JOIN dbo.SY_FrmLstTbl F
+        ON F.FormID = M.FormKey
     WHERE COALESCE(M.isDisable, 0) = 0
       AND COALESCE(M.URLPara, '') = ''
       AND M.MenuID IN (

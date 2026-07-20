@@ -73,28 +73,20 @@ var Router = (function () {
       };
 
       var formKey = m.FormKey || m.formKey || '';
-      var formName = m.DataSource || m.dataSource || m.FormName || m.formName || '';
+      var formName = m.TableName || m.tableName || m.FormName || m.formName || '';
 
-      // Dynamic routes are configured only by the menu and SY_FormTbl metadata.
+      // Dynamic routes are configured only by the menu and SY_FrmLstTbl metadata.
       route.script = 'src/js/core/DynamicFormEngine.js';
       route.pageFn = 'DynamicFormEngine';
-      var canPrint = _asBool(m.CanPrint || m.canPrint);
-      var documentTemplate = m.DocumentTemplate || m.documentTemplate || '';
-      var documentListName = m.DocumentListName || m.documentListName || '';
-      var documentIdField = m.DocumentIdField || m.documentIdField || '';
-
       route.config = {
         FormID: formKey,
         FormName: formName,
         PrimaryKey: m.PrimaryKey || m.primaryKey || '',
-        IsPaged: !!(m.IsPaged || m.isPaged),
-        HideAddBtn: !(m.CanAdd || m.canAdd),
-        HideEditBtn: !(m.CanEdit || m.canEdit),
-        HideDeleteBtn: !(m.CanDelete || m.canDelete),
-        HidePrintBtn: !(canPrint && documentTemplate && documentListName && documentIdField),
-        DocumentTemplate: documentTemplate,
-        DocumentListName: documentListName,
-        DocumentIdField: documentIdField,
+        IsPaged: false,
+        HideAddBtn: !_asBool(m.IsAdd || m.isAdd),
+        HideEditBtn: !_asBool(m.IsUpdate || m.isUpdate),
+        HideDeleteBtn: !_asBool(m.IsDelete || m.isDelete),
+        HidePrintBtn: false,
         UserCanAdd: _asBool(m.IsAdd || m.isAdd),
         UserCanEdit: _asBool(m.IsUpdate || m.isUpdate),
         UserCanDelete: _asBool(m.IsDelete || m.isDelete),

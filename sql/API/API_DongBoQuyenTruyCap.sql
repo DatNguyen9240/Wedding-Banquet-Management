@@ -55,6 +55,17 @@ BEGIN
               AND P.MenuID = M.MenuID
         );
 
+        -- A view is a read source only for the generic form engine. Never
+        -- grant CRUD on it just because the group is Admin.
+        UPDATE P
+        SET P.IsAdd = 0,
+            P.IsUpdate = 0,
+            P.IsDelete = 0
+        FROM WA_UserGroupPermisstion P
+        INNER JOIN WA_Menu M ON M.MenuID = P.MenuID
+        INNER JOIN dbo.SY_FrmLstTbl F ON F.FormID = M.FormKey
+        WHERE OBJECTPROPERTY(OBJECT_ID(F.TableName), 'IsView') = 1;
+
         -- Ghi version đồng bộ vào SY_Setup để các client tự biết cache cũ
         IF EXISTS (SELECT 1 FROM SY_Setup WHERE CodeID = 'menu_sync_ver')
             UPDATE SY_Setup

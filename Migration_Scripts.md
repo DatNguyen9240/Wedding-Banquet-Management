@@ -30,8 +30,9 @@ records of the requested table; it never assigns a generic text format merely
 to make the validation pass.
 
 For every dynamic CRUD menu, `WA_Menu.FormKey` identifies a row in
-`SY_FormTbl`. That row defines the read source, write object, primary key,
-optional save/delete procedures and CRUD capabilities. Register every column
+`SY_FrmLstTbl` by `FormID`. `TableName` defines the read/write source and
+`PrimaryKey` defines the row identity; CRUD authorization comes only from
+`WA_UserGroupPermisstion`. Register every column
 exposed by the read source in `SY_FmtFldTbl` with `CaptionVN` and an existing
 `FormatID`; add a `SY_FrmDrdwTbl` row only when that form/grid-column needs
 lookup or behaviour configuration. `SY_FrmDrdwTbl.FormID` is the UI form key,
