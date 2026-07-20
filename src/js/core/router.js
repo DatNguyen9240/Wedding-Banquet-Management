@@ -73,7 +73,11 @@ var Router = (function () {
       };
 
       var formKey = m.FormKey || m.formKey || '';
-      var formName = m.TableName || m.tableName || m.FormName || m.formName || '';
+      var formName = m.TableName || m.tableName || '';
+      if (!formKey || !formName) {
+        console.warn('[Router] Bỏ qua menu động chưa cấu hình SY_FrmLstTbl:', m.MenuID || m.id || rawUrl);
+        return;
+      }
 
       // Dynamic routes are configured only by the menu and SY_FrmLstTbl metadata.
       route.script = 'src/js/core/DynamicFormEngine.js';

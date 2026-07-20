@@ -25,7 +25,7 @@ BEGIN
         INNER JOIN dbo.WA_UserGroupPermisstion P ON P.UserGroupID = U.UserGroupID
         INNER JOIN dbo.WA_Menu M ON M.MenuID = P.MenuID
         WHERE U.UserName = @UserName
-          AND M.FormKey = @FormKey
+          AND COALESCE(NULLIF(M.FormKey, ''), M.FormName) = @FormKey
           AND P.IsRun = 1
           AND ((@IsEdit = 1 AND P.IsUpdate = 1) OR (@IsEdit = 0 AND P.IsAdd = 1))
     )

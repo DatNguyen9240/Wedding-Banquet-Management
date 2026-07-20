@@ -29,14 +29,17 @@ BEGIN
         M.IconClass AS [icon],
         M.FormName AS [formName],
         M.URLPara AS [URLPara],
-        M.FormKey AS [formKey],
-        F.TableName AS [tableName],
+        COALESCE(NULLIF(M.FormKey, ''), F.FormID) AS [formKey],
+        CASE WHEN OBJECTPROPERTY(OBJECT_ID(F.TableName), 'IsUserTable') = 1
+               OR OBJECTPROPERTY(OBJECT_ID(F.TableName), 'IsView') = 1
+             THEN F.TableName END AS [tableName],
         F.PrimaryKey AS [primaryKey],
         P.IsRun, P.IsAdd, P.IsUpdate, P.IsDelete,
         P.isManager, P.isAdmin, P.isAutoLock, P.isHideAmount, P.isLockDoc, P.isUnLockDoc, P.isExportExcel
     FROM WA_Menu M
     INNER JOIN dbo.WA_UserGroupPermisstion P ON M.MenuID = P.MenuID
-    LEFT JOIN dbo.SY_FrmLstTbl F ON F.FormID = M.FormKey
+    LEFT JOIN dbo.SY_FrmLstTbl F
+        ON F.FormID = COALESCE(NULLIF(M.FormKey, ''), M.FormName)
     WHERE COALESCE(M.isDisable, 0) = 0 
       AND P.IsRun = 1 
       AND P.UserGroupID = @UserGroupID
@@ -52,13 +55,16 @@ BEGIN
         M.IconClass AS [icon],
         M.FormName AS [formName],
         M.URLPara AS [URLPara],
-        M.FormKey AS [formKey],
-        F.TableName AS [tableName],
+        COALESCE(NULLIF(M.FormKey, ''), F.FormID) AS [formKey],
+        CASE WHEN OBJECTPROPERTY(OBJECT_ID(F.TableName), 'IsUserTable') = 1
+               OR OBJECTPROPERTY(OBJECT_ID(F.TableName), 'IsView') = 1
+             THEN F.TableName END AS [tableName],
         F.PrimaryKey AS [primaryKey],
         1 AS IsRun, 0 AS IsAdd, 0 AS IsUpdate, 0 AS IsDelete,
         0 AS isManager, 0 AS isAdmin, 0 AS isAutoLock, 0 AS isHideAmount, 0 AS isLockDoc, 0 AS isUnLockDoc, 0 AS isExportExcel
     FROM WA_Menu M
-    LEFT JOIN dbo.SY_FrmLstTbl F ON F.FormID = M.FormKey
+    LEFT JOIN dbo.SY_FrmLstTbl F
+        ON F.FormID = COALESCE(NULLIF(M.FormKey, ''), M.FormName)
     WHERE COALESCE(M.isDisable, 0) = 0 
       AND M.MenuID IN (
           SELECT Parent 
