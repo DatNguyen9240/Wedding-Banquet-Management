@@ -1,9 +1,9 @@
 /**
- * Router â€” Hash-based SPA routing cho Quáº£n lÃ½ Tiá»‡c CÆ°á»›i
- * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
- * Kiáº¿n trÃºc: Máº£ng ROUTES cáº¥u hÃ¬nh â†’ Dynamic script loading â†’ pageFn.render()
- * Template do Page Module tá»± fetch (Router cung cáº¥p cache layer)
- * Tham kháº£o: Medstand Router v9
+ * Router — Hash-based SPA routing cho Quản lý Tiệc Cưới
+ * ——————————————————————————————————————————————————
+ * Kiến trúc: Mảng ROUTES cấu hình → Dynamic script loading → pageFn.render()
+ * Template do Page Module tự fetch (Router cung cấp cache layer)
+ * Tham khảo: Medstand Router v9
  */
 var Router = (function () {
 
@@ -11,12 +11,12 @@ var Router = (function () {
     return value === 1 || value === '1' || value === true || value === 'true';
   }
 
-  // â”€â”€ Route definitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // — Route definitions ————————————————————————————————————————————————————————————
   var ROUTES = [
-    { path: '/dashboard', template: 'src/pages/dashboard/dashboard.html', script: 'src/pages/dashboard/dashboard.js', perm: 'tongquan', title: 'Tá»•ng quan', pageFn: 'DashboardPage', hideHeader: true },
-    { path: '/components-demo', template: 'src/pages/components-demo/components-demo.html', script: 'src/pages/components-demo/components-demo.js', perm: 'uidemo', title: 'Báº£n test Component', pageFn: 'ComponentsDemoPage' },
-    { path: '/appearance', template: 'src/pages/appearance/appearance.html', script: 'src/pages/appearance/appearance.js', perm: '', title: 'Cáº¥u hÃ¬nh Giao diá»‡n', pageFn: 'AppearancePage' },
-    { path: '/document-manager', template: 'src/pages/document-manager/document-manager.html', script: 'src/pages/document-manager/document-manager.js', perm: '', title: 'Workspace TÃ i Liá»‡u', pageFn: 'DocumentManagerPage', hideHeader: true },
+    { path: '/dashboard', template: 'src/pages/dashboard/dashboard.html', script: 'src/pages/dashboard/dashboard.js', perm: 'tongquan', title: 'Tổng quan', pageFn: 'DashboardPage', hideHeader: true },
+    { path: '/components-demo', template: 'src/pages/components-demo/components-demo.html', script: 'src/pages/components-demo/components-demo.js', perm: 'uidemo', title: 'Bản test Component', pageFn: 'ComponentsDemoPage' },
+    { path: '/appearance', template: 'src/pages/appearance/appearance.html', script: 'src/pages/appearance/appearance.js', perm: '', title: 'Cấu hình Giao diện', pageFn: 'AppearancePage' },
+    { path: '/document-manager', template: 'src/pages/document-manager/document-manager.html', script: 'src/pages/document-manager/document-manager.js', perm: '', title: 'Workspace Tài Liệu', pageFn: 'DocumentManagerPage', hideHeader: true },
 
     { path: '/categories', template: 'src/pages/categories/categories.html', script: 'src/pages/categories/categories.js', perm: '', title: '', pageFn: 'CategoriesPage' },
     { path: '/inventory', template: 'src/pages/inventory/inventory.html', script: 'src/pages/inventory/inventory.js', perm: '', title: 'Kho & Äá»‹nh lÆ°á»£ng', pageFn: 'InventoryPage' },
@@ -40,7 +40,7 @@ var Router = (function () {
     var needsReload = false;
 
     menus.forEach(function (m) {
-      // url cÃ³ thá»ƒ náº±m á»Ÿ URLPara hoáº·c urlPara
+      // url có thể nằm ở URLPara hoặc urlPara
       var rawUrl = m.URLPara || m.urlPara || '';
       if (!rawUrl || rawUrl.trim() === '') return;
 
@@ -53,7 +53,7 @@ var Router = (function () {
       var existingRoute = ROUTES.find(function (r) { return r.path === path; });
 
       if (existingRoute) {
-        // Cáº­p nháº­t thÃ´ng tin tá»« database náº¿u route custom Ä‘Ã£ Ä‘Æ°á»£c Ä‘á»‹nh nghÄ©a cá»©ng
+        // Cập nhật thông tin từ database nếu route custom đã được định nghĩa cứng
         existingRoute.perm = m.FormName || m.formName || existingRoute.perm;
         existingRoute.title = m.MenuName || m.VN || m.label || existingRoute.title || '';
         existingRoute.subTitle = m.SubTitle || m.subTitle || existingRoute.subTitle || '';
@@ -116,14 +116,14 @@ var Router = (function () {
     }
   }
 
-  // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ State ——————————————————————————————————————————————————â”€â”€â”€â”€â”€â”€â”€â”€â”€
   var _currentRoute = null;
   var _loadedScripts = {};
   var _templateCache = {};
-  var _appVersion = '2.13'; // Bump Ä‘á»ƒ lÃ m má»›i cache html/script Ä‘á»™ng
-  var _navId = 0; // Token cháº·n race-condition
+  var _appVersion = '2.13'; // Bump để làm mới cache html/script động
+  var _navId = 0; // Token chặn race-condition
 
-  // â”€â”€ Template cache (dÃ¹ng chung cho cáº£ Router láº«n Page modules) â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Template cache (dùng chung cho cả Router lẫn Page modules) ─────────
   function fetchTemplate(url) {
     if (_templateCache[url]) return Promise.resolve(_templateCache[url]);
     return fetch(url + '?v=' + _appVersion)
@@ -146,12 +146,12 @@ var Router = (function () {
     });
   }
 
-  // â”€â”€ Dynamic Script Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Dynamic Script Loading ─────────────────────────────────────────
   function _loadScript(src) {
     return new Promise(function (resolve, reject) {
       if (_loadedScripts[src]) { resolve(); return; }
       var el = document.createElement('script');
-      // ThÃªm cache-buster Ä‘á»ƒ Ä‘áº£m báº£o luÃ´n táº£i file JS má»›i nháº¥t
+      // Thêm cache-buster để đảm bảo luôn tải file JS mới nhất
       el.src = src + '?v=' + Date.now();
       el.onload = function () { _loadedScripts[src] = true; resolve(); };
       el.onerror = function () { reject(new Error('Script load failed: ' + src)); };
@@ -159,7 +159,7 @@ var Router = (function () {
     });
   }
 
-  // â”€â”€ Route matching (dÃ¹ng Map ná»™i bá»™ cho O(1) lookup) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Route matching (dùng Map nội bộ cho O(1) lookup) ─────────────────
   var _routeMap = {};
   ROUTES.forEach(function (r) { _routeMap[r.path] = r; });
 
@@ -167,7 +167,7 @@ var Router = (function () {
     return _routeMap[path] || null;
   }
 
-  // â”€â”€ Page Transition â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Page Transition ────────────────────────────────────────────────
   function _fadeOut($el) {
     return new Promise(function (resolve) {
       $el.style.opacity = '0';
@@ -181,13 +181,13 @@ var Router = (function () {
     $el.style.transition = 'opacity 180ms ease';
   }
 
-  // â”€â”€ Trang lá»—i â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Trang lá»—i ——————————————————————————————————————————————————â”€â”€â”€â”€â”€
   function _render404($el, path) {
     $el.innerHTML =
       '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center;padding:48px 24px;">' +
       '<span class="material-symbols-outlined" style="font-size:72px;color:var(--color-border-strong);margin-bottom:16px;">search_off</span>' +
       '<h2 style="font-size:2rem;font-weight:700;margin:0 0 8px;">404</h2>' +
-      '<p style="color:var(--color-text-secondary);margin:0 0 24px;">Trang <code style="background: rgba(148, 163, 184, 0.1);padding:2px 8px;border-radius:4px;">' + path + '</code> khÃ´ng tá»“n táº¡i</p>' +
+      '<p style="color:var(--color-text-secondary);margin:0 0 24px;">Trang <code style="background: rgba(148, 163, 184, 0.1);padding:2px 8px;border-radius:4px;">' + path + '</code> không tồn tại</p>' +
       '<a href="javascript:void(0)" onclick="window.location.href = window.location.pathname + \'#/dashboard\'" class="btn btn-primary" style="text-decoration:none;">Vá» trang chá»§</a>' +
       '</div>';
   }
@@ -205,7 +205,7 @@ var Router = (function () {
       '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40vh;text-align:center;padding:48px;">' +
       '<span class="material-symbols-outlined" style="font-size:64px;color:var(--color-border-strong);opacity:0.4;margin-bottom:16px;">construction</span>' +
       '<h3 style="margin:0 0 8px;font-weight:600;">' + title + '</h3>' +
-      '<p style="color:var(--color-text-secondary);margin:0;">Trang nÃ y Ä‘ang Ä‘Æ°á»£c phÃ¡t triá»ƒn...</p>' +
+      '<p style="color:var(--color-text-secondary);margin:0;">Trang này đang được phát triển...</p>' +
       '</div>';
   }
 
@@ -216,21 +216,21 @@ var Router = (function () {
       '</div></div>';
   }
 
-  // â”€â”€ Cáº­p nháº­t navigation UI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Cập nhật navigation UI ─────────────────────────────────────────
   function _updateNavActive(hash) {
     // Sidebar nav
     document.querySelectorAll('.sidebar-nav .nav-item').forEach(function (el) {
       el.classList.remove('active');
       if (el.getAttribute('href') === '#' + hash) el.classList.add('active');
     });
-    // Navbar (náº¿u Ä‘ang dÃ¹ng layout ngang)
+    // Navbar (nếu đang dùng layout ngang)
     document.querySelectorAll('.main-nav .nav-link, .sub-menu-item').forEach(function (el) {
       el.classList.remove('active');
       if (el.getAttribute('href') === '#' + hash) el.classList.add('active');
     });
   }
 
-  // â”€â”€ Main Route Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Main Route Handler ─────────────────────────────────────────────
   function _handleRoute() {
     _navId++;
     var currentNav = _navId;
@@ -261,13 +261,13 @@ var Router = (function () {
       // Scroll to top
       window.scrollTo({ top: 0, behavior: 'instant' });
 
-      // Cáº­p nháº­t nav UI
+      // Cập nhật nav UI
       _updateNavActive(pathOnly);
 
       // 404
       if (!route) {
-        if ($pageTitle) $pageTitle.innerText = '404 â€” KhÃ´ng tÃ¬m tháº¥y';
-        document.title = '404 | Quáº£n lÃ½ Tiá»‡c CÆ°á»›i';
+        if ($pageTitle) $pageTitle.innerText = '404 — Không tìm thấy';
+        document.title = '404 | Quản lý Tiệc Cưới';
         _render404($content, rawHash);
         if (typeof LoadingBar !== 'undefined') {
           LoadingBar.fail();
@@ -278,7 +278,7 @@ var Router = (function () {
       // Kiá»ƒm tra quyá»n
       var targetPerm = route.perm || route.module;
       if (targetPerm && !Permission.canView(targetPerm)) {
-        if ($pageTitle) $pageTitle.innerText = 'Tá»« chá»‘i truy cáº­p';
+        if ($pageTitle) $pageTitle.innerText = 'Từ chối truy cập';
         _renderAccessDenied($content);
         if (typeof LoadingBar !== 'undefined') {
           LoadingBar.fail();
@@ -288,11 +288,11 @@ var Router = (function () {
 
       // Cáº­p nháº­t title
       if ($pageTitle) $pageTitle.innerText = route.title;
-      document.title = route.title + ' | Quáº£n lÃ½ Tiá»‡c CÆ°á»›i';
+      document.title = route.title + ' | Quản lý Tiệc Cưới';
       document.body.setAttribute('data-page', pathOnly.replace('/', ''));
 
       // â”€â”€ TrÆ°á»ng há»£p 1: CÃ³ script â†’ load script â†’ pageFn.render() â”€â”€
-      // (Page module tá»± fetch template bÃªn trong render náº¿u cáº§n)
+      // (Page module tự fetch template bên trong render nếu cần)
       if (route.pageFn) {
         _fadeOut($content)
           .then(function () {
@@ -306,10 +306,10 @@ var Router = (function () {
             if (currentNav !== _navId) throw new Error('ABORTED');
             var mod = window[route.pageFn];
             if (mod && typeof mod.render === 'function') {
-              // XÃ³a sáº¡ch ná»™i dung cÅ©
+              // Xóa sạch nội dung cũ
               $content.innerHTML = '';
 
-              // 1. Dá»±ng Global Header (Láº¥y Title/Subtitle tá»« Router/Menu)
+              // 1. Dựng Global Header (Lấy Title/Subtitle từ Router/Menu)
               if (!route.hideHeader) {
                 var headerHtml =
                   '<div class="page-title-bar" id="global-header">' +
@@ -318,7 +318,7 @@ var Router = (function () {
                   '<span class="material-symbols-outlined">arrow_back</span>' +
                   '</button>' +
                   '<div style="min-width: 0;">' +
-                  '<h1 class="page-title-heading" style="margin: 0;">' + (route.title || 'Quáº£n lÃ½ Dá»¯ liá»‡u') + '</h1>' +
+                  '<h1 class="page-title-heading" style="margin: 0;">' + (route.title || 'Quản lý Dữ liệu') + '</h1>' +
                   (route.subTitle ? '<span class="page-title-sub" style="margin-top: 2px;">' + route.subTitle + '</span>' : '') +
                   '</div>' +
                   '</div>' +
@@ -327,18 +327,18 @@ var Router = (function () {
                 $content.insertAdjacentHTML('beforeend', headerHtml);
               }
 
-              // 2. Dá»±ng wrapper
+              // 2. Dựng wrapper
               var wrapper = document.createElement('div');
               wrapper.className = 'page-wrapper';
               $content.appendChild(wrapper);
 
-              // 3. Render trang vÃ o wrapper
+              // 3. Render trang vào wrapper
               mod.render(wrapper, route.config || null);
               if (typeof LoadingBar !== 'undefined') {
                 LoadingBar.done();
               }
             } else {
-              _renderError($content, 'KhÃ´ng tÃ¬m tháº¥y module: ' + route.pageFn);
+              _renderError($content, 'Không tìm thấy module: ' + route.pageFn);
               if (typeof LoadingBar !== 'undefined') {
                 LoadingBar.fail();
               }
@@ -349,7 +349,7 @@ var Router = (function () {
           .catch(function (err) {
             if (err.message === 'ABORTED') return; // Bá» qua náº¿u lÃ  thao tÃ¡c há»§y do click liÃªn tá»¥c
             console.error('[Router]', err);
-            _renderError($content, 'Lá»—i táº£i module: ' + err.message);
+            _renderError($content, 'Lỗi tải module: ' + err.message);
             _fadeIn($content);
             if (typeof LoadingBar !== 'undefined') {
               LoadingBar.fail();
@@ -377,7 +377,7 @@ var Router = (function () {
           .catch(function (err) {
             if (err.message === 'ABORTED') return;
             console.error('[Router]', err);
-            _renderError($content, 'Lá»—i táº£i template: ' + err.message);
+            _renderError($content, 'Lỗi tải template: ' + err.message);
             _fadeIn($content);
             if (typeof LoadingBar !== 'undefined') {
               LoadingBar.fail();
@@ -426,7 +426,7 @@ var Router = (function () {
           localStorage.setItem('pmql_permissions', JSON.stringify(permMap));
           localStorage.setItem('pmql_permission_ver', svVersion);
         }).catch(function (e) {
-          console.error('[Router] Lá»—i táº£i quyá» n má»›i:', e);
+          console.error('[Router] Lỗi tải quyền mới:', e);
         });
       }
     }).catch(function (e) {
@@ -435,7 +435,7 @@ var Router = (function () {
     });
   }
 
-  // â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Init ——————————————————————————————————————————————————â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function init() {
     window.addEventListener('hashchange', _handleRoute);
 
@@ -457,11 +457,11 @@ var Router = (function () {
     setTimeout(_preloadTemplates, 500);
   }
 
-  // â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Public API ——————————————————————————————————————————————————â”€â”€â”€â”€
   return {
     init: init,
     ROUTES: ROUTES,
     addDynamicRoutes: addDynamicRoutes,
-    fetchTemplate: fetchTemplate   // Cho page modules dÃ¹ng chung cache layer
+    fetchTemplate: fetchTemplate   // Cho page modules dùng chung cache layer
   };
 })();
