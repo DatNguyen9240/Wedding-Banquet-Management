@@ -1,4 +1,4 @@
-﻿CREATE PROCEDURE API_LayQuyenCuaToi
+CREATE OR ALTER PROCEDURE API_LayQuyenCuaToi
     @Username varchar(50)
 AS
 BEGIN
@@ -28,7 +28,8 @@ BEGIN
         ISNULL(P.IsRun, 0) AS CanView,
         ISNULL(P.IsAdd, 0) AS CanAdd,
         ISNULL(P.IsUpdate, 0) AS CanEdit,
-        ISNULL(P.IsDelete, 0) AS CanDelete
+        ISNULL(P.IsDelete, 0) AS CanDelete,
+        ISNULL(P.isExportDocx, 0) AS CanPrint
     FROM WA_UserGroupPermisstion P
     INNER JOIN WA_Menu M ON P.MenuID = M.MenuID
     WHERE P.UserGroupID = @UserGroupID

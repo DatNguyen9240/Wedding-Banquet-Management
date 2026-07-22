@@ -257,6 +257,7 @@ window.DynamicFormEngine = (function () {
     if (action === 'ADD') return !!modulePerm.CanAdd;
     if (action === 'EDIT') return !!modulePerm.CanEdit;
     if (action === 'DELETE') return !!modulePerm.CanDelete;
+    if (action === 'PRINT') return !!modulePerm.CanPrint;
     return true;
   }
 
@@ -357,9 +358,12 @@ window.DynamicFormEngine = (function () {
           var firstRow = dataList[0];
 
           // Map API fields → MODULE_CONFIG (chỉ ghi nếu API trả về giá trị)
-          var _rowMap = { primaryKey: 'PrimaryKey' }; // Ngừng lấy formTitle và formSubtitle để ưu tiên router
+          var _rowMap = {
+            primaryKey: 'PrimaryKey',
+            hidePrintBtn: 'HidePrintBtn'
+          };
           Object.keys(_rowMap).forEach(function (src) {
-            if (firstRow[src]) MODULE_CONFIG[_rowMap[src]] = firstRow[src];
+            if (firstRow[src] !== undefined && firstRow[src] !== null) MODULE_CONFIG[_rowMap[src]] = firstRow[src];
           });
 
           // Sinh nhãn mặc định — caller có thể override từ config
@@ -682,9 +686,21 @@ window.DynamicFormEngine = (function () {
               }
             }
           },
-          onPrint: MODULE_CONFIG.HidePrintBtn ? false : function () {
-            DocumentExportPlugin.generate(selectedRows, MODULE_CONFIG);
-          },
+          onPrint: (function() {
+            var hideVal = MODULE_CONFIG.HidePrintBtn;
+            var hide = (hideVal == 1 || hideVal === true || String(hideVal).toLowerCase() === 'true');
+            var hasPerm = _hasPermission('PRINT');
+            console.log('[DEBUG PRINT BUTTON]', {
+              FormName: MODULE_CONFIG.FormName,
+              RawHideVal: hideVal,
+              ParsedHide: hide,
+              HasPrintPermission: hasPerm,
+              FinalShow: !(hide || !hasPerm)
+            });
+            return (hide || !hasPerm) ? false : function () {
+              DocumentExportPlugin.generate(selectedRows, MODULE_CONFIG);
+            };
+          })(),
           onClose: false,
           extras: extraBtns
         });

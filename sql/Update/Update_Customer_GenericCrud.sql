@@ -34,6 +34,43 @@ BEGIN TRY
     SET FormName = 'dmkhachhang'
     WHERE MenuID = '0510';
 
+    -- Update or insert CCCD label in global dictionary
+    IF EXISTS (SELECT 1 FROM dbo.SY_FmtFldTbl WHERE FieldName = 'CMNDDaiDien')
+    BEGIN
+        UPDATE dbo.SY_FmtFldTbl
+        SET CaptionVN = N'Số CCCD'
+        WHERE FieldName = 'CMNDDaiDien';
+    END
+    ELSE
+    BEGIN
+        INSERT INTO dbo.SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID)
+        VALUES ('dmkhachhang', 'CMNDDaiDien', N'Số CCCD', 't');
+    END
+
+    -- Configure allowed fields for dmkhachhang in SY_FrmLstTbl to hide:
+    -- - Makh (id/mã khách hàng)
+    -- - Fax (fax)
+    -- - IsTinhcongno (tính công nợ)
+    -- - KhuvucID (khu vực)
+    -- - Masothue (mã số thuế)
+    -- - NhomkhID, Ngaysinhcodau, Ngaysinhchure (bỏ 3 cột này khỏi grid)
+    -- - Và thêm CMNDDaiDien (Số CCCD) vào grid và forms
+    UPDATE dbo.SY_FrmLstTbl
+    SET PrimaryKey = 'Makh',
+        HideColumnArr = 'IsDeleted;DeletedAt;DeletedBy;Makh;Masothue;Fax;KhuvucID;IsTinhcongno;IsNCC;IsNhanvien;DateCreate;DateUpdate;UserCreate;UserUpdate;TheVIP;Ghichu;IsMacdinh;CMNDchure;CMNDcodau;CMNDnguoidd;Noilamviec;IsDiachiChuRe;IsMailChuRe;ChucVu;TenCty;DiaChiCty;NguoiLienHeHoaDon;DienThoaiHoaDon;NgayCap;NoiCap;NgayDeLaiThongTin;NguoiPhuTrachID;TinhTrangKhachHang;LoaiTiecID;MakhChamSoc;IsGioiTinhNguoidd;MakhKT;isOngBaDaiDien;DienThoaiDaiDien;SoTaiKhoan;TaiNganHang;BranchID;IsKhachhang;NhomkhID;Ngaysinhcodau;Ngaysinhchure',
+        AddNewColumnArr = 'Tenkh;Tencodau;Tenchure;Diachi;Nguoigd;Dienthoai;Mail;NhomkhID;CMNDDaiDien;IsKhachhang',
+        EditorColumnArr = 'Tenkh;Tencodau;Tenchure;Diachi;Nguoigd;Dienthoai;Mail;NhomkhID;CMNDDaiDien;IsKhachhang'
+    WHERE TableName = 'dmkhachhang' OR FormID = 'dmkhachhang';
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        INSERT INTO dbo.SY_FrmLstTbl (FormID, FormType, CaptionVN, TableName, PrimaryKey, HideColumnArr, AddNewColumnArr, EditorColumnArr)
+        VALUES ('dmkhachhang', 'Grid', N'Danh mục Khách hàng', 'dmkhachhang', 'Makh',
+                'IsDeleted;DeletedAt;DeletedBy;Makh;Masothue;Fax;KhuvucID;IsTinhcongno;IsNCC;IsNhanvien;DateCreate;DateUpdate;UserCreate;UserUpdate;TheVIP;Ghichu;IsMacdinh;CMNDchure;CMNDcodau;CMNDnguoidd;Noilamviec;IsDiachiChuRe;IsMailChuRe;ChucVu;TenCty;DiaChiCty;NguoiLienHeHoaDon;DienThoaiHoaDon;NgayCap;NoiCap;NgayDeLaiThongTin;NguoiPhuTrachID;TinhTrangKhachHang;LoaiTiecID;MakhChamSoc;IsGioiTinhNguoidd;MakhKT;isOngBaDaiDien;DienThoaiDaiDien;SoTaiKhoan;TaiNganHang;BranchID;IsKhachhang;NhomkhID;Ngaysinhcodau;Ngaysinhchure',
+                'Tenkh;Tencodau;Tenchure;Diachi;Nguoigd;Dienthoai;Mail;NhomkhID;CMNDDaiDien;IsKhachhang',
+                'Tenkh;Tencodau;Tenchure;Diachi;Nguoigd;Dienthoai;Mail;NhomkhID;CMNDDaiDien;IsKhachhang');
+    END
+
     COMMIT TRANSACTION;
 END TRY
 BEGIN CATCH

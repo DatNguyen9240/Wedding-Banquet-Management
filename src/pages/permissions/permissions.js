@@ -21,6 +21,9 @@ var PermissionsPage = (function () {
           // CSS nhỏ cho tree table và role tabs
           var style = document.createElement('style');
           style.innerHTML = `
+            #app-content:has(#permission-tree-table) {
+              overflow-y: auto !important;
+            }
             .tree-row { transition: background 0.2s; }
             .tree-row:hover { background: rgba(148, 163, 184, 0.05); }
             .tree-cell { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
@@ -279,7 +282,8 @@ var PermissionsPage = (function () {
         isHideAmount: item.isHideAmount == 1,
         isLockDoc:    item.isLockDoc    == 1,
         isUnLockDoc:  item.isUnLockDoc  == 1,
-        isExportExcel:item.isExportExcel== 1
+        isExportExcel:item.isExportExcel== 1,
+        isExportDocx: item.isExportDocx == 1
       };
 
       _appendRow(tbody, {
@@ -393,9 +397,10 @@ var PermissionsPage = (function () {
       tr.appendChild(_createCheckboxTd(data.perms.isLockDoc, 'isLockDoc'));
       tr.appendChild(_createCheckboxTd(data.perms.isUnLockDoc, 'isUnLockDoc'));
       tr.appendChild(_createCheckboxTd(data.perms.isExportExcel, 'isExportExcel'));
+      tr.appendChild(_createCheckboxTd(data.perms.isExportDocx, 'isExportDocx'));
     } else {
       // Empty cells for folder rows
-      for (var i = 0; i < 11; i++) {
+      for (var i = 0; i < 12; i++) {
         var td = document.createElement('td');
         tr.appendChild(td);
       }
@@ -439,6 +444,7 @@ var PermissionsPage = (function () {
     var isLockDoc = tr.querySelector('.perm-chk[data-action="isLockDoc"]')?.checked || false;
     var isUnLockDoc = tr.querySelector('.perm-chk[data-action="isUnLockDoc"]')?.checked || false;
     var isExportExcel = tr.querySelector('.perm-chk[data-action="isExportExcel"]')?.checked || false;
+    var isExportDocx = tr.querySelector('.perm-chk[data-action="isExportDocx"]')?.checked || false;
 
     var payload = {
       NhomNguoiDangThaoTac: (function() {
@@ -457,7 +463,8 @@ var PermissionsPage = (function () {
       isHideAmount: isHideAmount ? 1 : 0,
       isLockDoc: isLockDoc ? 1 : 0,
       isUnLockDoc: isUnLockDoc ? 1 : 0,
-      isExportExcel: isExportExcel ? 1 : 0
+      isExportExcel: isExportExcel ? 1 : 0,
+      isExportDocx: isExportDocx ? 1 : 0
     };
 
 
@@ -516,7 +523,7 @@ var PermissionsPage = (function () {
     if (!ctxMenu) return;
 
     var PRESETS = [
-      { label: 'Cấm truy cập',                       icon: 'block',           cls: 'danger', p: { xem:0, them:0, sua:0, xoa:0, isManager:0, isAdmin:0, isAutoLock:0, isHideAmount:0, isLockDoc:0, isUnLockDoc:0, isExportExcel:0 } },
+      { label: 'Cấm truy cập',                       icon: 'block',           cls: 'danger', p: { xem:0, them:0, sua:0, xoa:0, isManager:0, isAdmin:0, isAutoLock:0, isHideAmount:0, isLockDoc:0, isUnLockDoc:0, isExportExcel:0, isExportDocx:0 } },
       { divider: true },
       { label: 'Cho quyền xem',                       icon: 'visibility',      p: { xem:1, them:0, sua:0, xoa:0, isManager:0, isAdmin:0 } },
       { label: 'Cho quyền thêm',                      icon: 'add_circle',      p: { xem:1, them:1, sua:0, xoa:0, isManager:0, isAdmin:0 } },
@@ -524,13 +531,14 @@ var PermissionsPage = (function () {
       { label: 'Cho quyền xóa',                       icon: 'delete',          p: { xem:1, them:0, sua:0, xoa:1, isManager:0, isAdmin:0 } },
       { label: 'Cho quyền xem + thêm + sửa + xóa',   icon: 'done_all',        p: { xem:1, them:1, sua:1, xoa:1, isManager:0, isAdmin:0 } },
       { divider: true },
-      { label: 'Cho quyền Manager',                   icon: 'manage_accounts', p: { xem:1, them:1, sua:1, xoa:1, isManager:1, isAdmin:0, isExportExcel:1 } },
-      { label: 'Cho quyền Admin (tất cả)',             icon: 'shield',          p: { xem:1, them:1, sua:1, xoa:1, isManager:1, isAdmin:1, isAutoLock:1, isHideAmount:1, isLockDoc:1, isUnLockDoc:1, isExportExcel:1 } },
+      { label: 'Cho quyền Manager',                   icon: 'manage_accounts', p: { xem:1, them:1, sua:1, xoa:1, isManager:1, isAdmin:0, isExportExcel:1, isExportDocx:1 } },
+      { label: 'Cho quyền Admin (tất cả)',             icon: 'shield',          p: { xem:1, them:1, sua:1, xoa:1, isManager:1, isAdmin:1, isAutoLock:1, isHideAmount:1, isLockDoc:1, isUnLockDoc:1, isExportExcel:1, isExportDocx:1 } },
       { divider: true },
       { label: 'Tắt/Mở tự động khóa sau In phiếu',   icon: 'lock_clock',      toggle: 'isAutoLock' },
       { label: 'Cho/Cấm xem cột số tiền',             icon: 'attach_money',    toggle: 'isHideAmount' },
       { label: 'Quyền khóa / Mở khóa chứng từ',      icon: 'lock',            toggle: 'isLockDoc', alsoToggle: 'isUnLockDoc' },
       { label: 'Quyền xuất Excel',                    icon: 'file_download',   toggle: 'isExportExcel' },
+      { label: 'Quyền xuất DOCX',                     icon: 'description',     toggle: 'isExportDocx' },
     ];
 
     // Build menu HTML

@@ -35,6 +35,7 @@ BEGIN
     DECLARE @AddNewColumnArr VARCHAR(MAX) = '';
     DECLARE @EditorColumnArr VARCHAR(MAX) = '';
     DECLARE @RequiredObjectId INT = @ObjectId;
+    DECLARE @HidePrintBtn BIT = 0;
 
     IF @ObjectId IS NULL
     BEGIN
@@ -63,7 +64,8 @@ BEGIN
         @HideColumnArr = ISNULL(formConfig.HideColumnArr, ''),
         @AddNewColumnArr = ISNULL(formConfig.AddNewColumnArr, ''),
         @EditorColumnArr = ISNULL(formConfig.EditorColumnArr, ''),
-        @PrimaryKey = NULLIF(LTRIM(RTRIM(formConfig.PrimaryKey)), '')
+        @PrimaryKey = NULLIF(LTRIM(RTRIM(formConfig.PrimaryKey)), ''),
+        @HidePrintBtn = ISNULL(formConfig.HidePrintBtn, 0)
     FROM dbo.SY_FrmLstTbl formConfig
     WHERE formConfig.FormID = @FormName
        OR formConfig.TableName = @FormName
@@ -264,6 +266,7 @@ BEGIN
         fm.MaxLength AS [maxLength],
         fm.Type AS [formatType],
         fm.Params AS [formatParams],
+        ISNULL(@HidePrintBtn, 0) AS [hidePrintBtn],
         fm.Align AS [formatAlign],
         fm.IsComplex AS [isComplex],
         fm.MinValue AS [minValue],

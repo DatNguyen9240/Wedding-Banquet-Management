@@ -1,6 +1,6 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
-/****** Object:  StoredProcedure [dbo].[API_LayQuyenNhomDayDu]    Script Date: 10/06/2026 5:32:50 PM ******/
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -30,7 +30,7 @@ BEGIN
         COALESCE(NULLIF(M.FormKey, ''), F.FormID) AS [formKey],
         CASE WHEN OBJECTPROPERTY(OBJECT_ID(F.TableName), 'IsUserTable') = 1
                OR OBJECTPROPERTY(OBJECT_ID(F.TableName), 'IsView') = 1
-             THEN F.TableName END AS [tableName],
+              THEN F.TableName END AS [tableName],
         F.PrimaryKey    AS [primaryKey],
         M.URLPara       AS [urlPara],
         ISNULL(P.IsRun,        0) AS IsRun,
@@ -43,9 +43,10 @@ BEGIN
         ISNULL(P.isHideAmount, 0) AS isHideAmount,
         ISNULL(P.isLockDoc,    0) AS isLockDoc,
         ISNULL(P.isUnLockDoc,  0) AS isUnLockDoc,
-        ISNULL(P.isExportExcel,0) AS isExportExcel
+        ISNULL(P.isExportExcel,0) AS isExportExcel,
+        ISNULL(P.isExportDocx, 0) AS isExportDocx
     FROM WA_Menu M
-    INNER JOIN WA_UserGroupPermisstion P        -- Đổi LEFT JOIN → INNER JOIN
+    INNER JOIN WA_UserGroupPermisstion P
         ON M.MenuID = P.MenuID AND P.UserGroupID = @UserGroupID
     LEFT JOIN dbo.SY_FrmLstTbl F
         ON F.FormID = COALESCE(NULLIF(M.FormKey, ''), M.FormName)
@@ -69,7 +70,7 @@ BEGIN
         M.URLPara   AS [urlPara],
         1 AS IsRun, 0 AS IsAdd, 0 AS IsUpdate, 0 AS IsDelete,
         0 AS isManager, 0 AS isAdmin, 0 AS isAutoLock, 0 AS isHideAmount,
-        0 AS isLockDoc, 0 AS isUnLockDoc, 0 AS isExportExcel
+        0 AS isLockDoc, 0 AS isUnLockDoc, 0 AS isExportExcel, 0 AS isExportDocx
     FROM WA_Menu M
     LEFT JOIN dbo.SY_FrmLstTbl F
         ON F.FormID = COALESCE(NULLIF(M.FormKey, ''), M.FormName)
@@ -89,3 +90,4 @@ BEGIN
 
     ORDER BY [id];
 END
+GO

@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 ALTER PROCEDURE [dbo].[API_LayMenuTheoNhomQuyen]
@@ -35,7 +35,7 @@ BEGIN
              THEN F.TableName END AS [tableName],
         F.PrimaryKey AS [primaryKey],
         P.IsRun, P.IsAdd, P.IsUpdate, P.IsDelete,
-        P.isManager, P.isAdmin, P.isAutoLock, P.isHideAmount, P.isLockDoc, P.isUnLockDoc, P.isExportExcel
+        P.isManager, P.isAdmin, P.isAutoLock, P.isHideAmount, P.isLockDoc, P.isUnLockDoc, P.isExportExcel, P.isExportDocx
     FROM WA_Menu M
     INNER JOIN dbo.WA_UserGroupPermisstion P ON M.MenuID = P.MenuID
     LEFT JOIN dbo.SY_FrmLstTbl F
@@ -61,7 +61,7 @@ BEGIN
              THEN F.TableName END AS [tableName],
         F.PrimaryKey AS [primaryKey],
         1 AS IsRun, 0 AS IsAdd, 0 AS IsUpdate, 0 AS IsDelete,
-        0 AS isManager, 0 AS isAdmin, 0 AS isAutoLock, 0 AS isHideAmount, 0 AS isLockDoc, 0 AS isUnLockDoc, 0 AS isExportExcel
+        0 AS isManager, 0 AS isAdmin, 0 AS isAutoLock, 0 AS isHideAmount, 0 AS isLockDoc, 0 AS isUnLockDoc, 0 AS isExportExcel, 0 AS isExportDocx
     FROM WA_Menu M
     LEFT JOIN dbo.SY_FrmLstTbl F
         ON F.FormID = COALESCE(NULLIF(M.FormKey, ''), M.FormName)

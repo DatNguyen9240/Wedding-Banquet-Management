@@ -418,14 +418,15 @@ var Router = (function () {
                 CanView: _isTrue(p.CanView) || _isTrue(p.canView) || _isTrue(p.canview) || _isTrue(p.CANVIEW),
                 CanAdd: _isTrue(p.CanAdd) || _isTrue(p.canAdd) || _isTrue(p.canadd) || _isTrue(p.CANADD),
                 CanEdit: _isTrue(p.CanEdit) || _isTrue(p.canEdit) || _isTrue(p.canedit) || _isTrue(p.CANEDIT),
-                CanDelete: _isTrue(p.CanDelete) || _isTrue(p.canDelete) || _isTrue(p.candelete) || _isTrue(p.CANDELETE)
+                CanDelete: _isTrue(p.CanDelete) || _isTrue(p.canDelete) || _isTrue(p.candelete) || _isTrue(p.CANDELETE),
+                CanPrint: _isTrue(p.CanPrint) || _isTrue(p.canPrint) || _isTrue(p.canprint) || _isTrue(p.CANPRINT)
               };
             }
           });
           localStorage.setItem('pmql_permissions', JSON.stringify(permMap));
           localStorage.setItem('pmql_permission_ver', svVersion);
         }).catch(function (e) {
-          console.error('[Router] Lá»—i táº£i quyá»n má»›i:', e);
+          console.error('[Router] Lá»—i táº£i quyá» n má»›i:', e);
         });
       }
     }).catch(function (e) {

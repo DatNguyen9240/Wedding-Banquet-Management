@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 IF OBJECT_ID('dbo.API_DongBoQuyenTruyCap') IS NOT NULL
@@ -33,7 +33,7 @@ BEGIN
         -- Bơm quyền còn thiếu (dùng URLPara thay FormName vì hệ thống này không dùng FormName)
         INSERT INTO WA_UserGroupPermisstion
             (ID, UserGroupID, MenuID, IsRun, IsAdd, IsUpdate, IsDelete,
-             isManager, isAdmin, isAutoLock, isHideAmount, isLockDoc, isUnLockDoc, isExportExcel)
+             isManager, isAdmin, isAutoLock, isHideAmount, isLockDoc, isUnLockDoc, isExportExcel, isExportDocx)
         SELECT
             G.UserGroupID + '_' + M.MenuID,
             G.UserGroupID,
@@ -45,6 +45,7 @@ BEGIN
             CASE WHEN G.UserGroupID = 'Admin' THEN 1 ELSE 0 END,
             CASE WHEN G.UserGroupID = 'Admin' THEN 1 ELSE 0 END,
             0, 0, 0,
+            CASE WHEN G.UserGroupID = 'Admin' THEN 1 ELSE 0 END,
             CASE WHEN G.UserGroupID = 'Admin' THEN 1 ELSE 0 END,
             CASE WHEN G.UserGroupID = 'Admin' THEN 1 ELSE 0 END
         FROM SY_UserGroup G

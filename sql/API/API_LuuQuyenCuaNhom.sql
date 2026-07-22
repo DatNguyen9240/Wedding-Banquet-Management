@@ -1,4 +1,4 @@
-﻿USE [QLTiec]
+USE [QLTiec]
 GO
 
 /****** Object:  StoredProcedure [dbo].[API_LuuQuyenCuaNhom] ******/
@@ -21,7 +21,8 @@ ALTER PROCEDURE [dbo].[API_LuuQuyenCuaNhom]
     @isHideAmount BIT,
     @isLockDoc BIT,
     @isUnLockDoc BIT,
-    @isExportExcel BIT
+    @isExportExcel BIT,
+    @isExportDocx BIT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -51,7 +52,8 @@ BEGIN
         isHideAmount = @isHideAmount,
         isLockDoc = @isLockDoc,
         isUnLockDoc = @isUnLockDoc,
-        isExportExcel = @isExportExcel
+        isExportExcel = @isExportExcel,
+        isExportDocx = @isExportDocx
     WHERE UserGroupID = @UserGroupID 
       AND MenuID = @MenuID;
 
