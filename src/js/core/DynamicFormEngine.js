@@ -2396,6 +2396,17 @@ window.DynamicFormEngine = (function () {
 
 
 
+    // Helper loại bỏ dấu tiếng Việt để so khớp không dấu
+    function removeAccents(str) {
+      if (!str) return '';
+      return str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+        .trim();
+    }
+
     // Lắng nghe sự kiện thay đổi để cập nhật currentModalFormState
     body.addEventListener('change', function (e) {
       var changedName = e.target.name;
@@ -2406,6 +2417,79 @@ window.DynamicFormEngine = (function () {
           val = val.replace(/\D/g, '');
         }
         currentModalFormState[changedName] = val;
+
+        // Tự động gán các cột liên kết nếu có cấu hình dropdownLinkColumn (LinkColumn từ database)
+        if (field && field.dropdownLinkColumn) {
+          var ruleStr = field.dropdownLinkColumn.trim();
+          if (ruleStr) {
+            // Định dạng: Chuyển khoản:TaiKhoanNo=112,TaiKhoanCo=131|Tiền mặt:TaiKhoanNo=111,TaiKhoanCo=131
+            var rules = ruleStr.split('|');
+            var matchedRule = null;
+            for (var rIdx = 0; rIdx < rules.length; rIdx++) {
+              var r = rules[rIdx].trim();
+              var colonIdx = r.indexOf(':');
+              if (colonIdx > -1) {
+                var key = r.substring(0, colonIdx).trim();
+                
+                var isMatch = false;
+                var cleanKey = removeAccents(key).toLowerCase();
+                var cleanVal = removeAccents(val).toLowerCase();
+                
+                if (cleanKey === cleanVal) {
+                  isMatch = true;
+                } else if (key.indexOf('?') > -1) {
+                  // Tương thích ngược với dữ liệu kiểu VARCHAR lưu dấu hỏi chấm thay cho tiếng Việt Unicode
+                  var escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, function (m) {
+                    return m === '?' ? '.' : '\\' + m;
+                  });
+                  var regex = new RegExp('^' + escapedKey + '$', 'i');
+                  isMatch = regex.test(val);
+                }
+
+                if (isMatch) {
+                  matchedRule = r.substring(colonIdx + 1).trim();
+                  break;
+                }
+              }
+            }
+            if (matchedRule) {
+              // Định dạng: TaiKhoanNo=112,TaiKhoanCo=131
+              var pairs = matchedRule.split(',');
+              pairs.forEach(function (p) {
+                var eqIdx = p.indexOf('=');
+                if (eqIdx > -1) {
+                  var targetCol = p.substring(0, eqIdx).trim();
+                  var targetVal = p.substring(eqIdx + 1).trim();
+                  
+                  // Tìm ô nhập liệu tương ứng trên form modal
+                  var targetEl = body.querySelector('[name="' + targetCol + '"]');
+                  if (!targetEl) {
+                    // Dự phòng tìm kiếm không phân biệt hoa thường
+                    var allInputs = body.querySelectorAll('input, select, textarea');
+                    for (var inpIdx = 0; inpIdx < allInputs.length; inpIdx++) {
+                      if (allInputs[inpIdx].name && allInputs[inpIdx].name.toLowerCase() === targetCol.toLowerCase()) {
+                        targetEl = allInputs[inpIdx];
+                        break;
+                      }
+                    }
+                  }
+                  
+                  if (targetEl) {
+                    targetEl.value = targetVal;
+                    console.log('[DynamicFormEngine DEBUG] Found target element. Set value and dispatch change.');
+                    // Phát sự kiện change để cập nhật state của form và chạy các logic liên quan
+                    targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    if (typeof targetEl.fetchDataForValue === 'function') {
+                      targetEl.fetchDataForValue();
+                    }
+                  } else {
+                    console.log('[DynamicFormEngine DEBUG] Target element not found for name:', targetCol);
+                  }
+                }
+              });
+            }
+          }
+        }
       }
     });
 
