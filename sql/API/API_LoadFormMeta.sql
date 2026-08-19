@@ -7,16 +7,20 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 /*
-  Canonical metadata contract
+  =============================================================================
+  CANONICAL METADATA CONTRACT & FORM RESOLVER
+  =============================================================================
+  SY_FrmLstTbl  : Ánh xạ FormID (logic) <--> TableName/ViewName (vật lý), PrimaryKey, HideColumnArr...
+  SY_FmtFldTbl  : Từ điển cột toàn cục (FieldName, Caption*, FormatID, alignment, widths)
+  SY_FmatTbl    : Định nghĩa định dạng dữ liệu (FormatID, masks, ranges, precision)
+  SY_FrmDrdwTbl : Hành vi UI Dropdown, LinkColumn, Trigger (FormID + GridName + ColumnID)
 
-  SY_FmtFldTbl  : global field dictionary (FieldName, Caption*, FormatID, alignment, widths)
-  SY_FmatTbl    : format definition (FormatID, masks, ranges, precision)
-  SY_FrmDrdwTbl : UI lookup behaviour (FormID + GridName + ColumnID)
-  SY_FrmLstTbl  : form-level grid configuration (HideColumnArr)
-
-  A field must exist in the field dictionary and its FormatID must exist in the
-  format dictionary. The procedure deliberately returns a configuration error
-  instead of inventing labels or formats at runtime.
+  Cơ chế phân giải (Resolver):
+  - @FormName nhận vào có thể là FormID logic (VD: 'frmKhachThamQuan', '0530', 'frmBaoGia')
+    hoặc Tên Table/View vật lý (VD: 'v_DanhSachKhachThamQuan', 'v_DanhSachBaoGia').
+  - Hệ thống tự động tra cứu SY_FrmLstTbl để xác định đúng Table/View cần đọc cấu trúc cột,
+    đồng thời lấy cấu hình Dropdown/Trigger từ SY_FrmDrdwTbl theo FormID chuẩn.
+  =============================================================================
 */
 CREATE OR ALTER PROCEDURE dbo.API_LoadFormMeta
     @FormName SYSNAME
@@ -24,24 +28,19 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @ObjectId INT = OBJECT_ID(@FormName);
+    DECLARE @ResolvedTableName SYSNAME = NULL;
+    DECLARE @ResolvedFormID SYSNAME = NULL;
+    DECLARE @ObjectId INT = NULL;
     DECLARE @PrimaryKey VARCHAR(100) = '';
     DECLARE @MissingFields NVARCHAR(MAX) = '';
     DECLARE @DuplicateFields NVARCHAR(MAX) = '';
-    DECLARE @DuplicateDropdowns NVARCHAR(MAX) = '';
     DECLARE @MissingCaptions NVARCHAR(MAX) = '';
     DECLARE @InvalidFormats NVARCHAR(MAX) = '';
     DECLARE @HideColumnArr VARCHAR(MAX) = '';
     DECLARE @AddNewColumnArr VARCHAR(MAX) = '';
     DECLARE @EditorColumnArr VARCHAR(MAX) = '';
-    DECLARE @RequiredObjectId INT = @ObjectId;
+    DECLARE @RequiredObjectId INT = NULL;
     DECLARE @HidePrintBtn BIT = 0;
-
-    IF @ObjectId IS NULL
-    BEGIN
-        SELECT -1 AS code, N'Không tìm thấy bảng hoặc view: ' + ISNULL(@FormName, '') AS msg;
-        RETURN;
-    END;
 
     IF OBJECT_ID('dbo.SY_FmtFldTbl', 'U') IS NULL
        OR OBJECT_ID('dbo.SY_FmatTbl', 'U') IS NULL
@@ -52,15 +51,10 @@ BEGIN
         RETURN;
     END;
 
-    /*
-      The router calls this procedure with TableName. FormID is also accepted
-      for callers that load metadata directly. HideColumnArr is a semicolon-
-      separated list, for example: objectName;objectPhone. AddNewColumnArr and
-      EditorColumnArr are optional allow-lists for the add/edit modal; when
-      populated, every other view column remains available only as a hidden
-      input so read-model JSON does not become an editable textbox.
-    */
+    -- 1. BƯỚC 1: TRA CỨU ÁNH XẠ FORM TỪ BẢNG SY_FrmLstTbl
     SELECT TOP (1)
+        @ResolvedFormID = formConfig.FormID,
+        @ResolvedTableName = NULLIF(LTRIM(RTRIM(formConfig.TableName)), ''),
         @HideColumnArr = ISNULL(formConfig.HideColumnArr, ''),
         @AddNewColumnArr = ISNULL(formConfig.AddNewColumnArr, ''),
         @EditorColumnArr = ISNULL(formConfig.EditorColumnArr, ''),
@@ -71,19 +65,39 @@ BEGIN
        OR formConfig.TableName = @FormName
     ORDER BY CASE WHEN formConfig.FormID = @FormName THEN 0 ELSE 1 END;
 
-    /*
-      v_DanhSachHopDong là read-model: nullability của view không phản ánh đúng
-      cột nhập liệu. Required phải lấy từ bảng ghi thật tbmk_Hopdong.
-    */
-    IF EXISTS (
-        SELECT 1
-        FROM dbo.SY_FrmLstTbl formConfig
-        WHERE (formConfig.FormID = @FormName OR formConfig.TableName = @FormName)
-          AND formConfig.TableName = 'v_DanhSachHopDong'
-    )
-        SET @RequiredObjectId = OBJECT_ID(N'dbo.tbmk_Hopdong', N'U');
+    -- 2. BƯỚC 2: XÁC ĐỊNH OBJECT_ID CHO BẢNG/VIEW
+    IF @ResolvedTableName IS NOT NULL
+    BEGIN
+        SET @ObjectId = OBJECT_ID(@ResolvedTableName);
+    END;
 
-    /* FieldName is global. More than one dictionary row for a name is invalid. */
+    -- Fallback: Nếu không thấy trong SY_FrmLstTbl hoặc ObjectId vẫn NULL, thử trực tiếp OBJECT_ID(@FormName)
+    IF @ObjectId IS NULL
+    BEGIN
+        SET @ObjectId = OBJECT_ID(@FormName);
+        IF @ObjectId IS NOT NULL
+        BEGIN
+            SET @ResolvedTableName = @FormName;
+            IF @ResolvedFormID IS NULL SET @ResolvedFormID = @FormName;
+        END;
+    END;
+
+    IF @ObjectId IS NULL
+    BEGIN
+        SELECT -1 AS code, N'Không tìm thấy Bảng, View hoặc Cấu hình Form trong SY_FrmLstTbl: ' + ISNULL(@FormName, '') AS msg;
+        RETURN;
+    END;
+
+    SET @RequiredObjectId = @ObjectId;
+
+    -- Đọc nullability thật từ bảng gốc nếu view là read-model (VD: Hopdong)
+    IF @ResolvedTableName = 'v_DanhSachHopDong' OR @FormName = 'v_DanhSachHopDong'
+    BEGIN
+        IF OBJECT_ID(N'dbo.tbmk_Hopdong', N'U') IS NOT NULL
+            SET @RequiredObjectId = OBJECT_ID(N'dbo.tbmk_Hopdong', N'U');
+    END;
+
+    /* FieldName là toàn cục. Kiểm tra xem có bị trùng lặp FieldName trong SY_FmtFldTbl không */
     SELECT @DuplicateFields = STUFF((
         SELECT N', ' + d.FieldName
         FROM (
@@ -102,26 +116,7 @@ BEGIN
         RETURN;
     END;
 
-    SELECT @DuplicateDropdowns = STUFF((
-        SELECT N', ' + d.ColumnID
-        FROM (
-            SELECT ColumnID
-            FROM dbo.SY_FrmDrdwTbl
-            WHERE FormID = @FormName
-              AND NULLIF(LTRIM(RTRIM(GridName)), '') IS NULL
-            GROUP BY ColumnID
-            HAVING COUNT(*) > 1
-        ) d
-        ORDER BY d.ColumnID
-        FOR XML PATH(''), TYPE
-    ).value('.', 'NVARCHAR(MAX)'), 1, 2, '');
-
-    IF ISNULL(@DuplicateDropdowns, '') <> ''
-    BEGIN
-        SELECT -1 AS code, N'Trung ColumnID trong SY_FrmDrdwTbl: ' + @DuplicateDropdowns AS msg;
-        RETURN;
-    END;
-
+    /* Kiểm tra các cột trong Table/View chưa được khai báo từ điển */
     SELECT @MissingFields = STUFF((
         SELECT N', ' + c.name
         FROM sys.columns c
@@ -141,6 +136,7 @@ BEGIN
         RETURN;
     END;
 
+    /* Kiểm tra các cột thiếu CaptionVN */
     SELECT @MissingCaptions = STUFF((
         SELECT N', ' + f.FieldName
         FROM dbo.SY_FmtFldTbl f
@@ -160,6 +156,7 @@ BEGIN
         RETURN;
     END;
 
+    /* Kiểm tra FormatID không hợp lệ */
     SELECT @InvalidFormats = STUFF((
         SELECT N', ' + f.FieldName + N' (' + ISNULL(f.FormatID, '') + N')'
         FROM dbo.SY_FmtFldTbl f
@@ -176,10 +173,11 @@ BEGIN
 
     IF ISNULL(@InvalidFormats, '') <> ''
     BEGIN
-        SELECT -1 AS code, N'FormatID không hợp lệ: ' + @InvalidFormats AS msg;
+        SELECT -1 AS code, N'Sai FormatID trong SY_FmtFldTbl: ' + @InvalidFormats AS msg;
         RETURN;
     END;
 
+    -- Tự động tìm PrimaryKey nếu chưa khai báo
     IF NULLIF(LTRIM(RTRIM(@PrimaryKey)), '') IS NULL
     BEGIN
         SELECT TOP (1) @PrimaryKey = c.name
@@ -191,6 +189,7 @@ BEGIN
         ORDER BY ic.key_ordinal;
     END;
 
+    -- 3. BƯỚC 3: TRẢ VỀ METADATA SCHEMA ĐẦY ĐỦ CHO FRONTEND
     SELECT
         c.name AS [name],
         f.CaptionVN AS [label],
@@ -317,12 +316,20 @@ BEGIN
        AND requiredColumn.name = c.name
     INNER JOIN dbo.SY_FmtFldTbl f ON f.FieldName = c.name
     INNER JOIN dbo.SY_FmatTbl fm ON fm.FormatID = f.FormatID
-    /* This API describes a table's main editor. Detail-grid metadata is not part
-       of this result and is keyed separately by GridName. */
-    LEFT JOIN dbo.SY_FrmDrdwTbl dd
-      ON dd.FormID = @FormName
-     AND NULLIF(LTRIM(RTRIM(dd.GridName)), '') IS NULL
-     AND dd.ColumnID = c.name
+    -- Khớp Dropdown ưu tiên: FormID chuẩn > Tên được truyền vào (@FormName) > Tên Table/View
+    OUTER APPLY (
+        SELECT TOP (1) d.*
+        FROM dbo.SY_FrmDrdwTbl d
+        WHERE (d.FormID = @ResolvedFormID OR d.FormID = @FormName OR d.FormID = @ResolvedTableName)
+          AND NULLIF(LTRIM(RTRIM(d.GridName)), '') IS NULL
+          AND d.ColumnID = c.name
+        ORDER BY
+            CASE
+                WHEN d.FormID = @ResolvedFormID THEN 0
+                WHEN d.FormID = @FormName THEN 1
+                ELSE 2
+            END
+    ) dd
     WHERE c.object_id = @ObjectId
     ORDER BY
         CASE

@@ -2407,6 +2407,111 @@ window.DynamicFormEngine = (function () {
         .trim();
     }
 
+    function _executeLinkColumnRule(field, val, formContainer, formState) {
+      if (!field || !field.dropdownLinkColumn || !formContainer) return;
+      var ruleStr = String(field.dropdownLinkColumn).trim();
+      if (!ruleStr) return;
+
+      // TH1: Trigger Động qua API / Stored Procedure (api:API_Name)
+      if (ruleStr.toLowerCase().indexOf('api:') === 0) {
+        var apiName = ruleStr.substring(4).trim();
+        var payloadData = Object.assign({}, formState || {});
+        payloadData[field.name] = val;
+
+        ApiClient.post('/api/API_Gateway_Router', {
+          List: apiName,
+          Func: 'View',
+          JsonData: JSON.stringify(payloadData)
+        }).then(function (res) {
+          if (res && res.records && res.records.length > 0) {
+            var returnData = res.records[0];
+            Object.keys(returnData).forEach(function (colName) {
+              var targetVal = returnData[colName];
+              if (targetVal === null || targetVal === undefined) return;
+
+              var targetEl = formContainer.querySelector('[name="' + colName + '"]');
+              if (!targetEl) {
+                var allInputs = formContainer.querySelectorAll('input, select, textarea');
+                for (var inpIdx = 0; inpIdx < allInputs.length; inpIdx++) {
+                  if (allInputs[inpIdx].name && allInputs[inpIdx].name.toLowerCase() === colName.toLowerCase()) {
+                    targetEl = allInputs[inpIdx];
+                    break;
+                  }
+                }
+              }
+              if (targetEl) {
+                targetEl.value = targetVal;
+                targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+                targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+                if (typeof targetEl.fetchDataForValue === 'function') {
+                  targetEl.fetchDataForValue();
+                }
+              }
+            });
+          }
+        }).catch(function (err) {
+          console.warn('[DynamicFormEngine] Dynamic LinkColumn API Error (' + apiName + '):', err);
+        });
+        return;
+      }
+
+      // TH2: Trigger Tĩnh (Key:Col=Val|...)
+      var rules = ruleStr.split('|');
+      var matchedRule = null;
+      for (var rIdx = 0; rIdx < rules.length; rIdx++) {
+        var r = rules[rIdx].trim();
+        var colonIdx = r.indexOf(':');
+        if (colonIdx > -1) {
+          var key = r.substring(0, colonIdx).trim();
+          var cleanKey = removeAccents(key).toLowerCase();
+          var cleanVal = removeAccents(val).toLowerCase();
+
+          if (cleanKey === cleanVal) {
+            matchedRule = r.substring(colonIdx + 1).trim();
+            break;
+          } else if (key.indexOf('?') > -1) {
+            var escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, function (m) {
+              return m === '?' ? '.' : '\\' + m;
+            });
+            var regex = new RegExp('^' + escapedKey + '$', 'i');
+            if (regex.test(val)) {
+              matchedRule = r.substring(colonIdx + 1).trim();
+              break;
+            }
+          }
+        }
+      }
+      if (matchedRule) {
+        var pairs = matchedRule.split(',');
+        pairs.forEach(function (p) {
+          var eqIdx = p.indexOf('=');
+          if (eqIdx > -1) {
+            var targetCol = p.substring(0, eqIdx).trim();
+            var targetVal = p.substring(eqIdx + 1).trim();
+
+            var targetEl = formContainer.querySelector('[name="' + targetCol + '"]');
+            if (!targetEl) {
+              var allInputs = formContainer.querySelectorAll('input, select, textarea');
+              for (var inpIdx = 0; inpIdx < allInputs.length; inpIdx++) {
+                if (allInputs[inpIdx].name && allInputs[inpIdx].name.toLowerCase() === targetCol.toLowerCase()) {
+                  targetEl = allInputs[inpIdx];
+                  break;
+                }
+              }
+            }
+
+            if (targetEl) {
+              targetEl.value = targetVal;
+              targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+              if (typeof targetEl.fetchDataForValue === 'function') {
+                targetEl.fetchDataForValue();
+              }
+            }
+          }
+        });
+      }
+    }
+
     // Lắng nghe sự kiện thay đổi để cập nhật currentModalFormState
     body.addEventListener('change', function (e) {
       var changedName = e.target.name;
@@ -2418,77 +2523,9 @@ window.DynamicFormEngine = (function () {
         }
         currentModalFormState[changedName] = val;
 
-        // Tự động gán các cột liên kết nếu có cấu hình dropdownLinkColumn (LinkColumn từ database)
+        // Thực thi luật LinkColumn (Cả Tĩnh lẫn Động qua API)
         if (field && field.dropdownLinkColumn) {
-          var ruleStr = field.dropdownLinkColumn.trim();
-          if (ruleStr) {
-            // Định dạng: Chuyển khoản:TaiKhoanNo=112,TaiKhoanCo=131|Tiền mặt:TaiKhoanNo=111,TaiKhoanCo=131
-            var rules = ruleStr.split('|');
-            var matchedRule = null;
-            for (var rIdx = 0; rIdx < rules.length; rIdx++) {
-              var r = rules[rIdx].trim();
-              var colonIdx = r.indexOf(':');
-              if (colonIdx > -1) {
-                var key = r.substring(0, colonIdx).trim();
-                
-                var isMatch = false;
-                var cleanKey = removeAccents(key).toLowerCase();
-                var cleanVal = removeAccents(val).toLowerCase();
-                
-                if (cleanKey === cleanVal) {
-                  isMatch = true;
-                } else if (key.indexOf('?') > -1) {
-                  // Tương thích ngược với dữ liệu kiểu VARCHAR lưu dấu hỏi chấm thay cho tiếng Việt Unicode
-                  var escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, function (m) {
-                    return m === '?' ? '.' : '\\' + m;
-                  });
-                  var regex = new RegExp('^' + escapedKey + '$', 'i');
-                  isMatch = regex.test(val);
-                }
-
-                if (isMatch) {
-                  matchedRule = r.substring(colonIdx + 1).trim();
-                  break;
-                }
-              }
-            }
-            if (matchedRule) {
-              // Định dạng: TaiKhoanNo=112,TaiKhoanCo=131
-              var pairs = matchedRule.split(',');
-              pairs.forEach(function (p) {
-                var eqIdx = p.indexOf('=');
-                if (eqIdx > -1) {
-                  var targetCol = p.substring(0, eqIdx).trim();
-                  var targetVal = p.substring(eqIdx + 1).trim();
-                  
-                  // Tìm ô nhập liệu tương ứng trên form modal
-                  var targetEl = body.querySelector('[name="' + targetCol + '"]');
-                  if (!targetEl) {
-                    // Dự phòng tìm kiếm không phân biệt hoa thường
-                    var allInputs = body.querySelectorAll('input, select, textarea');
-                    for (var inpIdx = 0; inpIdx < allInputs.length; inpIdx++) {
-                      if (allInputs[inpIdx].name && allInputs[inpIdx].name.toLowerCase() === targetCol.toLowerCase()) {
-                        targetEl = allInputs[inpIdx];
-                        break;
-                      }
-                    }
-                  }
-                  
-                  if (targetEl) {
-                    targetEl.value = targetVal;
-                    console.log('[DynamicFormEngine DEBUG] Found target element. Set value and dispatch change.');
-                    // Phát sự kiện change để cập nhật state của form và chạy các logic liên quan
-                    targetEl.dispatchEvent(new Event('change', { bubbles: true }));
-                    if (typeof targetEl.fetchDataForValue === 'function') {
-                      targetEl.fetchDataForValue();
-                    }
-                  } else {
-                    console.log('[DynamicFormEngine DEBUG] Target element not found for name:', targetCol);
-                  }
-                }
-              });
-            }
-          }
+          _executeLinkColumnRule(field, val, body, currentModalFormState);
         }
       }
     });
@@ -2754,6 +2791,7 @@ window.DynamicFormEngine = (function () {
           required: _bool(f.required),
           renderRule: _mapRenderRule(f.renderRule),
           dataSource: f.dataSource,
+          dropdownLinkColumn: f.dropdownLinkColumn || f.LinkColumn,
           position: f.position,
           showInAdd: _bool(f.showInAdd),
           showInEdit: _bool(f.showInEdit),
@@ -2855,6 +2893,24 @@ window.DynamicFormEngine = (function () {
         grid.appendChild(wrapper);
 
         currentModalFormState[field.name] = field.value;
+      });
+
+      // Lắng nghe sự kiện thay đổi trên Form Thêm nhanh để kích hoạt Trigger / LinkColumn
+      body.addEventListener('change', function (e) {
+        var changedName = e.target.name;
+        if (changedName) {
+          var val = e.target.value;
+          var field = formSchema.find(function (f) { return f.name === changedName; });
+          if (field && field.renderRule === 'mn') {
+            val = val.replace(/\D/g, '');
+          }
+          currentModalFormState[changedName] = val;
+
+          // Thực thi luật LinkColumn (Cả Tĩnh lẫn Động qua API)
+          if (field && field.dropdownLinkColumn) {
+            _executeLinkColumnRule(field, val, body, currentModalFormState);
+          }
+        }
       });
 
       var footer = document.createElement('div');

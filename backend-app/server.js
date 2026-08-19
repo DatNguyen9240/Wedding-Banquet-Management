@@ -197,6 +197,7 @@ app.get('/api/documents/templates', (req, res) => {
             if (!fs.existsSync(dir)) return;
             const files = fs.readdirSync(dir);
             for (const file of files) {
+                if (file.startsWith('~$') || file.startsWith('.')) continue;
                 const fullPath = path.join(dir, file);
                 const stat = fs.statSync(fullPath);
                 if (stat.isDirectory()) {
