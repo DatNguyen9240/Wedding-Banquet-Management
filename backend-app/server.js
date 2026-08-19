@@ -710,32 +710,54 @@ function deepParseJsonStrings(value) {
 function findTemplatePath(baseDir, templateName) {
     const cleanInput = String(templateName || '').replace(/\\/g, '/').replace(/^\/+/, '');
     const baseResolved = path.resolve(baseDir);
-    const directPath = path.resolve(baseResolved, cleanInput);
-    if (directPath.startsWith(baseResolved + path.sep)
+
+    let directPath = path.resolve(baseResolved, cleanInput);
+    if (!directPath.toLowerCase().endsWith('.docx') && !directPath.toLowerCase().endsWith('.doc')) {
+        if (fs.existsSync(directPath + '.docx')) directPath += '.docx';
+    }
+
+    if (directPath.startsWith(baseResolved)
         && fs.existsSync(directPath)
         && fs.statSync(directPath).isFile()
-        && /\.docx$/i.test(directPath)) {
+        && /\.docx?$/i.test(directPath)) {
         return directPath;
     }
 
-    const cleanName = cleanInput.replace(/\.docx?$/i, '');
-    const findRecursive = (dir) => {
+    const normalizeStr = (str) => String(str || '')
+        .replace(/\\/g, '/')
+        .replace(/\.docx?$/i, '')
+        .replace(/\s*\(\s*/g, '(')
+        .replace(/\s*\)\s*/g, ')')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .normalize()
+        .toLowerCase();
+
+    const targetNormalized = normalizeStr(cleanInput);
+    const targetBaseName = normalizeStr(path.basename(cleanInput));
+
+    let foundPath = null;
+    const scanRecursive = (dir) => {
+        if (foundPath) return;
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         for (const entry of entries) {
             const fullPath = path.join(dir, entry.name);
             if (entry.isDirectory()) {
-                const found = findRecursive(fullPath);
-                if (found) return found;
-            } else if (entry.isFile()) {
-                const entryBaseName = entry.name.replace(/\.docx?$/i, '');
-                if (entryBaseName.normalize().toLowerCase() === cleanName.normalize().toLowerCase()) {
-                    return fullPath;
+                scanRecursive(fullPath);
+            } else if (entry.isFile() && /\.docx?$/i.test(entry.name)) {
+                const relPath = path.relative(baseResolved, fullPath);
+                const relPathNormalized = normalizeStr(relPath);
+                const entryBaseNameNormalized = normalizeStr(entry.name);
+
+                if (relPathNormalized === targetNormalized || entryBaseNameNormalized === targetBaseName) {
+                    foundPath = fullPath;
+                    return;
                 }
             }
         }
-        return null;
     };
-    return findRecursive(baseDir);
+    scanRecursive(baseResolved);
+    return foundPath;
 }
 
 app.get('/', (req, res) => {
