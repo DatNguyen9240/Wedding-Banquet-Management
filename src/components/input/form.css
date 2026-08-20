@@ -32,10 +32,23 @@
   box-shadow: inset 0 0 0 1px var(--color-primary), 0 0 0 3px var(--color-primary-light);
 }
 
-.ui-input:disabled {
-  background: var(--color-background);
-  color: var(--color-text-secondary);
-  cursor: not-allowed;
+.ui-input:disabled,
+.ui-input-disabled input,
+.ui-input-disabled .ui-input,
+.date-input-wrapper.ui-input-disabled input,
+.date-input-wrapper.ui-input-disabled {
+  background: var(--color-background) !important;
+  color: var(--color-text-secondary) !important;
+  cursor: not-allowed !important;
+  opacity: 0.75;
+  pointer-events: none !important;
+}
+
+.ui-input-disabled .material-symbols-outlined,
+.date-input-wrapper.ui-input-disabled .material-symbols-outlined {
+  cursor: not-allowed !important;
+  opacity: 0.5;
+  pointer-events: none !important;
 }
 
 /* Dynamic form modal: rộng hơn, ô co giãn đúng theo lưới, không tràn ngang. */

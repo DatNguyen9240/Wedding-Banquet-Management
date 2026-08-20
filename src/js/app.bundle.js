@@ -13839,6 +13839,12 @@ var UIInput = (function () {
     visibleInput.style.cursor = 'pointer';
     visibleInput.placeholder = config.placeholder || 'Chọn ngày...';
 
+    var isDisabled = config.disabled || config.isReadOnlyAdd || config.isReadOnlyEdit || config.isLock || config.readonly;
+    if (isDisabled) {
+      visibleInput.disabled = true;
+      obj.wrapper.classList.add('ui-input-disabled');
+    }
+
     // Format display value
     var initialDate = config.value || '';
     if (initialDate) {
@@ -13978,6 +13984,17 @@ var UIInput = (function () {
     }
 
     function openPopup() {
+      // Đóng bất kỳ popup Calendar nào khác đang mở trên màn hình
+      if (typeof window.closeActiveDatepickerPopup === 'function' && window.closeActiveDatepickerPopup !== closePopup) {
+        window.closeActiveDatepickerPopup();
+      }
+      window.closeActiveDatepickerPopup = closePopup;
+
+      // Xóa các popup DOM datepicker mồ côi nếu còn sót lại
+      document.querySelectorAll('.custom-datepicker-popup').forEach(function (el) {
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+      });
+
       if (popup) return;
       popup = document.createElement('div');
       popup.className = 'custom-datepicker-popup';
@@ -14043,6 +14060,9 @@ var UIInput = (function () {
     }
 
     function closePopup() {
+      if (window.closeActiveDatepickerPopup === closePopup) {
+        window.closeActiveDatepickerPopup = null;
+      }
       if (!popup) return;
       document.removeEventListener('click', outsideClickListener);
       detachScrollListeners();
@@ -14066,6 +14086,7 @@ var UIInput = (function () {
 
     visibleInput.addEventListener('click', function (e) {
       e.stopPropagation();
+      if (visibleInput.disabled || hiddenInput.disabled || visibleInput.hasAttribute('disabled') || visibleInput.classList.contains('ui-input-disabled') || (visibleInput.closest && visibleInput.closest('.ui-input-disabled'))) return;
       if (popup) {
         closePopup();
       } else {
