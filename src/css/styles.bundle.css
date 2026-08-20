@@ -5096,11 +5096,11 @@ body.dark-theme .calendar-days-header {
   box-sizing: border-box;
 }
 
-/* Ngày chỉ cần đủ cho dd/MM/yyyy và icon; không chiếm nguyên nửa hàng. */
+/* Ngày mặc định vừa vặn dd/MM/yyyy và icon nếu CSDL không đặt MaxWidth/MinWidth riêng */
 .dynamic-form-grid > .df-date-field {
   flex: 0 1 230px;
-  width: 230px !important;
-  max-width: 230px !important;
+  min-width: 180px;
+  max-width: 100%;
 }
 
 .dynamic-form-grid .date-input-wrapper,

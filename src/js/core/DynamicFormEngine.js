@@ -2379,6 +2379,7 @@ window.DynamicFormEngine = (function () {
       }
       if (Number.isFinite(maxFieldWidth) && maxFieldWidth > 0) {
         wrapper.style.maxWidth = maxFieldWidth + 'px';
+        wrapper.style.flex = '0 1 ' + maxFieldWidth + 'px';
       }
       wrapper.style.boxSizing = 'border-box';
 
