@@ -6,6 +6,10 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
+IF OBJECT_ID(N'[dbo].[API_LuuHopDong]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[API_LuuHopDong];
+GO
+
 -- =============================================
 -- Author:      Antigravity
 -- Create date: 2026-05-19
@@ -51,7 +55,7 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     @Manv VARCHAR(20) = NULL,
     @UserCreate VARCHAR(20) = 'System',
     
-    -- Danh sách Sảnh đặt (Dạng JSON: [{"Sanhtiecid":"S01", "IsSanhchinh": 1}, ...])
+    -- Danh sách Sảnh đặt (có thể kèm kiểu setup, loại địa điểm, ca và giá theo từng sảnh)
     @JsonSanhTiec NVARCHAR(MAX) = NULL,
     @JsonBanTiec NVARCHAR(MAX) = NULL,
     @JsonThucUong NVARCHAR(MAX) = NULL,
@@ -61,10 +65,22 @@ CREATE PROCEDURE [dbo].[API_LuuHopDong]
     -- Các trường mở rộng từ UI form (bỏ trống không lưu hoặc lưu nếu cần)
     @DieuKhoanBoSung NVARCHAR(MAX) = NULL,
     @BenBTenDaiDien NVARCHAR(255) = NULL,
-    @LoaiHinhSuKien NVARCHAR(255) = NULL
+    @LoaiHinhSuKien NVARCHAR(255) = NULL,
+    @MauTrangTriID VARCHAR(50) = NULL,
+    @SoKhachThamQuanDuKien INT = NULL,
+    @GioBatDauTrienLam NVARCHAR(50) = NULL,
+    @GioKetThucTrienLam NVARCHAR(50) = NULL,
+    @BenANguoiGiaoDich NVARCHAR(255) = NULL,
+    @BenAChucVuGiaoDich NVARCHAR(255) = NULL,
+    @NoiDungXuatHoaDon NVARCHAR(MAX) = NULL,
+    @SoKhachHoiNghi INT = NULL,
+    @PhiPhucVuTyLe DECIMAL(18,2) = NULL,
+    @DSKhuyenMai NVARCHAR(MAX) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
+    IF @PhiPhucVuTyLe < 0 OR @PhiPhucVuTyLe > 100
+        THROW 50001, N'Phí phục vụ phải từ 0 đến 100%.', 1;
     
     DECLARE @Now DATETIME = GETDATE();
     DECLARE @NgayToChucParsed DATETIME = NULL;
@@ -162,9 +178,22 @@ BEGIN
         IF (LEFT(LTRIM(@JsonSanhTiec), 1) != '[' OR ISJSON(@JsonSanhTiec) = 0)
         BEGIN
             SET @JsonSanhTiec = (
-                SELECT Sanhtiecid, 1 AS IsSanhchinh
+                SELECT
+                    Sanhtiecid,
+                    CAST(CASE WHEN RowNo = 1 THEN 1 ELSE 0 END AS BIT) AS IsSanhchinh,
+                    CASE
+                        WHEN @Loaitiecid = 'BLT000002' AND RowNo = 1 THEN 'TRIEN_LAM'
+                        WHEN @Loaitiecid = 'BLT000002' THEN 'TIEC'
+                        WHEN @Loaitiecid = 'BLT000003' THEN 'TRIEN_LAM'
+                        WHEN @Loaitiecid = 'BLT000004' AND RowNo = 1 THEN 'HOI_NGHI'
+                        WHEN @Loaitiecid = 'BLT000004' THEN 'TIEC'
+                        WHEN @Loaitiecid = 'BLT000005' THEN 'HOI_NGHI'
+                        ELSE NULL
+                    END AS LoaiDiaDiem
                 FROM (
-                    SELECT LTRIM(RTRIM(value)) AS Sanhtiecid 
+                    SELECT
+                        LTRIM(RTRIM(value)) AS Sanhtiecid,
+                        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNo
                     FROM STRING_SPLIT(@JsonSanhTiec, ',')
                     WHERE value <> '.' AND value <> ''
                 ) s
@@ -176,16 +205,64 @@ BEGIN
         BEGIN
             -- Nếu đã là JSON array, chuẩn hóa để loại bỏ phần tử rác (nếu có)
             SET @JsonSanhTiec = (
-                SELECT Sanhtiecid, IsSanhchinh
+                SELECT
+                    Sanhtiecid,
+                    IsSanhchinh,
+                    KieuSetup,
+                    LoaiDiaDiem,
+                    Thoigianid,
+                    Giatiensanh,
+                    Ghichuct
                 FROM (
                     SELECT 
                         JSON_VALUE(value, '$.Sanhtiecid') AS Sanhtiecid,
-                        ISNULL(CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0) AS IsSanhchinh
+                        ISNULL(TRY_CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0) AS IsSanhchinh,
+                        NULLIF(JSON_VALUE(value, '$.KieuSetup'), '') AS KieuSetup,
+                        CASE
+                            WHEN NULLIF(JSON_VALUE(value, '$.LoaiDiaDiem'), '') IS NOT NULL
+                                THEN JSON_VALUE(value, '$.LoaiDiaDiem')
+                            WHEN @Loaitiecid = 'BLT000002' AND ISNULL(TRY_CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0) = 1
+                                THEN 'TRIEN_LAM'
+                            WHEN @Loaitiecid = 'BLT000002'
+                                THEN 'TIEC'
+                            WHEN @Loaitiecid = 'BLT000003'
+                                THEN 'TRIEN_LAM'
+                            WHEN @Loaitiecid = 'BLT000004' AND ISNULL(TRY_CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0) = 1
+                                THEN 'HOI_NGHI'
+                            WHEN @Loaitiecid = 'BLT000004'
+                                THEN 'TIEC'
+                            WHEN @Loaitiecid = 'BLT000005'
+                                THEN 'HOI_NGHI'
+                            ELSE NULL
+                        END AS LoaiDiaDiem,
+                        NULLIF(JSON_VALUE(value, '$.Thoigianid'), '') AS Thoigianid,
+                        TRY_CAST(JSON_VALUE(value, '$.Giatiensanh') AS DECIMAL(18,2)) AS Giatiensanh,
+                        NULLIF(JSON_VALUE(value, '$.Ghichuct'), '') AS Ghichuct
                     FROM OPENJSON(@JsonSanhTiec)
                 ) s
                 WHERE Sanhtiecid IS NOT NULL AND Sanhtiecid <> '.' AND Sanhtiecid <> ''
                 FOR JSON PATH
             );
+        END
+
+        -- Các hợp đồng kết hợp phải có đúng một sảnh cho từng phần sự kiện.
+        IF @Loaitiecid = 'BLT000002'
+           AND (
+                (SELECT COUNT(*) FROM OPENJSON(@JsonSanhTiec)) <> 2
+                OR (SELECT COUNT(*) FROM OPENJSON(@JsonSanhTiec) WHERE JSON_VALUE(value, '$.LoaiDiaDiem') = 'TRIEN_LAM') <> 1
+                OR (SELECT COUNT(*) FROM OPENJSON(@JsonSanhTiec) WHERE JSON_VALUE(value, '$.LoaiDiaDiem') = 'TIEC') <> 1
+           )
+        BEGIN
+            THROW 50021, N'Hợp đồng Triển lãm + Tiệc phải có đúng 01 sảnh triển lãm và 01 sảnh tiệc.', 1;
+        END
+
+        IF @Loaitiecid = 'BLT000003'
+           AND (
+                (SELECT COUNT(*) FROM OPENJSON(@JsonSanhTiec)) <> 1
+                OR (SELECT COUNT(*) FROM OPENJSON(@JsonSanhTiec) WHERE JSON_VALUE(value, '$.LoaiDiaDiem') = 'TRIEN_LAM') <> 1
+           )
+        BEGIN
+            THROW 50022, N'Hợp đồng Triển lãm phải có đúng 01 sảnh triển lãm.', 1;
         END
     END
 
@@ -314,14 +391,16 @@ BEGIN
                 TuNgaySetup, NgayTraSanhDV, TuGioDenGioSetup, DenGioSetup,
                 SobanManchinhthuc, SobanManduphong, SobanChaychinhthuc, SobanChayduphong, TongSoBan,
                 Tongtienhopdong, Sotiencoccho, Sotiencochopdong, Tongtiencoc,
-                Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID
+                Manv, Ghichu, IsHuy, IsKetthuc, DateCreate, UserCreate, GoiThucDonID,
+                BenANguoiGiaoDich, BenAChucVuGiaoDich, NoiDungXuatHoaDon, SoKhachHoiNghi, MauTrangTriID, SoKhachThamQuanDuKien, GioBatDauTrienLam, GioKetThucTrienLam, DieuKhoanBoSung, PhiPhucVu, Noidunguudai
             )
             VALUES (
                 @Sohopdong, @Sobiennhan, ISNULL(@NgayHopDongParsed,@Now), @NgayToChucParsed, @Nhamngay, @Makh, @Loaitiecid, @Thoigianid,
                 @TuNgaySetupParsed, @NgayTraSanhDVParsed, @SetupBatDau, @SetupKetThuc,
                 @SobanManchinhthucVal, @SobanManduphongVal, @SobanChaychinhthucVal, @SobanChayduphongVal, @TongSoBanVal,
                 @TongtienhopdongVal, @SotiencocchoVal, @SotiencochopdongVal, @TongtiencocVal,
-                @Manv, @Ghichu, 0, 0, @Now, @UserCreate, ''
+                @Manv, @Ghichu, 0, 0, @Now, @UserCreate, '',
+                @BenANguoiGiaoDich, @BenAChucVuGiaoDich, @NoiDungXuatHoaDon, @SoKhachHoiNghi, @MauTrangTriID, @SoKhachThamQuanDuKien, @GioBatDauTrienLam, @GioKetThucTrienLam, @DieuKhoanBoSung, @PhiPhucVuTyLe, @DSKhuyenMai
             );
             IF (@Sobiennhan IS NOT NULL AND @Sobiennhan != '')
                 UPDATE tbmk_Biennhancoccho SET IsKetthuc=1, DateUpdate=@Now, UserUpdate=@UserCreate WHERE DocumentID=@Sobiennhan;
@@ -347,7 +426,18 @@ BEGIN
                 SobanChaychinhthuc=@SobanChaychinhthucVal, SobanChayduphong=@SobanChayduphongVal,
                 TongSoBan=@TongSoBanVal, Tongtienhopdong=@TongtienhopdongVal,
                 Sotiencoccho=@SotiencocchoVal, Sotiencochopdong=@SotiencochopdongVal,
-                Tongtiencoc=@TongtiencocVal, Ghichu=@Ghichu, DateUpdate=@Now, UserUpdate=@UserCreate
+                Tongtiencoc=@TongtiencocVal, Ghichu=@Ghichu, DateUpdate=@Now, UserUpdate=@UserCreate,
+                MauTrangTriID = ISNULL(@MauTrangTriID, MauTrangTriID),
+                BenANguoiGiaoDich = COALESCE(@BenANguoiGiaoDich, BenANguoiGiaoDich),
+                BenAChucVuGiaoDich = COALESCE(@BenAChucVuGiaoDich, BenAChucVuGiaoDich),
+                NoiDungXuatHoaDon = COALESCE(@NoiDungXuatHoaDon, NoiDungXuatHoaDon),
+                SoKhachHoiNghi = COALESCE(@SoKhachHoiNghi, SoKhachHoiNghi),
+                SoKhachThamQuanDuKien = ISNULL(@SoKhachThamQuanDuKien, SoKhachThamQuanDuKien),
+                GioBatDauTrienLam = ISNULL(@GioBatDauTrienLam, GioBatDauTrienLam),
+                GioKetThucTrienLam = ISNULL(@GioKetThucTrienLam, GioKetThucTrienLam),
+                PhiPhucVu = COALESCE(@PhiPhucVuTyLe, PhiPhucVu),
+                Noidunguudai = COALESCE(@DSKhuyenMai, Noidunguudai),
+                DieuKhoanBoSung = ISNULL(@DieuKhoanBoSung, DieuKhoanBoSung)
             WHERE Sohopdong=@Sohopdong;
         END
 
@@ -357,7 +447,8 @@ BEGIN
             DELETE FROM tbmk_Hopdongsanhtiec WHERE Sohopdong=@Sohopdong;
             INSERT INTO tbmk_Hopdongsanhtiec (
                 UserAutoid, Sohopdong, Sanhtiecid, IsSanhchinh, 
-                KieuSetup, Ghichuct, DateCreate, UserCreate
+                KieuSetup, LoaiDiaDiem, Thoigianid, Giatiensanh,
+                Ghichuct, DateCreate, UserCreate
             )
             SELECT 
                 NEWID(), 
@@ -365,6 +456,9 @@ BEGIN
                 JSON_VALUE(value, '$.Sanhtiecid'),
                 ISNULL(CAST(JSON_VALUE(value, '$.IsSanhchinh') AS BIT), 0),
                 JSON_VALUE(value, '$.KieuSetup'),
+                JSON_VALUE(value, '$.LoaiDiaDiem'),
+                JSON_VALUE(value, '$.Thoigianid'),
+                TRY_CAST(JSON_VALUE(value, '$.Giatiensanh') AS DECIMAL(18,2)),
                 JSON_VALUE(value, '$.Ghichuct'),
                 @Now,
                 @UserCreate
@@ -385,9 +479,9 @@ BEGIN
                 NEWID(), @Sohopdong, ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), j.Mahang, j.Dongia,
                 @UserCreate, @Now, NULL, 0
             FROM OPENJSON(@JsonBanTiec)
-            WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+            WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2), TableType INT, IsChay BIT) j
             LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
-            WHERE ISNULL(hh.Tenhang, j.TenHang) NOT LIKE N'%chay%';
+            WHERE COALESCE(CASE WHEN j.TableType IN (1,2) THEN j.TableType - 1 END, CAST(j.IsChay AS INT), CASE WHEN ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%' THEN 1 ELSE 0 END) = 0;
 
             INSERT INTO tbmk_Hopdongthucdonchay (
                 UserAutoid, Sohopdong, STTmon, Mahang, Dongia,
@@ -397,9 +491,9 @@ BEGIN
                 NEWID(), @Sohopdong, ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), j.Mahang, j.Dongia,
                 @UserCreate, @Now, NULL, 0, 0
             FROM OPENJSON(@JsonBanTiec)
-            WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+            WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2), TableType INT, IsChay BIT) j
             LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
-            WHERE ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%';
+            WHERE COALESCE(CASE WHEN j.TableType IN (1,2) THEN j.TableType - 1 END, CAST(j.IsChay AS INT), CASE WHEN ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%' THEN 1 ELSE 0 END) = 1;
         END
 
         IF (@JsonThucUong IS NOT NULL)

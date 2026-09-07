@@ -1,3 +1,4 @@
+import { chooseWeddingTemplate } from './wedding-template-routing.js';
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
@@ -333,8 +334,8 @@ app.post('/api/documents/generate', async (req, res) => {
         // Áp dụng cho tất cả field là array trong dataMap
         for (const key of Object.keys(dataMap)) {
             if (Array.isArray(dataMap[key])) {
-                // Tự động tiêm [{}] cho mảng rỗng để tránh bị xóa hàng bảng biểu
-                if (dataMap[key].length === 0) {
+                // Tự động tiêm [{}] cho mảng rỗng để tránh bị xóa hàng bảng biểu (ngoại trừ loop tùy chọn như MenuChay)
+                if (dataMap[key].length === 0 && key !== 'MenuChay') {
                     dataMap[key] = [{}];
                 }
                 dataMap[key] = _injectSTT(dataMap[key]);
@@ -342,6 +343,27 @@ app.post('/api/documents/generate', async (req, res) => {
         }
 
 
+
+        // Ánh xạ tương thích các trường số bàn
+        if (dataMap.SoBanChinhThuc && !dataMap.BanChinhThuc) dataMap.BanChinhThuc = dataMap.SoBanChinhThuc;
+        if (dataMap.BanChinhThuc && !dataMap.SoBanChinhThuc) dataMap.SoBanChinhThuc = dataMap.BanChinhThuc;
+
+        // Tự động định tuyến template quyết toán: quyet_toan_01 (cá nhân/cưới) vs quyet_toan_02 (công ty/sự kiện)
+        if (templateType === 'quyet_toan' || templateType === 'quyet_toan.docx') {
+            const loaiTiecStr = (dataMap.LoaiHinhSK || dataMap.LoaiHinhSuKien || dataMap.Tenloaitiec || dataMap.TiecLoaiTiec || dataMap.Tentiec || '').toLowerCase();
+            const isCorporate = loaiTiecStr.includes('công ty') ||
+                                loaiTiecStr.includes('hội nghị') ||
+                                loaiTiecStr.includes('sự kiện') ||
+                                loaiTiecStr.includes('triển lãm') ||
+                                loaiTiecStr.includes('hội thảo');
+            templateType = isCorporate ? 'quyet_toan_02' : 'quyet_toan_01';
+            console.log(`[GENERATE] 🎯 Tự động định tuyến quyết toán (${loaiTiecStr || 'mặc định'}) -> '${templateType}'`);
+        }
+
+        // Receipt date, inclusive calendar-day window 0..30.
+        if (['hop_dong', 'hop_dong.docx', 'hop_dong_menu_ngay', 'hop_dong_menu_ngay.docx'].includes(templateType)) {
+            templateType = chooseWeddingTemplate(dataMap);
+        }
 
         // templateType is selected by the user from GET /api/documents/templates.
         // Resolve it only inside samples/; never trust an arbitrary filesystem path.

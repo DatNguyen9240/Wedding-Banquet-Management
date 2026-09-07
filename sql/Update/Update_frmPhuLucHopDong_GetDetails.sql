@@ -96,19 +96,23 @@ BEGIN
         END AS [DonGiaBanTiec],
 
         -- Bàn tiệc
-        ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SobanManchinhthuc],
-        ISNULL(NULLIF(pl.SobanManduphong, 0), hd.SobanManduphong) AS [SobanManduphong],
-        ISNULL(NULLIF(pl.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
-        ISNULL(NULLIF(pl.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
+        ISNULL(pl.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SobanManchinhthuc],
+        ISNULL(pl.SobanManduphong, hd.SobanManduphong) AS [SobanManduphong],
+        ISNULL(pl.SobanChaychinhthuc, hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
+        ISNULL(pl.SobanChayduphong, hd.SobanChayduphong) AS [SobanChayduphong],
         ISNULL(ISNULL(pl.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
 
         -- Aliases khớp chính xác với biến template Word
-        ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
-        ISNULL(NULLIF(pl.SobanManduphong, 0), hd.SobanManduphong) AS [SoBanManDuPhong],
+        ISNULL(pl.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SoBanManChinhThuc],
+        ISNULL(pl.SobanManduphong, hd.SobanManduphong) AS [SoBanManDuPhong],
+        ISNULL(pl.SobanChaychinhthuc, hd.SobanChaychinhthuc) AS [SoBanChayChinhThuc],
+        ISNULL(pl.SobanChayduphong, hd.SobanChayduphong) AS [SoBanChayDuPhong],
         ISNULL(ISNULL(pl.SoBanTang, hd.SoBanTang), 0) AS [BanTang],
-        -- Alias {SoBanChinhThuc} và {SoBanDuPhong} cho template
-        ISNULL(NULLIF(pl.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SoBanChinhThuc],
-        ISNULL(NULLIF(pl.SobanManduphong, 0), hd.SobanManduphong) AS [SoBanDuPhong],
+        -- Alias {SoBanChinhThuc} và {SoBanDuPhong} cho template (tổng mặn + chay)
+        ISNULL(ISNULL(pl.SobanManchinhthuc, hd.SobanManchinhthuc), 0) + ISNULL(ISNULL(pl.SobanChaychinhthuc, hd.SobanChaychinhthuc), 0) AS [SoBanChinhThuc],
+        ISNULL(ISNULL(pl.SobanManduphong, hd.SobanManduphong), 0) + ISNULL(ISNULL(pl.SobanChayduphong, hd.SobanChayduphong), 0) AS [SoBanDuPhong],
+        ISNULL(ISNULL(pl.SobanManchinhthuc, hd.SobanManchinhthuc), 0) + ISNULL(ISNULL(pl.SobanChaychinhthuc, hd.SobanChaychinhthuc), 0) + ISNULL(ISNULL(pl.SobanManduphong, hd.SobanManduphong), 0) + ISNULL(ISNULL(pl.SobanChayduphong, hd.SobanChayduphong), 0) + ISNULL(ISNULL(pl.SoBanTang, hd.SoBanTang), 0) AS [TongSoBan],
+        ISNULL((SELECT SUM(ps.Soluong) FROM tbmk_HopdongPhatSinh ps WITH (NOLOCK) WHERE ps.Sohopdong = hd.Sohopdong AND (ps.Mahang LIKE '%BAN%' OR ps.GhiChuPhatSinh LIKE N'%bàn%')), 0) AS [SoBanPhatSinh],
 
         -- Đợt thanh toán 2
         ISNULL(pl.TenDotThanhToanTD, pl.TenDotThanhToan) AS [TenDotThanhToan],
@@ -199,7 +203,19 @@ BEGIN
 
         -- Chi phí tổng cộng
         FORMAT(ISNULL(pl.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [TongGiaTriTamTinh],
-        FORMAT(ISNULL(pl.TongtienHopdongTD, hd.Tongtienhopdong), 'N0', 'vi-VN') AS [MenuTongCong],
+        FORMAT(ISNULL((SELECT SUM(ISNULL(t.Dongia, 0)) FROM (SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = pl.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonman
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(pl.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = pl.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = pl.Sothaydoi) UNION ALL SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = pl.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonchay
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(pl.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = pl.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = pl.Sothaydoi)) t), 0), 'N0', 'vi-VN') + N' VNĐ' AS [MenuTongCong],
 
         -- VÒNG LẶP MENU TIỆC (Bơm array [{STT, TenMonAn, DonGia}])
         COALESCE(
@@ -222,6 +238,50 @@ BEGIN
                 FOR JSON PATH
             )
         ) AS [MenuTiec],
+
+        -- Menu Man: use the appendix snapshot when either menu is present.
+        (SELECT ROW_NUMBER() OVER (ORDER BY t.STTmon, t.Mahang) AS STT,
+                ISNULL(hh.Tenhang, t.Mahang) AS TenMonAn,
+                FORMAT(ISNULL(t.Dongia, 0), 'N0', 'vi-VN') AS DonGia
+         FROM (SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = pl.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonman
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(pl.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = pl.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = pl.Sothaydoi)) t
+         LEFT JOIN dmHanghoa hh ON hh.Mahang = t.Mahang
+         ORDER BY t.STTmon, t.Mahang FOR JSON PATH) AS [MenuMan],
+        FORMAT(ISNULL((SELECT SUM(ISNULL(t.Dongia, 0)) FROM (SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = pl.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonman
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(pl.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = pl.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = pl.Sothaydoi)) t), 0), 'N0', 'vi-VN') + N' VNĐ' AS [MenuTongCongMan],
+
+        -- Menu Chay: use the appendix snapshot when either menu is present.
+        (SELECT ROW_NUMBER() OVER (ORDER BY t.STTmon, t.Mahang) AS STT,
+                ISNULL(hh.Tenhang, t.Mahang) AS TenMonAn,
+                FORMAT(ISNULL(t.Dongia, 0), 'N0', 'vi-VN') AS DonGia
+         FROM (SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = pl.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonchay
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(pl.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = pl.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = pl.Sothaydoi)) t
+         LEFT JOIN dmHanghoa hh ON hh.Mahang = t.Mahang
+         ORDER BY t.STTmon, t.Mahang FOR JSON PATH) AS [MenuChay],
+        FORMAT(ISNULL((SELECT SUM(ISNULL(t.Dongia, 0)) FROM (SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = pl.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonchay
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(pl.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = pl.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = pl.Sothaydoi)) t), 0), 'N0', 'vi-VN') + N' VNĐ' AS [MenuTongCongChay],
+
+
 
         -- VÒNG LẶP CHI PHÍ
         COALESCE(

@@ -420,6 +420,19 @@ BEGIN
                     
                     SELECT N'Phí bù nghi thức lễ' AS [DienGiai], N'Lần' AS [DVT], 1 AS [SoLuong], FORMAT(ISNULL(pt.PhiBuNTL, 0), 'N0', 'vi-VN') AS [DonGia], FORMAT(ISNULL(pt.PhiBuNTL, 0), 'N0', 'vi-VN') AS [ThanhTien], ISNULL(pt.PhiBuNTL, 0) AS val, 5 AS sort_order
                     WHERE ISNULL(pt.PhiBuNTL, 0) > 0
+
+                    UNION ALL
+
+                    SELECT 
+                        N'Bù giá đổi món: ' + ISNULL(dm.TenMonGoc, dm.MonGocID) + N' -> ' + ISNULL(dm.TenMonMoi, dm.MonMoiID) AS [DienGiai],
+                        N'Bàn' AS [DVT],
+                        ISNULL(dm.Soluong, 1) AS [SoLuong],
+                        FORMAT(ISNULL(dm.ChenhLech, 0), 'N0', 'vi-VN') AS [DonGia],
+                        FORMAT(ISNULL(dm.ThanhTienChenhLech, 0), 'N0', 'vi-VN') AS [ThanhTien],
+                        ISNULL(dm.ThanhTienChenhLech, 0) AS val,
+                        6 AS sort_order
+                    FROM tbmk_HopdongDoiMon dm
+                    WHERE dm.Sohopdong = pt.Sohopdong AND ISNULL(dm.ThanhTienChenhLech, 0) > 0
                 ) sub
                 WHERE val > 0
             ) t ON n.n = t.RowNum
@@ -442,7 +455,14 @@ BEGIN
         ) AS Cong1Val
     ) c1
     CROSS APPLY (
-        SELECT (ISNULL((SELECT SUM(Sotien) FROM tbmk_HopdongPhatSinh WHERE Sohopdong = pt.Sohopdong), ISNULL(pt.Sotienphatsinh, 0)) + ISNULL(pt.PhiBuSanh, 0) + ISNULL(pt.PhiBuBanTang, 0) + ISNULL(pt.PhiBuTTS, 0) + ISNULL(pt.PhiBuNTL, 0)) AS Cong2Val
+        SELECT (
+            ISNULL((SELECT SUM(Sotien) FROM tbmk_HopdongPhatSinh WHERE Sohopdong = pt.Sohopdong), ISNULL(pt.Sotienphatsinh, 0)) 
+            + ISNULL(pt.PhiBuSanh, 0) 
+            + ISNULL(pt.PhiBuBanTang, 0) 
+            + ISNULL(pt.PhiBuTTS, 0) 
+            + ISNULL(pt.PhiBuNTL, 0)
+            + ISNULL((SELECT SUM(ThanhTienChenhLech) FROM tbmk_HopdongDoiMon WHERE Sohopdong = pt.Sohopdong), 0)
+        ) AS Cong2Val
     ) c2
     WHERE 
         ISNULL(pt.IsDeleted, 0) = 0
@@ -1044,7 +1064,24 @@ BEGIN
                   AND LEFT(LTRIM(td.JsonPhatSinh), 1) = '['
             ),
             '[]'
-        ) AS [JsonPhatSinh];
+        ) AS [JsonPhatSinh],
+
+        (
+            SELECT 
+                dm.MonGocID AS [MonGocMahang],
+                dm.TenMonGoc AS [MonGocTen],
+                dm.DonGiaGoc,
+                dm.MonMoiID AS [MonMoiMahang],
+                dm.TenMonMoi AS [MonMoiTen],
+                dm.DonGiaMoi,
+                dm.ChenhLech,
+                dm.Soluong AS [Soluongban],
+                dm.ThanhTienChenhLech,
+                dm.GhiChu
+            FROM tbmk_HopdongDoiMon dm
+            WHERE dm.Sohopdong = @Sohopdong
+            FOR JSON PATH
+        ) AS [JsonDoiMon];
 END;
 GO
 
@@ -1227,81 +1264,29 @@ GO
 PRINT N'Đang đồng bộ cấu hình trường dữ liệu cho frmQuyetToan...';
 GO
 
-IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FormName = 'frmQuyetToan' AND FieldName = 'JsonBanTiec')
-    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmQuyetToan', 'JsonBanTiec', N'Chi tiết bàn tiệc (JSON)', 't', '12', 0, 90, 0, 0, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FieldName = 'JsonBanTiec')
+    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID) VALUES ('frmQuyetToan', 'JsonBanTiec', N'Chi tiết bàn tiệc (JSON)', 't');
 
-IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FormName = 'frmQuyetToan' AND FieldName = 'JsonThucUong')
-    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmQuyetToan', 'JsonThucUong', N'Chi tiết thức uống (JSON)', 't', '12', 0, 91, 0, 0, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FieldName = 'JsonThucUong')
+    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID) VALUES ('frmQuyetToan', 'JsonThucUong', N'Chi tiết thức uống (JSON)', 't');
 
-IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FormName = 'frmQuyetToan' AND FieldName = 'JsonDichVu')
-    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmQuyetToan', 'JsonDichVu', N'Chi tiết dịch vụ (JSON)', 't', '12', 0, 92, 0, 0, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FieldName = 'JsonDichVu')
+    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID) VALUES ('frmQuyetToan', 'JsonDichVu', N'Chi tiết dịch vụ (JSON)', 't');
 
-IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FormName = 'frmQuyetToan' AND FieldName = 'JsonPhatSinh')
-    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit)
-    VALUES ('frmQuyetToan', 'JsonPhatSinh', N'Chi tiết phát sinh (JSON)', 't', '12', 0, 93, 0, 0, 1, 1);
-GO
+IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FieldName = 'JsonPhatSinh')
+    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID) VALUES ('frmQuyetToan', 'JsonPhatSinh', N'Chi tiết phát sinh (JSON)', 't');
 
--- =========================================================================
--- 7. SỬA LỖI TIẾNG VIỆT CHO TRƯỜNG ĐÃ KẾT THÚC (ISKETHUC)
--- =========================================================================
-PRINT N'Đang cấu hình và sửa lỗi tiếng Việt cho trường IsKetthuc...';
-GO
+IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FieldName = 'IsKetthuc')
+    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID) VALUES ('frmQuyetToan', 'IsKetthuc', N'Đã kết thúc', 'sl');
 
-IF OBJECT_ID('SY_FmtFldTbl', 'U') IS NOT NULL
-BEGIN
-    -- 1. Sửa lỗi font tiếng Việt chung cho các form đang cấu hình IsKetthuc dạng select bị lỗi font
-    UPDATE SY_FmtFldTbl
-    SET DataSource = N'STATIC:0|Chưa kết thúc,1|Đã kết thúc'
-    WHERE FieldName = 'IsKetthuc' 
-      AND (DataSource LIKE N'%k?t%' 
-           OR DataSource LIKE N'%kêt%' 
-           OR DataSource LIKE N'%ket%');
+IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FieldName = 'Sohopdong')
+    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID) VALUES ('frmQuyetToan', 'Sohopdong', N'Số Hợp Đồng', 'sr');
 
-    -- 2. Đảm bảo cấu hình trường IsKetthuc của frmQuyetToan luôn có và hiển thị tiếng Việt chuẩn dạng dropdown select
-    IF EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FormName = 'frmQuyetToan' AND FieldName = 'IsKetthuc')
-    BEGIN
-        UPDATE SY_FmtFldTbl 
-        SET FormatID = 'sl', 
-            DataSource = N'STATIC:0|Chưa kết thúc,1|Đã kết thúc', 
-            CaptionVN = N'Đã kết thúc' 
-        WHERE FormName = 'frmQuyetToan' AND FieldName = 'IsKetthuc';
-    END
-    ELSE
-    BEGIN
-        INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, ShowInFilter, DataSource)
-        VALUES ('frmQuyetToan', 'IsKetthuc', N'Đã kết thúc', 'sl', '6', 0, 50, 1, 1, 0, 0, 1, N'STATIC:0|Chưa kết thúc,1|Đã kết thúc');
-    END
+IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FieldName = 'Sobiennhan')
+    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID) VALUES ('frmQuyetToan', 'Sobiennhan', N'Số Biên Nhận', 't');
 
-    -- Đảm bảo cấu hình trường Sohopdong của frmQuyetToan luôn có và hiển thị tiếng Việt chuẩn dạng search-readonly combobox
-    IF EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FormName = 'frmQuyetToan' AND FieldName = 'Sohopdong')
-    BEGIN
-        UPDATE SY_FmtFldTbl 
-        SET FormatID = 'sr', 
-            DataSource = '/api/API_Gateway_Router?List=API_DanhSachHopDong&Func=View', 
-            CaptionVN = N'Số Hợp Đồng',
-            ShowInAdd = 1,
-            ShowInEdit = 1,
-            IsReadOnlyAdd = 0,
-            IsReadOnlyEdit = 1
-        WHERE FormName = 'frmQuyetToan' AND FieldName = 'Sohopdong';
-    END
-    ELSE
-    BEGIN
-        INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID, FormPosition, IsRequired, OrderNo, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, ShowInFilter, DataSource)
-        VALUES ('frmQuyetToan', 'Sohopdong', N'Số Hợp Đồng', 'sr', '6', 0, 10, 1, 1, 0, 1, 1, '/api/API_Gateway_Router?List=API_DanhSachHopDong&Func=View');
-    END
-    -- Đảm bảo có từ điển để dịch cột Sobiennhan và Makh trên popup chọn Hợp đồng cho frmQuyetToan
-    IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FormName = 'frmQuyetToan' AND FieldName = 'Sobiennhan')
-        INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID, ShowInGrid)
-        VALUES ('frmQuyetToan', 'Sobiennhan', N'Số Biên Nhận', 0, 0, 0, 0, 99, '6', 't', 0);
-
-    IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FormName = 'frmQuyetToan' AND FieldName = 'Makh')
-        INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, ShowInAdd, ShowInEdit, IsReadOnlyAdd, IsReadOnlyEdit, OrderNo, FormPosition, FormatID, ShowInGrid)
-        VALUES ('frmQuyetToan', 'Makh', N'Mã Khách Hàng', 0, 0, 0, 0, 100, '6', 't', 0);
-END
+IF NOT EXISTS (SELECT 1 FROM SY_FmtFldTbl WHERE FieldName = 'Makh')
+    INSERT INTO SY_FmtFldTbl (FormName, FieldName, CaptionVN, FormatID) VALUES ('frmQuyetToan', 'Makh', N'Mã Khách Hàng', 't');
 GO
 
 PRINT N'>> ĐÃ CẬP NHẬT TOÀN BỘ CHỨC NĂNG QUYẾT TOÁN VÀ THAY ĐỔI CHI TIẾT THÀNH CÔNG!';

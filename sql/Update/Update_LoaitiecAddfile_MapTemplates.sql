@@ -19,7 +19,8 @@ INSERT INTO tbmk_LoaitiecAddfile (FormName, Loaitiecid, TemplateFile, GhiChu) VA
 ('frmHopDong', 'BLT000002', N'2.1 MAU HDONG - 0406 (TRIỂN LÃM + TIỆC).docx', N'Mẫu in hợp đồng Triển lãm + Tiệc'),
 ('frmHopDong', 'BLT000003', N'2.2 MAU HDONG - 0406 (TRIỂN LÃM).docx', N'Mẫu in hợp đồng Triển lãm'),
 ('frmHopDong', 'BLT000004', N'3.1 MAU HDONG - 0406 (HỘI NGHỊ + TIỆC-TEABREAK).docx', N'Mẫu in hợp đồng Hội nghị + Break Tea'),
-('frmHopDong', 'BLT000005', N'3.2 MAU HDONG - 0406 (HỘI NGHỊ ).docx', N'Mẫu in hợp đồng Hội nghị');
+('frmHopDong', 'BLT000005', N'3.2 MAU HDONG - 0406 (HỘI NGHỊ).docx', N'Mẫu in hợp đồng Hội nghị'),
+('frmHopDong_MenuNgay', 'BLT000001', N'hop_dong_menu_ngay.docx', N'Mẫu in hợp đồng Tiệc Cưới (Chọn ngay menu)');
 
 -- 3. BEO (frmBEO) -> BEO lần 1 (chưa thay đổi)
 INSERT INTO tbmk_LoaitiecAddfile (FormName, Loaitiecid, TemplateFile, GhiChu) VALUES 

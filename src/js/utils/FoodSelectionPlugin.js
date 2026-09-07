@@ -355,8 +355,8 @@ var FoodSelectionPlugin = (function () {
       var catalogItem = catalogCache ? catalogCache.find(function (c) { return (c.Mahang || c.MaMon) === maMon; }) : null;
 
       var isChayVal = defaultIsChay;
-      if (catalogItem && catalogItem.IsChay !== undefined) isChayVal = catalogItem.IsChay;
-      else if (rawItem.IsChay !== undefined) isChayVal = rawItem.IsChay;
+      if (rawItem.IsChay !== undefined) isChayVal = rawItem.IsChay;
+      else if (catalogItem && catalogItem.IsChay !== undefined) isChayVal = catalogItem.IsChay;
       else if (rawItem.TenHang && rawItem.TenHang.toLowerCase().includes('chay')) isChayVal = 1;
 
       // Chuẩn hóa thành 0 hoặc 1 (để tránh lệch kiểu dữ liệu string "0"/"1" từ API)
@@ -448,6 +448,7 @@ var FoodSelectionPlugin = (function () {
       return {
         Mahang: x.MaMon,
         TenHang: x.TenMon,
+        IsChay: x.IsChay == 1 ? 1 : 0,
         DvtID: x.DvtID || 'Đĩa',
         Soluong: x.SoLuong || 1,
         Dongia: x.DonGia,

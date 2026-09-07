@@ -10,8 +10,11 @@ GO
 -- Author:      Antigravity
 -- Create date: 2026-04-29
 -- Description: API Lấy danh sách Sảnh Tiệc đang hoạt động
--- =============================================
-CREATE OR ALTER PROCEDURE [dbo].[API_DanhSachSanh]
+IF OBJECT_ID(N'[dbo].[API_DanhSachSanh]', N'P') IS NOT NULL
+    DROP PROCEDURE [dbo].[API_DanhSachSanh];
+GO
+
+CREATE PROCEDURE [dbo].[API_DanhSachSanh]
     @Keyword NVARCHAR(100) = ''
 AS
 BEGIN
@@ -22,6 +25,7 @@ BEGIN
         Tensanhtiec AS [Tên sảnh],
         SLBanMin AS [Bàn tối thiểu (Min)],
         SLBanMax AS [Bàn tối đa (Max)],
+        Dongia AS [Giá thuê 1 buổi (4 giờ)],
         SLBanMin AS [SobanManchinhthuc]
     FROM dmSanhtiec
     WHERE (IsTamngung = 0 OR IsTamngung IS NULL)

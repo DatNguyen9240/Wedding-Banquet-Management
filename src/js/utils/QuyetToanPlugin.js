@@ -186,13 +186,21 @@ var QuyetToanPlugin = (function () {
     }
   }
 
-  function _generateDocument(sohopdong) {
+  function _generateDocument(sohopdong, contractRow) {
+    var loaiTiec = contractRow ? (contractRow.LoaiHinhSK || contractRow.LoaiHinhSuKien || contractRow.Tenloaitiec || contractRow.TiecLoaiTiec || contractRow.Tentiec || '').toLowerCase() : '';
+    var isCorporate = loaiTiec.includes('công ty') || 
+                      loaiTiec.includes('hội nghị') || 
+                      loaiTiec.includes('sự kiện') || 
+                      loaiTiec.includes('triển lãm') || 
+                      loaiTiec.includes('hội thảo');
+    var targetTemplate = isCorporate ? 'quyet_toan_02' : 'quyet_toan_01';
+
     var DOC_API_BASE = (window.API_CONFIG && window.API_CONFIG.ENDPOINTS && window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER)
       ? window.API_CONFIG.ENDPOINTS.DOCUMENT_MANAGER.BASE_API
       : 'http://localhost:3000/api/document';
 
     if (typeof UIToast !== 'undefined') {
-      UIToast.show('Đang khởi tạo tài liệu quyết toán...', 'info');
+      UIToast.show('Đang khởi tạo tài liệu quyết toán (' + targetTemplate + ')...', 'info');
     }
 
     var headers = { 'Content-Type': 'application/json' };
@@ -211,10 +219,13 @@ var QuyetToanPlugin = (function () {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({
-        templateType: 'quyet_toan',
+        templateType: targetTemplate,
         customerId: sohopdong,
-        outputFileName: 'quyet_toan_' + sohopdong,
-        rowData: { Sohopdong: sohopdong },
+        outputFileName: targetTemplate + '_' + sohopdong,
+        rowData: { 
+          Sohopdong: sohopdong,
+          LoaiHinhSK: contractRow ? (contractRow.LoaiHinhSK || contractRow.Tenloaitiec || contractRow.Tentiec || '') : ''
+        },
         sqlListName: 'frmQuyetToan',
         convertFields: ['DanhSachDichVu', 'DichVuPhatSinh', 'DanhSachNgay', 'DichVuTinhPhi']
       })
@@ -723,9 +734,9 @@ var QuyetToanPlugin = (function () {
             }
           }
 
-          // Sinh file quyết toán Word
+          // Sinh file quyết toán Word (tự động phân loại quyet_toan_01 vs quyet_toan_02)
           try {
-            _generateDocument(sohopdong);
+            _generateDocument(sohopdong, contractRow);
           } catch (e) {
             console.error('[QuyetToanPlugin] Lỗi sinh file word:', e);
           }

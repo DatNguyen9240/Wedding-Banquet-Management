@@ -205,19 +205,19 @@ BEGIN
     INSERT INTO tbmk_Thaydoithucdonman (UserAutoid, Sothaydoi, STTmon, Mahang, Dongia, UserCreate, DateCreate, Ghichuthucdonman, IsKhaividaugio)
     SELECT NEWID(), h.Sothaydoi, ROW_NUMBER() OVER (PARTITION BY h.Sothaydoi ORDER BY j.Mahang), j.Mahang, j.Dongia, 'Migrate', GETDATE(), NULL, 0
     FROM tbmk_Thaydoi h
-    CROSS APPLY OPENJSON(h.JsonBanTiec) WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+    CROSS APPLY OPENJSON(h.JsonBanTiec) WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2), TableType INT, IsChay BIT) j
     LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
     WHERE NULLIF(LTRIM(RTRIM(h.JsonBanTiec)), '') IS NOT NULL AND LEFT(LTRIM(h.JsonBanTiec), 1) = '['
-      AND ISNULL(hh.Tenhang, j.TenHang) NOT LIKE N'%chay%'
+      AND COALESCE(CASE WHEN j.TableType IN (1,2) THEN j.TableType - 1 END, CAST(j.IsChay AS INT), CASE WHEN ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%' THEN 1 ELSE 0 END) = 0
       AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman x WHERE x.Sothaydoi = h.Sothaydoi);
 
     INSERT INTO tbmk_Thaydoithucdonchay (UserAutoid, Sothaydoi, STTmon, Mahang, Dongia, UserCreate, DateCreate, Ghichuthucdonchay, IsKhaividaugio)
     SELECT NEWID(), h.Sothaydoi, ROW_NUMBER() OVER (PARTITION BY h.Sothaydoi ORDER BY j.Mahang), j.Mahang, j.Dongia, 'Migrate', GETDATE(), NULL, 0
     FROM tbmk_Thaydoi h
-    CROSS APPLY OPENJSON(h.JsonBanTiec) WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+    CROSS APPLY OPENJSON(h.JsonBanTiec) WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2), TableType INT, IsChay BIT) j
     LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
     WHERE NULLIF(LTRIM(RTRIM(h.JsonBanTiec)), '') IS NOT NULL AND LEFT(LTRIM(h.JsonBanTiec), 1) = '['
-      AND ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%'
+      AND COALESCE(CASE WHEN j.TableType IN (1,2) THEN j.TableType - 1 END, CAST(j.IsChay AS INT), CASE WHEN ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%' THEN 1 ELSE 0 END) = 1
       AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay x WHERE x.Sothaydoi = h.Sothaydoi);
 END
 
@@ -321,7 +321,7 @@ SELECT
     FORMAT(ISNULL(td.NgayToChucTD, hd.Ngaytochuc), 'HH:mm') AS [TiecGioBatDau],
     
     -- Ngày tổ chức Dương lịch & Âm lịch
-    RIGHT('0' + CAST(DAY(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [NgayToChuc],
+    CONVERT(VARCHAR(10), ISNULL(td.NgayToChucTD, hd.Ngaytochuc), 103) AS [NgayToChuc],
 
     RIGHT('0' + CAST(MONTH(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR), 2) AS [ThangToChuc],
     CAST(YEAR(ISNULL(td.NgayToChucTD, hd.Ngaytochuc)) AS VARCHAR) AS [NamToChuc],
@@ -359,20 +359,26 @@ SELECT
     ISNULL(td.DonGiaBanTiecTD, td.DonGiaBanTiec) AS [DonGiaBanTiec],
     ISNULL(td.SoKhachTrenBanTD, td.SoKhachTrenBan) AS [SoKhachTrenBan],
     
-    -- Bàn tiệc
-    ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc) AS [SobanManchinhthuc],
-    ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong) AS [SobanManduphong],
-    ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
-    ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong) AS [SobanChayduphong],
-    ISNULL(ISNULL(NULLIF(td.SobanManchinhthuc, 0), hd.SobanManchinhthuc), 0) + ISNULL(ISNULL(NULLIF(td.SobanChaychinhthuc, 0), hd.SobanChaychinhthuc), 0) AS [SoBanChinhThuc],
-    ISNULL(ISNULL(NULLIF(td.SobanManduphong, 0), hd.SobanManduphong), 0) + ISNULL(ISNULL(NULLIF(td.SobanChayduphong, 0), hd.SobanChayduphong), 0) AS [SoBanDuPhong],
+    ISNULL(td.SobanManchinhthuc, hd.SobanManchinhthuc) AS [SobanManchinhthuc],
+    ISNULL(td.SobanManduphong, hd.SobanManduphong) AS [SobanManduphong],
+    ISNULL(td.SobanChaychinhthuc, hd.SobanChaychinhthuc) AS [SobanChaychinhthuc],
+    ISNULL(td.SobanChayduphong, hd.SobanChayduphong) AS [SobanChayduphong],
+    ISNULL(ISNULL(td.SobanManchinhthuc, hd.SobanManchinhthuc), 0) + ISNULL(ISNULL(td.SobanChaychinhthuc, hd.SobanChaychinhthuc), 0) AS [SoBanChinhThuc],
+    ISNULL(ISNULL(td.SobanManduphong, hd.SobanManduphong), 0) + ISNULL(ISNULL(td.SobanChayduphong, hd.SobanChayduphong), 0) AS [SoBanDuPhong],
     ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [BanTang],
     ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [SoBanTang],
+    ISNULL(ISNULL(td.SobanManchinhthuc, hd.SobanManchinhthuc), 0) + ISNULL(ISNULL(td.SobanChaychinhthuc, hd.SobanChaychinhthuc), 0) + ISNULL(ISNULL(td.SobanManduphong, hd.SobanManduphong), 0) + ISNULL(ISNULL(td.SobanChayduphong, hd.SobanChayduphong), 0) + ISNULL(ISNULL(td.SoBanTang, hd.SoBanTang), 0) AS [TongSoBan],
+    ISNULL((SELECT SUM(ps.Soluong) FROM tbmk_HopdongPhatSinh ps WITH (NOLOCK) WHERE ps.Sohopdong = td.Sohopdong AND (ps.Mahang LIKE '%BAN%' OR ps.GhiChuPhatSinh LIKE N'%bàn%')), 0) AS [SoBanPhatSinh],
     -- {#MenuTiec}: Lấy từ bảng con (Thaydoithucdonman & Thaydoithucdonchay)
     COALESCE(
         (
-            SELECT ISNULL(hh.Tenhang, t.Mahang) AS [TenMonAn],
-                   FORMAT(ISNULL(t.Dongia, 0), 'N0', 'vi-VN') AS [DonGia]
+            SELECT 
+                CASE 
+                    WHEN t.Loai = 2 AND LOWER(ISNULL(hh.Tenhang, t.Mahang)) NOT LIKE '%chay%'
+                    THEN ISNULL(hh.Tenhang, t.Mahang) + N' (Món chay)'
+                    ELSE ISNULL(hh.Tenhang, t.Mahang)
+                END AS [TenMonAn],
+                FORMAT(ISNULL(t.Dongia, 0), 'N0', 'vi-VN') AS [DonGia]
             FROM (
                 SELECT Mahang, Dongia, STTmon, 1 AS Loai FROM tbmk_Thaydoithucdonman WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
                 UNION ALL
@@ -401,15 +407,60 @@ SELECT
         '[]'
     ) AS [MenuTiec],
 
-    FORMAT(
-        ISNULL((
-            SELECT SUM(ISNULL(Dongia, 0)) FROM (
-                SELECT Dongia FROM tbmk_Thaydoithucdonman WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
+    FORMAT(ISNULL((SELECT SUM(ISNULL(t.Dongia, 0)) FROM (SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi
                 UNION ALL
-                SELECT Dongia FROM tbmk_Thaydoithucdonchay WITH (NOLOCK) WHERE Sothaydoi = td.Sothaydoi
-            ) t
-        ), 0), 'N0', 'vi-VN'
-    ) + N' VNĐ' AS [MenuTongCong],
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonman
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(td.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi) UNION ALL SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonchay
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(td.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi)) t), 0), 'N0', 'vi-VN') + N' VNĐ' AS [MenuTongCong],
+    -- Menu Man: use the appendix snapshot when either menu is present.
+    (SELECT ROW_NUMBER() OVER (ORDER BY t.STTmon, t.Mahang) AS STT,
+                ISNULL(hh.Tenhang, t.Mahang) AS TenMonAn,
+                FORMAT(ISNULL(t.Dongia, 0), 'N0', 'vi-VN') AS DonGia
+         FROM (SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonman
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(td.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi)) t
+         LEFT JOIN dmHanghoa hh ON hh.Mahang = t.Mahang
+         ORDER BY t.STTmon, t.Mahang FOR JSON PATH) AS [MenuMan],
+    FORMAT(ISNULL((SELECT SUM(ISNULL(t.Dongia, 0)) FROM (SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonman
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(td.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi)) t), 0), 'N0', 'vi-VN') + N' VNĐ' AS [MenuTongCongMan],
+
+    -- Menu Chay: use the appendix snapshot when either menu is present.
+    (SELECT ROW_NUMBER() OVER (ORDER BY t.STTmon, t.Mahang) AS STT,
+                ISNULL(hh.Tenhang, t.Mahang) AS TenMonAn,
+                FORMAT(ISNULL(t.Dongia, 0), 'N0', 'vi-VN') AS DonGia
+         FROM (SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonchay
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(td.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi)) t
+         LEFT JOIN dmHanghoa hh ON hh.Mahang = t.Mahang
+         ORDER BY t.STTmon, t.Mahang FOR JSON PATH) AS [MenuChay],
+    FORMAT(ISNULL((SELECT SUM(ISNULL(t.Dongia, 0)) FROM (SELECT Mahang, Dongia, STTmon FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi
+                UNION ALL
+                SELECT Mahang, Dongia, STTmon FROM tbmk_Hopdongthucdonchay
+                WHERE Sohopdong = hd.Sohopdong
+                  AND NULLIF(LTRIM(RTRIM(td.JsonBanTiec)), '') IS NULL
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonman WHERE Sothaydoi = td.Sothaydoi)
+                  AND NOT EXISTS (SELECT 1 FROM tbmk_Thaydoithucdonchay WHERE Sothaydoi = td.Sothaydoi)) t), 0), 'N0', 'vi-VN') + N' VNĐ' AS [MenuTongCongChay],
 
     -- {#DanhSachChiPhi}{STT}{NoiDung}{DVT}{SoLuong}{DonGia}{ThanhTien}{/DanhSachChiPhi}
     -- Ưu tiên: cột DanhSachChiPhi có sẵn → fallback tổng hợp từ bảng con dịch vụ
@@ -628,6 +679,8 @@ BEGIN
             SET @HanThanhToanDot2TDParsed = COALESCE(TRY_CAST(@HanThanhToanDot2TDStr AS DATETIME), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 126), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 120), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 23), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 103), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 105), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 111), TRY_CONVERT(DATETIME, @HanThanhToanDot2TDStr, 101));
     END
 
+        DECLARE @JsonBanTiec NVARCHAR(MAX) = COALESCE(JSON_QUERY(@JsonData, '$.JsonBanTiec'), (SELECT x.JsonBanTiec FROM OPENJSON(@JsonData) WITH (JsonBanTiec NVARCHAR(MAX)) x));
+
     IF @Sohopdong IS NULL OR @Sohopdong = ''
     BEGIN
         SELECT -1 AS code, N'Lỗi: Số hợp đồng không được để trống!' AS msg;
@@ -712,7 +765,7 @@ BEGIN
                 TRY_CAST(JSON_VALUE(@JsonData, '$.SobanChayduphong') AS INT),
                 TRY_CAST(JSON_VALUE(@JsonData, '$.SoBanTang') AS INT),
                 
-                JSON_QUERY(@JsonData, '$.JsonBanTiec'),
+                @JsonBanTiec,
                 JSON_QUERY(@JsonData, '$.JsonThucUong'),
                 JSON_QUERY(@JsonData, '$.JsonDichVu'),
                 JSON_QUERY(@JsonData, '$.JsonPhatSinh')
@@ -762,7 +815,7 @@ BEGIN
                 SobanChayduphong = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SobanChayduphong') AS INT), SobanChayduphong),
                 SoBanTang = COALESCE(TRY_CAST(JSON_VALUE(@JsonData, '$.SoBanTang') AS INT), SoBanTang),
                 
-                JsonBanTiec = COALESCE(JSON_QUERY(@JsonData, '$.JsonBanTiec'), JsonBanTiec),
+                JsonBanTiec = COALESCE(@JsonBanTiec, JsonBanTiec),
                 JsonThucUong = COALESCE(JSON_QUERY(@JsonData, '$.JsonThucUong'), JsonThucUong),
                 JsonDichVu = COALESCE(JSON_QUERY(@JsonData, '$.JsonDichVu'), JsonDichVu),
                 JsonPhatSinh = COALESCE(JSON_QUERY(@JsonData, '$.JsonPhatSinh'), JsonPhatSinh)
@@ -770,7 +823,7 @@ BEGIN
         END
 
         -- Bóc tách dữ liệu JSON từ các trường ẩn (Frontend gửi lên dưới dạng chuỗi JSON escape)
-        DECLARE @JsonBanTiec NVARCHAR(MAX) = JSON_QUERY(@JsonData, '$.JsonBanTiec');
+
         DECLARE @JsonThucUong NVARCHAR(MAX) = JSON_QUERY(@JsonData, '$.JsonThucUong');
         DECLARE @JsonDichVu NVARCHAR(MAX) = JSON_QUERY(@JsonData, '$.JsonDichVu');
 
@@ -787,9 +840,9 @@ BEGIN
                 NEWID(), @Sothaydoi, ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), j.Mahang, j.Dongia,
                 @UserName, @Now, NULL, 0
             FROM OPENJSON(@JsonBanTiec)
-            WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+            WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2), TableType INT, IsChay BIT) j
             LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
-            WHERE ISNULL(hh.Tenhang, j.TenHang) NOT LIKE N'%chay%';
+            WHERE COALESCE(CASE WHEN j.TableType IN (1,2) THEN j.TableType - 1 END, CAST(j.IsChay AS INT), CASE WHEN ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%' THEN 1 ELSE 0 END) = 0;
 
             INSERT INTO tbmk_Thaydoithucdonchay (
                 UserAutoid, Sothaydoi, STTmon, Mahang, Dongia,
@@ -799,9 +852,9 @@ BEGIN
                 NEWID(), @Sothaydoi, ROW_NUMBER() OVER(ORDER BY (SELECT NULL)), j.Mahang, j.Dongia,
                 @UserName, @Now, NULL, 0
             FROM OPENJSON(@JsonBanTiec)
-            WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+            WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2), TableType INT, IsChay BIT) j
             LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
-            WHERE ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%';
+            WHERE COALESCE(CASE WHEN j.TableType IN (1,2) THEN j.TableType - 1 END, CAST(j.IsChay AS INT), CASE WHEN ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%' THEN 1 ELSE 0 END) = 1;
         END
 
         IF (@JsonThucUong IS NOT NULL)
@@ -886,19 +939,19 @@ BEGIN
         INSERT INTO tbmk_Hopdongthucdonman (UserAutoid, Sohopdong, STTmon, Mahang, Dongia, Ghichuthucdonman, IsKhaividaugio, UserCreate, DateCreate)
         SELECT NEWID(), i.Sohopdong, ROW_NUMBER() OVER(PARTITION BY i.Sohopdong ORDER BY (SELECT NULL)), j.Mahang, j.Dongia, NULL, 0, i.UserCreate, GETDATE()
         FROM inserted i
-        CROSS APPLY OPENJSON(i.JsonBanTiec) WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+        CROSS APPLY OPENJSON(i.JsonBanTiec) WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2), TableType INT, IsChay BIT) j
         LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
         WHERE i.JsonBanTiec IS NOT NULL AND i.JsonBanTiec <> '[]'
-          AND ISNULL(hh.Tenhang, j.TenHang) NOT LIKE N'%chay%';
+          AND COALESCE(CASE WHEN j.TableType IN (1,2) THEN j.TableType - 1 END, CAST(j.IsChay AS INT), CASE WHEN ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%' THEN 1 ELSE 0 END) = 0;
 
         -- Thêm chi tiết thực đơn chay
         INSERT INTO tbmk_Hopdongthucdonchay (UserAutoid, Sohopdong, STTmon, Mahang, Dongia, Ghichuthucdonchay, IsKhaividaugio, UserCreate, DateCreate)
         SELECT NEWID(), i.Sohopdong, ROW_NUMBER() OVER(PARTITION BY i.Sohopdong ORDER BY (SELECT NULL)), j.Mahang, j.Dongia, NULL, 0, i.UserCreate, GETDATE()
         FROM inserted i
-        CROSS APPLY OPENJSON(i.JsonBanTiec) WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2)) j
+        CROSS APPLY OPENJSON(i.JsonBanTiec) WITH (Mahang VARCHAR(50), TenHang NVARCHAR(255), Dongia DECIMAL(18,2), TableType INT, IsChay BIT) j
         LEFT JOIN dmHanghoa hh ON j.Mahang = hh.Mahang
         WHERE i.JsonBanTiec IS NOT NULL AND i.JsonBanTiec <> '[]'
-          AND ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%';
+          AND COALESCE(CASE WHEN j.TableType IN (1,2) THEN j.TableType - 1 END, CAST(j.IsChay AS INT), CASE WHEN ISNULL(hh.Tenhang, j.TenHang) LIKE N'%chay%' THEN 1 ELSE 0 END) = 1;
 
         -- Thêm chi tiết thức uống
         INSERT INTO tbmk_Hopdongthucuong (UserAutoid, Sohopdong, Mahang, Soluong, Dongia, Sotien, IsKhuyenmai, Ghichuthucuong, Giamgia, STT, UserCreate, DateCreate)
@@ -956,11 +1009,11 @@ BEGIN
             h.Thoigianid = COALESCE(NULLIF(lc.ThoiGianIDTD, ''), h.Thoigianid),
             h.Nhamngay = COALESCE(NULLIF(lc.NhamNgayTD, ''), h.Nhamngay),
             h.Loaitiecid = COALESCE(NULLIF(lc.LoaiTiecIDTD, ''), h.Loaitiecid),
-            h.SobanManchinhthuc = COALESCE(NULLIF(lc.SobanManchinhthuc, 0), h.SobanManchinhthuc),
-            h.SobanManduphong = COALESCE(NULLIF(lc.SobanManduphong, 0), h.SobanManduphong),
+            h.SobanManchinhthuc = COALESCE(lc.SobanManchinhthuc, h.SobanManchinhthuc),
+            h.SobanManduphong = COALESCE(lc.SobanManduphong, h.SobanManduphong),
             h.Giabanman = COALESCE(NULLIF(lc.GiabanManTD, 0), h.Giabanman),
-            h.SobanChaychinhthuc = COALESCE(NULLIF(lc.SobanChaychinhthuc, 0), h.SobanChaychinhthuc),
-            h.SobanChayduphong = COALESCE(NULLIF(lc.SobanChayduphong, 0), h.SobanChayduphong),
+            h.SobanChaychinhthuc = COALESCE(lc.SobanChaychinhthuc, h.SobanChaychinhthuc),
+            h.SobanChayduphong = COALESCE(lc.SobanChayduphong, h.SobanChayduphong),
             h.Giabanchay = COALESCE(NULLIF(lc.GiabanChayTD, 0), h.Giabanchay),
             h.Ghichu = COALESCE(NULLIF(lc.Ghichu, ''), h.Ghichu),
             h.Tongtienbanman = COALESCE(NULLIF(lc.TongtienBanmanTD, 0), h.Tongtienbanman),
@@ -971,7 +1024,7 @@ BEGIN
             h.Conlai = COALESCE(NULLIF(lc.ConLaiTD, 0), h.Conlai),
             h.Soluongkhach = COALESCE(NULLIF(lc.SoluongKhachTD, 0), h.Soluongkhach),
             h.Tongtienphanchay = COALESCE(NULLIF(lc.TongTienPhanChayTD, 0), h.Tongtienphanchay),
-            h.SoBanTang = COALESCE(NULLIF(lc.SoBanTang, 0), h.SoBanTang),
+            h.SoBanTang = COALESCE(lc.SoBanTang, h.SoBanTang),
             h.SoNguoiTrenBan = COALESCE(NULLIF(lc.SoNguoiTrenBanTD, 0), h.SoNguoiTrenBan),
             h.TongSoBan = COALESCE(NULLIF(lc.TongSoBanTD, 0), h.TongSoBan),
             h.SoBanTinhPhiPhucVu = COALESCE(NULLIF(lc.SoBanTinhPhiPhucVuTD, 0), h.SoBanTinhPhiPhucVu),
@@ -1220,8 +1273,12 @@ PRINT N'Đang di chuyển dữ liệu từ SY_FormatFields sang SY_FmtFldTbl...'
 GO
 
 MERGE INTO SY_FmtFldTbl AS target
-USING SY_FormatFields AS source
-ON (target.FormName = source.FormName AND target.FieldName = source.FieldName)
+USING (
+    SELECT FieldName, MAX(FormName) AS FormName, MAX(CaptionVN) AS CaptionVN, MAX(CaptionEN) AS CaptionEN, MAX(CaptionCH) AS CaptionCH, MAX(FormatID) AS FormatID, MAX(AlignX) AS AlignX, MAX(MinWidth) AS MinWidth, MAX(MaxWidth) AS MaxWidth
+    FROM SY_FormatFields
+    GROUP BY FieldName
+) AS source
+ON (target.FieldName = source.FieldName)
 WHEN MATCHED THEN
     UPDATE SET 
         CaptionVN = ISNULL(source.CaptionVN, target.CaptionVN),

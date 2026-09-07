@@ -181,6 +181,10 @@ var PromotionAutoFillPlugin = (function () {
   function _fetchAndFill(modalContent, formName) {
     var fields = _getFormFields(modalContent, formName);
     if (!fields.loaiTiecEl || !fields.targetEl) return;
+    var requestId = (modalContent._promoRequestId || 0) + 1;
+    modalContent._promoRequestId = requestId;
+    var oldPicker = modalContent.querySelector('.promo-catalog-picker');
+    if (oldPicker) oldPicker.remove();
 
     var loaiTiec = fields.loaiTiecEl.value;
     var banMan = fields.banManEl ? Number(fields.banManEl.value || 0) : 0;
@@ -191,105 +195,58 @@ var PromotionAutoFillPlugin = (function () {
       return;
     }
 
+    var ngayToChucEl = modalContent.querySelector('[name="Ngaytochuc"]') || modalContent.querySelector('[name="NgayToChuc"]');
+    var ngayToChuc = ngayToChucEl ? (ngayToChucEl.value || '') : '';
+    if (!ngayToChuc) return;
+
     var payload = {
       List: 'API_LayDichVuUuDaiTheoLoaiTiec',
       Func: 'View',
       JsonData: JSON.stringify({
         Loaitiecid: loaiTiec,
         Soluongban: totalTables,
-        Nhahangid: ''
+        Nhahangid: (modalContent.querySelector('[name="Nhahangid"]') || {}).value || '',
+        TatCa: 1,
+        Ngaytochuc: ngayToChuc
       })
     };
 
     ApiClient.post('/api/API_Gateway_Router', payload)
       .then(function (res) {
+        if (modalContent._promoRequestId !== requestId) return;
         var records = (res && res.records) ? res.records : ((res && res.data) ? res.data : (Array.isArray(res) ? res : []));
+        var existingPicker = modalContent.querySelector('.promo-catalog-picker');
+        if (existingPicker) existingPicker.remove();
+        var picker = document.createElement('div');
+        picker.className = 'promo-catalog-picker';
+        fields.targetEl.parentNode.insertBefore(picker, fields.targetEl);
         if (!records || records.length === 0) {
+          picker.textContent = 'Không có CTKM phù hợp với ngày tổ chức và số bàn hiện tại.';
           return;
         }
-
-        // Format danh sách khuyến mãi với cơ chế fallback thông minh
-        var formatted = records.map(function (item, idx) {
-          var qty = Number(item.Soluong || item.soluong || 1);
-          var qtyStr = qty > 1 ? ' (SL: ' + qty + ')' : '';
-
-          // 1. Thử lấy từ các cột tên quen thuộc
-          var name = item.Tenhang || item.TenHang || item.tenhang || item.tenHang || item.TenMon || item.tenMon || item.Tenmon || item.tenmon || '';
-
-          // 2. Nếu trống, tìm cột nào có chứa chữ 'ten', 'name', 'diengiai', 'desc'
-          if (!name) {
-            var keys = Object.keys(item);
-            for (var i = 0; i < keys.length; i++) {
-              var k = keys[i];
-              var kl = k.toLowerCase();
-              if (kl.indexOf('ten') > -1 || kl.indexOf('name') > -1 || kl.indexOf('diengiai') > -1 || kl.indexOf('desc') > -1) {
-                name = item[k];
-                break;
-              }
-            }
-          }
-
-          // 3. Nếu vẫn trống, thử lấy từ cột mã hàng quen thuộc
-          if (!name) {
-            name = item.Mahang || item.mahang || item.MaHang || item.maHang || '';
-          }
-
-          // 4. Nếu vẫn trống, tìm cột nào có chứa chữ 'ma', 'code', 'id' (trừ cột ID hệ thống)
-          if (!name) {
-            var keys = Object.keys(item);
-            for (var i = 0; i < keys.length; i++) {
-              var k = keys[i];
-              var kl = k.toLowerCase();
-              if (kl !== 'userautoid' && kl !== 'documentid' && (kl.indexOf('ma') > -1 || kl.indexOf('id') > -1 || kl.indexOf('code') > -1)) {
-                name = item[k];
-                break;
-              }
-            }
-          }
-
-          // 5. Cuối cùng, nếu vẫn trống, lấy bất kỳ trường nào khác rỗng và không phải ID hệ thống
-          if (!name) {
-            var keys = Object.keys(item);
-            for (var i = 0; i < keys.length; i++) {
-              var k = keys[i];
-              var kl = k.toLowerCase();
-              if (kl !== 'userautoid' && kl !== 'documentid' && kl !== 'stt' && item[k]) {
-                name = item[k];
-                break;
-              }
-            }
-          }
-
-          return (name || 'Ưu đãi') + qtyStr;
-        }).join('\n');
-
-        var currentVal = fields.targetEl.value ? fields.targetEl.value.trim() : '';
-        if (currentVal === formatted.trim()) {
-          return;
-        }
-
-        var doUpdate = function () {
-          fields.targetEl.value = formatted;
-          fields.targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+        var groups = {};
+        records.forEach(function (r) { (groups[r.DocumentID] || (groups[r.DocumentID] = [])).push(r); });
+        var select = document.createElement('select');
+        select.setAttribute('aria-label', 'Chọn CTKM đang áp dụng');
+        var placeholder = document.createElement('option');
+        placeholder.value = ''; placeholder.textContent = 'Chọn CTKM đang áp dụng'; select.appendChild(placeholder);
+        Object.keys(groups).forEach(function (id) {
+          var option = document.createElement('option'); option.value = id;
+          option.textContent = id + ' — ' + groups[id].map(function (r) { return r.Tenhang || r.Mahang; }).join(', ');
+          select.appendChild(option);
+        });
+        picker.appendChild(select);
+        select.addEventListener('change', function () {
+          if (!select.value) return;
+          fields.targetEl.value = groups[select.value].map(function (r) {
+            return (r.Tenhang || r.Mahang || '') + (Number(r.Soluong) > 1 ? ' (SL: ' + r.Soluong + ')' : '');
+          }).join('\n');
           fields.targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+          fields.targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        return;
 
-          // Thêm style đổi màu nhẹ để báo hiệu vừa được điền tự động
-          fields.targetEl.style.setProperty('background-color', 'rgba(16, 185, 129, 0.1)', 'important');
-          fields.targetEl.style.setProperty('border-color', '#10b981', 'important');
-          setTimeout(function () {
-            fields.targetEl.style.removeProperty('background-color');
-            fields.targetEl.style.removeProperty('border-color');
-          }, 2000);
-        };
 
-        if (!currentVal) {
-          doUpdate();
-        } else {
-          // Nếu đã có sẵn nội dung, hỏi xác nhận từ người dùng để tránh đè dữ liệu custom
-          if (confirm('Số lượng bàn hoặc loại tiệc đã thay đổi. Bạn có muốn tự động tải lại danh sách khuyến mãi tương ứng không? Nội dung khuyến mãi hiện tại sẽ bị thay thế.')) {
-            doUpdate();
-          }
-        }
       })
       .catch(function (err) {
         console.error('[PromotionAutoFillPlugin] Lỗi tải ưu đãi:', err);
@@ -313,6 +270,10 @@ var PromotionAutoFillPlugin = (function () {
     };
 
     fields.loaiTiecEl.addEventListener('change', handler);
+    ['Ngaytochuc', 'NgayToChuc', 'Nhahangid'].forEach(function (name) {
+      var input = modalContent.querySelector('[name="' + name + '"]');
+      if (input) input.addEventListener('change', handler);
+    });
     if (fields.banManEl) {
       fields.banManEl.addEventListener('input', handler);
       fields.banManEl.addEventListener('change', handler);
@@ -330,6 +291,7 @@ var PromotionAutoFillPlugin = (function () {
 
     // Thực thi check live một lần khi mới mở form
     _validateLive(modalContent, formName);
+    _fetchAndFill(modalContent, formName);
   }
 
   // Đã bỏ chặn lưu số bàn vượt quá sức chứa sảnh để người dùng vẫn nhập và lưu được bình thường (chỉ giữ lại cảnh báo trực quan)

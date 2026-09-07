@@ -129,9 +129,46 @@ BEGIN
 
     SET @result = (
         SELECT
-            ISNULL(hh.Tenhang, td.Mahang) AS [TenMonAn],
+            ROW_NUMBER() OVER (ORDER BY td.STTmon, td.Mahang) AS [STT],
+              ISNULL(hh.Tenhang, td.Mahang) AS [TenMonAn],
             FORMAT(ISNULL(td.Dongia, 0), 'N0', 'vi-VN') AS [DonGia]
         FROM tbmk_Hopdongthucdonman td
+        LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
+        WHERE td.Sohopdong = @Sohopdong
+        ORDER BY td.STTmon, td.Mahang
+        FOR JSON PATH
+    );
+
+    RETURN ISNULL(@result, '[]');
+END
+GO
+
+IF OBJECT_ID(N'dbo.fn_DOCX_MenuMan', N'FN') IS NOT NULL
+    DROP FUNCTION dbo.fn_DOCX_MenuMan;
+GO
+CREATE FUNCTION dbo.fn_DOCX_MenuMan(@Sohopdong VARCHAR(50))
+RETURNS NVARCHAR(MAX)
+AS
+BEGIN
+    RETURN dbo.fn_DOCX_MenuTiec(@Sohopdong);
+END
+GO
+
+IF OBJECT_ID(N'dbo.fn_DOCX_MenuChay', N'FN') IS NOT NULL
+    DROP FUNCTION dbo.fn_DOCX_MenuChay;
+GO
+CREATE FUNCTION dbo.fn_DOCX_MenuChay(@Sohopdong VARCHAR(50))
+RETURNS NVARCHAR(MAX)
+AS
+BEGIN
+    DECLARE @result NVARCHAR(MAX);
+
+    SET @result = (
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY td.STTmon, td.Mahang) AS [STT],
+              ISNULL(hh.Tenhang, td.Mahang) AS [TenMonAn],
+            FORMAT(ISNULL(td.Dongia, 0), 'N0', 'vi-VN') AS [DonGia]
+        FROM tbmk_Hopdongthucdonchay td
         LEFT JOIN dmHanghoa hh ON td.Mahang = hh.Mahang
         WHERE td.Sohopdong = @Sohopdong
         ORDER BY td.STTmon, td.Mahang
@@ -158,6 +195,30 @@ BEGIN
     IF @tong = 0
     BEGIN
         SELECT @tong = ISNULL(h.Giabanman, 0)
+        FROM tbmk_Hopdong h
+        WHERE h.Sohopdong = @Sohopdong;
+    END
+
+    RETURN FORMAT(ISNULL(@tong, 0), 'N0', 'vi-VN') + N' VNĐ';
+END
+GO
+
+IF OBJECT_ID(N'dbo.fn_DOCX_MenuTongCongChay', N'FN') IS NOT NULL
+    DROP FUNCTION dbo.fn_DOCX_MenuTongCongChay;
+GO
+CREATE FUNCTION dbo.fn_DOCX_MenuTongCongChay(@Sohopdong VARCHAR(50))
+RETURNS NVARCHAR(200)
+AS
+BEGIN
+    DECLARE @tong DECIMAL(18, 2);
+
+    SELECT @tong = ISNULL(SUM(ISNULL(td.Dongia, 0)), 0)
+    FROM tbmk_Hopdongthucdonchay td
+    WHERE td.Sohopdong = @Sohopdong;
+
+    IF @tong = 0
+    BEGIN
+        SELECT @tong = ISNULL(h.Giabanchay, 0)
         FROM tbmk_Hopdong h
         WHERE h.Sohopdong = @Sohopdong;
     END
