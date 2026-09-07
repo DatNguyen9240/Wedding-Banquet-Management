@@ -6,7 +6,7 @@
  * Cho phép xem hình ảnh trực quan, đơn giá, mô tả và áp dụng vào hợp đồng.
  */
 var MauTrangTriPlugin = (function () {
-  var SUPPORTED_FORMS = ['frmHopDong', 'v_DanhSachHopDong'];
+  var SUPPORTED_FORMS = ['frmHopDong', 'v_DanhSachHopDong', '0540', 'tbmk_Hopdong'];
   var _cachedDecorList = null;
 
   function _loadDecorThemes() {
@@ -196,8 +196,15 @@ var MauTrangTriPlugin = (function () {
             if (SUPPORTED_FORMS.indexOf(fName) !== -1) formBody = node;
           }
           if (!formBody) {
-            var found = node.querySelector ? node.querySelector('[data-form-name="frmHopDong"]') : null;
-            if (found) formBody = found;
+            SUPPORTED_FORMS.forEach(function (name) {
+              if (!formBody && node.querySelector) {
+                var found = node.querySelector('[data-form-name="' + name + '"]');
+                if (found) formBody = found;
+              }
+            });
+          }
+          if (!formBody && node.querySelector && (node.querySelector('[name="Sohopdong"]') || node.querySelector('[name="Sobiennhan"]'))) {
+            formBody = node.querySelector('form') || node;
           }
           if (formBody) {
             setTimeout(function () {

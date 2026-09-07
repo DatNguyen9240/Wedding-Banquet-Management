@@ -756,7 +756,8 @@ var QuyetToanPlugin = (function () {
   }
 
   function getExtraButtons(formName, getSelectedRows, moduleConfig, onReload) {
-    if (formName !== 'frmHopDong') return [];
+    var validForms = ['frmHopDong', 'v_DanhSachHopDong', '0540', 'tbmk_Hopdong'];
+    if (validForms.indexOf(formName) === -1 && (!moduleConfig || validForms.indexOf(moduleConfig.FormID) === -1)) return [];
 
     return [{
       id: 'btn-create-quyettoan',
